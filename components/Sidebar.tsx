@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -13,53 +13,72 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { href: '/dashboard',          label: 'Dashboard',         icon: '▦',  module: 'dashboard'         },
-  { href: '/projects',           label: 'Projects',          icon: '📁', module: 'projects'           },
-  { href: '/vendors',            label: 'Vendors',           icon: '🏢', module: 'vendors'            },
-  { href: '/billing',            label: 'Billing & Invoices',icon: '💳', module: 'billing'            },
-  { href: '/attendance',         label: 'Attendance',        icon: '📅', module: 'attendance'         },
-  { href: '/safety-compliance',  label: 'Safety Compliance', icon: '🛡', module: 'safety_compliance'  },
-  { href: '/srn-return',         label: 'SRN Return',        icon: '↩', module: 'srn_return'         },
-  { href: '/site-expenses',      label: 'Site Expenses',     icon: '💰', module: 'site_expenses'      },
-  { href: '/reports',            label: 'Reports',           icon: '📊', module: 'reports'            },
+  { href: '/dashboard',         label: 'Dashboard',          icon: '▦'  },
+  { href: '/projects',          label: 'Projects',           icon: '📁' },
+  { href: '/vendors',           label: 'Vendors',            icon: '🏢' },
+  { href: '/billing',           label: 'Billing & Invoices', icon: '💳' },
+  { href: '/attendance',        label: 'Attendance',         icon: '📅' },
+  { href: '/safety-compliance', label: 'Safety Compliance',  icon: '🛡' },
+  { href: '/srn-return',        label: 'SRN Return',         icon: '↩' },
+  { href: '/site-expenses',     label: 'Site Expenses',      icon: '💰' },
+  { href: '/reports',           label: 'Reports',            icon: '📊' },
 ];
 
 const ADMIN_NAV: NavItem[] = [
-  { href: '/admin/users', label: 'User Management',    icon: '👥', adminOnly: true },
-  { href: '/admin/roles', label: 'Role & Permissions', icon: '🔑', adminOnly: true },
+  { href: '/admin/users', label: 'User Management',    icon: '👥' },
+  { href: '/admin/roles', label: 'Role & Permissions', icon: '🔑' },
 ];
 
 interface Props { collapsed: boolean; onCollapse: () => void; }
 
 export default function Sidebar({ collapsed, onCollapse }: Props) {
   const { pathname } = useRouter();
-  const { profile, can } = useAuth();
+  const { profile, can, loading } = useAuth();
   const isSuperAdmin = profile?.role === 'super_admin';
 
-  const isActive = (href: string) => pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
+  const isActive = (href: string) =>
+    pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
+
+  const shouldShow = (item: NavItem) => {
+    // While loading, show all items
+    if (loading) return true;
+    // Super admin sees everything
+    if (isSuperAdmin) return true;
+    // No module restriction means always show
+    if (!item.module) return true;
+    // Check permission
+    return can(item.module as any, 'read');
+  };
 
   const navLink = (item: NavItem) => {
     const active = isActive(item.href);
     return (
       <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: collapsed ? '10px' : '9px 14px',
-          justifyContent: collapsed ? 'center' : 'flex-start',
-          borderRadius: 8,
-          background: active ? T.primaryMid : 'transparent',
-          color: active ? T.primary : T.textMuted,
-          fontWeight: active ? 600 : 400,
-          fontSize: 13,
-          marginBottom: 2,
-          cursor: 'pointer',
-          borderLeft: active ? `3px solid ${T.primary}` : '3px solid transparent',
-          transition: 'all 0.15s',
-          overflow: 'hidden',
-          whiteSpace: 'nowrap',
-        }}
-          onMouseEnter={e => { if (!active) (e.currentTarget as HTMLDivElement).style.background = '#F8FAFC'; }}
-          onMouseLeave={e => { if (!active) (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: collapsed ? '10px' : '9px 14px',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            borderRadius: 8,
+            background: active ? T.primaryMid : 'transparent',
+            color: active ? T.primary : T.textMuted,
+            fontWeight: active ? 600 : 400,
+            fontSize: 13,
+            marginBottom: 2,
+            cursor: 'pointer',
+            borderLeft: active ? `3px solid ${T.primary}` : '3px solid transparent',
+            transition: 'all 0.15s',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={e => {
+            if (!active) (e.currentTarget as HTMLDivElement).style.background = '#F0FDFA';
+          }}
+          onMouseLeave={e => {
+            if (!active) (e.currentTarget as HTMLDivElement).style.background = 'transparent';
+          }}
         >
           <span style={{ fontSize: 15, flexShrink: 0, lineHeight: 1 }}>{item.icon}</span>
           {!collapsed && <span>{item.label}</span>}
@@ -100,17 +119,22 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
         }}>⚡</div>
         {!collapsed && (
           <div style={{ overflow: 'hidden' }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: T.primary, whiteSpace: 'nowrap' }}>Venus Energy</div>
-            <div style={{ fontSize: 9, color: T.textDim, textTransform: 'uppercase', letterSpacing: 1 }}>Project Control</div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: T.primary, whiteSpace: 'nowrap' }}>
+              Venus Energy
+            </div>
+            <div style={{ fontSize: 9, color: T.textDim, textTransform: 'uppercase', letterSpacing: 1 }}>
+              Project Control
+            </div>
           </div>
         )}
       </div>
 
       {/* Nav */}
       <nav style={{ padding: '10px 8px', flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-        {NAV.filter(item => !item.module || can(item.module as any, 'read')).map(navLink)}
+        {NAV.filter(shouldShow).map(navLink)}
 
-        {isSuperAdmin && (
+        {/* Admin section */}
+        {(isSuperAdmin || loading) && (
           <>
             <div style={{
               fontSize: 9, fontWeight: 600, textTransform: 'uppercase',
@@ -125,7 +149,7 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
         )}
       </nav>
 
-      {/* Profile quick link */}
+      {/* Profile */}
       <div style={{ padding: '10px 8px', borderTop: `1px solid ${T.border}` }}>
         <Link href="/profile" style={{ textDecoration: 'none' }}>
           <div style={{
@@ -146,7 +170,7 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
             {!collapsed && (
               <div style={{ overflow: 'hidden' }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 130 }}>
-                  {profile?.full_name || 'User'}
+                  {profile?.full_name || profile?.email || 'User'}
                 </div>
                 <div style={{ fontSize: 10, color: T.textDim, whiteSpace: 'nowrap' }}>
                   {profile?.role?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
@@ -162,7 +186,8 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
             width: '100%', marginTop: 6, padding: '6px',
             background: '#F8FAFC', border: `1px solid ${T.border}`,
             borderRadius: 7, color: T.textMuted, cursor: 'pointer',
-            fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+            fontSize: 12, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', gap: 5,
           }}>
           <span>{collapsed ? '›' : '‹'}</span>
           {!collapsed && <span>Collapse</span>}
