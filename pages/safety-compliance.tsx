@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
+import Toast from '@/components/Toast';
 import { T, card, badge, th, td, btnPrimary, inputStyle } from '@/lib/theme';
 
 const checks = [
@@ -30,6 +31,7 @@ const statusColor: Record<string,string> = { Compliant:T.success, 'Non-Compliant
 export default function SafetyCompliancePage() {
   const [search, setSearch] = useState('');
   const [focused, setFocused] = useState(false);
+  const [toast, setToast] = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
   const [selected, setSelected] = useState(checks[0]);
 
   const filtered = checks.filter(c => !search || c.site.toLowerCase().includes(search.toLowerCase()) || c.id.toLowerCase().includes(search.toLowerCase()));
@@ -62,7 +64,7 @@ export default function SafetyCompliancePage() {
           <div style={card}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
               <input value={search} onChange={e=>setSearch(e.target.value)} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} placeholder="Search site or check ID…" style={{ ...inputStyle(focused), width:220 }} />
-              <button style={btnPrimary}>+ Add Compliance Check</button>
+              <button onClick={() => setToast({msg:'Feature: Add Safety Check form coming in next update.',type:'info'})} style={btnPrimary}>+ Add Compliance Check</button>
             </div>
             <table style={{ width:'100%' }}>
               <thead><tr>{['Check ID','Site','Supervisor','Date','Score','Items','Status','Next Review'].map(h=><th key={h} style={th}>{h}</th>)}</tr></thead>
@@ -126,6 +128,7 @@ export default function SafetyCompliancePage() {
           </div>
         </div>
       </div>
+        {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </Layout>
   );
 }

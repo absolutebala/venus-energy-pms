@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
+import Toast from '@/components/Toast';
 import { T, card, badge, th, td, btnPrimary, inputStyle } from '@/lib/theme';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -29,6 +30,7 @@ const fmt = (v: number) => `₹${v.toLocaleString('en-IN')}`;
 export default function SiteExpensesPage() {
   const [search, setSearch] = useState('');
   const [focused, setFocused] = useState(false);
+  const [toast, setToast] = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
   const [catFilter, setCatFilter] = useState('All');
 
   const categories = ['All','Material Purchase','Labour','Equipment','Transport','Others'];
@@ -74,7 +76,7 @@ export default function SiteExpensesPage() {
                   <button key={f} onClick={()=>setCatFilter(f)} style={{ padding:'5px 10px', borderRadius:6, border:'1px solid', borderColor:catFilter===f?T.primary:T.border, background:catFilter===f?T.primaryLight:'#fff', color:catFilter===f?T.primary:T.textMuted, fontSize:11, cursor:'pointer', fontWeight:catFilter===f?600:400, whiteSpace:'nowrap' }}>{f}</button>
                 ))}
               </div>
-              <div style={{ marginLeft:'auto' }}><button style={btnPrimary}>+ Add Expense</button></div>
+              <div style={{ marginLeft:'auto' }}><button onClick={() => setToast({msg:'Feature: Add Expense form coming in next update.',type:'info'})} style={btnPrimary}>+ Add Expense</button></div>
             </div>
             <div style={{ overflowX:'auto' }}>
               <table style={{ width:'100%' }}>
@@ -122,6 +124,7 @@ export default function SiteExpensesPage() {
           </div>
         </div>
       </div>
+        {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </Layout>
   );
 }

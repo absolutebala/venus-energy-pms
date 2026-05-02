@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { T, card, badge, th, td, btnPrimary, inputStyle } from '@/lib/theme';
+import Toast from '@/components/Toast';
+import Toast from '@/components/Toast';
 
 const attendance = [
   { id:'EMP-1001', name:'Suresh Kumar',  designation:'Site Engineer', vendor:'ABC Telecom',   checkIn:'08:02 AM', checkOut:'06:01 PM', hours:'09:59', status:'Present' },
@@ -21,6 +23,7 @@ export default function AttendancePage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [focused, setFocused] = useState(false);
+  const [toast, setToast] = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
 
   const filtered = attendance.filter(e => {
     if (statusFilter !== 'All' && e.status !== statusFilter) return false;
@@ -65,7 +68,7 @@ export default function AttendancePage() {
                 <button key={f} onClick={()=>setStatusFilter(f)} style={{ padding:'6px 12px', borderRadius:6, border:'1px solid', borderColor:statusFilter===f?T.primary:T.border, background:statusFilter===f?T.primaryLight:'#fff', color:statusFilter===f?T.primary:T.textMuted, fontSize:12, cursor:'pointer', fontWeight:statusFilter===f?600:400 }}>{f}</button>
               ))}
             </div>
-            <div style={{ marginLeft:'auto' }}><button style={btnPrimary}>+ Mark Attendance</button></div>
+            <div style={{ marginLeft:'auto' }}><button onClick={() => setToast({msg:'Attendance marked successfully for Day Shift — 20 May 2025',type:'success'})} style={btnPrimary}>+ Mark Attendance</button></div>
           </div>
 
           <div style={{ overflowX:'auto' }}>
@@ -94,6 +97,8 @@ export default function AttendancePage() {
           <div style={{ padding:'10px 0', borderTop:`1px solid ${T.border}`, fontSize:11, color:T.textDim, marginTop:4 }}>Showing {filtered.length} of {attendance.length} employees · Attendance rate: <strong style={{ color:T.success }}>{Math.round((present/attendance.length)*100)}%</strong></div>
         </div>
       </div>
+        {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+        {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </Layout>
   );
 }

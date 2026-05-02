@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
+import Toast from '@/components/Toast';
 import { T, card, badge, th, td, btnPrimary, inputStyle } from '@/lib/theme';
 
 const returns = [
@@ -15,6 +16,7 @@ const fmt = (v: number) => `₹${v.toLocaleString('en-IN')}`;
 export default function SRNReturnPage() {
   const [search, setSearch] = useState('');
   const [focused, setFocused] = useState(false);
+  const [toast, setToast] = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
   const [statusFilter, setStatusFilter] = useState('All');
 
   const filtered = returns.filter(r => {
@@ -57,7 +59,7 @@ export default function SRNReturnPage() {
                 <button key={f} onClick={()=>setStatusFilter(f)} style={{ padding:'6px 12px', borderRadius:6, border:'1px solid', borderColor:statusFilter===f?T.primary:T.border, background:statusFilter===f?T.primaryLight:'#fff', color:statusFilter===f?T.primary:T.textMuted, fontSize:12, cursor:'pointer', fontWeight:statusFilter===f?600:400 }}>{f}</button>
               ))}
             </div>
-            <div style={{ marginLeft:'auto' }}><button style={btnPrimary}>+ Add SRN Return</button></div>
+            <div style={{ marginLeft:'auto' }}><button onClick={() => setToast({msg:'Feature: Add SRN Return form coming in next update.',type:'info'})} style={btnPrimary}>+ Add SRN Return</button></div>
           </div>
 
           <div style={{ overflowX:'auto' }}>
@@ -89,6 +91,7 @@ export default function SRNReturnPage() {
           <div style={{ padding:'10px 0', borderTop:`1px solid ${T.border}`, fontSize:11, color:T.textDim, marginTop:4 }}>Showing {filtered.length} of {returns.length} returns</div>
         </div>
       </div>
+        {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </Layout>
   );
 }

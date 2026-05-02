@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
+import Toast from '@/components/Toast';
 import { T, card, th, td, btnPrimary, inputStyle } from '@/lib/theme';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 
@@ -38,6 +39,7 @@ const kpis = [
 export default function ReportsPage() {
   const [reportType, setReportType] = useState('All');
   const [focused, setFocused] = useState(false);
+  const [toast, setToast] = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
   const [search, setSearch] = useState('');
 
   const reportTypes = ['All','Financial','Expense','Progress','Attendance','Vendor'];
@@ -101,7 +103,7 @@ export default function ReportsPage() {
           <div style={card}>
             <div style={{ fontSize:13, fontWeight:600, color:T.text, marginBottom:14 }}>📊 Report Shortcuts</div>
             {['Financial Summary','Site Expense Report','Work Status Report','Attendance Report','Vendor Performance','Custom Report'].map((r,i,arr)=>(
-              <button key={i} style={{ width:'100%', display:'flex', justifyContent:'space-between', padding:'9px 0', background:'none', border:'none', color:T.primary, cursor:'pointer', fontSize:12, fontWeight:500, borderBottom:i<arr.length-1?`1px solid ${T.border}`:'none', textAlign:'left' }}>
+              <button key={i} style={{ width:'100%', display:'flex', justifyContent:'space-between', padding:'9px 0', background:'none', border:'none', color:T.primary, cursor:'pointer', fontSize:12, fontWeight:500, borderBottom:i<arr.length-1?`1px solid ${T.border}`:'none', textAlign:'left' as const }}>
                 <span>{r}</span><span>→</span>
               </button>
             ))}
@@ -147,6 +149,7 @@ export default function ReportsPage() {
           <div style={{ padding:'10px 0', borderTop:`1px solid ${T.border}`, fontSize:11, color:T.textDim, marginTop:4 }}>Showing {filtered.length} of {recentReports.length} reports</div>
         </div>
       </div>
+        {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </Layout>
   );
 }
