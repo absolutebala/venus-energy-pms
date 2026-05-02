@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { T, card, badge, th, td, btnPrimary, inputStyle } from '@/lib/theme';
 import Toast from '@/components/Toast';
-import Toast from '@/components/Toast';
 
 const attendance = [
   { id:'EMP-1001', name:'Suresh Kumar',  designation:'Site Engineer', vendor:'ABC Telecom',   checkIn:'08:02 AM', checkOut:'06:01 PM', hours:'09:59', status:'Present' },
