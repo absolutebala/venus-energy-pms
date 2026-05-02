@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes — accessible without auth
-  const publicRoutes = ['/login', '/auth/callback', '/auth/reset-password', '/api/'];
+  const publicRoutes = ['/login', '/auth/callback', '/auth/reset-password'];
   const isPublic = publicRoutes.some((r) => pathname.startsWith(r));
 
   if (!session && !isPublic) {
