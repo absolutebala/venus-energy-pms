@@ -140,7 +140,7 @@ export default function ProjectsPage() {
           <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)} style={{ ...inputStyle(), width:'auto', marginLeft:'auto' }}>
             {TYPES.map(t=><option key={t}>{t}</option>)}
           </select>
-          <button onClick={openNew} style={btnPrimary}>+ New Project</button>
+          <button onClick={() => router.push("/projects/new")} style={btnPrimary}>+ New Project</button>
         </div>
 
         {/* Table */}
