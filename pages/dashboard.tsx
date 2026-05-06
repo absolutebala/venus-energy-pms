@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
@@ -9,11 +9,9 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 const fmt = (v: number) => `₹${(v / 100000).toFixed(2)}L`;
 
 const kpis = [
-  { label:'Total PO Value',  value:'₹12.45 Cr', icon:'📋', color:T.primary, trend:'+12%', up:true,  link:'/projects'                },
-  { label:'Pending Billing', value:'₹2.35 Cr',  icon:'⏳', color:T.warning, trend:'-5%',  up:false, link:'/billing?status=submitted' },
-  { label:'Active Projects', value:'48',          icon:'⚡', color:T.success, trend:'+3',   up:true,  link:'/projects?status=in_progress' },
-  { label:'PO Aging >30d',   value:'16',          icon:'⏰', color:T.danger,  trend:'+2',   up:false, link:'/projects?aging=overdue'  },
-  { label:'Total Expenses',  value:'₹1.25 Cr',  icon:'💰', color:T.purple,  trend:'+8%',  up:false, link:'/site-expenses'           },
+  { label:'Total PO Value',  value:'₹12.45 Cr', icon:'📋', color:T.primary, trend:'+12%', up:true,  link:'/projects' },
+  { label:'PO Aging >30d',   value:'16',          icon:'⏰', color:T.danger,  trend:'+2',   up:false, link:'/projects?aging=overdue' },
+  { label:'Total Expenses',  value:'₹1.25 Cr',  icon:'💰', color:T.purple,  trend:'+8%',  up:false, link:'/site-expenses' },
 ];
 
 const statusData = [
@@ -24,59 +22,97 @@ const statusData = [
 ];
 
 const agingData = [
-  { range:'0–30d',  count:26, fill:'#16A34A', link:'/projects?aging=0-30'  },
-  { range:'31–60d', count:14, fill:'#2563EB', link:'/projects?aging=31-60' },
-  { range:'61–90d', count: 6, fill:'#D97706', link:'/projects?aging=61-90' },
-  { range:'90+d',   count: 4, fill:'#DC2626', link:'/projects?aging=90+'   },
+  { range:'0–30d',  count:26, fill:'#16A34A', min:0,  max:30  },
+  { range:'31–60d', count:14, fill:'#2563EB', min:31, max:60  },
+  { range:'61–90d', count: 6, fill:'#D97706', min:61, max:90  },
+  { range:'90+d',   count: 4, fill:'#DC2626', min:91, max:999 },
 ];
 
-const recentProjects = [
-  { id:'VE-2025-001', site:'Chennai North',     type:'Tower Erection',       client:'Airtel', po:1850000, aging:12, status:'In Progress' },
-  { id:'VE-2025-002', site:'Bengaluru East',    type:'Tower Maintenance',    client:'Jio',    po:420000,  aging:78, status:'Delayed'     },
-  { id:'VE-2025-003', site:'Hyderabad Central', type:'Component Replacement',client:'Vi',     po:760000,  aging:22, status:'Completed'   },
-  { id:'VE-2025-004', site:'Chennai South',     type:'Fiber Installation',   client:'BSNL',   po:1230000, aging:12, status:'In Progress' },
-  { id:'VE-2025-005', site:'Coimbatore',        type:'Tower Erection',       client:'Airtel', po:2200000, aging:8,  status:'Pending'     },
+const projectSummary = [
+  { id:'VE-2025-001', site:'Chennai North',     pm:'Arun Kumar',   poValue:1850000, aging:12, status:'In Progress' },
+  { id:'VE-2025-002', site:'Bengaluru East',    pm:'Priya Sharma', poValue:420000,  aging:78, status:'Delayed'     },
+  { id:'VE-2025-003', site:'Hyderabad Central', pm:'Arun Kumar',   poValue:760000,  aging:22, status:'Completed'   },
+  { id:'VE-2025-004', site:'Chennai South',     pm:'Vijay Kumar',  poValue:1230000, aging:12, status:'In Progress' },
+  { id:'VE-2025-005', site:'Coimbatore',        pm:'Arun Kumar',   poValue:2200000, aging:8,  status:'Pending'     },
+];
+
+const workProgress = [
+  { id:'VE-2025-001', workStatus:'In Progress', poStatus:'Partially Received', lastUpdate:'20 May 2025' },
+  { id:'VE-2025-002', workStatus:'Delayed',     poStatus:'Pending',            lastUpdate:'18 May 2025' },
+  { id:'VE-2025-003', workStatus:'In Progress', poStatus:'Partially Received', lastUpdate:'20 May 2025' },
+  { id:'VE-2025-004', workStatus:'Completed',   poStatus:'Fully Received',     lastUpdate:'19 May 2025' },
+  { id:'VE-2025-005', workStatus:'In Progress', poStatus:'Partially Received', lastUpdate:'20 May 2025' },
 ];
 
 const alerts = [
-  { type:'danger', title:'Delayed Projects (>60d)', count:3,  msg:'VE-002, 006, 009 — critical overdue', link:'/projects?status=delayed'         },
-  { type:'warn',   title:'Safety Cert. Expiring',   count:5,  msg:'5 certificates expire within 7 days', link:'/safety-compliance'               },
-  { type:'info',   title:'Pending Billing',          count:12, msg:'12 invoices awaiting approval',       link:'/billing?status=submitted'        },
-  { type:'warn',   title:'SRN Material Return',      count:7,  msg:'7 material returns outstanding',      link:'/srn-return?status=pending'       },
+  { type:'danger', title:'Delayed Projects (>60d)', count:3,  msg:'VE-002, 006, 009 — critical overdue', link:'/projects?status=delayed'  },
+  { type:'warn',   title:'Safety Cert. Expiring',   count:5,  msg:'5 certificates expire within 7 days', link:'/safety-compliance'          },
+  { type:'info',   title:'Pending Billing',          count:12, msg:'12 invoices awaiting approval',       link:'/billing?status=submitted'   },
+  { type:'warn',   title:'SRN Material Return',      count:7,  msg:'7 material returns outstanding',      link:'/srn-return'                 },
 ];
 
 const alertColors: Record<string,string> = { danger:T.danger, warn:T.warning, info:T.info };
 const alertBgs:    Record<string,string> = { danger:T.dangerBg, warn:T.warningBg, info:T.infoBg };
 
+const REGIONS = ['All Regions','Tamil Nadu','Karnataka','Telangana','Maharashtra','Delhi','Kerala','West Bengal'];
+const PROJECT_TYPES = ['All Types','Tower Erection','Tower Maintenance','Component Replacement','Fiber Installation','Civil Works','Power Works'];
+
 export default function Dashboard() {
   const router = useRouter();
   const { profile } = useAuth();
+  const [region,      setRegion]      = useState('All Regions');
+  const [projectType, setProjectType] = useState('All Types');
+  const [fromDate,    setFromDate]    = useState('');
+  const [toDate,      setToDate]      = useState('');
+
+  const selStyle: React.CSSProperties = {
+    background: '#fff', border: `1px solid ${T.border}`, borderRadius: 7,
+    padding: '6px 10px', fontSize: 12, color: T.text, outline: 'none',
+    cursor: 'pointer',
+  };
+
+  const handleAgingClick = (entry: any) => {
+    router.push(`/projects?ageMin=${entry.min}&ageMax=${entry.max}`);
+  };
 
   return (
     <Layout>
       <div className="fade-in">
-        {/* Welcome */}
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+        {/* Filter bar + welcome */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18, flexWrap:'wrap', gap:10 }}>
           <div>
-            <h2 style={{ fontSize:16, fontWeight:700, color:T.text }}>Welcome back, {profile?.full_name?.split(' ')[0] || 'User'} 👋</h2>
-            <p style={{ fontSize:13, color:T.textMuted }}>Here's what's happening across all your projects today.</p>
+            <h2 style={{ fontSize:16, fontWeight:700, color:T.text, margin:0 }}>Welcome back, {profile?.full_name?.split(' ')[0] || 'User'} 👋</h2>
+            <p style={{ fontSize:12, color:T.textMuted, margin:0 }}>Here's what's happening across all your projects.</p>
           </div>
-          <div style={{ fontSize:12, color:T.textDim }}>{new Date().toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' })}</div>
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
+            <select value={region} onChange={e=>setRegion(e.target.value)} style={selStyle}>
+              {REGIONS.map(r=><option key={r}>{r}</option>)}
+            </select>
+            <select value={projectType} onChange={e=>setProjectType(e.target.value)} style={selStyle}>
+              {PROJECT_TYPES.map(t=><option key={t}>{t}</option>)}
+            </select>
+            <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+              <input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)} style={{ ...selStyle, width:130 }} />
+              <span style={{ fontSize:11, color:T.textDim }}>to</span>
+              <input type="date" value={toDate} onChange={e=>setToDate(e.target.value)} style={{ ...selStyle, width:130 }} />
+            </div>
+          </div>
         </div>
 
-        {/* KPI cards — all clickable */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:14, marginBottom:20 }}>
+        {/* KPI cards - 3 only */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:20 }}>
           {kpis.map((k,i) => (
-            <div key={i} onClick={() => router.push(k.link)} style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px', cursor:'pointer', transition:'box-shadow 0.15s, transform 0.15s' }}
-              onMouseEnter={e=>{ const el = e.currentTarget as HTMLDivElement; el.style.boxShadow='0 4px 16px rgba(13,148,136,0.15)'; el.style.transform='translateY(-1px)'; }}
-              onMouseLeave={e=>{ const el = e.currentTarget as HTMLDivElement; el.style.boxShadow='0 1px 3px rgba(0,0,0,0.06)'; el.style.transform='translateY(0)'; }}>
+            <div key={i} onClick={() => router.push(k.link)}
+              style={{ ...card, position:'relative', overflow:'hidden', padding:'18px 20px', cursor:'pointer', transition:'all 0.15s' }}
+              onMouseEnter={e=>{ const el=e.currentTarget as HTMLDivElement; el.style.boxShadow='0 4px 16px rgba(13,148,136,0.15)'; el.style.transform='translateY(-1px)'; }}
+              onMouseLeave={e=>{ const el=e.currentTarget as HTMLDivElement; el.style.boxShadow='0 1px 3px rgba(0,0,0,0.06)'; el.style.transform='translateY(0)'; }}>
               <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:k.color }} />
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                 <div>
-                  <div style={{ fontSize:11, color:T.textMuted, fontWeight:500, marginBottom:6, textTransform:'uppercase', letterSpacing:0.5 }}>{k.label}</div>
-                  <div style={{ fontSize:22, fontWeight:700, color:T.text, letterSpacing:-0.5 }}>{k.value}</div>
+                  <div style={{ fontSize:11, color:T.textMuted, fontWeight:500, marginBottom:7, textTransform:'uppercase', letterSpacing:0.5 }}>{k.label}</div>
+                  <div style={{ fontSize:26, fontWeight:700, color:T.text, letterSpacing:-0.5 }}>{k.value}</div>
                 </div>
-                <div style={{ width:36, height:36, background:`${k.color}15`, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>{k.icon}</div>
+                <div style={{ width:40, height:40, background:`${k.color}15`, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{k.icon}</div>
               </div>
               <div style={{ fontSize:11, color:k.up?T.success:T.danger, marginTop:10, fontWeight:500 }}>
                 {k.up?'▲':'▼'} {k.trend} vs last month
@@ -87,7 +123,7 @@ export default function Dashboard() {
 
         {/* Charts row */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
-          {/* Status pie — segments clickable */}
+          {/* Status pie */}
           <div style={card}>
             <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>Project Status Distribution</div>
             <div style={{ display:'flex', alignItems:'center', gap:14 }}>
@@ -103,13 +139,12 @@ export default function Dashboard() {
               <div style={{ flex:1 }}>
                 {statusData.map((d,i) => (
                   <div key={i} onClick={() => router.push(`/projects?status=${d.status}`)}
-                    style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12, cursor:'pointer', borderRadius:6, padding:'2px 6px', margin:'0 -6px 10px' }}
+                    style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10, cursor:'pointer', borderRadius:6, padding:'3px 6px' }}
                     onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}
                     onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='transparent'}>
                     <div style={{ width:10, height:10, borderRadius:3, background:d.color, flexShrink:0 }} />
                     <span style={{ fontSize:13, color:T.textMuted, flex:1 }}>{d.name}</span>
                     <span style={{ fontSize:14, fontWeight:700, color:T.text }}>{d.value}</span>
-                    <span style={{ fontSize:11, color:T.textDim }}>({Math.round(d.value/51*100)}%)</span>
                     <span style={{ fontSize:11, color:T.primary }}>→</span>
                   </div>
                 ))}
@@ -117,81 +152,112 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Aging bar — bars clickable */}
+          {/* Aging bar - fixed click handler */}
           <div style={card}>
             <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>PO Aging Analysis (Days)</div>
             <ResponsiveContainer width="100%" height={160}>
-              <BarChart data={agingData} barSize={36}>
+              <BarChart data={agingData} barSize={36}
+                onClick={(data: any) => { if (data?.activePayload?.[0]) { const d = data.activePayload[0].payload; router.push(`/projects?ageMin=${d.min}&ageMax=${d.max}`); } }}>
                 <XAxis dataKey="range" tick={{ fontSize:12, fill:T.textMuted }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize:12, fill:T.textMuted }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:8, fontSize:12 }} cursor={{ fill:'#F1F5F9' }} />
-                <Bar dataKey="count" radius={[5,5,0,0]} cursor="pointer" onClick={(entry: any) => router.push(entry.link)}>
+                <Tooltip contentStyle={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:8, fontSize:12 }} cursor={{ fill:'#F1F5F9', cursor:'pointer' }} />
+                <Bar dataKey="count" radius={[5,5,0,0]} cursor="pointer">
                   {agingData.map((d,i) => <Cell key={i} fill={d.fill} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-            <div style={{ display:'flex', justifyContent:'center', gap:12, marginTop:8 }}>
+            <div style={{ display:'flex', justifyContent:'center', gap:14, marginTop:8 }}>
               {agingData.map((d,i) => (
-                <Link key={i} href={d.link} style={{ textDecoration:'none', fontSize:11, color:d.fill, fontWeight:600, display:'flex', alignItems:'center', gap:3 }}>
+                <div key={i} onClick={() => router.push(`/projects?ageMin=${d.min}&ageMax=${d.max}`)}
+                  style={{ fontSize:11, color:d.fill, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4 }}>
                   <span style={{ width:6, height:6, borderRadius:2, background:d.fill, display:'inline-block' }} />
                   {d.range} ({d.count})
-                </Link>
+                </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Projects table + Alerts */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 280px', gap:14 }}>
+        {/* Project Summary + Work Progress + Alerts */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 260px', gap:14 }}>
+
+          {/* Project Summary */}
           <div style={card}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-              <div style={{ fontSize:14, fontWeight:600, color:T.text }}>Recent Projects</div>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:13 }}>
+              <div style={{ fontSize:14, fontWeight:600, color:T.text }}>Project Summary</div>
               <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none', fontWeight:500 }}>View All →</Link>
             </div>
-            <div style={{ overflowX:'auto' }}>
-              <table style={{ width:'100%' }}>
-                <thead>
-                  <tr>{['Project ID','Site','Job Type','Client','PO Value','Aging','Status'].map(h=><th key={h} style={th}>{h}</th>)}</tr>
-                </thead>
-                <tbody>
-                  {recentProjects.map((p,i) => (
-                    <tr key={i}
-                      onClick={() => router.push(`/projects/${p.id}`)}
-                      style={{ cursor:'pointer' }}
-                      onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
-                      onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
-                      <td style={{ ...td, color:T.primary, fontWeight:700 }}>{p.id}</td>
-                      <td style={{ ...td, color:T.text, fontWeight:500 }}>{p.site}</td>
-                      <td style={td}><span style={{ fontSize:11, background:T.primaryLight, color:T.primary, padding:'2px 8px', borderRadius:5, fontWeight:500, whiteSpace:'nowrap' }}>{p.type}</span></td>
-                      <td style={td}>{p.client}</td>
-                      <td style={{ ...td, fontWeight:600, color:T.text }}>{fmt(p.po)}</td>
-                      <td style={td}><span style={{ color:p.aging>60?T.danger:p.aging>30?T.warning:T.success, fontWeight:700 }}>{p.aging}d</span></td>
-                      <td style={td}><span style={badge(p.status)}>{p.status}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div style={{ padding:'10px 0 0', borderTop:`1px solid ${T.border}`, fontSize:11, color:T.textDim, marginTop:8 }}>
-              Click any row to view project details
+            <table style={{ width:'100%' }}>
+              <thead>
+                <tr>{['Project No','Site Name','Project Mgr','PO Value','Aging','Status'].map(h=><th key={h} style={{ ...th, padding:'7px 8px', fontSize:10 }}>{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {projectSummary.map((p,i) => (
+                  <tr key={i} onClick={() => router.push(`/projects/${p.id}`)} style={{ cursor:'pointer' }}
+                    onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
+                    onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
+                    <td style={{ ...td, color:T.primary, fontWeight:700, fontSize:12, padding:'9px 8px' }}>{p.id}</td>
+                    <td style={{ ...td, color:T.text, fontSize:12, padding:'9px 8px' }}>{p.site}</td>
+                    <td style={{ ...td, fontSize:11, padding:'9px 8px' }}>{p.pm}</td>
+                    <td style={{ ...td, fontWeight:600, color:T.text, fontSize:12, padding:'9px 8px', whiteSpace:'nowrap' }}>{fmt(p.poValue)}</td>
+                    <td style={{ ...td, padding:'9px 8px' }}><span style={{ color:p.aging>60?T.danger:p.aging>30?T.warning:T.success, fontWeight:700, fontSize:12 }}>{p.aging}d</span></td>
+                    <td style={{ ...td, padding:'9px 8px' }}><span style={badge(p.status)}>{p.status}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{ display:'flex', justifyContent:'center', gap:8, marginTop:10, paddingTop:10, borderTop:`1px solid ${T.border}` }}>
+              {[1,2,3,4,5].map(n => <button key={n} style={{ width:26, height:26, borderRadius:5, border:`1px solid ${n===1?T.primary:T.border}`, background:n===1?T.primary:'#fff', color:n===1?'#fff':T.textMuted, fontSize:12, cursor:'pointer' }}>{n}</button>)}
+              <button style={{ width:26, height:26, borderRadius:5, border:`1px solid ${T.border}`, background:'#fff', color:T.textMuted, fontSize:12, cursor:'pointer' }}>›</button>
             </div>
           </div>
 
-          {/* Alerts — all clickable */}
+          {/* Work Progress Overview */}
+          <div style={card}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:13 }}>
+              <div style={{ fontSize:14, fontWeight:600, color:T.text }}>Work Progress Overview</div>
+              <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none', fontWeight:500 }}>View All →</Link>
+            </div>
+            <table style={{ width:'100%' }}>
+              <thead>
+                <tr>{['Project No','Work Status','PO Status','Last Update'].map(h=><th key={h} style={{ ...th, padding:'7px 8px', fontSize:10 }}>{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {workProgress.map((p,i) => (
+                  <tr key={i} onClick={() => router.push(`/projects/${p.id}`)} style={{ cursor:'pointer' }}
+                    onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
+                    onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
+                    <td style={{ ...td, color:T.primary, fontWeight:700, fontSize:12, padding:'9px 8px' }}>{p.id}</td>
+                    <td style={{ ...td, padding:'9px 8px' }}><span style={badge(p.workStatus)}>{p.workStatus}</span></td>
+                    <td style={{ ...td, padding:'9px 8px' }}>
+                      <span style={{ fontSize:11, fontWeight:600, color:p.poStatus==='Fully Received'?T.success:p.poStatus==='Pending'?T.warning:T.primary, background:p.poStatus==='Fully Received'?T.successBg:p.poStatus==='Pending'?T.warningBg:T.primaryLight, padding:'2px 8px', borderRadius:20 }}>{p.poStatus}</span>
+                    </td>
+                    <td style={{ ...td, fontSize:11, color:T.textMuted, padding:'9px 8px', whiteSpace:'nowrap' }}>{p.lastUpdate}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{ display:'flex', justifyContent:'center', gap:8, marginTop:10, paddingTop:10, borderTop:`1px solid ${T.border}` }}>
+              {[1,2,3,4,5].map(n => <button key={n} style={{ width:26, height:26, borderRadius:5, border:`1px solid ${n===1?T.primary:T.border}`, background:n===1?T.primary:'#fff', color:n===1?'#fff':T.textMuted, fontSize:12, cursor:'pointer' }}>{n}</button>)}
+              <button style={{ width:26, height:26, borderRadius:5, border:`1px solid ${T.border}`, background:'#fff', color:T.textMuted, fontSize:12, cursor:'pointer' }}>›</button>
+            </div>
+          </div>
+
+          {/* Alerts */}
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             <div style={{ fontSize:13, fontWeight:600, color:T.text }}>🔔 Alerts & Notifications</div>
             {alerts.map((a,i) => (
               <Link key={i} href={a.link} style={{ textDecoration:'none' }}>
-                <div style={{ ...card, padding:12, borderLeft:`3px solid ${alertColors[a.type]}`, background:alertBgs[a.type], cursor:'pointer', transition:'box-shadow 0.15s' }}
+                <div style={{ ...card, padding:12, borderLeft:`3px solid ${alertColors[a.type]}`, background:alertBgs[a.type], cursor:'pointer' }}
                   onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'}
                   onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.boxShadow='none'}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
                     <div style={{ fontSize:12, fontWeight:600, color:T.text }}>{a.title}</div>
-                    <div style={{ background:alertColors[a.type], color:'#fff', borderRadius:12, padding:'1px 8px', fontSize:10, fontWeight:700 }}>{a.count}</div>
+                    <div style={{ background:alertColors[a.type], color:'#fff', borderRadius:12, padding:'1px 7px', fontSize:10, fontWeight:700 }}>{a.count}</div>
                   </div>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                     <div style={{ fontSize:11, color:T.textMuted }}>{a.msg}</div>
-                    <span style={{ fontSize:11, color:alertColors[a.type], fontWeight:600, marginLeft:6 }}>→</span>
+                    <span style={{ fontSize:11, color:alertColors[a.type], fontWeight:600, marginLeft:6, flexShrink:0 }}>→</span>
                   </div>
                 </div>
               </Link>

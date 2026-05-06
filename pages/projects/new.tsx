@@ -11,7 +11,9 @@ const INIT_SITES    = ['Station 3 - Pile Cap Area','Station 5 - Tower Base','Che
 const INIT_VENDORS  = ['ABC Constructions Pvt Ltd','XYZ Infra Solutions','TowerTech Pvt Ltd','NetConnect Services','PowerSys India','BuildRight Constructions'];
 const INIT_UOMS     = ['Bag','Nos','KG','MT','CFT','CUM','Ltr','Set','RMT','Pair'];
 const INIT_GST      = ['0%','5%','12%','18%','28%'];
-const APPROVERS     = ['Ramesh Kumar (RM)','Amit Sharma (RM)','Suresh Patel (Admin)','John Doe (Admin)'];
+const APPROVERS      = ['Ramesh Kumar (RM)','Amit Sharma (RM)','Suresh Patel (Admin)','John Doe (Admin)'];
+const REGIONS        = ['Tamil Nadu','Karnataka','Telangana','Maharashtra','Delhi','Kerala','West Bengal','Gujarat','Rajasthan','Andhra Pradesh'];
+const PROJECT_TYPES  = ['Tower Erection','Tower Maintenance','Component Replacement','Fiber Installation','Civil Works','Power Works','Survey & Design','Testing & Commissioning'];
 const PAYMENT_TERMS = ['15 Days','30 Days','45 Days','60 Days','90 Days','Advance'];
 const CURRENCIES    = ['INR','USD','EUR','AED'];
 
@@ -71,6 +73,8 @@ export default function NewProjectPage() {
   const [deliveryDate,  setDeliveryDate]  = useState('');
   const [paymentTerms,  setPaymentTerms]  = useState('30 Days');
   const [currency,      setCurrency]      = useState('INR');
+  const [region,        setRegion]        = useState('Tamil Nadu');
+  const [projectType,   setProjectType]   = useState('Tower Erection');
 
   // PO Items
   const [items, setItems] = useState<POItem[]>([emptyItem(1)]);
@@ -178,26 +182,26 @@ export default function NewProjectPage() {
   return (
     <Layout>
       <div className="fade-in">
-        {/* Breadcrumb */}
-        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:18, fontSize:13 }}>
-          <Link href="/dashboard" style={{ color:T.primary, textDecoration:'none', fontWeight:500 }}>Dashboard</Link>
-          <span style={{ color:T.textDim }}>›</span>
-          <Link href="/projects" style={{ color:T.primary, textDecoration:'none', fontWeight:500 }}>Projects</Link>
-          <span style={{ color:T.textDim }}>›</span>
-          <span style={{ color:T.text, fontWeight:600 }}>Add PO</span>
-        </div>
-
-        {/* Top action bar */}
-        <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginBottom:20 }}>
-          <Link href="/projects" style={{ textDecoration:'none' }}>
-            <button style={{ ...btnSecondary, padding:'9px 20px' }}>Cancel</button>
-          </Link>
-          <button onClick={()=>handleSubmit(true)} disabled={saving} style={{ ...btnSecondary, borderColor:T.warning, color:T.warning, padding:'9px 20px' }}>
-            💾 Save as Draft
-          </button>
-          <button onClick={()=>handleSubmit(false)} disabled={saving} style={{ ...btnPrimary, padding:'9px 24px', opacity:saving?0.8:1 }}>
-            {saving ? <><div className="spinner" style={{ borderTopColor:'#fff', borderColor:'rgba(255,255,255,0.3)', width:14, height:14 }} /> Submitting…</> : '📤 Submit PO'}
-          </button>
+        {/* Breadcrumb + Action buttons on same row */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, gap:12 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:13 }}>
+            <Link href="/dashboard" style={{ color:T.primary, textDecoration:'none', fontWeight:500 }}>Dashboard</Link>
+            <span style={{ color:T.textDim }}>›</span>
+            <Link href="/projects" style={{ color:T.primary, textDecoration:'none', fontWeight:500 }}>Projects</Link>
+            <span style={{ color:T.textDim }}>›</span>
+            <span style={{ color:T.text, fontWeight:600 }}>Add Purchase Order</span>
+          </div>
+          <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+            <Link href="/projects" style={{ textDecoration:'none' }}>
+              <button style={{ ...btnSecondary, padding:'8px 18px', fontSize:13 }}>Cancel</button>
+            </Link>
+            <button onClick={()=>handleSubmit(true)} disabled={saving} style={{ ...btnSecondary, borderColor:T.warning, color:T.warning, padding:'8px 18px', fontSize:13 }}>
+              💾 Save as Draft
+            </button>
+            <button onClick={()=>handleSubmit(false)} disabled={saving} style={{ ...btnPrimary, padding:'8px 22px', fontSize:13, opacity:saving?0.8:1 }}>
+              {saving ? <><div className="spinner" style={{ borderTopColor:'#fff', borderColor:'rgba(255,255,255,0.3)', width:14, height:14 }} /> Submitting…</> : '📤 Submit PO'}
+            </button>
+          </div>
         </div>
 
         <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:20, alignItems:'start' }}>
@@ -248,6 +252,15 @@ export default function NewProjectPage() {
                 <F label="Payment Terms"><Sel value={paymentTerms} onChange={setPaymentTerms} options={PAYMENT_TERMS} /></F>
                 <F label="Currency"><Sel value={currency} onChange={setCurrency} options={CURRENCIES} /></F>
               </div>
+
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
+                <F label="Region *">
+                  <Sel value={region} onChange={setRegion} options={REGIONS} />
+                </F>
+                <F label="Project Type *">
+                  <Sel value={projectType} onChange={setProjectType} options={PROJECT_TYPES} />
+                </F>
+              </div>
             </div>
 
             {/* 2. PO Items */}
@@ -274,7 +287,7 @@ export default function NewProjectPage() {
                           <input value={item.hsn} onChange={e=>updateItem(item.id,'hsn',e.target.value)} placeholder="HSN" style={{ ...inputStyle(), padding:'7px 8px', fontSize:12, width:72, boxSizing:'border-box' as const }} />
                         </td>
                         <td style={{ padding:'8px', width:110 }}>
-                          <CreatableSelect label="" value={item.uom} options={uoms} onChange={v=>updateItem(item.id,'uom',v)} onCreateNew={v=>setUoms(p=>[...p,v])} placeholder="UOM" />
+                          <CreatableSelect label="" value={item.uom} options={uoms} onChange={v=>updateItem(item.id,'uom',v)} onCreateNew={v=>setUoms(p=>[...p,v])} placeholder="UOM" compact />
                         </td>
                         <td style={{ padding:'8px', width:90 }}>
                           <input type="number" value={item.qty} onChange={e=>updateItem(item.id,'qty',e.target.value)} placeholder="0" style={{ ...inputStyle(), padding:'7px 8px', fontSize:12, width:80, boxSizing:'border-box' as const, textAlign:'right' as const }} />
@@ -283,7 +296,7 @@ export default function NewProjectPage() {
                           <input type="number" value={item.rate} onChange={e=>updateItem(item.id,'rate',e.target.value)} placeholder="0.00" style={{ ...inputStyle(), padding:'7px 8px', fontSize:12, width:90, boxSizing:'border-box' as const, textAlign:'right' as const }} />
                         </td>
                         <td style={{ padding:'8px', width:100 }}>
-                          <CreatableSelect label="" value={item.gst} options={gstOpts} onChange={v=>{ updateItem(item.id,'gst',v); setGstOpts(p=>p.includes(v)?p:[...p,v]); }} onCreateNew={v=>{const fv=v.includes('%')?v:v+'%'; setGstOpts(p=>[...p,fv]); updateItem(item.id,'gst',fv);}} placeholder="GST%" />
+                          <CreatableSelect label="" value={item.gst} options={gstOpts} onChange={v=>{ updateItem(item.id,'gst',v); setGstOpts(p=>p.includes(v)?p:[...p,v]); }} onCreateNew={v=>{const fv=v.includes('%')?v:v+'%'; setGstOpts(p=>[...p,fv]); updateItem(item.id,'gst',fv);}} placeholder="GST%" compact />
                         </td>
                         <td style={{ padding:'8px', fontSize:13, fontWeight:700, color:T.text, textAlign:'right' as const, whiteSpace:'nowrap', minWidth:100 }}>
                           {item.amount > 0 ? `₹ ${item.amount.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}` : '—'}
@@ -411,21 +424,6 @@ export default function NewProjectPage() {
               </div>
             </div>
 
-            {/* 7. Quick Actions */}
-            <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:12, padding:20, boxShadow:'0 1px 3px rgba(0,0,0,0.06)' }}>
-              {sectionTitle('7','Quick Actions')}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                {[{ icon:'🏢', label:'Vendor Master', action:()=>setToast({msg:'Opening Vendor Master…',type:'info'}) },
-                  { icon:'📦', label:'Item Master',   action:()=>setToast({msg:'Opening Item Master…',type:'info'})  }].map((a,i)=>(
-                  <button key={i} onClick={a.action} style={{ background:T.bg, border:`1px solid ${T.border}`, borderRadius:8, padding:'10px 8px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:4, transition:'all 0.15s' }}
-                    onMouseEnter={e=>(e.currentTarget as HTMLButtonElement).style.borderColor=T.primary}
-                    onMouseLeave={e=>(e.currentTarget as HTMLButtonElement).style.borderColor=T.border}>
-                    <span style={{ fontSize:20 }}>{a.icon}</span>
-                    <span style={{ fontSize:11, fontWeight:500, color:T.textMuted }}>{a.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {/* Meta info */}
             <div style={{ marginTop:14, fontSize:11, color:T.textDim, padding:'0 4px' }}>

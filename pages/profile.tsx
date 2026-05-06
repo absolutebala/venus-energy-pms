@@ -98,9 +98,22 @@ export default function ProfilePage() {
 
     try {
       // Use the API route instead of direct Supabase to bypass RLS issues
+      // Get the current session token to send in Authorization header
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        setProfileMsg({ type:'error', text:'Session expired. Please log out and log in again.' });
+        setSaving(false);
+        return;
+      }
+
       const res = await fetch('/api/profile/update', {
         method: 'POST',
-        headers: { 'Content-Type':'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           full_name:   fullName   || null,
           phone:       phone      || null,

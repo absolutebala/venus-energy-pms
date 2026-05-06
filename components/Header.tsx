@@ -17,6 +17,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/profile':            '👤  Profile Settings',
   '/admin/users':        '👥  User Management',
   '/admin/roles':        '🔑  Role & Permissions',
+  '/projects/new':       '📋  Add Purchase Order',
+  '/projects/[id]':      '📁  Project Details',
 };
 
 export default function Header() {
