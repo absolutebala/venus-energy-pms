@@ -180,7 +180,7 @@ export default function VendorProjectUpdatePage() {
                         </div>
                       ) : (
                         <>
-                          <input ref={el=>fileRefs.current[doc.key]=el} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e=>handleFileUpload(doc.key,e)} style={{ display:'none' }} />
+                          <input ref={el=>{ fileRefs.current[doc.key]=el; }} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e=>handleFileUpload(doc.key,e)} style={{ display:'none' }} />
                           <button onClick={()=>fileRefs.current[doc.key]?.click()} style={{ ...btnSecondary, width:'100%', justifyContent:'center', fontSize:12, padding:'6px 0', marginTop:4 }}>
                             ⬆ Upload {doc.label}
                           </button>
