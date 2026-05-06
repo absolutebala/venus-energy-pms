@@ -48,6 +48,17 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     site_expenses:    perm(false, true, false, false),
     reports:          perm(false, true, false, false),
   },
+  vendor: {
+    dashboard:        perm(false, true, false, false),
+    projects:         perm(false, true, true,  false),
+    vendors:          perm(false, false,false, false),
+    billing:          perm(false, false,false, false),
+    attendance:       perm(false, false,false, false),
+    safety_compliance:perm(false, true, false, false),
+    srn_return:       perm(false, false,false, false),
+    site_expenses:    perm(false, false,false, false),
+    reports:          perm(false, false,false, false),
+  },
 };
 
 function perm(
