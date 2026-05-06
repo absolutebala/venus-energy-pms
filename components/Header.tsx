@@ -19,7 +19,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/roles':        '🔑  Role & Permissions',
   '/vendor/projects':    '📁  My Projects',
   '/projects/new':       '📋  Add Purchase Order',
-  '/projects/new':       '📋  Add Purchase Order',
   '/projects/[id]':      '📁  Project Details',
 };
 
