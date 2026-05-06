@@ -178,8 +178,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Project Summary + Work Progress + Alerts */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 260px', gap:14 }}>
+        {/* Project Summary + Work Progress */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:16 }}>
 
           {/* Project Summary */}
           <div style={card}>
@@ -242,29 +242,30 @@ export default function Dashboard() {
               <button style={{ width:26, height:26, borderRadius:5, border:`1px solid ${T.border}`, background:'#fff', color:T.textMuted, fontSize:12, cursor:'pointer' }}>›</button>
             </div>
           </div>
+        </div>
 
-          {/* Alerts */}
-          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            <div style={{ fontSize:13, fontWeight:600, color:T.text }}>🔔 Alerts & Notifications</div>
+        {/* Alerts & Notifications — bottom horizontal row */}
+        <div style={card}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>🔔 Alerts & Notifications</div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12 }}>
             {alerts.map((a,i) => (
               <Link key={i} href={a.link} style={{ textDecoration:'none' }}>
-                <div style={{ ...card, padding:12, borderLeft:`3px solid ${alertColors[a.type]}`, background:alertBgs[a.type], cursor:'pointer' }}
+                <div style={{ padding:14, borderLeft:`4px solid ${alertColors[a.type]}`, background:alertBgs[a.type], borderRadius:8, cursor:'pointer', height:'100%', boxSizing:'border-box' as const }}
                   onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'}
                   onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.boxShadow='none'}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
-                    <div style={{ fontSize:12, fontWeight:600, color:T.text }}>{a.title}</div>
-                    <div style={{ background:alertColors[a.type], color:'#fff', borderRadius:12, padding:'1px 7px', fontSize:10, fontWeight:700 }}>{a.count}</div>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:T.text }}>{a.title}</div>
+                    <div style={{ background:alertColors[a.type], color:'#fff', borderRadius:12, padding:'2px 8px', fontSize:10, fontWeight:700, flexShrink:0, marginLeft:6 }}>{a.count}</div>
                   </div>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                    <div style={{ fontSize:11, color:T.textMuted }}>{a.msg}</div>
-                    <span style={{ fontSize:11, color:alertColors[a.type], fontWeight:600, marginLeft:6, flexShrink:0 }}>→</span>
-                  </div>
+                  <div style={{ fontSize:11, color:T.textMuted, lineHeight:1.5 }}>{a.msg}</div>
+                  <div style={{ fontSize:11, color:alertColors[a.type], fontWeight:600, marginTop:8 }}>View Details →</div>
                 </div>
               </Link>
             ))}
           </div>
         </div>
       </div>
+
     </Layout>
   );
 }

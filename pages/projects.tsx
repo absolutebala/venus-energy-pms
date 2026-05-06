@@ -34,6 +34,8 @@ export default function ProjectsPage() {
   const router = useRouter();
   const [projects, setProjects]     = useState(INITIAL_PROJECTS);
   const [statusFilter, setStatusFilter] = useState('All');
+  const [ageMin, setAgeMin] = useState<number|null>(null);
+  const [ageMax, setAgeMax] = useState<number|null>(null);
   const [typeFilter, setTypeFilter]     = useState('All');
   const [search, setSearch]             = useState('');
   const [focused, setFocused]           = useState(false);
@@ -45,17 +47,21 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     if (router.isReady) {
-      const { status } = router.query;
+      const { status, ageMin: qAgeMin, ageMax: qAgeMax } = router.query;
       if (status && typeof status === 'string') {
         const mapped = STATUS_MAP[status] || status;
         if (STATUSES.includes(mapped)) setStatusFilter(mapped);
       }
+      if (qAgeMin && typeof qAgeMin === 'string') setAgeMin(Number(qAgeMin));
+      if (qAgeMax && typeof qAgeMax === 'string') setAgeMax(Number(qAgeMax));
     }
   }, [router.isReady, router.query]);
 
   const filtered = projects.filter(p => {
     if (statusFilter !== 'All' && p.status !== statusFilter) return false;
     if (typeFilter !== 'All' && p.type !== typeFilter) return false;
+    if (ageMin !== null && p.aging < ageMin) return false;
+    if (ageMax !== null && ageMax < 999 && p.aging > ageMax) return false;
     if (search) {
       const s = search.toLowerCase();
       return p.site.toLowerCase().includes(s) || p.id.toLowerCase().includes(s) || p.client.toLowerCase().includes(s);
@@ -129,6 +135,15 @@ export default function ProjectsPage() {
           ))}
         </div>
 
+        {/* Active aging filter indicator */}
+        {ageMin !== null && (
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+            <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:20, padding:'4px 14px', fontSize:12, color:T.primary, fontWeight:600, display:'flex', alignItems:'center', gap:8 }}>
+              <span>⏰ Filtering by PO Aging: {ageMin}–{ageMax && ageMax < 999 ? ageMax+'d' : '90+ days'}</span>
+              <button onClick={()=>{ setAgeMin(null); setAgeMax(null); }} style={{ background:'none', border:'none', cursor:'pointer', color:T.primary, fontWeight:700, fontSize:14, lineHeight:1 }}>×</button>
+            </div>
+          </div>
+        )}
         {/* Filters */}
         <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
           <input value={search} onChange={e=>setSearch(e.target.value)} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} placeholder="Search site, project ID, client…" style={{ ...inputStyle(focused), width:240 }} />

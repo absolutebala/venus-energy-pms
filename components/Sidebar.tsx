@@ -6,7 +6,7 @@ import { T } from '@/lib/theme';
 
 interface NavItem { href: string; label: string; icon: string; module?: string; }
 
-const NAV: NavItem[] = [
+const ADMIN_NAV: NavItem[] = [
   { href:'/dashboard',         label:'Dashboard',          icon:'▦'  },
   { href:'/projects',          label:'Projects',           icon:'📁' },
   { href:'/vendors',           label:'Vendors',            icon:'🏢' },
@@ -18,7 +18,11 @@ const NAV: NavItem[] = [
   { href:'/reports',           label:'Reports',            icon:'📊' },
 ];
 
-const ADMIN_NAV: NavItem[] = [
+const VENDOR_NAV: NavItem[] = [
+  { href:'/vendor/projects', label:'My Projects', icon:'📁' },
+];
+
+const SUPER_ADMIN_NAV: NavItem[] = [
   { href:'/admin/users', label:'User Management',    icon:'👥' },
   { href:'/admin/roles', label:'Role & Permissions', icon:'🔑' },
 ];
@@ -27,11 +31,12 @@ interface Props { collapsed: boolean; onCollapse: () => void; }
 
 export default function Sidebar({ collapsed, onCollapse }: Props) {
   const { pathname } = useRouter();
-  const { profile, can, loading } = useAuth();
+  const { profile, can, loading, isVendor } = useAuth();
   const isSuperAdmin = profile?.role === 'super_admin';
 
   const isActive = (href: string) =>
-    pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
+    pathname === href || (href !== '/dashboard' && href !== '/vendor/projects' && pathname.startsWith(href)) ||
+    (pathname === href);
 
   const shouldShow = (item: NavItem) => {
     if (loading || isSuperAdmin) return true;
@@ -42,7 +47,7 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
   const navLink = (item: NavItem) => {
     const active = isActive(item.href);
     return (
-      <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
+      <Link key={item.href} href={item.href} style={{ textDecoration:'none' }}>
         <div
           style={{ display:'flex', alignItems:'center', gap:10, padding:collapsed?'10px':'9px 14px', justifyContent:collapsed?'center':'flex-start', borderRadius:8, background:active?T.primaryMid:'transparent', color:active?T.primary:T.textMuted, fontWeight:active?600:400, fontSize:13, marginBottom:2, cursor:'pointer', borderLeft:active?`3px solid ${T.primary}`:'3px solid transparent', transition:'all 0.15s', overflow:'hidden', whiteSpace:'nowrap' }}
           onMouseEnter={e=>{ if(!active)(e.currentTarget as HTMLDivElement).style.background='#F0FDFA'; }}
@@ -54,6 +59,8 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
     );
   };
 
+  const navItems = isVendor ? VENDOR_NAV : ADMIN_NAV.filter(shouldShow);
+
   return (
     <aside style={{ width:collapsed?58:220, background:T.sidebar, borderRight:`1px solid ${T.sidebarBorder}`, display:'flex', flexDirection:'column', transition:'width 0.2s ease', flexShrink:0, overflow:'hidden', height:'100vh', position:'sticky', top:0 }}>
       {/* Logo */}
@@ -62,21 +69,23 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
         {!collapsed && (
           <div style={{ overflow:'hidden' }}>
             <div style={{ fontWeight:700, fontSize:14, color:T.primary, whiteSpace:'nowrap' }}>Venus Energy</div>
-            <div style={{ fontSize:9, color:T.textDim, textTransform:'uppercase', letterSpacing:1 }}>Project Control</div>
+            <div style={{ fontSize:9, color:T.textDim, textTransform:'uppercase', letterSpacing:1 }}>
+              {isVendor ? 'Vendor Portal' : 'Project Control'}
+            </div>
           </div>
         )}
       </div>
 
       {/* Nav */}
       <nav style={{ padding:'10px 8px', flex:1, overflowY:'auto', overflowX:'hidden' }}>
-        {NAV.filter(shouldShow).map(navLink)}
+        {navItems.map(navLink)}
 
-        {(isSuperAdmin || loading) && (
+        {!isVendor && (isSuperAdmin || loading) && (
           <>
             <div style={{ fontSize:9, fontWeight:600, textTransform:'uppercase', letterSpacing:1, color:T.textDim, padding:collapsed?'12px 0 4px':'14px 14px 4px', textAlign:collapsed?'center':'left' }}>
               {collapsed ? '—' : 'Admin'}
             </div>
-            {ADMIN_NAV.map(navLink)}
+            {SUPER_ADMIN_NAV.map(navLink)}
           </>
         )}
       </nav>

@@ -58,7 +58,7 @@ function Alert({ msg }: { msg: { type:'success'|'error'; text:string } }) {
 }
 
 export default function ProfilePage() {
-  const { profile, refreshProfile } = useAuth();
+  const { profile, refreshProfile, getAccessToken } = useAuth();
 
   const [fullName,    setFullName]    = useState('');
   const [phone,       setPhone]       = useState('');
@@ -98,11 +98,10 @@ export default function ProfilePage() {
 
     try {
       // Use the API route instead of direct Supabase to bypass RLS issues
-      // Get the current session token to send in Authorization header
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
+      // Get the access token reliably from AuthContext
+      const token = await getAccessToken();
 
-      if (!session?.access_token) {
+      if (!token) {
         setProfileMsg({ type:'error', text:'Session expired. Please log out and log in again.' });
         setSaving(false);
         return;
@@ -112,7 +111,7 @@ export default function ProfilePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           full_name:   fullName   || null,
