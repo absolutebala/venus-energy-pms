@@ -39,8 +39,9 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
     (pathname === href);
 
   const shouldShow = (item: NavItem) => {
-    if (loading || isSuperAdmin) return true;
+    if (isSuperAdmin) return true;
     if (!item.module) return true;
+    if (loading) return true; // show all main nav during load (no admin-only items in ADMIN_NAV)
     return can(item.module as any, 'read');
   };
 
@@ -80,7 +81,7 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
       <nav style={{ padding:'10px 8px', flex:1, overflowY:'auto', overflowX:'hidden' }}>
         {navItems.map(navLink)}
 
-        {!isVendor && (isSuperAdmin || loading) && (
+        {!isVendor && isSuperAdmin && !loading && (
           <>
             <div style={{ fontSize:9, fontWeight:600, textTransform:'uppercase', letterSpacing:1, color:T.textDim, padding:collapsed?'12px 0 4px':'14px 14px 4px', textAlign:collapsed?'center':'left' }}>
               {collapsed ? '—' : 'Admin'}
