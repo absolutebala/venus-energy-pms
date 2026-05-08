@@ -18,7 +18,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/users':        '👥  User Management',
   '/admin/roles':        '🔑  Role & Permissions',
   '/teams':              '👤  Teams',
-  '/attendance':         '📅  Attendance',
   '/vendor/projects':    '📁  My Projects',
   '/projects/new':       '📋  Add Purchase Order',
   '/projects/[id]':      '📁  Project Details',
