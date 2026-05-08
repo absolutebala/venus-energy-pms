@@ -4,19 +4,7 @@ import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
 import { ROLE_LABELS, UserRole } from '@/types';
-
-export const TEAM_MEMBERS = [
-  { id:'TM-001', full_name:'Ramesh Kumar',  email:'ramesh@venusenergy.com',  phone:'9876543210', role:'region_manager'  as UserRole, region:'Tamil Nadu',    designation:'Regional Manager',  is_active:true  },
-  { id:'TM-002', full_name:'Amit Sharma',   email:'amit@venusenergy.com',    phone:'9876543211', role:'region_manager'  as UserRole, region:'Maharashtra',   designation:'Regional Manager',  is_active:true  },
-  { id:'TM-003', full_name:'Arun Kumar',    email:'arun@venusenergy.com',    phone:'9876543212', role:'project_manager' as UserRole, region:'Tamil Nadu',    designation:'Project Manager',   is_active:true  },
-  { id:'TM-004', full_name:'Vijay Kumar',   email:'vijay@venusenergy.com',   phone:'9876543213', role:'project_manager' as UserRole, region:'Telangana',     designation:'Project Manager',   is_active:true  },
-  { id:'TM-005', full_name:'Priya Sharma',  email:'priya@venusenergy.com',   phone:'9876543214', role:'project_manager' as UserRole, region:'Karnataka',     designation:'Project Manager',   is_active:true  },
-  { id:'TM-006', full_name:'Pooja Mehta',   email:'pooja@venusenergy.com',   phone:'9876543215', role:'project_manager' as UserRole, region:'Maharashtra',   designation:'Project Manager',   is_active:true  },
-  { id:'TM-007', full_name:'Suresh Patel',  email:'suresh@venusenergy.com',  phone:'9876543216', role:'site_engineer'  as UserRole, region:'Tamil Nadu',    designation:'Site Engineer',     is_active:true  },
-  { id:'TM-008', full_name:'Rajeev Singh',  email:'rajeev@venusenergy.com',  phone:'9876543217', role:'site_engineer'  as UserRole, region:'Delhi',         designation:'Site Engineer',     is_active:true  },
-  { id:'TM-009', full_name:'Neha Verma',    email:'neha@venusenergy.com',    phone:'9876543218', role:'viewer'         as UserRole, region:'West Bengal',   designation:'Operations Lead',   is_active:true  },
-  { id:'TM-010', full_name:'Deepak Nair',   email:'deepak@venusenergy.com',  phone:'9876543219', role:'accounting_team' as UserRole, region:'Head Office', designation:'Accounts Executive',is_active:false },
-];
+import { TEAM_MEMBERS } from '@/lib/teamData';
 
 // Roles available for team creation (no super_admin)
 const ASSIGNABLE_ROLES: UserRole[] = ['region_manager','project_manager','site_engineer','viewer'];

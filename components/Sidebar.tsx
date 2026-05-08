@@ -32,7 +32,7 @@ interface Props { collapsed: boolean; onCollapse: () => void; }
 export default function Sidebar({ collapsed, onCollapse }: Props) {
   const { pathname } = useRouter();
   const { profile, can, loading, isVendor } = useAuth();
-  const isSuperAdmin = profile?.role === 'super_admin';
+  const isSuperAdmin = !loading && profile?.role === 'super_admin';
 
   const isActive = (href: string) =>
     pathname === href || (href !== '/dashboard' && href !== '/vendor/projects' && pathname.startsWith(href)) ||

@@ -5,7 +5,7 @@ import Layout from '@/components/Layout';
 import CreatableSelect from '@/components/CreatableSelect';
 import Toast from '@/components/Toast';
 import { T, inputStyle, btnPrimary, btnSecondary } from '@/lib/theme';
-import { TEAM_MEMBERS } from '@/pages/teams';
+import { TEAM_MEMBERS } from '@/lib/teamData';
 
 // Seed data
 const INIT_SITES    = ['Station 3 - Pile Cap Area','Station 5 - Tower Base','Chennai East Site','Bengaluru North Hub','Mumbai Tower Site','Delhi NCR Zone A'];
