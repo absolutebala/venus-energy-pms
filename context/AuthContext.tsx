@@ -58,8 +58,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Reliable token getter — always reads fresh from supabase client
   const getAccessToken = useCallback(async (): Promise<string | null> => {
+    // Try getSession first
     const { data: { session } } = await supabase.auth.getSession();
-    return session?.access_token ?? null;
+    if (session?.access_token) return session.access_token;
+    // Session missing — try refreshing
+    try {
+      const { data: refreshed } = await supabase.auth.refreshSession();
+      if (refreshed.session?.access_token) return refreshed.session.access_token;
+    } catch (_) {}
+    return null;
   }, [supabase]);
 
   useEffect(() => {

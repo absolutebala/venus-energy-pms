@@ -14,11 +14,18 @@ const kpis = [
   { label:'Total Expenses',  value:'₹1.25 Cr',  icon:'💰', color:T.purple,  trend:'+8%',  up:false, link:'/site-expenses' },
 ];
 
+const ALL_PROJECTS_DATA = [
+  { status:'in_progress' }, { status:'delayed'     }, { status:'completed'   },
+  { status:'in_progress' }, { status:'pending'     }, { status:'delayed'     },
+  { status:'in_progress' }, { status:'in_progress' }, { status:'delayed'     },
+  { status:'pending'     },
+];
+const countByStatus = (s: string) => ALL_PROJECTS_DATA.filter(p => p.status === s).length;
 const statusData = [
-  { name:'Completed',   value:19, color:'#16A34A', status:'completed'   },
-  { name:'In Progress', value:14, color:'#2563EB', status:'in_progress' },
-  { name:'Pending',     value:10, color:'#D97706', status:'pending'     },
-  { name:'Delayed',     value: 8, color:'#DC2626', status:'delayed'     },
+  { name:'In Progress', value:countByStatus('in_progress'), color:'#2563EB', status:'in_progress' },
+  { name:'Delayed',     value:countByStatus('delayed'),     color:'#DC2626', status:'delayed'     },
+  { name:'Completed',   value:countByStatus('completed'),   color:'#16A34A', status:'completed'   },
+  { name:'Pending',     value:countByStatus('pending'),     color:'#D97706', status:'pending'     },
 ];
 
 const agingData = [

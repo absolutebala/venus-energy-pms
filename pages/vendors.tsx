@@ -117,7 +117,7 @@ export default function VendorsPage() {
           {[
             { label:'Total Vendors',  value:vendors.length,                   color:T.primary, icon:'🏢' },
             { label:'Active',         value:vendors.filter(v=>v.active).length,   color:T.success, icon:'✅' },
-            { label:'Portal Access',  value:vendors.filter(v=>v.inviteStatus==='active').length, color:T.info, icon:'🔗' },
+            { label:'Invited',        value:vendors.filter(v=>v.inviteStatus==='invitation_sent'||v.inviteStatus==='active').length, color:T.info, icon:'🔗' },
             { label:'Total PO Value', value:`₹${(vendors.reduce((a,v)=>a+v.poValue,0)/10000000).toFixed(2)}Cr`, color:T.warning, icon:'💰' },
           ].map((s,i)=>(
             <div key={i} style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px' }}>
@@ -142,7 +142,7 @@ export default function VendorsPage() {
           <div style={{ overflowX:'auto' }}>
             <table style={{ width:'100%' }}>
               <thead>
-                <tr>{['Vendor Name','Contact Details','GST No.','Projects','PO Value','Portal Status','Account Status','Actions'].map(h=><th key={h} style={th}>{h}</th>)}</tr>
+                <tr>{['Vendor Name','Contact Details','GST No.','Projects','PO Value','Status','Actions'].map(h=><th key={h} style={th}>{h}</th>)}</tr>
               </thead>
               <tbody>
                 {filtered.map((v,i)=>(
@@ -167,8 +167,10 @@ export default function VendorsPage() {
                     <td style={{ ...td, fontWeight:600, color:T.text, whiteSpace:'nowrap' }}>₹{(v.poValue/100000).toFixed(2)}L</td>
                     <td style={td}>
                       <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-                        {inviteBadge(v.inviteStatus)}
-                        {(v.inviteStatus === 'not_sent' || v.inviteStatus === 'invitation_sent') && v.active && (
+                        <span style={{ fontSize:11, fontWeight:600, color:v.active?T.success:T.danger, background:v.active?T.successBg:'#FEF2F2', padding:'3px 10px', borderRadius:20, display:'inline-block' }}>
+                          {v.active ? 'Active' : 'Deactivated'}
+                        </span>
+                        {v.active && (v.inviteStatus === 'not_sent' || v.inviteStatus === 'invitation_sent') && (
                           <button
                             onClick={() => sendInvite(v)}
                             disabled={sendingInvite === v.id}
@@ -177,11 +179,6 @@ export default function VendorsPage() {
                           </button>
                         )}
                       </div>
-                    </td>
-                    <td style={td}>
-                      <span style={{ fontSize:11, fontWeight:600, color:v.active?T.success:T.danger, background:v.active?T.successBg:'#FEF2F2', padding:'3px 10px', borderRadius:20 }}>
-                        {v.active ? 'Active' : 'Inactive'}
-                      </span>
                     </td>
                     <td style={td}>
                       <div style={{ display:'flex', gap:4 }}>
