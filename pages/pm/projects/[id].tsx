@@ -8,10 +8,10 @@ import { useUpload } from '@/lib/useUpload';
 import { T, card, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
 
 const PROJECTS: Record<string,any> = {
-  'VE-2025-001': { id:'VE-2025-001', projectName:'Chennai Metro Phase II', site:'Chennai North', pm:'Arun Kumar', poNo:'PO-2025-001', poDate:'2025-04-01', poValue:1850000, region:'Tamil Nadu', type:'Tower Erection', vendorAssigned:true, vendor:'ABC Telecom Services', vendorContact:'Rajesh Kumar', vendorPhone:'+91 98765 43210', vendorEmail:'rajesh@abctelecom.com', returnLogisticsUnlocked:false },
-  'VE-2025-004': { id:'VE-2025-004', projectName:'Chennai Fiber Network',   site:'Chennai South', pm:'Arun Kumar', poNo:'PO-2025-004', poDate:'2025-04-20', poValue:1230000, region:'Tamil Nadu', type:'Fiber Installation', vendorAssigned:false, vendor:'', vendorContact:'', vendorPhone:'', vendorEmail:'', returnLogisticsUnlocked:false },
-  'VE-2025-005': { id:'VE-2025-005', projectName:'Coimbatore Tower Erect',  site:'Coimbatore',   pm:'Arun Kumar', poNo:'PO-2025-005', poDate:'2025-05-01', poValue:2200000, region:'Tamil Nadu', type:'Tower Erection', vendorAssigned:false, vendor:'', vendorContact:'', vendorPhone:'', vendorEmail:'', returnLogisticsUnlocked:false },
-  'VE-2025-008': { id:'VE-2025-008', projectName:'Delhi NCR Maintenance',   site:'Delhi NCR',    pm:'Arun Kumar', poNo:'PO-2025-008', poDate:'2025-04-15', poValue:380000,  region:'Delhi', type:'Tower Maintenance', vendorAssigned:true, vendor:'XYZ Infra Solutions', vendorContact:'Priya Sharma', vendorPhone:'+91 98765 43211', vendorEmail:'priya@xyzinfra.com', returnLogisticsUnlocked:false },
+  'VE-2025-001': { id:'VE-2025-001', projectName:'Chennai Metro Phase II', site:'Chennai North', pm:'Arun Kumar', poNo:'PO-2025-001', poDate:'2025-04-01', poValue:1850000, region:'Tamil Nadu', type:'Tower Erection', vendorAssigned:true, vendor:'ABC Telecom Services', vendorContact:'Rajesh Kumar', vendorPhone:'+91 98765 43210', vendorEmail:'rajesh@abctelecom.com', vendorCompleted:true,  returnLogisticsUnlocked:true  },
+  'VE-2025-004': { id:'VE-2025-004', projectName:'Chennai Fiber Network',   site:'Chennai South', pm:'Arun Kumar', poNo:'PO-2025-004', poDate:'2025-04-20', poValue:1230000, region:'Tamil Nadu', type:'Fiber Installation', vendorAssigned:false, vendor:'', vendorContact:'', vendorPhone:'', vendorEmail:'', vendorCompleted:false, returnLogisticsUnlocked:false },
+  'VE-2025-005': { id:'VE-2025-005', projectName:'Coimbatore Tower Erect',  site:'Coimbatore',   pm:'Arun Kumar', poNo:'PO-2025-005', poDate:'2025-05-01', poValue:2200000, region:'Tamil Nadu', type:'Tower Erection', vendorAssigned:false, vendor:'', vendorContact:'', vendorPhone:'', vendorEmail:'', vendorCompleted:false, returnLogisticsUnlocked:false },
+  'VE-2025-008': { id:'VE-2025-008', projectName:'Delhi NCR Maintenance',   site:'Delhi NCR',    pm:'Arun Kumar', poNo:'PO-2025-008', poDate:'2025-04-15', poValue:380000,  region:'Delhi', type:'Tower Maintenance', vendorAssigned:true, vendor:'XYZ Infra Solutions', vendorContact:'Priya Sharma', vendorPhone:'+91 98765 43211', vendorEmail:'priya@xyzinfra.com', vendorCompleted:false, returnLogisticsUnlocked:false },
 };
 
 const VENDORS = [
@@ -127,7 +127,10 @@ export default function PMProjectDetailPage() {
   const totalSrnAmount = srnItems.reduce((a,i)=>a+i.amount,0);
 
   // Section 4 - Returns & Logistics (greyed by default)
-  const [returnLogisticsUnlocked] = useState(project?.returnLogisticsUnlocked || false);
+  // Unlocks automatically when vendor marks project complete, or manually by RM/Admin
+  const [returnLogisticsUnlocked, setReturnLogisticsUnlocked] = useState(
+    project?.vendorCompleted || project?.returnLogisticsUnlocked || false
+  );
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [rlMatStatus,   setRlMatStatus]   = useState('');
   const [rlGateNo,      setRlGateNo]      = useState('');
@@ -456,13 +459,15 @@ export default function PMProjectDetailPage() {
         <div style={{ ...card, marginBottom:16, position:'relative', opacity: returnLogisticsUnlocked ? 1 : 0.5 }}>
           {sectionTitle('4','Return & Logistics Details', '#D97706')}
           {!returnLogisticsUnlocked && (
-            <div style={{ position:'absolute', inset:0, background:'rgba(255,255,255,0.6)', borderRadius:12, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', zIndex:10 }}>
-              <div style={{ fontSize:32, marginBottom:8 }}>🔒</div>
-              <div style={{ fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>Locked — Available after vendor completes the project</div>
-              <div style={{ fontSize:12, color:T.textDim, marginBottom:12 }}>Only Regional Manager or Admin can unlock this section</div>
-              <button onClick={()=>setShowUnlockModal(true)} style={{ background:T.warning, color:'#fff', border:'none', borderRadius:8, padding:'8px 20px', fontSize:13, fontWeight:600, cursor:'pointer' }}>
-                🔓 Request Unlock
-              </button>
+            <div style={{ position:'absolute', inset:0, background:'rgba(255,255,255,0.75)', borderRadius:12, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', zIndex:10, backdropFilter:'blur(2px)' }}>
+              <div style={{ fontSize:36, marginBottom:10 }}>🔒</div>
+              <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:6 }}>Return & Logistics Locked</div>
+              <div style={{ fontSize:12, color:T.textMuted, textAlign:'center' as const, maxWidth:320, lineHeight:1.6 }}>
+                This section will automatically unlock once the vendor marks this project as <strong>Completed</strong>.
+              </div>
+              <div style={{ marginTop:12, fontSize:11, color:T.textDim, background:T.bg, border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 14px' }}>
+                RM or Admin can also unlock manually if required
+              </div>
             </div>
           )}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'0 16px' }}>
@@ -509,21 +514,7 @@ export default function PMProjectDetailPage() {
             style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
         </div>
 
-        {/* Unlock Request Modal */}
-        {showUnlockModal && (
-          <Modal title="🔓 Request to Unlock Return & Logistics" onClose={()=>setShowUnlockModal(false)} width={460}>
-            <p style={{ fontSize:13, color:T.textMuted, marginBottom:16 }}>
-              This request will be sent to the Regional Manager and Admin for approval. Please provide a reason.
-            </p>
-            <textarea rows={4} placeholder="Enter reason for unlock request…"
-              style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const, marginBottom:16 }} />
-            <div style={{ display:'flex', justifyContent:'flex-end', gap:10 }}>
-              <button onClick={()=>setShowUnlockModal(false)} style={btnSecondary}>Cancel</button>
-              <button onClick={()=>{ setShowUnlockModal(false); setToast({ msg:'Unlock request sent to RM and Admin!', type:'success' }); }}
-                style={{ ...btnPrimary, background:T.warning }}>Send Request</button>
-            </div>
-          </Modal>
-        )}
+
       </div>
       {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
     </Layout>

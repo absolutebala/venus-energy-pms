@@ -87,7 +87,10 @@ export default function VendorProjectUpdatePage() {
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
-      setToast({ msg:'Submitted for PM review! You will be notified once reviewed.', type:'success' });
+      const isCompleted = workStatus === 'Completed';
+      setToast({ msg: isCompleted
+        ? 'Project marked as Completed and submitted for PM review! The Returns & Logistics section is now unlocked for your Project Manager.'
+        : 'Project submitted for PM review! You will be notified once reviewed.', type:'success' });
       setTimeout(() => router.push('/vendor/projects'), 2000);
     }, 800);
   };
@@ -236,7 +239,7 @@ export default function VendorProjectUpdatePage() {
 
             <button onClick={handleSubmitForReview} disabled={submitting || !allUploaded}
               style={{ ...btnPrimary, width:'100%', justifyContent:'center', padding:'11px', opacity:!allUploaded||submitting?0.6:1, cursor:!allUploaded?'not-allowed':'pointer' }}>
-              {submitting ? <><div className="spinner" style={{ borderTopColor:'#fff', borderColor:'rgba(255,255,255,0.3)', width:14, height:14 }} /> Submitting…</> : '📤 Submit for PM Review'}
+              {submitting ? <><div className="spinner" style={{ borderTopColor:'#fff', borderColor:'rgba(255,255,255,0.3)', width:14, height:14 }} /> Submitting…</> : workStatus === 'Completed' ? '✅ Mark Complete & Submit' : '📤 Submit for PM Review'}
             </button>
 
             {!allUploaded && (
