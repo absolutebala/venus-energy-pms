@@ -4,7 +4,9 @@ import Link from 'next/link';
 import Layout from '@/components/Layout';
 import CreatableSelect from '@/components/CreatableSelect';
 import Toast from '@/components/Toast';
+import Modal from '@/components/Modal';
 import { T, inputStyle, btnPrimary, btnSecondary } from '@/lib/theme';
+import { useAuth } from '@/context/AuthContext';
 import { useUpload, UploadResult } from '@/lib/useUpload';
 import { TEAM_MEMBERS } from '@/lib/teamData';
 
@@ -66,6 +68,10 @@ export default function NewProjectPage() {
   const router = useRouter();
 
   const { upload } = useUpload();
+  const { getAccessToken } = useAuth();
+  const [extracting, setExtracting] = useState(false);
+  const [showNoKeyModal, setShowNoKeyModal] = useState(false);
+  const poFileRef = useRef<HTMLInputElement>(null);
   const [sites,   setSites]   = useState(INIT_SITES);
   const [uoms,    setUoms]    = useState(INIT_UOMS);
   const [gstOpts, setGstOpts] = useState(INIT_GST);
@@ -156,6 +162,42 @@ export default function NewProjectPage() {
     setUploadingFile(false);
   };
 
+  const handleExtractPO = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setExtracting(true);
+    const token = await getAccessToken();
+    if (!token) { setExtracting(false); return; }
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch('/api/upload/extract-po', {
+        method:'POST',
+        headers:{ Authorization:`Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.error === 'NO_API_KEY') { setShowNoKeyModal(true); setExtracting(false); return; }
+      if (!res.ok) { setToast({ msg: data.error || 'Extraction failed.', type:'error' }); setExtracting(false); return; }
+      const d = data.data;
+      if (d.project_name)   setProjectName(d.project_name);
+      if (d.project_no)     setProjectNo(d.project_no);
+      if (d.site_name)      setSite(d.site_name);
+      if (d.indus_id)       setIndusId(d.indus_id);
+      if (d.po_no)          setPoNo(d.po_no);
+      if (d.po_date)        setPoDate(d.po_date);
+      if (d.payment_terms)  setPaymentTerms(d.payment_terms);
+      if (d.currency)       setCurrency(d.currency);
+      if (d.regional_manager) setRegionalManager(d.regional_manager);
+      if (d.project_manager)  setProjectManager(d.project_manager);
+      if (d.remarks)        setRemarks(d.remarks);
+      if (d.items?.length)  { setItems(d.items.map((item: any, i: number) => ({ id:i+1, description:item.description||'', hsn:item.hsn||'', uom:item.uom||'Bag', qty:String(item.quantity||''), rate:String(item.rate||''), gst:String(item.gst_rate||18)+'%', amount:(item.quantity||0)*(item.rate||0) }))); }
+      setToast({ msg:'PO data extracted successfully! Please review and confirm all fields.', type:'success' });
+    } catch { setToast({ msg:'Failed to extract PO data. Please fill manually.', type:'error' }); }
+    setExtracting(false);
+    if (poFileRef.current) poFileRef.current.value = '';
+  };
+
   const handleSubmit = (draft: boolean) => {
     if (!projectName) { setToast({ msg:'Project Name is required.', type:'error' }); return; }
     if (!site)        { setToast({ msg:'Site Name is required.', type:'error' }); return; }
@@ -182,6 +224,11 @@ export default function NewProjectPage() {
             <span style={{ color:T.text, fontWeight:600 }}>Add Purchase Order</span>
           </div>
           <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+            <input ref={poFileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleExtractPO} style={{ display:'none' }} />
+            <button onClick={()=>poFileRef.current?.click()} disabled={extracting}
+              style={{ ...btnSecondary, borderColor:'#7C3AED', color:'#7C3AED', padding:'8px 18px', fontSize:13, opacity:extracting?0.8:1 }}>
+              {extracting ? <><div className="spinner" style={{ borderTopColor:'#7C3AED', borderColor:'#7C3AED40', width:14, height:14 }} /> Extracting…</> : '🤖 Upload PO (AI Fill)'}
+            </button>
             <Link href="/projects" style={{ textDecoration:'none' }}>
               <button style={{ ...btnSecondary, padding:'8px 18px', fontSize:13 }}>Cancel</button>
             </Link>
@@ -380,6 +427,19 @@ export default function NewProjectPage() {
         </div>
       </div>
 
+      {showNoKeyModal && (
+        <Modal title="🤖 OpenAI API Key Required" onClose={()=>setShowNoKeyModal(false)} width={440}>
+          <p style={{ fontSize:13, color:T.textMuted, marginBottom:14 }}>
+            The AI PO extraction feature requires an OpenAI API key. Please configure it in Admin Profile Settings.
+          </p>
+          <div style={{ background:T.infoBg, border:'1px solid #BFDBFE', borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:12, color:T.info }}>
+            Go to: <strong>Profile → AI Settings → Enter your OpenAI API key</strong>
+          </div>
+          <div style={{ display:'flex', justifyContent:'flex-end' }}>
+            <button onClick={()=>setShowNoKeyModal(false)} style={btnPrimary}>Got it</button>
+          </div>
+        </Modal>
+      )}
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </Layout>
   );

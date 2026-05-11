@@ -22,6 +22,19 @@ const VENDOR_NAV: NavItem[] = [
   { href:'/vendor/projects', label:'My Projects', icon:'📁' },
 ];
 
+const PM_NAV: NavItem[] = [
+  { href:'/dashboard',      label:'Dashboard',   icon:'▦'  },
+  { href:'/pm/projects',    label:'My Projects', icon:'📁' },
+  { href:'/profile',        label:'Profile',     icon:'👤' },
+];
+
+const RM_NAV: NavItem[] = [
+  { href:'/dashboard',      label:'Dashboard',   icon:'▦'  },
+  { href:'/rm/projects',    label:'My Projects', icon:'📁' },
+  { href:'/vendors',        label:'Vendors',     icon:'🏢' },
+  { href:'/reports',        label:'Reports',     icon:'📊' },
+];
+
 const SUPER_ADMIN_NAV: NavItem[] = [
   { href:'/admin/users', label:'User Management',    icon:'👥' },
   { href:'/admin/roles', label:'Role & Permissions', icon:'🔑' },
@@ -32,6 +45,8 @@ interface Props { collapsed: boolean; onCollapse: () => void; }
 export default function Sidebar({ collapsed, onCollapse }: Props) {
   const { pathname } = useRouter();
   const { profile, can, loading, isVendor } = useAuth();
+  const isPM = !loading && profile?.role === 'project_manager';
+  const isRM = !loading && profile?.role === 'region_manager';
   const isSuperAdmin = !loading && profile?.role === 'super_admin';
 
   const isActive = (href: string) =>
@@ -60,7 +75,7 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
     );
   };
 
-  const navItems = isVendor ? VENDOR_NAV : ADMIN_NAV.filter(shouldShow);
+  const navItems = isVendor ? VENDOR_NAV : isPM ? PM_NAV : isRM ? RM_NAV : ADMIN_NAV.filter(shouldShow);
 
   return (
     <aside style={{ width:collapsed?58:220, background:T.sidebar, borderRight:`1px solid ${T.sidebarBorder}`, display:'flex', flexDirection:'column', transition:'width 0.2s ease', flexShrink:0, overflow:'hidden', height:'100vh', position:'sticky', top:0 }}>
@@ -71,7 +86,7 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
           <div style={{ overflow:'hidden' }}>
             <div style={{ fontWeight:700, fontSize:14, color:T.primary, whiteSpace:'nowrap' }}>Venus Energy</div>
             <div style={{ fontSize:9, color:T.textDim, textTransform:'uppercase', letterSpacing:1 }}>
-              {isVendor ? 'Vendor Portal' : 'Project Control'}
+              {isVendor ? 'Vendor Portal' : isPM ? 'Project Manager' : isRM ? 'Region Manager' : 'Project Control'}
             </div>
           </div>
         )}
