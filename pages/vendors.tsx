@@ -32,6 +32,21 @@ export default function VendorsPage() {
   // Invite sending state
   const [sendingInvite, setSendingInvite] = useState<number|null>(null);
 
+  // Delete state
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [deleting, setDeleting]         = useState(false);
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setTimeout(() => {
+      setVendors(prev => prev.filter(v => v.id !== deleteTarget.id));
+      setToast({ msg:`${deleteTarget.name} has been deleted.`, type:'info' });
+      setDeleting(false);
+      setDeleteTarget(null);
+    }, 500);
+  };
+
   const filtered = vendors.filter(v =>
     !search || v.name.toLowerCase().includes(search.toLowerCase()) || v.contact.toLowerCase().includes(search.toLowerCase())
   );
@@ -187,6 +202,7 @@ export default function VendorsPage() {
                           ? <button onClick={()=>openDeactivate(v)} style={{ background:'#FEF2F2', border:'none', borderRadius:5, padding:'4px 8px', color:T.danger, cursor:'pointer', fontSize:11, fontWeight:500 }}>Deactivate</button>
                           : <button onClick={()=>activate(v)} style={{ background:T.successBg, border:'none', borderRadius:5, padding:'4px 8px', color:T.success, cursor:'pointer', fontSize:11, fontWeight:500 }}>Activate</button>
                         }
+                        <button onClick={()=>setDeleteTarget(v)} style={{ background:T.dangerBg, border:'none', borderRadius:5, padding:'4px 8px', color:T.danger, cursor:'pointer', fontSize:11, fontWeight:500 }}>🗑</button>
                       </div>
                     </td>
                   </tr>

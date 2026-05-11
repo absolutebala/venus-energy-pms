@@ -129,6 +129,19 @@ export default function AdminUsersPage() {
     fetchUsers();
   };
 
+  const [deleteTarget, setDeleteTarget] = useState<UserRow|null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    // Mark inactive in profiles (does not delete Supabase auth user)
+    await supabase.from('profiles').update({ is_active: false }).eq('id', deleteTarget.id);
+    setDeleting(false);
+    setDeleteTarget(null);
+    fetchUsers();
+  };
+
   const filtered = users.filter(u => {
     if (roleFilter !== 'all' && u.role !== roleFilter) return false;
     if (search) {
@@ -234,6 +247,7 @@ export default function AdminUsersPage() {
                         <button onClick={()=>toggleActive(u)} style={{ background:u.is_active?T.dangerBg:T.successBg, border:'none', borderRadius:6, padding:'5px 10px', color:u.is_active?T.danger:T.success, cursor:'pointer', fontSize:12, fontWeight:500 }}>
                           {u.is_active?'Deactivate':'Activate'}
                         </button>
+                        <button onClick={()=>setDeleteTarget(u)} style={{ background:T.dangerBg, border:'none', borderRadius:6, padding:'5px 10px', color:T.danger, cursor:'pointer', fontSize:12, fontWeight:500 }}>🗑 Delete</button>
                       </div>
                     </td>
                   </tr>
@@ -326,6 +340,26 @@ export default function AdminUsersPage() {
             </button>
           </div>
         </ModalOverlay>
+      )}
+      {/* Delete Confirm Modal */}
+      {deleteTarget && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.5)', zIndex:2000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+          <div style={{ background:T.surface, borderRadius:16, padding:28, width:'100%', maxWidth:440, boxShadow:'0 20px 60px rgba(0,0,0,0.18)' }}>
+            <h3 style={{ fontSize:16, fontWeight:700, color:T.text, marginBottom:10 }}>🗑 Delete User</h3>
+            <p style={{ fontSize:13, color:T.textMuted, marginBottom:6 }}>
+              Are you sure you want to delete <strong style={{ color:T.text }}>{deleteTarget.full_name || deleteTarget.email}</strong>?
+            </p>
+            <p style={{ fontSize:12, color:T.textDim, marginBottom:20 }}>
+              This will mark the account as inactive. The user will no longer be able to log in.
+            </p>
+            <div style={{ display:'flex', justifyContent:'flex-end', gap:10 }}>
+              <button onClick={()=>setDeleteTarget(null)} style={{ background:T.bg, border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', fontSize:13, cursor:'pointer', color:T.text }}>Cancel</button>
+              <button onClick={confirmDelete} disabled={deleting} style={{ background:T.danger, border:'none', borderRadius:8, padding:'8px 18px', fontSize:13, fontWeight:600, color:'#fff', cursor:'pointer', opacity:deleting?0.8:1 }}>
+                {deleting ? 'Deleting…' : '🗑 Confirm Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </Layout>
   );
