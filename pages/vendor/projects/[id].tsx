@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
 import Toast from '@/components/Toast';
+import { useUpload } from '@/lib/useUpload';
 import { T, card, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
 
 const projectData: Record<string, any> = {
@@ -12,44 +13,59 @@ const projectData: Record<string, any> = {
 };
 
 const DOC_TYPES = [
-  { key:'safety_photos',    label:'Safety Photos',    desc:'Photos showing safety gear, barricading, PPE compliance', icon:'📷' },
-  { key:'site_photos',      label:'Site Photos',      desc:'Current work progress photos from site',                  icon:'🏗' },
-  { key:'jmr_document',     label:'JMR Document',     desc:'Joint Measurement Record signed by both parties',         icon:'📄' },
-  { key:'ac_certificate',   label:'AC Certificate',   desc:'Activity Completion Certificate',                         icon:'🏅' },
-  { key:'noc_document',     label:'NOC Document',     desc:'No Objection Certificate from relevant authorities',      icon:'📋' },
-  { key:'drawing_document', label:'Drawing Document', desc:'As-built drawings of completed work',                     icon:'📐' },
+  { key:'safety_photos',    label:'Safety Photos',    desc:'Photos showing safety gear, barricading, PPE compliance', icon:'📷', accept:'image/*' },
+  { key:'site_photos',      label:'Site Photos',      desc:'Current work progress photos from site',                  icon:'🏗', accept:'image/*' },
+  { key:'jmr_document',     label:'JMR Document',     desc:'Joint Measurement Record signed by both parties',         icon:'📄', accept:'.pdf,.doc,.docx' },
+  { key:'ac_certificate',   label:'AC Certificate',   desc:'Activity Completion Certificate',                         icon:'🏅', accept:'.pdf,.doc,.docx' },
+  { key:'noc_document',     label:'NOC Document',     desc:'No Objection Certificate from relevant authorities',      icon:'📋', accept:'.pdf,.doc,.docx' },
+  { key:'drawing_document', label:'Drawing Document', desc:'As-built drawings of completed work',                     icon:'📐', accept:'.pdf,.dwg,.png,.jpg' },
 ];
 
-const WORK_STATUSES = ['Pending', 'In Progress', 'On Hold', 'Completed'];
+const WORK_STATUSES = ['Pending','In Progress','On Hold','Completed'];
 
 export default function VendorProjectUpdatePage() {
   const router = useRouter();
   const { id }  = router.query;
   const project = id ? projectData[id as string] : null;
+  const { upload } = useUpload();
 
   const [workStatus, setWorkStatus] = useState('In Progress');
   const [progress,   setProgress]   = useState('65');
   const [remarks,    setRemarks]    = useState('');
-  const [docs, setDocs] = useState<Record<string,{name:string;size:string}|null>>(
+
+  const [docs, setDocs] = useState<Record<string,{name:string;size:string;url:string}|null>>(
     Object.fromEntries(DOC_TYPES.map(d => [d.key, null]))
   );
+  const [uploading, setUploading] = useState<Record<string,boolean>>({});
   const [saving,    setSaving]    = useState(false);
   const [submitting,setSubmitting]= useState(false);
   const [toast, setToast]         = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
   const fileRefs = useRef<Record<string,HTMLInputElement|null>>({});
 
-  const handleFileUpload = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const kb = file.size / 1024;
-    const size = kb > 1024 ? `${(kb/1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
-    setDocs(prev => ({ ...prev, [key]: { name:file.name, size } }));
-    setToast({ msg:`${DOC_TYPES.find(d=>d.key===key)?.label} uploaded!`, type:'success' });
+
+    // 5MB limit
+    if (file.size > 5 * 1024 * 1024) {
+      setToast({ msg:'File size must be under 5MB.', type:'error' });
+      return;
+    }
+
+    setUploading(prev => ({ ...prev, [key]: true }));
+    try {
+      const result = await upload(file, `projects/${id}/documents`);
+      setDocs(prev => ({ ...prev, [key]: { name: result.fileName, size: result.fileSize, url: result.publicUrl } }));
+      setToast({ msg:`${DOC_TYPES.find(d=>d.key===key)?.label} uploaded successfully!`, type:'success' });
+    } catch (err: any) {
+      setToast({ msg: err.message || 'Upload failed. Please try again.', type:'error' });
+    }
+    setUploading(prev => ({ ...prev, [key]: false }));
+    if (fileRefs.current[key]) fileRefs.current[key]!.value = '';
   };
 
   const removeDoc = (key: string) => {
     setDocs(prev => ({ ...prev, [key]: null }));
-    if (fileRefs.current[key]) fileRefs.current[key]!.value = '';
   };
 
   const uploadedCount = Object.values(docs).filter(Boolean).length;
@@ -65,13 +81,13 @@ export default function VendorProjectUpdatePage() {
 
   const handleSubmitForReview = () => {
     if (!allUploaded) {
-      setToast({ msg:`Please upload all 6 required documents before submitting. (${uploadedCount}/6 uploaded)`, type:'error' });
+      setToast({ msg:`Upload all 6 documents before submitting. (${uploadedCount}/6 done)`, type:'error' });
       return;
     }
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
-      setToast({ msg:'Project submitted for PM review! You will be notified once reviewed.', type:'success' });
+      setToast({ msg:'Submitted for PM review! You will be notified once reviewed.', type:'success' });
       setTimeout(() => router.push('/vendor/projects'), 2000);
     }, 800);
   };
@@ -115,15 +131,12 @@ export default function VendorProjectUpdatePage() {
             <div style={{ fontSize:11, color:T.textMuted, marginBottom:4 }}>Work Scope</div>
             <div style={{ fontSize:13, color:T.text, lineHeight:1.6 }}>{project.scope}</div>
           </div>
-          <div style={{ display:'flex', gap:16, marginTop:12 }}>
-            <div style={{ fontSize:12, color:T.textMuted }}>Deadline: <strong style={{ color:T.danger }}>{project.deadline}</strong></div>
-          </div>
+          <div style={{ marginTop:10, fontSize:12, color:T.textMuted }}>Deadline: <strong style={{ color:T.danger }}>{project.deadline}</strong></div>
         </div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 320px', gap:16, alignItems:'start' }}>
-          {/* Left: Documents + Work Status */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:16, alignItems:'start' }}>
           <div>
-            {/* Work Status Update */}
+            {/* Work Status */}
             <div style={{ ...card, marginBottom:16 }}>
               <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14, paddingBottom:10, borderBottom:`1px solid ${T.border}` }}>📊 Work Status Update</div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
@@ -140,7 +153,7 @@ export default function VendorProjectUpdatePage() {
               </div>
               <div>
                 <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>Work Remarks</label>
-                <textarea value={remarks} onChange={e=>setRemarks(e.target.value)} placeholder="Describe the work done, materials used, issues encountered…" rows={3}
+                <textarea value={remarks} onChange={e=>setRemarks(e.target.value)} placeholder="Describe work done, materials used, issues…" rows={3}
                   style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
               </div>
             </div>
@@ -148,21 +161,19 @@ export default function VendorProjectUpdatePage() {
             {/* Document Upload */}
             <div style={card}>
               <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:5 }}>📂 Required Documents</div>
-              <div style={{ fontSize:12, color:T.textMuted, marginBottom:16 }}>
-                All 6 documents must be uploaded to submit for PM review. ({uploadedCount}/6 uploaded)
-              </div>
-
-              {/* Overall doc progress */}
+              <div style={{ fontSize:12, color:T.textMuted, marginBottom:12 }}>All 6 documents required before submission. ({uploadedCount}/6 uploaded)</div>
               <div style={{ height:6, background:T.border, borderRadius:3, marginBottom:20 }}>
                 <div style={{ height:'100%', width:`${(uploadedCount/6)*100}%`, background:allUploaded?T.success:T.primary, borderRadius:3, transition:'width 0.3s' }} />
               </div>
 
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 {DOC_TYPES.map(doc => {
-                  const uploaded = docs[doc.key];
+                  const uploaded  = docs[doc.key];
+                  const isUploading = uploading[doc.key];
+
                   return (
                     <div key={doc.key} style={{ border:`1.5px solid ${uploaded?T.success:T.border}`, borderRadius:10, padding:14, background:uploaded?T.successBg:'#fff', transition:'all 0.15s' }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
                         <span style={{ fontSize:20 }}>{doc.icon}</span>
                         <div>
                           <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{doc.label}</div>
@@ -172,17 +183,20 @@ export default function VendorProjectUpdatePage() {
 
                       {uploaded ? (
                         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'rgba(255,255,255,0.7)', padding:'6px 10px', borderRadius:6 }}>
-                          <div>
-                            <div style={{ fontSize:12, fontWeight:600, color:T.text, maxWidth:160, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{uploaded.name}</div>
-                            <div style={{ fontSize:10, color:T.textDim }}>{uploaded.size}</div>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <a href={uploaded.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:12, fontWeight:600, color:T.primary, maxWidth:160, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', display:'block', textDecoration:'none' }}>
+                              {uploaded.name}
+                            </a>
+                            <div style={{ fontSize:10, color:T.textDim }}>{uploaded.size} · ✅ Uploaded</div>
                           </div>
-                          <button onClick={()=>removeDoc(doc.key)} style={{ background:'none', border:'none', color:T.danger, cursor:'pointer', fontSize:16, lineHeight:1 }}>🗑</button>
+                          <button onClick={()=>removeDoc(doc.key)} style={{ background:'none', border:'none', color:T.danger, cursor:'pointer', fontSize:16, lineHeight:1, marginLeft:8, flexShrink:0 }}>🗑</button>
                         </div>
                       ) : (
                         <>
-                          <input ref={el=>{ fileRefs.current[doc.key]=el; }} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e=>handleFileUpload(doc.key,e)} style={{ display:'none' }} />
-                          <button onClick={()=>fileRefs.current[doc.key]?.click()} style={{ ...btnSecondary, width:'100%', justifyContent:'center', fontSize:12, padding:'6px 0', marginTop:4 }}>
-                            ⬆ Upload {doc.label}
+                          <input ref={el=>{ fileRefs.current[doc.key]=el; }} type="file" accept={doc.accept} onChange={e=>handleFileUpload(doc.key,e)} style={{ display:'none' }} />
+                          <button onClick={()=>fileRefs.current[doc.key]?.click()} disabled={isUploading}
+                            style={{ ...btnSecondary, width:'100%', justifyContent:'center', fontSize:12, padding:'7px 0', marginTop:4, opacity:isUploading?0.7:1, cursor:isUploading?'not-allowed':'pointer' }}>
+                            {isUploading ? <><div className="spinner" style={{ borderTopColor:T.primary, borderColor:`${T.primary}40`, width:12, height:12 }} /> Uploading…</> : `⬆ Upload ${doc.label}`}
                           </button>
                         </>
                       )}
@@ -193,22 +207,21 @@ export default function VendorProjectUpdatePage() {
             </div>
           </div>
 
-          {/* Right sidebar: Actions */}
+          {/* Right sidebar */}
           <div style={{ position:'sticky', top:80 }}>
-            {/* Progress summary */}
             <div style={{ ...card, marginBottom:14 }}>
               <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>📋 Submission Checklist</div>
               {[
-                { label:'Work Status Updated',    done:workStatus!=='Pending' },
-                { label:'Progress % Set',         done:Number(progress)>0     },
-                { label:'Safety Photos',          done:!!docs.safety_photos   },
-                { label:'Site Photos',            done:!!docs.site_photos     },
-                { label:'JMR Document',           done:!!docs.jmr_document    },
-                { label:'AC Certificate',         done:!!docs.ac_certificate  },
-                { label:'NOC Document',           done:!!docs.noc_document    },
-                { label:'Drawing Document',       done:!!docs.drawing_document},
+                { label:'Work Status Updated',  done:workStatus!=='Pending'    },
+                { label:'Progress % Set',        done:Number(progress)>0        },
+                { label:'Safety Photos',         done:!!docs.safety_photos      },
+                { label:'Site Photos',           done:!!docs.site_photos        },
+                { label:'JMR Document',          done:!!docs.jmr_document       },
+                { label:'AC Certificate',        done:!!docs.ac_certificate     },
+                { label:'NOC Document',          done:!!docs.noc_document       },
+                { label:'Drawing Document',      done:!!docs.drawing_document   },
               ].map((item,i) => (
-                <div key={i} style={{ display:'flex', alignItems:'center', gap:8, padding:'6px 0', borderBottom: i<7 ? `1px solid ${T.border}`:'' }}>
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 0', borderBottom:i<7?`1px solid ${T.border}`:'' }}>
                   <div style={{ width:18, height:18, borderRadius:'50%', background:item.done?T.success:T.border, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                     {item.done && <span style={{ color:'#fff', fontSize:10, fontWeight:700 }}>✓</span>}
                   </div>
@@ -217,25 +230,23 @@ export default function VendorProjectUpdatePage() {
               ))}
             </div>
 
-            {/* Action buttons */}
             <button onClick={handleSave} disabled={saving} style={{ ...btnSecondary, width:'100%', justifyContent:'center', marginBottom:10, padding:'10px', opacity:saving?0.8:1 }}>
               {saving ? '…' : '💾 Save Progress'}
             </button>
 
-            <button onClick={handleSubmitForReview} disabled={submitting}
+            <button onClick={handleSubmitForReview} disabled={submitting || !allUploaded}
               style={{ ...btnPrimary, width:'100%', justifyContent:'center', padding:'11px', opacity:!allUploaded||submitting?0.6:1, cursor:!allUploaded?'not-allowed':'pointer' }}>
               {submitting ? <><div className="spinner" style={{ borderTopColor:'#fff', borderColor:'rgba(255,255,255,0.3)', width:14, height:14 }} /> Submitting…</> : '📤 Submit for PM Review'}
             </button>
 
             {!allUploaded && (
               <div style={{ marginTop:10, fontSize:11, color:T.danger, textAlign:'center' }}>
-                {6-uploadedCount} document(s) still required before submission
+                {6-uploadedCount} more document(s) required
               </div>
             )}
           </div>
         </div>
       </div>
-
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </Layout>
   );

@@ -5,6 +5,7 @@ import Layout from '@/components/Layout';
 import CreatableSelect from '@/components/CreatableSelect';
 import Toast from '@/components/Toast';
 import { T, inputStyle, btnPrimary, btnSecondary } from '@/lib/theme';
+import { useUpload, UploadResult } from '@/lib/useUpload';
 import { TEAM_MEMBERS } from '@/lib/teamData';
 
 // Seed data
@@ -64,6 +65,7 @@ const sectionTitle = (n: string, t: string) => (
 export default function NewProjectPage() {
   const router = useRouter();
 
+  const { upload } = useUpload();
   const [sites,   setSites]   = useState(INIT_SITES);
   const [uoms,    setUoms]    = useState(INIT_UOMS);
   const [gstOpts, setGstOpts] = useState(INIT_GST);
@@ -85,7 +87,8 @@ export default function NewProjectPage() {
   const nextId = useRef(2);
 
   // 3. Attachments
-  const [files, setFiles]       = useState<{name:string;size:string}[]>([]);
+  const [files, setFiles]       = useState<{name:string;size:string;url:string}[]>([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -122,19 +125,35 @@ export default function NewProjectPage() {
   const fmt = (v: number) => `₹ ${v.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
 
   // File drop
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault(); setDragging(false);
-    Array.from(e.dataTransfer.files).forEach(f => {
-      const kb = f.size / 1024;
-      setFiles(p => [...p, { name:f.name, size:kb>1024?`${(kb/1024).toFixed(1)} MB`:`${Math.round(kb)} KB` }]);
-    });
-  }, []);
+    const fileList = Array.from(e.dataTransfer.files);
+    setUploadingFile(true);
+    for (const f of fileList) {
+      if (f.size > 5 * 1024 * 1024) { setToast({ msg:`${f.name} exceeds 5MB limit.`, type:'error' }); continue; }
+      try {
+        const result = await upload(f, 'po-attachments');
+        setFiles(p => [...p, { name: result.fileName, size: result.fileSize, url: result.publicUrl }]);
+      } catch (err: any) {
+        setToast({ msg: err.message || 'Upload failed', type:'error' });
+      }
+    }
+    setUploadingFile(false);
+  }, [upload]);
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    Array.from(e.target.files || []).forEach(f => {
-      const kb = f.size / 1024;
-      setFiles(p => [...p, { name:f.name, size:kb>1024?`${(kb/1024).toFixed(1)} MB`:`${Math.round(kb)} KB` }]);
-    });
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = Array.from(e.target.files || []);
+    setUploadingFile(true);
+    for (const f of fileList) {
+      if (f.size > 5 * 1024 * 1024) { setToast({ msg:`${f.name} exceeds 5MB limit.`, type:'error' }); continue; }
+      try {
+        const result = await upload(f, 'po-attachments');
+        setFiles(p => [...p, { name: result.fileName, size: result.fileSize, url: result.publicUrl }]);
+      } catch (err: any) {
+        setToast({ msg: err.message || 'Upload failed', type:'error' });
+      }
+    }
+    setUploadingFile(false);
   };
 
   const handleSubmit = (draft: boolean) => {
