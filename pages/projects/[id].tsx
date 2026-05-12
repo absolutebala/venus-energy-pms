@@ -73,7 +73,14 @@ export default function ProjectDetailPage() {
   const isPM    = profile?.role === 'project_manager' || profile?.role === 'super_admin';
   const isBilling = profile?.role === 'super_admin' || profile?.role === 'region_manager';
 
-  if (!id) return <Layout><div style={{ padding:40, textAlign:'center', color:T.textMuted }}>Loading…</div></Layout>;
+  if (!router.isReady) return (
+    <Layout>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh', flexDirection:'column', gap:16 }}>
+        <div className="spinner" style={{ width:32, height:32, borderTopColor:T.primary, borderColor:T.primary+'30' }} />
+        <div style={{ fontSize:14, color:T.textMuted }}>Loading…</div>
+      </div>
+    </Layout>
+  );
   if (!project) return (
     <Layout>
       <div style={{ ...card, textAlign:'center', padding:60 }}>

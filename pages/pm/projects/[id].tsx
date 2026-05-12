@@ -61,7 +61,18 @@ export default function PMProjectDetailPage() {
   const router = useRouter();
   const { id } = router.query;
   const { upload } = useUpload();
-  const project = id ? PROJECTS[id as string] : null;
+  // Wait for router to be ready before looking up project
+  const project = router.isReady && id ? PROJECTS[id as string] : undefined;
+
+  // Show loading while router hydrates
+  if (!router.isReady) return (
+    <Layout>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh', flexDirection:'column', gap:16 }}>
+        <div className="spinner" style={{ width:32, height:32, borderTopColor:T.primary, borderColor:`${T.primary}30` }} />
+        <div style={{ fontSize:14, color:T.textMuted }}>Loading project…</div>
+      </div>
+    </Layout>
+  );
 
   // Section 1 - Vendor
   const [vendorName,    setVendorName]    = useState(project?.vendor || '');
@@ -208,7 +219,16 @@ export default function PMProjectDetailPage() {
     );
   };
 
-  if (!project) return <Layout><div style={{ padding:40, textAlign:'center' }}>Loading…</div></Layout>;
+  if (project === null || (router.isReady && !project)) return (
+    <Layout>
+      <div style={{ ...card, textAlign:'center', padding:60, margin:20 }}>
+        <div style={{ fontSize:48, marginBottom:16 }}>🔍</div>
+        <h2 style={{ fontSize:20, fontWeight:700, color:T.text, marginBottom:8 }}>Project Not Found</h2>
+        <p style={{ fontSize:13, color:T.textMuted, marginBottom:20 }}>Project ID: {id} could not be found.</p>
+        <Link href="/pm/projects" style={{ background:T.primary, color:'#fff', borderRadius:8, padding:'10px 20px', fontSize:13, fontWeight:600, textDecoration:'none' }}>← Back to My Projects</Link>
+      </div>
+    </Layout>
+  );
 
   const tableHeader = (cols: string[]) => (
     <tr style={{ background:T.bg }}>
