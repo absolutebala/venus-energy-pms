@@ -52,6 +52,7 @@ const activityLog = [
 export default function ProjectDetailPage() {
   const router = useRouter();
   const { id }  = router.query;
+  const { profile } = useAuth();
 
   // All roles use the comprehensive PM view as canonical detail
   React.useEffect(() => {
@@ -59,7 +60,6 @@ export default function ProjectDetailPage() {
       router.replace(`/pm/projects/${id}`);
     }
   }, [id, profile?.role]);
-  const { profile } = useAuth();
   const [projects, setProjects] = useState(allProjects);
   const [toast, setToast] = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
   const [reviewNotes, setReviewNotes] = useState('');
