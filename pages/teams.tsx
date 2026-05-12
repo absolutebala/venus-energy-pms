@@ -63,14 +63,23 @@ export default function TeamsPage() {
     setToast({ msg:`${m.full_name} ${m.is_active?'deactivated':'activated'}.`, type:'info' });
   };
 
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [deleting, setDeleting]         = useState(false);
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setTimeout(() => {
+      setMembers(prev => prev.filter(m => m.id !== deleteTarget.id));
+      setToast({ msg:`${deleteTarget.full_name} has been deleted.`, type:'info' });
+      setDeleting(false);
+      setDeleteTarget(null);
+    }, 400);
+  };
+
   const roleSummary = EXTENDED_ROLES.map(r => ({ role:r, label:ROLE_LABELS_EXT[r], count:members.filter(m=>m.role===r).length }));
 
-  const F = ({ label, children }: { label:string; children:React.ReactNode }) => (
-    <div style={{ marginBottom:14 }}>
-      <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>{label}</label>
-      {children}
-    </div>
-  );
+  // F is defined outside component to prevent re-render cursor loss
 
   return (
     <Layout>
@@ -134,6 +143,7 @@ export default function TeamsPage() {
                         <button onClick={()=>toggleActive(m)} style={{ background:m.is_active?'#FEF2F2':T.successBg, border:'none', borderRadius:5, padding:'4px 8px', color:m.is_active?T.danger:T.success, cursor:'pointer', fontSize:11, fontWeight:500 }}>
                           {m.is_active?'Deactivate':'Activate'}
                         </button>
+                        <button onClick={()=>setDeleteTarget(m)} style={{ background:'#FEF2F2', border:'none', borderRadius:5, padding:'4px 8px', color:T.danger, cursor:'pointer', fontSize:11, fontWeight:500 }}>🗑</button>
                       </div>
                     </td>
                   </tr>
@@ -150,30 +160,49 @@ export default function TeamsPage() {
         {showModal && (
           <Modal title={editMember ? `Edit — ${editMember.full_name}` : '+ Add Team Member'} onClose={() => setShowModal(false)} width={500}>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
-              <div style={{ gridColumn:'1/-1' }}>
-                <F label="Full Name *">
-                  <input value={form.full_name} onChange={e=>setForm(f=>({...f,full_name:e.target.value}))} placeholder="Full name" style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
-                </F>
+              <div style={{ gridColumn:'1/-1', marginBottom:14 }}>
+                <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>Full Name *</label>
+                <input
+                  autoFocus
+                  value={form.full_name}
+                  onChange={e => { const v = e.target.value; setForm(prev => ({ ...prev, full_name: v })); }}
+                  placeholder="Full name"
+                  style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }}
+                />
               </div>
-              <F label="Email Address *">
-                <input type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} placeholder="email@venusenergy.com" readOnly={!!editMember} style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const, ...(editMember?{background:T.bg,color:T.textMuted,cursor:'not-allowed'}:{}) }} />
-              </F>
-              <F label="Phone">
-                <input value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))} placeholder="9876543210" style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
-              </F>
-              <F label="Role *">
-                <select value={form.role} onChange={e=>setForm(f=>({...f,role:e.target.value as UserRole}))} style={{ ...inputStyle(), width:'100%' }}>
+              <div style={{ marginBottom:14 }}>
+                <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>Email Address *</label>
+                <input type="email" value={form.email} readOnly={!!editMember}
+                  onChange={e => { const v = e.target.value; setForm(prev => ({ ...prev, email: v })); }}
+                  placeholder="email@venusenergy.com"
+                  style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const, ...(editMember?{background:T.bg,color:T.textMuted,cursor:'not-allowed'}:{}) }} />
+              </div>
+              <div style={{ marginBottom:14 }}>
+                <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>Phone</label>
+                <input value={form.phone}
+                  onChange={e => { const v = e.target.value; setForm(prev => ({ ...prev, phone: v })); }}
+                  placeholder="9876543210"
+                  style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
+              </div>
+              <div style={{ marginBottom:14 }}>
+                <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>Role *</label>
+                <select value={form.role} onChange={e => { const v = e.target.value; setForm(prev => ({ ...prev, role: v as UserRole })); }} style={{ ...inputStyle(), width:'100%' }}>
                   {EXTENDED_ROLES.map(r=><option key={r} value={r}>{ROLE_LABELS_EXT[r]}</option>)}
                 </select>
-              </F>
-              <F label="Region">
-                <select value={form.region} onChange={e=>setForm(f=>({...f,region:e.target.value}))} style={{ ...inputStyle(), width:'100%' }}>
+              </div>
+              <div style={{ marginBottom:14 }}>
+                <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>Region</label>
+                <select value={form.region} onChange={e => { const v = e.target.value; setForm(prev => ({ ...prev, region: v })); }} style={{ ...inputStyle(), width:'100%' }}>
                   {REGIONS.map(r=><option key={r}>{r}</option>)}
                 </select>
-              </F>
-              <F label="Designation">
-                <input value={form.designation} onChange={e=>setForm(f=>({...f,designation:e.target.value}))} placeholder="e.g. Project Manager" style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
-              </F>
+              </div>
+              <div style={{ marginBottom:14 }}>
+                <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>Designation</label>
+                <input value={form.designation}
+                  onChange={e => { const v = e.target.value; setForm(prev => ({ ...prev, designation: v })); }}
+                  placeholder="e.g. Project Manager"
+                  style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
+              </div>
             </div>
             {!editMember && (
               <div style={{ background:T.infoBg, border:`1px solid #BFDBFE`, borderRadius:8, padding:'10px 14px', marginBottom:14, fontSize:12, color:T.info }}>
@@ -190,6 +219,23 @@ export default function TeamsPage() {
         )}
 
         {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+
+        {deleteTarget && (
+          <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.5)', zIndex:2000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+            <div style={{ background:T.surface, borderRadius:16, padding:28, width:'100%', maxWidth:440, boxShadow:'0 20px 60px rgba(0,0,0,0.18)' }}>
+              <h3 style={{ fontSize:16, fontWeight:700, color:T.text, marginBottom:10 }}>🗑 Delete Team Member</h3>
+              <p style={{ fontSize:13, color:T.textMuted, marginBottom:20 }}>
+                Are you sure you want to delete <strong style={{ color:T.text }}>{deleteTarget.full_name}</strong>? This cannot be undone.
+              </p>
+              <div style={{ display:'flex', justifyContent:'flex-end', gap:10 }}>
+                <button onClick={()=>setDeleteTarget(null)} style={{ background:T.bg, border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', fontSize:13, cursor:'pointer', color:T.text }}>Cancel</button>
+                <button onClick={confirmDelete} disabled={deleting} style={{ background:T.danger, border:'none', borderRadius:8, padding:'8px 18px', fontSize:13, fontWeight:600, color:'#fff', cursor:'pointer', opacity:deleting?0.8:1 }}>
+                  {deleting ? 'Deleting…' : '🗑 Confirm Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );

@@ -59,6 +59,9 @@ function Alert({ msg }: { msg: { type:'success'|'error'; text:string } }) {
 
 export default function ProfilePage() {
   const { profile, refreshProfile, getAccessToken } = useAuth();
+  const [openaiKey,  setOpenaiKey]  = React.useState('');
+  const [savingKey,  setSavingKey]  = React.useState(false);
+  const [showKey,    setShowKey]    = React.useState(false);
 
   const [fullName,    setFullName]    = useState('');
   const [phone,       setPhone]       = useState('');
@@ -295,6 +298,62 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* AI Settings — Super Admin only */}
+      {profile?.role === 'super_admin' && (
+        <div style={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:12, padding:24, boxShadow:'0 1px 3px rgba(0,0,0,0.06)', marginTop:0 }}>
+          <div style={{ fontSize:15, fontWeight:700, color:T.text, marginBottom:6 }}>🤖 AI Settings</div>
+          <div style={{ fontSize:13, color:T.textMuted, marginBottom:16 }}>
+            OpenAI API key for automatic PO document data extraction. Required to use the "Upload PO (AI Fill)" feature.
+          </div>
+          <div style={{ display:'flex', gap:10, alignItems:'flex-end' }}>
+            <div style={{ flex:1 }}>
+              <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>OpenAI API Key</label>
+              <div style={{ position:'relative' as const }}>
+                <input
+                  type={showKey ? 'text' : 'password'}
+                  value={openaiKey}
+                  onChange={e => setOpenaiKey(e.target.value)}
+                  placeholder="sk-proj-..."
+                  style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const, paddingRight:60 }}
+                />
+                <button onClick={() => setShowKey(s => !s)}
+                  style={{ position:'absolute' as const, right:10, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', fontSize:12, color:T.textMuted }}>
+                  {showKey ? 'Hide' : 'Show'}
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                if (!openaiKey.trim()) return;
+                setSavingKey(true);
+                const token = await getAccessToken();
+                if (token) {
+                  const res = await fetch('/api/profile/save-openai-key', {
+                    method:'POST',
+                    headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${token}` },
+                    body: JSON.stringify({ openai_api_key: openaiKey }),
+                  });
+                  if (res.ok) setProfileMsg({ type:'success', text:'OpenAI API key saved!' });
+                  else setProfileMsg({ type:'error', text:'Failed to save key.' });
+                }
+                setSavingKey(false);
+              }}
+              disabled={savingKey || !openaiKey.trim()}
+              style={{ ...btnPrimary, padding:'10px 20px', flexShrink:0, opacity:savingKey||!openaiKey.trim()?0.6:1 }}>
+              {savingKey ? 'Saving…' : '💾 Save Key'}
+            </button>
+          </div>
+          <div style={{ marginTop:10, fontSize:11, color:T.textDim }}>
+            Get your API key at{' '}
+            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" style={{ color:T.primary, fontWeight:500 }}>
+              platform.openai.com/api-keys
+            </a>
+            {' '}— requires GPT-4o access.
+          </div>
+        </div>
+      )}
+    </div>
     </Layout>
   );
 }
