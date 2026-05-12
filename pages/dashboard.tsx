@@ -7,14 +7,14 @@ import { T, card, badge } from '@/lib/theme';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const ALL_PROJECTS = [
-  { id:'VE-2025-001', projectName:'Chennai Metro Phase II', site:'Chennai North',  client:'Airtel', type:'Tower Erection',    pm:'Arun Kumar',   vendor:'ABC Telecom Services', poValue:1850000, aging:12, status:'in_progress', progress:65,  region:'TN', createdAt:'2025-04-01' },
+  { id:'VE-2025-001', projectName:'Chennai Metro Phase II', site:'Chennai North',  client:'Airtel', type:'Tower Erection',    pm:'Arun Kumar',   vendor:'ABC Telecom Services', poValue:1850000, aging:12, status:'in_progress', progress:65,  region:'TN', createdAt:'2025-04-01', assignedAt:'2025-05-10' },
   { id:'VE-2025-002', projectName:'Bengaluru East Maint.',  site:'Bengaluru East', client:'Jio',    type:'Tower Maintenance',  pm:'Priya Sharma', vendor:'XYZ Infra Solutions',  poValue:420000,  aging:78, status:'delayed',     progress:30,  region:'KA', createdAt:'2025-03-15' },
   { id:'VE-2025-003', projectName:'Hyderabad Component',    site:'Hyderabad',      client:'Vi',     type:'Component Replace',  pm:'Arun Kumar',   vendor:'TowerTech Pvt Ltd',    poValue:760000,  aging:22, status:'completed',   progress:100, region:'TS', createdAt:'2025-04-10' },
-  { id:'VE-2025-004', projectName:'Chennai Fiber Network',  site:'Chennai South',  client:'BSNL',   type:'Fiber Installation', pm:'Vijay Kumar',  vendor:null,                   poValue:1230000, aging:12, status:'in_progress', progress:45,  region:'TN', createdAt:'2025-04-20' },
-  { id:'VE-2025-005', projectName:'Coimbatore Tower',       site:'Coimbatore',     client:'Airtel', type:'Tower Erection',     pm:'Arun Kumar',   vendor:null,                   poValue:2200000, aging:8,  status:'pending',     progress:10,  region:'TN', createdAt:'2025-05-01' },
+  { id:'VE-2025-004', projectName:'Chennai Fiber Network',  site:'Chennai South',  client:'BSNL',   type:'Fiber Installation', pm:'Vijay Kumar',  vendor:null,                   poValue:1230000, aging:12, status:'in_progress', progress:45,  region:'TN', createdAt:'2025-04-20', assignedAt:'2025-05-08' },
+  { id:'VE-2025-005', projectName:'Coimbatore Tower',       site:'Coimbatore',     client:'Airtel', type:'Tower Erection',     pm:'Arun Kumar',   vendor:null,                   poValue:2200000, aging:8,  status:'pending',     progress:10,  region:'TN', createdAt:'2025-05-01', assignedAt:'2025-05-11' },
   { id:'VE-2025-006', projectName:'Pune Civil Works',       site:'Pune West',      client:'Jio',    type:'Civil Works',        pm:'Pooja Mehta',  vendor:'BuildRight Constructions',poValue:540000,aging:95, status:'delayed',     progress:20,  region:'MH', createdAt:'2025-02-01' },
   { id:'VE-2025-007', projectName:'Mumbai Power Works',     site:'Mumbai Central', client:'Vi',     type:'Power Works',        pm:'Pooja Mehta',  vendor:'PowerSys India',        poValue:890000,  aging:33, status:'billing_review',progress:100,region:'MH', createdAt:'2025-04-05' },
-  { id:'VE-2025-008', projectName:'Delhi NCR Maintenance',  site:'Delhi NCR',      client:'Airtel', type:'Tower Maintenance',  pm:'Rajeev Singh', vendor:'XYZ Infra Solutions',   poValue:380000,  aging:18, status:'in_progress', progress:55,  region:'DL', createdAt:'2025-05-01' },
+  { id:'VE-2025-008', projectName:'Delhi NCR Maintenance',  site:'Delhi NCR',      client:'Airtel', type:'Tower Maintenance',  pm:'Rajeev Singh', vendor:'XYZ Infra Solutions',   poValue:380000,  aging:18, status:'in_progress', progress:55,  region:'DL', createdAt:'2025-05-01', assignedAt:'2025-05-09' },
   { id:'VE-2025-009', projectName:'Kochi Component Repl.',  site:'Kochi',          client:'BSNL',   type:'Component Replace',  pm:'Vijay Kumar',  vendor:'TowerTech Pvt Ltd',     poValue:650000,  aging:62, status:'delayed',     progress:40,  region:'KL', createdAt:'2025-03-01' },
   { id:'VE-2025-010', projectName:'Kolkata Fiber Install.',  site:'Kolkata North',  client:'Jio',    type:'Fiber Installation', pm:null,           vendor:null,                    poValue:975000,  aging:5,  status:'pending',     progress:0,   region:'WB', createdAt:'2025-05-10' },
 ];
@@ -287,20 +287,25 @@ export default function Dashboard() {
           </div>
           <div style={card}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:13 }}>
-              <div style={{ fontSize:14, fontWeight:600, color:T.text }}>Recently Created Projects</div>
+              <div style={{ fontSize:14, fontWeight:600, color:T.text }}>{isPM ? 'My Projects (Recently Assigned)' : 'Recently Created Projects'}</div>
               <Link href={projectListPath} style={{ fontSize:12, color:T.primary, textDecoration:'none', fontWeight:500 }}>View All →</Link>
             </div>
-            {recent.map((p,i)=>(
+            {(isPM
+              ? [...ALL_PROJECTS].filter(p=>p.pm===profile?.full_name).sort((a,b)=>new Date((b as any).assignedAt||b.createdAt).getTime()-new Date((a as any).assignedAt||a.createdAt).getTime()).slice(0,5)
+              : recent
+            ).map((p,i)=>(
               <div key={i} onClick={()=>router.push(projectDetailPath(p.id))}
-                style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:i<recent.length-1?`1px solid ${T.border}`:'', cursor:'pointer' }}
+                style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:i<4?`1px solid ${T.border}`:'', cursor:'pointer' }}
                 onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
                 onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='transparent'}>
                 <div>
                   <div style={{ fontSize:12, fontWeight:700, color:T.primary }}>{p.id}</div>
                   <div style={{ fontSize:12, color:T.text }}>{p.projectName}</div>
-                  <div style={{ fontSize:11, color:T.textDim }}>{new Date(p.createdAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</div>
+                  <div style={{ fontSize:11, color:T.textDim }}>
+                    {isPM ? `Assigned: ${new Date((p as any).assignedAt||p.createdAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}` : new Date(p.createdAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
+                  </div>
                 </div>
-                <div style={{ textAlign:'right' }}>
+                <div style={{ textAlign:'right' as const }}>
                   <div style={{ fontSize:12, fontWeight:600, color:T.text }}>{fmt(p.poValue)}</div>
                   <span style={badge(STATUS_DISPLAY[p.status]||p.status)}>{STATUS_DISPLAY[p.status]||p.status}</span>
                 </div>
