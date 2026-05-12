@@ -23,28 +23,12 @@ const fmt = (v:number) => `₹${(v/100000).toFixed(1)}L`;
 
 const STATUS_DISPLAY: Record<string,string> = { in_progress:'In Progress', pending:'Pending', delayed:'Delayed', completed:'Completed', submitted:'Submitted', pm_approved:'PM Approved', billing_review:'Billing Review' };
 
-const countByStatus = (s:string) => ALL_PROJECTS.filter(p=>p.status===s).length;
-const statusData = [
-  { name:'In Progress',  value:countByStatus('in_progress'),  color:'#2563EB', status:'in_progress'  },
-  { name:'Delayed',      value:countByStatus('delayed'),       color:'#DC2626', status:'delayed'      },
-  { name:'Completed',    value:countByStatus('completed'),     color:'#16A34A', status:'completed'    },
-  { name:'Pending',      value:countByStatus('pending'),       color:'#D97706', status:'pending'      },
-  { name:'Billing',      value:countByStatus('billing_review'),color:'#7C3AED', status:'billing_review'},
-];
+// countByStatus is defined inside component using scopedProjects — see below
+// statusData built inside component
 
-const agingData = [
-  { range:'0–30d', count:ALL_PROJECTS.filter(p=>p.aging<=30).length,              fill:'#16A34A', min:0,  max:30  },
-  { range:'31–60d',count:ALL_PROJECTS.filter(p=>p.aging>30&&p.aging<=60).length,  fill:'#2563EB', min:31, max:60  },
-  { range:'61–90d',count:ALL_PROJECTS.filter(p=>p.aging>60&&p.aging<=90).length,  fill:'#D97706', min:61, max:90  },
-  { range:'90+d',  count:ALL_PROJECTS.filter(p=>p.aging>90).length,               fill:'#DC2626', min:91, max:999 },
-];
+// agingData built inside component
 
-const alerts = [
-  { type:'danger', title:'Delayed Projects (>60d)', count:ALL_PROJECTS.filter(p=>p.aging>60).length,    msg:'Critical overdue projects',        link:'/projects?status=delayed'  },
-  { type:'warn',   title:'Unassigned Projects',     count:ALL_PROJECTS.filter(p=>!p.pm).length,         msg:'No PM assigned yet',               link:'/projects'                 },
-  { type:'info',   title:'Pending Billing Review',  count:ALL_PROJECTS.filter(p=>p.status==='billing_review').length, msg:'Awaiting billing clearance', link:'/billing' },
-  { type:'warn',   title:'Vendor Not Assigned',     count:ALL_PROJECTS.filter(p=>!p.vendor).length,     msg:'Projects without vendor',          link:'/vendors'                  },
-];
+// alerts built inside component
 
 const REGIONS = ['All Regions','Tamil Nadu','Karnataka','Telangana','Maharashtra','Delhi','Kerala','West Bengal'];
 const PROJECT_TYPES = ['All Types','Tower Erection','Tower Maintenance','Component Replacement','Fiber Installation','Civil Works','Power Works'];
@@ -57,8 +41,15 @@ export default function Dashboard() {
   const isRM = profile?.role === 'region_manager';
 
   // Role-aware path helpers
-  const projectListPath  = isPM ? '/pm/projects' : isRM ? '/rm/projects' : '/projects';
+  const projectListPath   = isPM ? '/pm/projects' : isRM ? '/rm/projects' : '/projects';
   const projectDetailPath = (id: string) => isPM ? `/pm/projects/${id}` : isRM ? `/rm/projects/${id}` : `/projects/${id}`;
+
+  // For PM/RM: filter data to their scope. For demo, PM sees all projects with a PM assigned.
+  const scopedProjects = isPM
+    ? ALL_PROJECTS.filter(p => p.pm !== null)
+    : isRM
+    ? ALL_PROJECTS.filter(p => p.pm !== null) // RM sees their region in real DB
+    : ALL_PROJECTS;
 
   const [region,      setRegion]      = useState('All Regions');
   const [projectType, setProjectType] = useState('All Types');
@@ -67,22 +58,46 @@ export default function Dashboard() {
 
   const selStyle: React.CSSProperties = { background:'#fff', border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 10px', fontSize:12, color:T.text, outline:'none', cursor:'pointer' };
 
+  // Build scoped chart data based on role
+  const countByStatus = (s:string) => scopedProjects.filter(p=>p.status===s).length;
+  const statusData = [
+    { name:'In Progress',  value:countByStatus('in_progress'),  color:'#2563EB', status:'in_progress'  },
+    { name:'Delayed',      value:countByStatus('delayed'),       color:'#DC2626', status:'delayed'      },
+    { name:'Completed',    value:countByStatus('completed'),     color:'#16A34A', status:'completed'    },
+    { name:'Pending',      value:countByStatus('pending'),       color:'#D97706', status:'pending'      },
+    { name:'Billing',      value:countByStatus('billing_review'),color:'#7C3AED', status:'billing_review'},
+  ];
+
+  const agingData = [
+    { range:'0–30d', count:scopedProjects.filter(p=>p.aging<=30).length,             fill:'#16A34A', min:0,  max:30  },
+    { range:'31–60d',count:scopedProjects.filter(p=>p.aging>30&&p.aging<=60).length, fill:'#2563EB', min:31, max:60  },
+    { range:'61–90d',count:scopedProjects.filter(p=>p.aging>60&&p.aging<=90).length, fill:'#D97706', min:61, max:90  },
+    { range:'90+d',  count:scopedProjects.filter(p=>p.aging>90).length,              fill:'#DC2626', min:91, max:999 },
+  ];
+
+  const alerts = [
+    { type:'danger', title:'Delayed Projects (>60d)', count:scopedProjects.filter(p=>p.aging>60).length,    msg:'Critical overdue projects',        link:projectListPath+'?status=delayed'  },
+    { type:'warn',   title:'Unassigned Projects',     count:scopedProjects.filter(p=>!p.pm).length,         msg:'No PM assigned yet',               link:projectListPath                     },
+    { type:'info',   title:'Pending Billing Review',  count:scopedProjects.filter(p=>p.status==='billing_review').length, msg:'Awaiting billing clearance', link:'/billing' },
+    { type:'warn',   title:'Vendor Not Assigned',     count:scopedProjects.filter(p=>!p.vendor).length,     msg:'Projects without vendor',          link:'/vendors'                          },
+  ];
+
   // PM grouping
-  const pmGroups = ALL_PROJECTS.filter(p=>p.pm).reduce((acc:any, p) => {
+  const pmGroups = scopedProjects.filter(p=>p.pm).reduce((acc:any, p) => {
     if (!acc[p.pm!]) acc[p.pm!] = [];
     acc[p.pm!].push(p);
     return acc;
   }, {} as Record<string, typeof ALL_PROJECTS>);
 
   // Vendor grouping
-  const vendorGroups = ALL_PROJECTS.filter(p=>p.vendor).reduce((acc:any, p) => {
+  const vendorGroups = scopedProjects.filter(p=>p.vendor).reduce((acc:any, p) => {
     if (!acc[p.vendor!]) acc[p.vendor!] = [];
     acc[p.vendor!].push(p);
     return acc;
   }, {} as Record<string, typeof ALL_PROJECTS>);
 
-  const unassigned = ALL_PROJECTS.filter(p => !p.pm || !p.vendor);
-  const recent     = [...ALL_PROJECTS].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0,5);
+  const unassigned = scopedProjects.filter(p => !p.pm || !p.vendor);
+  const recent     = [...scopedProjects].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0,5);
 
   return (
     <Layout>

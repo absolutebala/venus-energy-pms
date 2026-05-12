@@ -42,9 +42,9 @@ export default function PMProjectsPage() {
   }, [router.isReady, router.query]);
 
   // Filter to this PM's projects
-  const myProjects = ALL_PROJECTS.filter(p =>
-    p.pm === (profile?.full_name || 'Arun Kumar')
-  );
+  // NOTE: Mock data uses hardcoded PM names. In production this filters by user ID from DB.
+  // For demo: show all projects that have a PM assigned (simulates PM's assigned projects)
+  const myProjects = ALL_PROJECTS.filter(p => p.pm !== null && p.pm !== undefined);
 
   // Apply filters
   const filtered = myProjects.filter(p => {
