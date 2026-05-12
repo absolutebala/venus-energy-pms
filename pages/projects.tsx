@@ -41,6 +41,13 @@ const TYPES = ['All','Tower Erection','Tower Maintenance','Component Replacement
 export default function ProjectsPage() {
   const router = useRouter();
   const { profile } = useAuth();
+
+  // Redirect PM to their dedicated view
+  React.useEffect(() => {
+    if (profile?.role === 'project_manager') {
+      router.replace('/pm/projects');
+    }
+  }, [profile?.role]);
   const isAdmin = profile?.role === 'super_admin' || profile?.role === 'region_manager';
 
   const [projects, setProjects] = useState(ALL_PROJECTS);

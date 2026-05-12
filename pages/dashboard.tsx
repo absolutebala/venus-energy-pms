@@ -53,6 +53,12 @@ export default function Dashboard() {
   const router = useRouter();
   const { profile } = useAuth();
   const isSuperAdmin = profile?.role === 'super_admin';
+  const isPM = profile?.role === 'project_manager';
+  const isRM = profile?.role === 'region_manager';
+
+  // Role-aware path helpers
+  const projectListPath  = isPM ? '/pm/projects' : isRM ? '/rm/projects' : '/projects';
+  const projectDetailPath = (id: string) => isPM ? `/pm/projects/${id}` : isRM ? `/rm/projects/${id}` : `/projects/${id}`;
 
   const [region,      setRegion]      = useState('All Regions');
   const [projectType, setProjectType] = useState('All Types');
@@ -131,7 +137,7 @@ export default function Dashboard() {
               <ResponsiveContainer width={160} height={160}>
                 <PieChart>
                   <Pie data={statusData} cx="50%" cy="50%" innerRadius={44} outerRadius={68} dataKey="value" paddingAngle={3}
-                    onClick={(entry:any)=>router.push(`/projects?status=${entry.status}`)}>
+                    onClick={(entry:any)=>router.push(`${projectListPath}?status=${entry.status}`)}>
                     {statusData.map((d,i)=><Cell key={i} fill={d.color} cursor="pointer" />)}
                   </Pie>
                   <Tooltip contentStyle={{ fontSize:12, borderRadius:8 }} />
@@ -139,7 +145,7 @@ export default function Dashboard() {
               </ResponsiveContainer>
               <div style={{ flex:1 }}>
                 {statusData.map((d,i)=>(
-                  <div key={i} onClick={()=>router.push(`/projects?status=${d.status}`)}
+                  <div key={i} onClick={()=>router.push(`${projectListPath}?status=${d.status}`)}
                     style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, cursor:'pointer', borderRadius:6, padding:'3px 6px' }}
                     onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}
                     onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='transparent'}>
@@ -155,7 +161,7 @@ export default function Dashboard() {
             <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>PO Aging Analysis</div>
             <ResponsiveContainer width="100%" height={160}>
               <BarChart data={agingData} barSize={36}
-                onClick={(data:any)=>{ if(data?.activePayload?.[0]){ const d=data.activePayload[0].payload; router.push(`/projects?ageMin=${d.min}&ageMax=${d.max}`); } }}>
+                onClick={(data:any)=>{ if(data?.activePayload?.[0]){ const d=data.activePayload[0].payload; router.push(`${projectListPath}?ageMin=${d.min}&ageMax=${d.max}`); } }}>
                 <XAxis dataKey="range" tick={{ fontSize:12, fill:T.textMuted }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize:12, fill:T.textMuted }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ background:T.surface, border:`1px solid ${T.border}`, borderRadius:8, fontSize:12 }} cursor={{ fill:'#F1F5F9' }} />
@@ -174,11 +180,11 @@ export default function Dashboard() {
             <div style={card}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
                 <div style={{ fontSize:14, fontWeight:700, color:T.text }}>📊 Projects by Project Manager</div>
-                <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>View All →</Link>
+                <Link href={projectListPath} style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>View All →</Link>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
                 {Object.entries(pmGroups).map(([pm, projects]:any) => (
-                  <div key={pm} onClick={()=>router.push('/projects')} style={{ background:T.bg, border:`1px solid ${T.border}`, borderRadius:10, padding:14, cursor:'pointer', transition:'all 0.15s' }}
+                  <div key={pm} onClick={()=>router.push(projectListPath)} style={{ background:T.bg, border:`1px solid ${T.border}`, borderRadius:10, padding:14, cursor:'pointer', transition:'all 0.15s' }}
                     onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'}
                     onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.boxShadow='none'}>
                     <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:8 }}>{pm}</div>
@@ -233,11 +239,11 @@ export default function Dashboard() {
               <div style={{ ...card, border:`1.5px solid ${T.warning}`, marginBottom:16 }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
                   <div style={{ fontSize:14, fontWeight:700, color:T.warning }}>⚠️ Unassigned Projects ({unassigned.length})</div>
-                  <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>Assign Now →</Link>
+                  <Link href={projectListPath} style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>Assign Now →</Link>
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
                   {unassigned.map((p,i) => (
-                    <div key={i} onClick={()=>router.push(`/projects/${p.id}`)} style={{ background:T.warningBg, border:`1px solid #FDE68A`, borderRadius:9, padding:12, cursor:'pointer' }}
+                    <div key={i} onClick={()=>router.push(projectDetailPath(p.id))} style={{ background:T.warningBg, border:`1px solid #FDE68A`, borderRadius:9, padding:12, cursor:'pointer' }}
                       onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'}
                       onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.boxShadow='none'}>
                       <div style={{ fontSize:12, fontWeight:700, color:T.text, marginBottom:4 }}>{p.id}</div>
@@ -259,13 +265,13 @@ export default function Dashboard() {
           <div style={card}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:13 }}>
               <div style={{ fontSize:14, fontWeight:600, color:T.text }}>Project Summary</div>
-              <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none', fontWeight:500 }}>View All →</Link>
+              <Link href={projectListPath} style={{ fontSize:12, color:T.primary, textDecoration:'none', fontWeight:500 }}>View All →</Link>
             </div>
             <table style={{ width:'100%' }}>
               <thead><tr>{['Project No','Site','PM','PO Value','Aging','Status'].map(h=><th key={h} style={{ padding:'7px 8px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:'left', borderBottom:`2px solid ${T.border}` }}>{h}</th>)}</tr></thead>
               <tbody>
                 {recent.map((p,i)=>(
-                  <tr key={i} onClick={()=>router.push(`/projects/${p.id}`)} style={{ cursor:'pointer' }}
+                  <tr key={i} onClick={()=>router.push(projectDetailPath(p.id))} style={{ cursor:'pointer' }}
                     onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
                     onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
                     <td style={{ padding:'8px', color:T.primary, fontWeight:700, fontSize:12 }}>{p.id}</td>
@@ -282,10 +288,10 @@ export default function Dashboard() {
           <div style={card}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:13 }}>
               <div style={{ fontSize:14, fontWeight:600, color:T.text }}>Recently Created Projects</div>
-              <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none', fontWeight:500 }}>View All →</Link>
+              <Link href={projectListPath} style={{ fontSize:12, color:T.primary, textDecoration:'none', fontWeight:500 }}>View All →</Link>
             </div>
             {recent.map((p,i)=>(
-              <div key={i} onClick={()=>router.push(`/projects/${p.id}`)}
+              <div key={i} onClick={()=>router.push(projectDetailPath(p.id))}
                 style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:i<recent.length-1?`1px solid ${T.border}`:'', cursor:'pointer' }}
                 onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
                 onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='transparent'}>

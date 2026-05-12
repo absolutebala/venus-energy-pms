@@ -52,6 +52,13 @@ const activityLog = [
 export default function ProjectDetailPage() {
   const router = useRouter();
   const { id }  = router.query;
+
+  // All roles use the comprehensive PM view as canonical detail
+  React.useEffect(() => {
+    if (id && profile?.role === 'project_manager') {
+      router.replace(`/pm/projects/${id}`);
+    }
+  }, [id, profile?.role]);
   const { profile } = useAuth();
   const [projects, setProjects] = useState(allProjects);
   const [toast, setToast] = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);

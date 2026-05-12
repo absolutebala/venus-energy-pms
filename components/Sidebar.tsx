@@ -49,9 +49,15 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
   const isRM = !loading && profile?.role === 'region_manager';
   const isSuperAdmin = !loading && profile?.role === 'super_admin';
 
-  const isActive = (href: string) =>
-    pathname === href || (href !== '/dashboard' && href !== '/vendor/projects' && pathname.startsWith(href)) ||
-    (pathname === href);
+  const isActive = (href: string) => {
+    if (pathname === href) return true;
+    if (href === '/dashboard') return false;
+    if (href === '/projects') return pathname === '/projects' || pathname.startsWith('/projects/');
+    if (href === '/pm/projects') return pathname === '/pm/projects' || pathname.startsWith('/pm/projects/');
+    if (href === '/rm/projects') return pathname === '/rm/projects' || pathname.startsWith('/rm/projects/');
+    if (href === '/vendor/projects') return pathname === '/vendor/projects' || pathname.startsWith('/vendor/projects/');
+    return pathname.startsWith(href);
+  };
 
   const shouldShow = (item: NavItem) => {
     if (isSuperAdmin) return true;
