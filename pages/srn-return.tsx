@@ -46,7 +46,7 @@ export default function STNSRNPage() {
   const ongoingProjects   = filtered.filter(p => !['completed','billing_review'].includes(p.status));
   const completedProjects = filtered.filter(p => ['completed','billing_review'].includes(p.status));
   const overdueCount      = filtered.filter(p => p.isOverdue).length;
-  const pendingReturnCount= filtered.reduce((a,p) => a + p.materials.filter(m=>m.balance>0).length, 0);
+  const pendingReturnCount= filtered.reduce((a,p) => a + p.materials.filter(m=>m.returnQty>0).length, 0);
 
   const totalSTN = filtered.reduce((a,p) => a + p.materials.reduce((b,m)=>b+m.stnQty,0), 0);
   const totalSRN = filtered.reduce((a,p) => a + p.materials.reduce((b,m)=>b+m.srnQty,0), 0);
@@ -75,9 +75,9 @@ export default function STNSRNPage() {
               <td style={{ padding:'9px 10px', color:T.textMuted }}>{m.uom}</td>
               <td style={{ padding:'9px 10px', fontWeight:600, color:T.text, textAlign:'right' }}>{m.stnQty.toLocaleString()}</td>
               <td style={{ padding:'9px 10px', fontWeight:600, color:T.success, textAlign:'right' }}>{m.srnQty.toLocaleString()}</td>
-              <td style={{ padding:'9px 10px', fontWeight:700, color:m.balance>0?T.danger:T.success, textAlign:'right' }}>
-                {m.balance.toLocaleString()}
-                {m.balance > 0 && <span style={{ fontSize:10, marginLeft:4 }}>⚠️</span>}
+              <td style={{ padding:'9px 10px', fontWeight:700, color:m.returnQty>0?T.danger:T.success, textAlign:'right' }}>
+                {m.returnQty.toLocaleString()}
+                {m.returnQty > 0 && <span style={{ fontSize:10, marginLeft:4 }}>⚠️</span>}
               </td>
               <td style={{ padding:'9px 10px' }}>
                 <span style={{ fontSize:11, fontWeight:600, color:RETURN_COLOR[m.returnStatus], background:`${RETURN_COLOR[m.returnStatus]}18`, padding:'3px 10px', borderRadius:20 }}>
@@ -91,7 +91,7 @@ export default function STNSRNPage() {
             <td colSpan={3} style={{ padding:'9px 10px', fontWeight:700, color:T.text }}>Total</td>
             <td style={{ padding:'9px 10px', fontWeight:700, color:T.text, textAlign:'right' }}>{project.materials.reduce((a,m)=>a+m.stnQty,0).toLocaleString()}</td>
             <td style={{ padding:'9px 10px', fontWeight:700, color:T.success, textAlign:'right' }}>{project.materials.reduce((a,m)=>a+m.srnQty,0).toLocaleString()}</td>
-            <td style={{ padding:'9px 10px', fontWeight:700, color:T.danger, textAlign:'right' }}>{project.materials.reduce((a,m)=>a+m.balance,0).toLocaleString()}</td>
+            <td style={{ padding:'9px 10px', fontWeight:700, color:T.danger, textAlign:'right' }}>{project.materials.reduce((a,m)=>a+m.returnQty,0).toLocaleString()}</td>
             <td></td>
           </tr>
         </tbody>
@@ -101,8 +101,8 @@ export default function STNSRNPage() {
 
   const ProjectRow = ({ project, showVendor = true }: { project: ProjectSTNSRN; showVendor?: boolean }) => {
     const isExpanded = expandedId === project.projectId;
-    const pendingItems = project.materials.filter(m=>m.balance>0).length;
-    const allReturned  = project.materials.every(m=>m.balance===0);
+    const pendingItems = project.materials.filter(m=>m.returnQty>0).length;
+    const allReturned  = project.materials.every(m=>m.returnQty===0);
 
     return (
       <div style={{ border:`1.5px solid ${project.isOverdue?T.danger:allReturned?T.success:T.border}`, borderRadius:12, marginBottom:12, overflow:'hidden', transition:'all 0.15s' }}>
@@ -237,7 +237,7 @@ export default function STNSRNPage() {
                     {completedProjects.map((p,i)=>{
                       const stn = p.materials.reduce((a,m)=>a+m.stnQty,0);
                       const srn = p.materials.reduce((a,m)=>a+m.srnQty,0);
-                      const bal = p.materials.reduce((a,m)=>a+m.balance,0);
+                      const bal = p.materials.reduce((a,m)=>a+m.returnQty,0);
                       const cleared = bal === 0;
                       return (
                         <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}>
