@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useUpload } from '@/lib/useUpload';
 import { T, card, badge, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
 import { STN_SRN_DATA } from '@/lib/stnSrnData';
+import { getPaidAmount, getProjectTransactions, PAYMENT_TRANSACTIONS, PaymentTransaction } from '@/lib/expensesData';
 
 // ── Mock project data ────────────────────────────────────────────
 const PROJECT_DB: Record<string,any> = {
@@ -49,7 +50,8 @@ const STATUS_FLOW = ['pending','in_progress','submitted','under_review','pm_appr
 const STATUS_LABELS: Record<string,string> = { pending:'Pending', in_progress:'In Progress', submitted:'Submitted', under_review:'Under Review', pm_approved:'PM Approved', billing_review:'Billing Review', completed:'Completed', delayed:'Delayed' };
 const STATUS_COLOR: Record<string,string>  = { pending:'#D97706', in_progress:'#2563EB', submitted:'#7C3AED', under_review:'#7C3AED', pm_approved:'#0D9488', billing_review:'#D97706', completed:'#16A34A', delayed:'#DC2626' };
 
-const ACTIVITY_LOG = [
+// Activity log is combined with payment transactions
+const BASE_ACTIVITY_LOG = [
   { date:'20/05/2025 04:45 PM', action:'Site Photos uploaded by vendor', by:'ABC Telecom Services', role:'Vendor'  },
   { date:'19/05/2025 05:00 PM', action:'Vendor assigned to project',     by:'Arun Kumar',           role:'PM'      },
   { date:'18/05/2025 03:00 PM', action:'PM review notes added',          by:'Arun Kumar',           role:'PM'      },
@@ -71,6 +73,7 @@ export default function ProjectDetailPage() {
   const isBilling  = ['super_admin','accounting_team'].includes(role);
 
   const [projects, setProjects] = useState(PROJECT_DB);
+  const [allTransactions, setAllTransactions] = React.useState(PAYMENT_TRANSACTIONS);
   const [editMode, setEditMode] = useState(false);
   const [saving,   setSaving]   = useState(false);
   const [toast,    setToast]    = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
@@ -164,7 +167,15 @@ export default function ProjectDetailPage() {
     </div>
   );
 
-  const roleColor: Record<string,string> = { Vendor:T.info, PM:T.primary, RM:T.success, Billing:'#7C3AED' };
+  const roleColor: Record<string,string> = { Vendor:T.info, PM:T.primary, RM:T.success, Billing:'#7C3AED', Payment:T.success };
+  const projectTxns = allTransactions.filter(t => t.projectId === p.id);
+  const txnLogs = projectTxns.map(t => ({
+    date: t.addedAt,
+    action: `Payment of ${fmt(t.amount)} — Txn: ${t.txnNumber}`,
+    by: t.addedBy,
+    role: 'Payment' as const,
+  }));
+  const ACTIVITY_LOG = [...txnLogs, ...BASE_ACTIVITY_LOG];
 
   return (
     <Layout>
@@ -244,8 +255,8 @@ export default function ProjectDetailPage() {
             {[
               { label:'PO Value',      key:'poValue',      color:T.text    },
               { label:'Billed Amount', key:'billedAmount', color:T.info    },
-              { label:'Paid Amount',   key:'paidAmount',   color:T.success },
-              { label:'Pending',       key:null,           color:T.warning, computed: p.billedAmount - p.paidAmount },
+              { label:'Paid Amount',   key:null,           color:T.success, computed: getPaidAmount(p.id, allTransactions) },
+              { label:'Pending',       key:null,           color:T.warning, computed: p.billedAmount - getPaidAmount(p.id, allTransactions) },
             ].map((r,i)=>(
               <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:`1px solid ${T.border}` }}>
                 <span style={{ fontSize:13, color:T.textMuted }}>{r.label}</span>
@@ -380,6 +391,52 @@ export default function ProjectDetailPage() {
           )}
         </div>
 
+
+        {/* ── Admin Utilisation Review (SA only) ── */}
+        {role === 'super_admin' && (() => {
+          const stnD = id ? STN_SRN_DATA.find(s => s.projectId === id) : null;
+          if (!stnD) return null;
+          const reviewItems = stnD.materials.filter(m => m.utilisedStatus === 'submitted' || m.utilisedStatus === 'pm_approved' || m.utilisedStatus === 'pm_rejected');
+          if (reviewItems.length === 0) return null;
+          return (
+            <div style={{ ...card, marginBottom:16 }}>
+              <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:6, paddingBottom:10, borderBottom:`2px solid ${T.primaryMid}` }}>
+                🔍 Utilisation Review (Admin)
+              </div>
+              <div style={{ fontSize:12, color:T.textMuted, marginBottom:16 }}>
+                Vendor utilisation submissions — you can approve or reject each item.
+              </div>
+              <div style={{ display:'flex', flexDirection:'column' as const, gap:12 }}>
+                {stnD.materials.map((item: any) => {
+                  const b = STATUS_BADGE_COLOR[item.utilisedStatus as keyof typeof STATUS_BADGE_COLOR] || STATUS_BADGE_COLOR.pending;
+                  return (
+                    <div key={item.code} style={{ border:`1.5px solid ${item.utilisedStatus==='pm_approved'?T.success:item.utilisedStatus==='pm_rejected'?T.danger:item.utilisedStatus==='submitted'?T.info:T.border}`, borderRadius:10, padding:14 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+                        <div>
+                          <div style={{ fontSize:11, fontWeight:700, color:T.primary }}>{item.code}</div>
+                          <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{item.description}</div>
+                          <div style={{ fontSize:11, color:T.textMuted }}>STN: {item.stnQty} {item.uom} | Vendor Input: {item.utilisedQty ?? 'Not submitted'} {item.uom}</div>
+                        </div>
+                        <span style={{ fontSize:11, fontWeight:700, color:b.color, background:b.bg, padding:'3px 10px', borderRadius:20 }}>{b.label}</span>
+                      </div>
+                      {item.utilisedStatus === 'submitted' && (
+                        <div style={{ display:'flex', gap:10, marginTop:8 }}>
+                          <button onClick={()=>{ setToast({ msg:`${item.description} approved!`, type:'success' }); }}
+                            style={{ ...btnPrimary, background:T.success, fontSize:12, padding:'6px 14px' }}>✅ Approve</button>
+                          <button onClick={()=>{ setToast({ msg:`${item.description} rejected.`, type:'info' }); }}
+                            style={{ ...btnSecondary, borderColor:T.danger, color:T.danger, fontSize:12, padding:'6px 14px' }}>❌ Reject</button>
+                        </div>
+                      )}
+                      {item.utilisedStatus === 'pm_approved' && (
+                        <div style={{ fontSize:12, color:T.success }}>✅ Approved — Return Qty: {item.returnQty} {item.uom}</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
         {/* ── 5. Billing Review Checklist ── */}
         {(isBilling || canEdit) && (
           <div style={{ ...card, marginBottom:16, border:`1.5px solid ${!isCompleted?T.border:'#7C3AED'}`, opacity:!['pm_approved','billing_review','completed'].includes(p.status)?0.5:1, position:'relative' as const }}>

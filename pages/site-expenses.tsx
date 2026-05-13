@@ -1,65 +1,94 @@
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import Toast from '@/components/Toast';
-import { T, card, badge, th, td, btnPrimary, inputStyle } from '@/lib/theme';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-
-const expenses = [
-  { id:'EXP-2025-0001', date:'20/05/2025', category:'Material Purchase', description:'Cement 53 Grade - 100 Bags', vendor:'ABC Constructions', amount:55000,  paidBy:'Project', status:'Approved' },
-  { id:'EXP-2025-0002', date:'19/05/2025', category:'Labour',            description:'Mason Labour Payment',       vendor:'XYZ Engineers',   amount:85000,  paidBy:'Project', status:'Approved' },
-  { id:'EXP-2025-0003', date:'18/05/2025', category:'Equipment',         description:'Concrete Vibrator Rental',   vendor:'Build Well',       amount:18500,  paidBy:'Project', status:'Pending'  },
-  { id:'EXP-2025-0004', date:'17/05/2025', category:'Transport',         description:'Truck Transportation',       vendor:'Shree Transport',  amount:14800,  paidBy:'Contractor', status:'Approved' },
-  { id:'EXP-2025-0005', date:'16/05/2025', category:'Material Purchase', description:'Steel Bar 16mm - 1 Ton',     vendor:'ABC Constructions',amount:72600,  paidBy:'Project', status:'Approved' },
-  { id:'EXP-2025-0006', date:'15/05/2025', category:'Labour',            description:'Helper Labour Payment',      vendor:'XYZ Engineers',   amount:42500,  paidBy:'Project', status:'Pending'  },
-  { id:'EXP-2025-0007', date:'14/05/2025', category:'Others',            description:'Site Office Stationery',     vendor:'Office Needs',     amount:3250,   paidBy:'Project', status:'Rejected' },
-  { id:'EXP-2025-0008', date:'13/05/2025', category:'Equipment',         description:'Generator Diesel',           vendor:'Build Well',       amount:21400,  paidBy:'Project', status:'Approved' },
-];
-
-const categoryColors: Record<string,string> = { 'Material Purchase':'#0D9488', Labour:'#2563EB', Equipment:'#D97706', Transport:'#7C3AED', Others:'#DC2626' };
-
-const pieData = [
-  { name:'Material', value:42.25, color:'#0D9488' },
-  { name:'Labour',   value:28.15, color:'#2563EB'  },
-  { name:'Equipment',value:14.35, color:'#D97706' },
-  { name:'Transport',value:8.65,  color:'#7C3AED'  },
-  { name:'Others',   value:6.60,  color:'#DC2626'   },
-];
+import { useAuth } from '@/context/AuthContext';
+import { T, card, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
+import { PAYMENT_TRANSACTIONS, VENDOR_PROJECTS, getPaidAmount, getProjectTransactions, PaymentTransaction } from '@/lib/expensesData';
 
 const fmt = (v: number) => `₹${v.toLocaleString('en-IN')}`;
 
+const VENDORS = Object.keys(VENDOR_PROJECTS);
+
 export default function SiteExpensesPage() {
-  const [search, setSearch] = useState('');
-  const [focused, setFocused] = useState(false);
+  const { profile } = useAuth();
+  const role          = profile?.role || 'viewer';
+  const isAccounting  = role === 'accounting_team' || role === 'super_admin';
+  const canAdd        = role === 'accounting_team';
+
+  const [transactions, setTransactions] = useState<PaymentTransaction[]>(PAYMENT_TRANSACTIONS);
+  const [selectedVendor,  setSelectedVendor]  = useState('');
+  const [selectedProject, setSelectedProject] = useState('');
   const [toast, setToast] = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
-  const [catFilter, setCatFilter] = useState('All');
+  const [saving, setSaving] = useState(false);
 
-  const categories = ['All','Material Purchase','Labour','Equipment','Transport','Others'];
-  const filtered = expenses.filter(e => {
-    if (catFilter !== 'All' && e.category !== catFilter) return false;
-    if (search) return e.description.toLowerCase().includes(search.toLowerCase()) || e.id.toLowerCase().includes(search.toLowerCase());
-    return true;
-  });
+  // Payment form
+  const [form, setForm] = useState({ amount:'', date:'', txnNumber:'', description:'' });
+  const [focused, setFocused] = useState<string|null>(null);
 
-  const total    = expenses.reduce((a,e)=>a+e.amount,0);
-  const approved = expenses.filter(e=>e.status==='Approved').reduce((a,e)=>a+e.amount,0);
-  const pending  = expenses.filter(e=>e.status==='Pending').reduce((a,e)=>a+e.amount,0);
+  const vendorProjects = selectedVendor ? VENDOR_PROJECTS[selectedVendor] || [] : [];
+  const projectTxns    = selectedProject ? getProjectTransactions(selectedProject, transactions) : [];
+  const totalPaid      = selectedProject ? getPaidAmount(selectedProject, transactions) : 0;
+  const selectedProjectData = vendorProjects.find(p => p.id === selectedProject);
+
+  const handleAddPayment = () => {
+    if (!selectedProject || !form.amount || !form.date || !form.txnNumber) {
+      setToast({ msg:'Please fill all required fields.', type:'error' });
+      return;
+    }
+    if (Number(form.amount) <= 0) {
+      setToast({ msg:'Amount must be greater than 0.', type:'error' });
+      return;
+    }
+    setSaving(true);
+    setTimeout(() => {
+      const newTxn: PaymentTransaction = {
+        id:          `TXN-${Date.now()}`,
+        projectId:   selectedProject,
+        vendor:      selectedVendor,
+        amount:      Number(form.amount),
+        date:        form.date,
+        txnNumber:   form.txnNumber,
+        description: form.description,
+        addedBy:     profile?.full_name || 'Accounting Team',
+        addedAt:     new Date().toLocaleString('en-IN'),
+      };
+      setTransactions(prev => [newTxn, ...prev]);
+      setForm({ amount:'', date:'', txnNumber:'', description:'' });
+      setToast({ msg:`Payment of ${fmt(Number(form.amount))} recorded successfully!`, type:'success' });
+      setSaving(false);
+    }, 600);
+  };
+
+  const inp = (label: string, field: string, type='text', placeholder='', required=false) => (
+    <div style={{ marginBottom:14 }}>
+      <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>
+        {label} {required && <span style={{ color:T.danger }}>*</span>}
+      </label>
+      <input type={type} value={(form as any)[field]}
+        onChange={e => setForm(p => ({ ...p, [field]: e.target.value }))}
+        onFocus={() => setFocused(field)} onBlur={() => setFocused(null)}
+        placeholder={placeholder}
+        style={{ ...inputStyle(focused===field), width:'100%', boxSizing:'border-box' as const }} />
+    </div>
+  );
 
   return (
     <Layout>
       <div className="fade-in">
+        {/* Summary KPIs */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
           {[
-            { label:'Total Expenses', value:fmt(total),    color:T.primary, icon:'💰' },
-            { label:'Approved',       value:fmt(approved), color:T.success, icon:'✅' },
-            { label:'Pending',        value:fmt(pending),  color:T.warning, icon:'⏳' },
-            { label:'This Month',     value:'₹7.85 L',     color:T.info,    icon:'📅' },
+            { label:'Total Transactions',  value:transactions.length,                                           color:T.primary, icon:'📄' },
+            { label:'Total Paid (All)',     value:fmt(transactions.reduce((a,t)=>a+t.amount,0)),                 color:T.success, icon:'💰' },
+            { label:'Vendors Paid',         value:new Set(transactions.map(t=>t.vendor)).size,                   color:T.info,    icon:'🏢' },
+            { label:'Projects with Payment',value:new Set(transactions.map(t=>t.projectId)).size,               color:'#7C3AED', icon:'📁' },
           ].map((s,i)=>(
             <div key={i} style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px' }}>
               <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:s.color }} />
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                 <div>
-                  <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase', letterSpacing:0.5, marginBottom:4 }}>{s.label}</div>
-                  <div style={{ fontSize:20, fontWeight:700, color:T.text }}>{s.value}</div>
+                  <div style={{ fontSize:10, color:T.textMuted, textTransform:'uppercase', letterSpacing:0.4, marginBottom:4 }}>{s.label}</div>
+                  <div style={{ fontSize:20, fontWeight:700, color:s.color }}>{s.value}</div>
                 </div>
                 <div style={{ fontSize:22 }}>{s.icon}</div>
               </div>
@@ -67,64 +96,178 @@ export default function SiteExpensesPage() {
           ))}
         </div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 260px', gap:14, marginBottom:16 }}>
-          <div style={card}>
-            <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:16, flexWrap:'wrap' }}>
-              <input value={search} onChange={e=>setSearch(e.target.value)} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} placeholder="Search expense…" style={{ ...inputStyle(focused), width:200 }} />
-              <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
-                {categories.map(f=>(
-                  <button key={f} onClick={()=>setCatFilter(f)} style={{ padding:'5px 10px', borderRadius:6, border:'1px solid', borderColor:catFilter===f?T.primary:T.border, background:catFilter===f?T.primaryLight:'#fff', color:catFilter===f?T.primary:T.textMuted, fontSize:11, cursor:'pointer', fontWeight:catFilter===f?600:400, whiteSpace:'nowrap' }}>{f}</button>
-                ))}
+        <div style={{ display:'grid', gridTemplateColumns:'280px 1fr', gap:16 }}>
+          {/* Left: Vendor + Project selector */}
+          <div>
+            <div style={card}>
+              <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:14 }}>Select Vendor & Project</div>
+
+              <div style={{ marginBottom:14 }}>
+                <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>Vendor</label>
+                <select value={selectedVendor} onChange={e=>{ setSelectedVendor(e.target.value); setSelectedProject(''); }}
+                  style={{ ...inputStyle(), width:'100%' }}>
+                  <option value="">— Select Vendor —</option>
+                  {VENDORS.map(v=><option key={v} value={v}>{v}</option>)}
+                </select>
               </div>
-              <div style={{ marginLeft:'auto' }}><button onClick={() => setToast({msg:'Feature: Add Expense form coming in next update.',type:'info'})} style={btnPrimary}>+ Add Expense</button></div>
+
+              {selectedVendor && vendorProjects.length > 0 && (
+                <div>
+                  <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:8 }}>Projects</label>
+                  {vendorProjects.map(p => {
+                    const paid   = getPaidAmount(p.id, transactions);
+                    const pending = p.billedAmount - paid;
+                    return (
+                      <div key={p.id} onClick={()=>setSelectedProject(p.id)}
+                        style={{ padding:'12px', borderRadius:9, marginBottom:8, cursor:'pointer', border:`1.5px solid ${selectedProject===p.id?T.primary:T.border}`, background:selectedProject===p.id?T.primaryLight:T.surface, transition:'all 0.15s' }}>
+                        <div style={{ fontSize:12, fontWeight:700, color:T.primary }}>{p.id}</div>
+                        <div style={{ fontSize:12, color:T.text, marginBottom:6 }}>{p.name}</div>
+                        <div style={{ fontSize:11, color:T.textMuted }}>Billed: <strong>{fmt(p.billedAmount)}</strong></div>
+                        <div style={{ fontSize:11, color:T.success }}>Paid: <strong>{fmt(paid)}</strong></div>
+                        {pending > 0 && <div style={{ fontSize:11, color:T.danger }}>Pending: <strong>{fmt(pending)}</strong></div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {selectedVendor && vendorProjects.length === 0 && (
+                <div style={{ fontSize:12, color:T.textMuted, textAlign:'center', padding:20 }}>No projects for this vendor.</div>
+              )}
             </div>
-            <div style={{ overflowX:'auto' }}>
-              <table style={{ width:'100%' }}>
-                <thead><tr>{['Expense No','Date','Category','Description','Vendor','Amount','Paid By','Status'].map(h=><th key={h} style={th}>{h}</th>)}</tr></thead>
-                <tbody>
-                  {filtered.map((e,i)=>(
-                    <tr key={i}
-                      onMouseEnter={r=>(r.currentTarget as HTMLTableRowElement).style.background=T.bg}
-                      onMouseLeave={r=>(r.currentTarget as HTMLTableRowElement).style.background='transparent'}>
-                      <td style={{ ...td, color:T.primary, fontWeight:600 }}>{e.id}</td>
-                      <td style={td}>{e.date}</td>
-                      <td style={td}><span style={{ fontSize:11, background:`${categoryColors[e.category]}15`, color:categoryColors[e.category], padding:'2px 8px', borderRadius:5, fontWeight:600, whiteSpace:'nowrap' }}>{e.category}</span></td>
-                      <td style={{ ...td, color:T.text, maxWidth:180 }}>{e.description}</td>
-                      <td style={td}>{e.vendor}</td>
-                      <td style={{ ...td, fontWeight:700, color:T.text }}>{fmt(e.amount)}</td>
-                      <td style={td}>{e.paidBy}</td>
-                      <td style={td}><span style={badge(e.status)}>{e.status}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div style={{ padding:'10px 0', borderTop:`1px solid ${T.border}`, fontSize:11, color:T.textDim, marginTop:4 }}>Showing {filtered.length} of {expenses.length} entries</div>
           </div>
 
-          <div style={card}>
-            <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>Expense by Category</div>
-            <ResponsiveContainer width="100%" height={160}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={68} dataKey="value" paddingAngle={3}>
-                  {pieData.map((d,i)=><Cell key={i} fill={d.color} />)}
-                </Pie>
-                <Tooltip formatter={(v:any)=>`${v}%`} contentStyle={{ fontSize:12, borderRadius:8 }} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div style={{ marginTop:8 }}>
-              {pieData.map((d,i)=>(
-                <div key={i} style={{ display:'flex', alignItems:'center', gap:7, marginBottom:8 }}>
-                  <div style={{ width:8, height:8, borderRadius:2, background:d.color, flexShrink:0 }} />
-                  <span style={{ fontSize:12, color:T.textMuted, flex:1 }}>{d.name}</span>
-                  <span style={{ fontSize:12, fontWeight:700, color:T.text }}>{d.value}%</span>
+          {/* Right: Transactions + Add payment */}
+          <div>
+            {!selectedProject ? (
+              <div style={{ ...card, textAlign:'center', padding:60, color:T.textDim }}>
+                <div style={{ fontSize:40, marginBottom:12 }}>💳</div>
+                <div style={{ fontSize:14 }}>Select a vendor and project to view and add payments.</div>
+              </div>
+            ) : (
+              <>
+                {/* Project financial summary */}
+                {selectedProjectData && (
+                  <div style={{ ...card, marginBottom:16, background:`linear-gradient(135deg, ${T.primaryLight}, #E0FDF4)`, border:`1px solid ${T.primaryMid}` }}>
+                    <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:12 }}>{selectedProject} — {selectedProjectData.name}</div>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12 }}>
+                      {[
+                        { label:'PO Value',      value:fmt(selectedProjectData.poValue),  color:T.text    },
+                        { label:'Billed Amount',  value:fmt(selectedProjectData.billedAmount), color:T.info },
+                        { label:'Total Paid',     value:fmt(totalPaid),                   color:T.success },
+                        { label:'Pending',        value:fmt(selectedProjectData.billedAmount - totalPaid), color:selectedProjectData.billedAmount-totalPaid>0?T.danger:T.success },
+                      ].map((s,i)=>(
+                        <div key={i} style={{ background:'rgba(255,255,255,0.7)', borderRadius:8, padding:'10px 14px' }}>
+                          <div style={{ fontSize:10, color:T.textDim, marginBottom:3 }}>{s.label}</div>
+                          <div style={{ fontSize:15, fontWeight:700, color:s.color }}>{s.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add payment form - accounting only */}
+                {canAdd && (
+                  <div style={{ ...card, marginBottom:16 }}>
+                    <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14, paddingBottom:10, borderBottom:`1px solid ${T.border}` }}>
+                      + Add Payment Record
+                    </div>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
+                      {inp('Amount (₹)', 'amount', 'number', 'e.g. 500000', true)}
+                      {inp('Payment Date', 'date', 'date', '', true)}
+                    </div>
+                    {inp('Bank Transaction Number', 'txnNumber', 'text', 'e.g. HDFC20250510001', true)}
+                    {inp('Description (optional)', 'description', 'text', 'e.g. Progress payment - 65% completion')}
+                    <div style={{ display:'flex', gap:10 }}>
+                      <button onClick={handleAddPayment} disabled={saving || !form.amount || !form.date || !form.txnNumber}
+                        style={{ ...btnPrimary, opacity:saving||!form.amount||!form.date||!form.txnNumber?0.6:1 }}>
+                        {saving ? 'Recording…' : '💰 Record Payment'}
+                      </button>
+                      <button onClick={()=>setForm({ amount:'', date:'', txnNumber:'', description:'' })} style={btnSecondary}>Clear</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Transaction history */}
+                <div style={card}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+                    <div style={{ fontSize:14, fontWeight:700, color:T.text }}>Payment History</div>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.success }}>Total Paid: {fmt(totalPaid)}</div>
+                  </div>
+
+                  {projectTxns.length === 0 ? (
+                    <div style={{ textAlign:'center', padding:30, color:T.textDim, fontSize:13 }}>No payments recorded for this project yet.</div>
+                  ) : (
+                    <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+                      <thead>
+                        <tr style={{ background:T.bg }}>
+                          {['Txn No','Amount','Date','Bank Txn Number','Description','Added By','Time'].map(h=>(
+                            <th key={h} style={{ padding:'8px 10px', fontSize:11, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:'left', borderBottom:`2px solid ${T.border}` }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {projectTxns.map((txn,i)=>(
+                          <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}
+                            onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.bg}
+                            onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
+                            <td style={{ padding:'10px', color:T.primary, fontWeight:700, fontSize:12 }}>{txn.id}</td>
+                            <td style={{ padding:'10px', fontWeight:700, color:T.success, fontSize:13 }}>{fmt(txn.amount)}</td>
+                            <td style={{ padding:'10px', fontSize:12 }}>{new Date(txn.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</td>
+                            <td style={{ padding:'10px', fontSize:12, fontFamily:'monospace', color:T.text }}>{txn.txnNumber}</td>
+                            <td style={{ padding:'10px', fontSize:12, color:T.textMuted }}>{txn.description||'—'}</td>
+                            <td style={{ padding:'10px', fontSize:11, color:T.textMuted }}>{txn.addedBy}</td>
+                            <td style={{ padding:'10px', fontSize:11, color:T.textDim }}>{txn.addedAt}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr style={{ background:T.primaryLight, borderTop:`2px solid ${T.primaryMid}` }}>
+                          <td style={{ padding:'10px', fontWeight:700, color:T.primary }} colSpan={1}>TOTAL</td>
+                          <td style={{ padding:'10px', fontWeight:700, color:T.success, fontSize:14 }}>{fmt(totalPaid)}</td>
+                          <td colSpan={5} />
+                        </tr>
+                      </tfoot>
+                    </table>
+                  )}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
         </div>
+
+        {/* All transactions table for SA/PM/RM */}
+        {!selectedProject && (
+          <div style={{ ...card, marginTop:16 }}>
+            <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>All Payment Transactions</div>
+            <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+              <thead>
+                <tr style={{ background:T.bg }}>
+                  {['Txn No','Project','Vendor','Amount','Date','Bank Txn Number','Added By'].map(h=>(
+                    <th key={h} style={{ padding:'8px 10px', fontSize:11, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:'left', borderBottom:`2px solid ${T.border}` }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.map((txn,i)=>(
+                  <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}
+                    onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.bg}
+                    onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
+                    <td style={{ padding:'9px 10px', color:T.primary, fontWeight:700, fontSize:12 }}>{txn.id}</td>
+                    <td style={{ padding:'9px 10px', color:T.primary, fontWeight:600, fontSize:12 }}>{txn.projectId}</td>
+                    <td style={{ padding:'9px 10px', fontSize:12 }}>{txn.vendor}</td>
+                    <td style={{ padding:'9px 10px', fontWeight:700, color:T.success }}>{fmt(txn.amount)}</td>
+                    <td style={{ padding:'9px 10px', fontSize:12 }}>{new Date(txn.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</td>
+                    <td style={{ padding:'9px 10px', fontSize:12, fontFamily:'monospace' }}>{txn.txnNumber}</td>
+                    <td style={{ padding:'9px 10px', fontSize:11, color:T.textMuted }}>{txn.addedBy}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
-        {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+      {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
     </Layout>
   );
 }
