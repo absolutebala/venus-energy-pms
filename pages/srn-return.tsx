@@ -80,8 +80,11 @@ export default function STNSRNPage() {
                 {m.returnQty > 0 && <span style={{ fontSize:10, marginLeft:4 }}>⚠️</span>}
               </td>
               <td style={{ padding:'9px 10px' }}>
-                <span style={{ fontSize:11, fontWeight:600, color:RETURN_COLOR[m.returnStatus], background:`${RETURN_COLOR[m.returnStatus]}18`, padding:'3px 10px', borderRadius:20 }}>
-                  {m.returnStatus}
+                <span style={{ fontSize:11, fontWeight:600,
+                  color:m.returnQty===0?'#16A34A':m.utilisedStatus==='pm_approved'?'#D97706':'#DC2626',
+                  background:m.returnQty===0?'#F0FDF4':m.utilisedStatus==='pm_approved'?'#FFFBEB':'#FEF2F2',
+                  padding:'3px 10px', borderRadius:20 }}>
+                  {m.returnQty===0?'Fully Returned':m.utilisedStatus==='pm_approved'?'Partially Returned':'Pending Return'}
                 </span>
               </td>
             </tr>
