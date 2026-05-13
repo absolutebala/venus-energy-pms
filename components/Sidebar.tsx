@@ -10,8 +10,6 @@ const ADMIN_NAV: NavItem[] = [
   { href:'/dashboard',         label:'Dashboard',          icon:'▦'  },
   { href:'/projects',          label:'Projects',           icon:'📁' },
   { href:'/vendors',           label:'Vendors',            icon:'🏢' },
-  { href:'/billing',           label:'Billing & Invoices', icon:'💳' },
-  { href:'/safety-compliance', label:'Safety Compliance',  icon:'🛡' },
   { href:'/srn-return',        label:'STN / SRN Status',   icon:'📦' },
   { href:'/site-expenses',     label:'Site Expenses',      icon:'💰' },
   { href:'/teams',             label:'Teams',              icon:'👤' },
@@ -30,7 +28,6 @@ const PM_NAV: NavItem[] = [
 
 const ACCOUNTING_NAV: NavItem[] = [
   { href:'/dashboard',  label:'Dashboard',         icon:'▦'  },
-  { href:'/billing',    label:'Billing & Invoices', icon:'💳' },
   { href:'/projects',   label:'Projects',           icon:'📁' },
   { href:'/reports',    label:'Reports',            icon:'📊' },
 ];

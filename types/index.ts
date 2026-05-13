@@ -18,23 +18,27 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export const ALL_MODULES = [
-  'dashboard', 'projects', 'vendors', 'billing',
-  'attendance', 'safety_compliance', 'srn_return',
+  'dashboard', 'projects', 'vendors', 'srn_return', 'ptw',
   'site_expenses', 'reports',
 ] as const;
 
-export type AppModule = (typeof ALL_MODULES)[number];
+export type AppModule =
+  | 'dashboard'
+  | 'projects'
+  | 'vendors'
+  | 'srn_return'
+  | 'site_expenses'
+  | 'ptw'
+  | 'reports';
 
 export const MODULE_LABELS: Record<AppModule, string> = {
-  dashboard:        'Dashboard',
-  projects:         'Projects',
-  vendors:          'Vendors',
-  billing:          'Billing & Invoices',
-  attendance:       'Attendance',
-  safety_compliance:'Safety Compliance',
-  srn_return:       'SRN Return',
-  site_expenses:    'Site Expenses',
-  reports:          'Reports',
+  dashboard:    'Dashboard',
+  projects:     'Projects',
+  vendors:      'Vendors',
+  srn_return:   'STN / SRN Status',
+  site_expenses:'Site Expenses',
+  ptw:          'PTW Management',
+  reports:      'Reports',
 };
 
 export interface Permission {
