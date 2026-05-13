@@ -5,6 +5,7 @@ import Layout from '@/components/Layout';
 import Toast from '@/components/Toast';
 import Modal from '@/components/Modal';
 import { useUpload } from '@/lib/useUpload';
+import { STN_SRN_DATA, MaterialItem, STATUS_BADGE_COLOR } from '@/lib/stnSrnData';
 import { T, card, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
 
 const PROJECTS: Record<string,any> = {
@@ -56,6 +57,118 @@ const F = ({ label, children, required }: any) => (
     {children}
   </div>
 );
+
+
+
+// Isolated PTW form component
+function PTWForm({ projectId }: { projectId: string }) {
+  const [form, setForm] = React.useState({
+    ticketId:        '',
+    supervisorName:  '',
+    dateFrom:        '',
+    dateTo:          '',
+    notes:           '',
+  });
+  const [saved, setSaved]   = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+
+  const inp = (label: string, field: string, type='text', placeholder='') => (
+    <div style={{ marginBottom:14 }}>
+      <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase' as const, letterSpacing:0.3 }}>{label}</label>
+      <input type={type} value={(form as any)[field]}
+        onChange={e=>{ const v=e.target.value; setForm(p=>({...p,[field]:v})); setSaved(false); }}
+        placeholder={placeholder}
+        style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
+        {inp('PTW Ticket ID *',            'ticketId',       'text', 'e.g. PTW-2025-1234')}
+        {inp('Supervisor Name (Vendor) *', 'supervisorName', 'text', 'Vendor site supervisor')}
+        {inp('Allowed Date From *',        'dateFrom',       'date')}
+        {inp('Allowed Date To *',          'dateTo',         'date')}
+      </div>
+      <div style={{ marginBottom:14 }}>
+        <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase' as const, letterSpacing:0.3 }}>Notes</label>
+        <textarea value={form.notes} onChange={e=>{ setForm(p=>({...p,notes:e.target.value})); setSaved(false); }} rows={2}
+          placeholder="Special conditions, restrictions, safety notes…"
+          style={{ ...inputStyle(), width:'100%', resize:'vertical' as const, boxSizing:'border-box' as const }} />
+      </div>
+
+      {form.dateFrom && form.dateTo && new Date(form.dateTo) < new Date() && (
+        <div style={{ background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:8, padding:'8px 14px', marginBottom:14, fontSize:12, color:T.danger, fontWeight:600 }}>
+          ⚠️ PTW has expired — Allowed Date To is in the past. Please renew.
+        </div>
+      )}
+      {form.dateFrom && form.dateTo && new Date(form.dateTo) >= new Date() && (
+        <div style={{ background:T.successBg, border:'1px solid #BBF7D0', borderRadius:8, padding:'8px 14px', marginBottom:14, fontSize:12, color:T.success, fontWeight:600 }}>
+          ✅ PTW valid until {form.dateTo}
+        </div>
+      )}
+
+      <button onClick={()=>{ setSaving(true); setTimeout(()=>{ setSaving(false); setSaved(true); },500); }}
+        disabled={saving||!form.ticketId||!form.supervisorName||!form.dateFrom||!form.dateTo}
+        style={{ ...btnPrimary, fontSize:13, opacity:!form.ticketId||!form.supervisorName||!form.dateFrom||!form.dateTo?0.5:1 }}>
+        {saving?'Saving…':saved?'✅ PTW Saved':'💾 Save PTW'}
+      </button>
+    </div>
+  );
+}
+
+// Isolated PM review form per item
+function PMReviewForm({ item, onApprove, onReject }: { item: MaterialItem; onApprove:(qty:number,remarks:string)=>void; onReject:(reason:string)=>void }) {
+  const [approvedQty, setApprovedQty] = React.useState<string>(String(item.utilisedQty ?? ''));
+  const [pmRemarks,   setPmRemarks]   = React.useState('');
+  const [rejectReason,setRejectReason]= React.useState('');
+  const [showReject,  setShowReject]  = React.useState(false);
+
+  return (
+    <div style={{ background:'#F8FAFC', border:`1px solid ${T.border}`, borderRadius:10, padding:14 }}>
+      <div style={{ fontSize:13, fontWeight:600, color:T.text, marginBottom:12 }}>Your Review</div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:'0 12px', marginBottom:12 }}>
+        <div>
+          <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.text, marginBottom:4 }}>
+            Approved Qty ({item.uom}) <span style={{ color:T.textDim }}>max {item.stnQty}</span>
+          </label>
+          <input type="number" min="0" max={item.stnQty} value={approvedQty}
+            onChange={e=>setApprovedQty(e.target.value)}
+            style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
+          {approvedQty !== '' && Number(approvedQty) <= item.stnQty && (
+            <div style={{ fontSize:11, color:T.warning, marginTop:3 }}>
+              Return to Indus: {item.stnQty - Number(approvedQty)} {item.uom}
+            </div>
+          )}
+        </div>
+        <div>
+          <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.text, marginBottom:4 }}>PM Remarks (optional)</label>
+          <input value={pmRemarks} onChange={e=>setPmRemarks(e.target.value)} placeholder="Notes on approval…"
+            style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
+        </div>
+      </div>
+
+      {showReject && (
+        <div style={{ marginBottom:12 }}>
+          <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.danger, marginBottom:4 }}>Rejection Reason *</label>
+          <input value={rejectReason} onChange={e=>setRejectReason(e.target.value)} placeholder="Why are you rejecting this utilisation?"
+            style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
+        </div>
+      )}
+
+      <div style={{ display:'flex', gap:10 }}>
+        <button onClick={()=>{ if(!approvedQty||Number(approvedQty)<0||Number(approvedQty)>item.stnQty) return; onApprove(Number(approvedQty),pmRemarks); }}
+          style={{ ...btnPrimary, background:T.success, fontSize:12, padding:'7px 16px' }}>
+          Approve
+        </button>
+        {!showReject
+          ? <button onClick={()=>setShowReject(true)} style={{ ...btnSecondary, borderColor:T.danger, color:T.danger, fontSize:12, padding:'7px 16px' }}>Reject</button>
+          : <button onClick={()=>{ if(!rejectReason.trim()) return; onReject(rejectReason); setShowReject(false); }} style={{ ...btnPrimary, background:T.danger, fontSize:12, padding:'7px 16px' }}>Confirm Reject</button>
+        }
+      </div>
+    </div>
+  );
+}
 
 export default function PMProjectDetailPage() {
   const router = useRouter();
