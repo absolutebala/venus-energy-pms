@@ -124,47 +124,65 @@ function SuperAdminDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
         <KpiCard label="Unassigned"        value={unassigned.length}                         icon="⚠️" color={T.warning} onClick={()=>router.push('/projects')} />
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:14, marginBottom:20 }}>
+        {/* Status Distribution */}
         <div style={card}>
-          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>Status Distribution</div>
-          <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-            <ResponsiveContainer width={140} height={140}>
-              <PieChart><Pie data={statusData} cx="50%" cy="50%" innerRadius={38} outerRadius={62} dataKey="value" paddingAngle={3}
+          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Status Distribution</div>
+          <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
+            <ResponsiveContainer width={110} height={110}>
+              <PieChart><Pie data={statusData} cx="50%" cy="50%" innerRadius={28} outerRadius={50} dataKey="value" paddingAngle={3}
                 onClick={(e:any)=>router.push(`/projects?status=${e.status}`)}>
                 {statusData.map((d,i)=><Cell key={i} fill={d.color} cursor="pointer" />)}
               </Pie><Tooltip contentStyle={{ fontSize:12 }} /></PieChart>
             </ResponsiveContainer>
-            <div style={{ flex:1 }}>
-              {statusData.map((d,i)=>(
-                <div key={i} onClick={()=>router.push(`/projects?status=${d.status}`)}
-                  style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, cursor:'pointer', padding:'2px 4px', borderRadius:5 }}
-                  onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}
-                  onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='transparent'}>
-                  <div style={{ width:8, height:8, borderRadius:2, background:d.color }} />
-                  <span style={{ fontSize:12, color:T.textMuted, flex:1 }}>{d.name}</span>
-                  <span style={{ fontSize:13, fontWeight:700, color:T.text }}>{d.value}</span>
-                </div>
-              ))}
-            </div>
           </div>
+          {statusData.map((d,i)=>(
+            <div key={i} onClick={()=>router.push(`/projects?status=${d.status}`)}
+              style={{ display:'flex', alignItems:'center', gap:8, marginBottom:7, cursor:'pointer', padding:'3px 5px', borderRadius:5 }}
+              onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}
+              onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='transparent'}>
+              <div style={{ width:8, height:8, borderRadius:2, background:d.color, flexShrink:0 }} />
+              <span style={{ fontSize:12, color:T.textMuted, flex:1 }}>{d.name}</span>
+              <span style={{ fontSize:12, fontWeight:700, color:T.text }}>{d.value}</span>
+            </div>
+          ))}
         </div>
+        {/* Projects by PM */}
         <div style={card}>
-          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>Projects by PM</div>
-          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Projects by PM</div>
+          <div style={{ display:'flex', flexDirection:'column' as const, gap:6 }}>
             {Object.entries(pmGroups).slice(0,5).map(([pm,ps]:any)=>(
               <div key={pm} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pm)}`)}
-                style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:T.bg, borderRadius:8, cursor:'pointer', transition:'all 0.15s', marginBottom:4 }}
+                style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', transition:'all 0.15s' }}
                 onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
                 onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
-                <div>
-                  <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{pm}</div>
-                  <div style={{ fontSize:11, color:T.textMuted }}>Click to view all projects</div>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+                  <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{pm}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10 }}>{(ps as any[]).length} →</span>
                 </div>
-                <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                  <span style={{ fontSize:11, color:T.info, background:`${T.info}18`, padding:'2px 8px', borderRadius:10 }}>{ps.filter((p:any)=>p.status==='in_progress').length} active</span>
-                  {ps.filter((p:any)=>p.status==='delayed').length>0 && <span style={{ fontSize:11, color:T.danger, background:`${T.danger}18`, padding:'2px 8px', borderRadius:10 }}>{ps.filter((p:any)=>p.status==='delayed').length} delayed</span>}
-                  <span style={{ fontSize:11, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'2px 10px', borderRadius:10 }}>{ps.length} →</span>
+                <div style={{ display:'flex', gap:5, flexWrap:'wrap' as const }}>
+                  {(ps as any[]).filter((p:any)=>p.status==='in_progress').length>0 && <span style={{ fontSize:10, color:T.info, background:`${T.info}15`, padding:'1px 7px', borderRadius:8 }}>{(ps as any[]).filter((p:any)=>p.status==='in_progress').length} active</span>}
+                  {(ps as any[]).filter((p:any)=>p.status==='delayed').length>0 && <span style={{ fontSize:10, color:T.danger, background:`${T.danger}15`, padding:'1px 7px', borderRadius:8 }}>{(ps as any[]).filter((p:any)=>p.status==='delayed').length} delayed</span>}
+                  {(ps as any[]).filter((p:any)=>['completed','billing_review'].includes(p.status)).length>0 && <span style={{ fontSize:10, color:T.success, background:`${T.success}15`, padding:'1px 7px', borderRadius:8 }}>{(ps as any[]).filter((p:any)=>['completed','billing_review'].includes(p.status)).length} done</span>}
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Projects by Vendor */}
+        <div style={card}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Projects by Vendor</div>
+          <div style={{ display:'flex', flexDirection:'column' as const, gap:6 }}>
+            {Object.entries(vendorGroups).slice(0,5).map(([v,ps]:any)=>(
+              <div key={v} onClick={()=>router.push(`/projects?vendor=${encodeURIComponent(v)}`)}
+                style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', transition:'all 0.15s' }}
+                onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
+                onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+                  <span style={{ fontSize:12, fontWeight:600, color:T.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const, maxWidth:160 }}>{v}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10, flexShrink:0 }}>{(ps as any[]).length} →</span>
+                </div>
+                <div style={{ fontSize:11, color:T.textMuted }}>₹{((ps as any[]).reduce((a:number,p:any)=>a+p.poValue,0)/100000).toFixed(1)}L total PO</div>
               </div>
             ))}
           </div>
@@ -189,15 +207,12 @@ function SuperAdminDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
         </div>
       )}
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
-        <div style={card}>
-          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
-            <div style={{ fontSize:14, fontWeight:600, color:T.text }}>Recent Projects</div>
-            <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>View All →</Link>
-          </div>
-          <table style={{ width:'100%' }}><TableHead /><tbody>{recent.map(p=><ProjectRow key={p.id} p={p} href={`/projects/${p.id}`} />)}</tbody></table>
+      <div style={{ ...card, marginBottom:20 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text }}>Recent Projects</div>
+          <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none', fontWeight:500 }}>View All →</Link>
         </div>
-
+        <table style={{ width:'100%' }}><TableHead /><tbody>{recent.map(p=><ProjectRow key={p.id} p={p} href={`/projects/${p.id}`} />)}</tbody></table>
       </div>
 
       <div style={card}>
