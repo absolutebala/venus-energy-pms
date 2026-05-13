@@ -4,7 +4,8 @@ export type UserRole =
   | 'project_manager'
   | 'site_engineer'
   | 'viewer'
-  | 'vendor';
+  | 'vendor'
+  | 'accounting_team';
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin:     'Super Admin',
@@ -13,6 +14,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   site_engineer:   'Site Engineer',
   viewer:          'Viewer',
   vendor:          'Vendor',
+  accounting_team: 'Accounting Team',
 };
 
 export const ALL_MODULES = [
