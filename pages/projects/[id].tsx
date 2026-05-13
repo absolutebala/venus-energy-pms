@@ -119,11 +119,11 @@ export default function ProjectDetailPage() {
       <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>{label}</label>
       {editMode && !readOnly && canEdit ? (
         options ? (
-          <select value={(form as any)[key]} onChange={e=>setForm(f=>({...f,[key]:e.target.value}))} style={{ ...inputStyle(), width:'100%' }}>
+          <select value={(form as any)[key]} onChange={e=>setForm((f:any)=>({...f,[key]:e.target.value}))} style={{ ...inputStyle(), width:'100%' }}>
             {options.map(o=><option key={o}>{o}</option>)}
           </select>
         ) : (
-          <input type={type} value={(form as any)[key]||''} onChange={e=>setForm(f=>({...f,[key]:e.target.value}))}
+          <input type={type} value={(form as any)[key]||''} onChange={e=>setForm((f:any)=>({...f,[key]:e.target.value}))}
             style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
         )
       ) : (
@@ -233,7 +233,7 @@ export default function ProjectDetailPage() {
             <div style={{ marginBottom:14 }}>
               <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Remarks</label>
               {editMode && canEdit
-                ? <textarea value={form.remarks||''} onChange={e=>setForm(f=>({...f,remarks:e.target.value}))} rows={3} style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
+                ? <textarea value={form.remarks||''} onChange={e=>setForm((f:any)=>({...f,remarks:e.target.value}))} rows={3} style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
                 : <div style={{ fontSize:13, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>{p.remarks||'—'}</div>
               }
             </div>
@@ -250,7 +250,7 @@ export default function ProjectDetailPage() {
               <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:`1px solid ${T.border}` }}>
                 <span style={{ fontSize:13, color:T.textMuted }}>{r.label}</span>
                 {editMode && canEditFin && r.key ? (
-                  <input type="number" value={(form as any)[r.key]||0} onChange={e=>setForm(f=>({...f,[r.key!]:Number(e.target.value)}))}
+                  <input type="number" value={(form as any)[r.key]||0} onChange={e=>setForm((f:any)=>({...f,[r.key!]:Number(e.target.value)}))}
                     style={{ ...inputStyle(), width:160, textAlign:'right' as const }} />
                 ) : (
                   <span style={{ fontSize:14, fontWeight:700, color:r.color }}>{fmt(r.computed !== undefined ? r.computed : (p as any)[r.key!])}</span>
@@ -280,7 +280,7 @@ export default function ProjectDetailPage() {
           <div style={{ marginBottom:14 }}>
             <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Work Scope</label>
             {editMode && canEdit && !isCompleted
-              ? <textarea value={form.workScope||''} onChange={e=>setForm(f=>({...f,workScope:e.target.value}))} rows={2} style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
+              ? <textarea value={form.workScope||''} onChange={e=>setForm((f:any)=>({...f,workScope:e.target.value}))} rows={2} style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
               : <div style={{ fontSize:13, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>{p.workScope||'—'}</div>
             }
           </div>
@@ -340,7 +340,7 @@ export default function ProjectDetailPage() {
                   { label:'STN Date',   value:stnData.stnDate,      color:T.primary },
                   { label:'SRN Date',   value:stnData.srnDate||'Pending', color:stnData.srnDate?T.success:T.danger },
                   { label:'Items Issued',  value:stnData.materials.reduce((a,m)=>a+m.stnQty,0), color:T.text },
-                  { label:'Balance Pending', value:stnData.materials.reduce((a,m)=>a+m.balance,0), color:stnData.materials.some(m=>m.balance>0)?T.danger:T.success },
+                  { label:'Balance Pending', value:stnData.materials.reduce((a,m)=>a+m.returnQty,0), color:stnData.materials.some(m=>m.returnQty>0)?T.danger:T.success },
                 ].map((s,i)=>(
                   <div key={i} style={{ background:T.bg, borderRadius:8, padding:'10px 14px' }}>
                     <div style={{ fontSize:11, color:T.textDim, marginBottom:3 }}>{s.label}</div>
@@ -364,10 +364,10 @@ export default function ProjectDetailPage() {
                       <td style={{ padding:'9px 10px', fontSize:12, color:T.textMuted }}>{m.uom}</td>
                       <td style={{ padding:'9px 10px', fontWeight:600, textAlign:'right' as const }}>{m.stnQty}</td>
                       <td style={{ padding:'9px 10px', fontWeight:600, color:T.success, textAlign:'right' as const }}>{m.srnQty}</td>
-                      <td style={{ padding:'9px 10px', fontWeight:700, color:m.balance>0?T.danger:T.success, textAlign:'right' as const }}>{m.balance}</td>
+                      <td style={{ padding:'9px 10px', fontWeight:700, color:m.returnQty>0?T.danger:T.success, textAlign:'right' as const }}>{m.returnQty}</td>
                       <td style={{ padding:'9px 10px' }}>
-                        <span style={{ fontSize:11, fontWeight:600, color:m.balance===0?T.success:m.returnStatus==='Partially Returned'?'#D97706':T.danger, background:m.balance===0?T.successBg:m.returnStatus==='Partially Returned'?'#FFFBEB':'#FEF2F2', padding:'2px 8px', borderRadius:10 }}>
-                          {m.returnStatus}
+                        <span style={{ fontSize:11, fontWeight:600, color:m.returnQty===0?T.success:m.utilisedStatus==='pm_approved'?'#D97706':T.danger, background:m.returnQty===0?T.successBg:m.utilisedStatus==='pm_approved'?'#FFFBEB':'#FEF2F2', padding:'2px 8px', borderRadius:10 }}>
+                          {m.returnQty===0?'Fully Returned':m.utilisedStatus==='pm_approved'?'Partially Returned':'Pending Return'}
                         </span>
                       </td>
                     </tr>
