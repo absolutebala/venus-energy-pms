@@ -21,6 +21,32 @@ const DOC_TYPES = [
   { key:'drawing_document', label:'Drawing Document', desc:'As-built drawings of completed work',                     icon:'📐', accept:'.pdf,.dwg,.png,.jpg' },
 ];
 
+
+// Mock allocation items from PM assignment
+const ALLOCATION_ITEMS: Record<string, any[]> = {
+  'VE-2025-001': [
+    { code:'CIV-1001', desc:'Concrete M30',         uom:'Cum', qty:800, rate:6500, amount:5200000, stage:'Foundation',  status:'In Progress' },
+    { code:'CIV-1002', desc:'Rebar Fe500',           uom:'MT',  qty:20,  rate:62000,amount:1240000, stage:'Foundation',  status:'Not Started' },
+    { code:'CIV-1003', desc:'Shuttering Plywood',    uom:'Nos', qty:450, rate:1850, amount:832500,  stage:'Structure',   status:'In Progress' },
+  ],
+  'VE-2025-004': [
+    { code:'FIB-1001', desc:'Fiber Cable 24-Core',   uom:'RMT', qty:4500,rate:180,  amount:810000,  stage:'Laying',      status:'In Progress' },
+    { code:'FIB-1002', desc:'Fiber Duct 50mm',       uom:'RMT', qty:4500,rate:95,   amount:427500,  stage:'Ducting',     status:'Not Started' },
+  ],
+};
+
+const PROJECT_EXPENSES: Record<string, any[]> = {
+  'VE-2025-001': [
+    { type:'Labour',    desc:'Foundation crew wages',    amount:45000, date:'18/05/2025', status:'Approved' },
+    { type:'Material',  desc:'Aggregate and sand supply', amount:82000, date:'17/05/2025', status:'Approved' },
+    { type:'Transport', desc:'Material transportation',   amount:12000, date:'15/05/2025', status:'Pending'  },
+  ],
+  'VE-2025-004': [
+    { type:'Labour',    desc:'Fiber laying crew',         amount:38000, date:'19/05/2025', status:'Approved' },
+    { type:'Equipment', desc:'Trenching machine rental',  amount:25000, date:'18/05/2025', status:'Pending'  },
+  ],
+};
+
 const WORK_STATUSES = ['Pending','In Progress','On Hold','Completed'];
 
 export default function VendorProjectUpdatePage() {
@@ -146,6 +172,81 @@ export default function VendorProjectUpdatePage() {
 
         <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:16, alignItems:'start' }}>
           <div>
+
+            {/* Allocation Items - from PM assignment */}
+            <div style={{ ...card, marginBottom:16 }}>
+              <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:5 }}>📦 Your Work Allocation</div>
+              <div style={{ fontSize:12, color:T.textMuted, marginBottom:14 }}>Items allocated to you by the Project Manager for this project.</div>
+              {(ALLOCATION_ITEMS[id as string] || []).length > 0 ? (
+                <>
+                  <div style={{ overflowX:'auto' as const }}>
+                    <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+                      <thead>
+                        <tr style={{ background:T.bg }}>
+                          {['Item Code','Description','UOM','Qty','Rate (₹)','Allocation Amt (₹)','Stage','Status'].map(h=>(
+                            <th key={h} style={{ padding:'8px', fontSize:11, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:'left', borderBottom:`2px solid ${T.border}`, whiteSpace:'nowrap' as const }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(ALLOCATION_ITEMS[id as string] || []).map((item: any, i: number) => (
+                          <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}>
+                            <td style={{ padding:'9px 8px', color:T.primary, fontWeight:600, fontSize:12 }}>{item.code}</td>
+                            <td style={{ padding:'9px 8px', fontSize:13 }}>{item.desc}</td>
+                            <td style={{ padding:'9px 8px', fontSize:12 }}>{item.uom}</td>
+                            <td style={{ padding:'9px 8px', fontSize:12, textAlign:'right' as const }}>{item.qty.toLocaleString('en-IN')}</td>
+                            <td style={{ padding:'9px 8px', fontSize:12, textAlign:'right' as const }}>₹{item.rate.toLocaleString('en-IN')}</td>
+                            <td style={{ padding:'9px 8px', fontWeight:700, color:T.primary, whiteSpace:'nowrap' as const }}>₹{item.amount.toLocaleString('en-IN')}</td>
+                            <td style={{ padding:'9px 8px', fontSize:12 }}>{item.stage}</td>
+                            <td style={{ padding:'9px 8px' }}>
+                              <span style={{ fontSize:11, fontWeight:600, color:item.status==='In Progress'?T.info:item.status==='Completed'?T.success:T.textDim, background:item.status==='In Progress'?T.infoBg:item.status==='Completed'?T.successBg:T.bg, padding:'2px 8px', borderRadius:10 }}>{item.status}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style={{ display:'flex', justifyContent:'flex-end', marginTop:12, padding:'10px 14px', background:T.primaryLight, borderRadius:8 }}>
+                    <span style={{ fontSize:13, fontWeight:700, color:T.primary }}>
+                      Total Allocation: ₹{(ALLOCATION_ITEMS[id as string]||[]).reduce((a:number,i:any)=>a+i.amount,0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ textAlign:'center', padding:30, color:T.textDim, fontSize:13 }}>No items allocated yet. Contact your Project Manager.</div>
+              )}
+            </div>
+
+            {/* Project Expenses */}
+            <div style={{ ...card, marginBottom:16 }}>
+              <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:5 }}>💰 Project Expenses</div>
+              <div style={{ fontSize:12, color:T.textMuted, marginBottom:14 }}>Expenses logged for your work on this project.</div>
+              {(PROJECT_EXPENSES[id as string] || []).length > 0 ? (
+                <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+                  <thead>
+                    <tr style={{ background:T.bg }}>
+                      {['Type','Description','Amount (₹)','Date','Status'].map(h=>(
+                        <th key={h} style={{ padding:'8px', fontSize:11, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:'left', borderBottom:`2px solid ${T.border}` }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(PROJECT_EXPENSES[id as string]||[]).map((exp: any, i: number) => (
+                      <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}>
+                        <td style={{ padding:'9px 8px' }}><span style={{ fontSize:11, fontWeight:600, background:T.primaryLight, color:T.primary, padding:'2px 8px', borderRadius:5 }}>{exp.type}</span></td>
+                        <td style={{ padding:'9px 8px', fontSize:13 }}>{exp.desc}</td>
+                        <td style={{ padding:'9px 8px', fontWeight:600 }}>₹{exp.amount.toLocaleString('en-IN')}</td>
+                        <td style={{ padding:'9px 8px', fontSize:12, color:T.textDim }}>{exp.date}</td>
+                        <td style={{ padding:'9px 8px' }}><span style={{ fontSize:11, fontWeight:600, color:exp.status==='Approved'?T.success:T.warning, background:exp.status==='Approved'?T.successBg:T.warningBg, padding:'2px 8px', borderRadius:10 }}>{exp.status}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ textAlign:'center', padding:30, color:T.textDim, fontSize:13 }}>No expenses recorded for this project yet.</div>
+              )}
+            </div>
+
             {/* Work Status */}
             <div style={{ ...card, marginBottom:16 }}>
               <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14, paddingBottom:10, borderBottom:`1px solid ${T.border}` }}>📊 Work Status Update</div>
