@@ -231,7 +231,7 @@ function RegionManagerDashboard({ projects }: { projects: typeof ALL_PROJECTS })
   const router = useRouter();
   const [globalView, setGlobalView] = useState(false);
   const myProjects = globalView ? projects : projects.filter(p=>p.rm==='Ramesh Kumar');
-  const myPMs = [...new Set(myProjects.map(p=>p.pm).filter(Boolean))];
+  const myPMs = Array.from(new Set(myProjects.map(p=>p.pm).filter(Boolean))) as string[];
 
   return (
     <div>
