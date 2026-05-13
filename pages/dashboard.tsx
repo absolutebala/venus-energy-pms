@@ -197,21 +197,7 @@ function SuperAdminDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
           </div>
           <table style={{ width:'100%' }}><TableHead /><tbody>{recent.map(p=><ProjectRow key={p.id} p={p} href={`/projects/${p.id}`} />)}</tbody></table>
         </div>
-        <div style={card}>
-          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Projects by Vendor</div>
-          {Object.entries(vendorGroups).slice(0,5).map(([v,ps]:any)=>(
-            <div key={v} onClick={()=>router.push(`/projects?vendor=${encodeURIComponent(v)}`)}
-              style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:T.bg, borderRadius:8, marginBottom:6, cursor:'pointer', transition:'all 0.15s' }}
-              onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
-              onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
-              <div>
-                <div style={{ fontSize:12, color:T.text, fontWeight:600 }}>{v}</div>
-                <div style={{ fontSize:11, color:T.textMuted }}>{fmt(ps.reduce((a:number,p:any)=>a+p.poValue,0))} total PO value</div>
-              </div>
-              <span style={{ fontSize:11, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'2px 10px', borderRadius:10 }}>{ps.length} projects →</span>
-            </div>
-          ))}
-        </div>
+
       </div>
 
       <div style={card}>
