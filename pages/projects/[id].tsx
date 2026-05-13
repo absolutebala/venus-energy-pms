@@ -408,7 +408,13 @@ export default function ProjectDetailPage() {
               </div>
               <div style={{ display:'flex', flexDirection:'column' as const, gap:12 }}>
                 {stnD.materials.map((item: any) => {
-                  const b = STATUS_BADGE_COLOR[item.utilisedStatus as keyof typeof STATUS_BADGE_COLOR] || STATUS_BADGE_COLOR.pending;
+                  const BADGE: Record<string,{color:string;bg:string;label:string}> = {
+                    pending:     { color:'#64748B', bg:'#F1F5F9', label:'Pending Input'   },
+                    submitted:   { color:'#2563EB', bg:'#EFF6FF', label:'Submitted to PM' },
+                    pm_approved: { color:'#16A34A', bg:'#F0FDF4', label:'PM Approved'     },
+                    pm_rejected: { color:'#DC2626', bg:'#FEF2F2', label:'PM Rejected'     },
+                  };
+                  const b = BADGE[item.utilisedStatus] || BADGE.pending;
                   return (
                     <div key={item.code} style={{ border:`1.5px solid ${item.utilisedStatus==='pm_approved'?T.success:item.utilisedStatus==='pm_rejected'?T.danger:item.utilisedStatus==='submitted'?T.info:T.border}`, borderRadius:10, padding:14 }}>
                       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
