@@ -206,6 +206,7 @@ function SuperAdminDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
         <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>🔔 Alerts</div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12 }}>
           {[
+            { type:'#7C3AED', title:'Material Returns Overdue', count:3, link:'/srn-return', msg:'3 projects with pending material returns to Indus' },
             { type:T.danger,  title:'Delayed >60d',       count:projects.filter(p=>p.aging>60).length,             link:'/projects?status=delayed' },
             { type:T.warning, title:'No PM Assigned',      count:projects.filter(p=>!p.pm).length,                  link:'/projects'                },
             { type:'#7C3AED', title:'Pending Billing',     count:projects.filter(p=>p.status==='billing_review').length, link:'/billing'             },

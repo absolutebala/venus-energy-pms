@@ -1,149 +1,212 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
 import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
 import { useAuth } from '@/context/AuthContext';
-import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
+import { useUpload } from '@/lib/useUpload';
+import { T, card, badge, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
+import { STN_SRN_DATA } from '@/lib/stnSrnData';
 
-const allProjects: Record<string, any> = {
-  'VE-2025-001': { id:'VE-2025-001', poNo:'PO-2025-001', indusId:'IND-1001', site:'Chennai North',     type:'Tower Erection',       vendor:'ABC Telecom Services',  poValue:1850000, aging:12,  status:'in_progress',  progress:65,  region:'TN', pm:'Arun Kumar',   rm:'Ramesh Kumar', startDate:'01/04/2025', endDate:'30/06/2025', remarks:'Foundation work and reinforcement in progress.' },
-  'VE-2025-002': { id:'VE-2025-002', poNo:'PO-2025-001', indusId:'IND-1002', site:'Bengaluru East',    type:'Tower Maintenance',    vendor:'XYZ Infra Solutions',                           poValue:420000,  aging:78,  status:'submitted',    progress:80,  region:'KA', pm:'Priya Sharma', rm:'Ramesh Kumar', startDate:'01/03/2025', endDate:'30/04/2025', remarks:'Vendor has submitted for PM review.' },
-  'VE-2025-003': { id:'VE-2025-003', poNo:'PO-2025-002', indusId:'IND-1003', site:'Hyderabad Central', type:'Component Replacement',vendor:'TowerTech Pvt Ltd',                             poValue:760000,  aging:22,  status:'pm_approved',  progress:100, region:'TS', pm:'Arun Kumar',   rm:'Ramesh Kumar', startDate:'01/04/2025', endDate:'20/05/2025', remarks:'PM approved. Awaiting billing review.' },
-  'VE-2025-004': { id:'VE-2025-004', poNo:'PO-2025-002', indusId:'IND-1004', site:'Chennai South',     type:'Fiber Installation',   vendor:'NetConnect Services',                           poValue:1230000, aging:12,  status:'in_progress',  progress:45,  region:'TN', pm:'Vijay Kumar',  rm:'Ramesh Kumar', startDate:'15/04/2025', endDate:'15/07/2025', remarks:'Fiber laying in progress.' },
-  'VE-2025-005': { id:'VE-2025-005', poNo:'PO-2025-003', indusId:'IND-1005', site:'Coimbatore',        type:'Tower Erection',       vendor:'ABC Telecom Services',                          poValue:2200000, aging:8,   status:'pending',      progress:10,  region:'TN', pm:'Arun Kumar',   rm:'Suresh Patel', startDate:'15/05/2025', endDate:'31/08/2025', remarks:'Site survey completed.' },
-  'VE-2025-006': { id:'VE-2025-006', poNo:'PO-2025-003', indusId:'IND-1006', site:'Pune West',         type:'Civil Works',          vendor:'BuildRight Constructions',                      poValue:540000,  aging:95,  status:'delayed',      progress:20,  region:'MH', pm:'Pooja Mehta',  rm:'Amit Sharma',  startDate:'01/02/2025', endDate:'30/04/2025', remarks:'Severely delayed.' },
-  'VE-2025-007': { id:'VE-2025-007', poNo:'PO-2025-004', indusId:'IND-1007', site:'Mumbai Central',    type:'Power Works',          vendor:'PowerSys India',                                poValue:890000,  aging:33,  status:'billing_review',progress:100, region:'MH', pm:'Pooja Mehta',  rm:'Amit Sharma',  startDate:'01/04/2025', endDate:'31/05/2025', remarks:'Billing checklist pending.' },
-  'VE-2025-008': { id:'VE-2025-008', poNo:'PO-2025-004', indusId:'IND-1008', site:'Delhi NCR',         type:'Tower Maintenance',    vendor:'XYZ Infra Solutions',                           poValue:380000,  aging:18,  status:'in_progress',  progress:55,  region:'DL', pm:'Rajeev Singh', rm:'Amit Sharma',  startDate:'01/05/2025', endDate:'31/05/2025', remarks:'Antenna replacement done.' },
-  'VE-2025-009': { id:'VE-2025-009', poNo:'PO-2025-005', indusId:'IND-1009', site:'Kochi',             type:'Component Replacement',vendor:'TowerTech Pvt Ltd',                             poValue:650000,  aging:62,  status:'delayed',      progress:40,  region:'KL', pm:'Vijay Kumar',  rm:'Suresh Patel', startDate:'01/03/2025', endDate:'30/04/2025', remarks:'Awaiting parts.' },
-  'VE-2025-010': { id:'VE-2025-010', poNo:'PO-2025-005', indusId:'IND-1010', site:'Kolkata North',     type:'Fiber Installation',   vendor:'NetConnect Services',                           poValue:975000,  aging:5,   status:'pending',      progress:0,   region:'WB', pm:'Neha Verma',   rm:'Suresh Patel', startDate:'01/06/2025', endDate:'31/08/2025', remarks:'Not yet started.' },
+// ── Mock project data ────────────────────────────────────────────
+const PROJECT_DB: Record<string,any> = {
+  'VE-2025-001': { id:'VE-2025-001', projectName:'Chennai Metro Phase II', poNo:'PO-2025-001', indusId:'IND-1001', site:'Chennai North', region:'Tamil Nadu', type:'Tower Erection', status:'in_progress', progress:65, poValue:1850000, billedAmount:1200000, paidAmount:950000, startDate:'2025-04-01', endDate:'2025-06-30', rm:'Ramesh Kumar', pm:'Arun Kumar', vendor:'ABC Telecom Services', vendorContact:'Rajesh Kumar', vendorPhone:'+91 98765 43210', vendorEmail:'rajesh@abctelecom.com', workScope:'Civil foundation and structure works for Station 3 & 4.', remarks:'Foundation work in progress.' },
+  'VE-2025-002': { id:'VE-2025-002', projectName:'Bengaluru East Maint.',  poNo:'PO-2025-001', indusId:'IND-1002', site:'Bengaluru East', region:'Karnataka',  type:'Tower Maintenance', status:'delayed', progress:30, poValue:420000, billedAmount:150000, paidAmount:100000, startDate:'2025-03-01', endDate:'2025-04-30', rm:'Amit Sharma', pm:'Priya Sharma', vendor:'XYZ Infra Solutions', vendorContact:'Priya Sharma', vendorPhone:'+91 98765 43211', vendorEmail:'priya@xyzinfra.com', workScope:'Antenna replacement and tower painting.', remarks:'Delayed due to material shortage.' },
+  'VE-2025-003': { id:'VE-2025-003', projectName:'Hyderabad Component',    poNo:'PO-2025-002', indusId:'IND-1003', site:'Hyderabad',      region:'Tamil Nadu', type:'Component Replace', status:'billing_review', progress:100, poValue:760000, billedAmount:760000, paidAmount:600000, startDate:'2025-04-10', endDate:'2025-05-20', rm:'Ramesh Kumar', pm:'Arun Kumar', vendor:'TowerTech Pvt Ltd', vendorContact:'Arun Singh', vendorPhone:'+91 98765 43212', vendorEmail:'arun@towertech.com', workScope:'RRU replacement and fiber termination.', remarks:'PM approved. Pending billing.' },
+  'VE-2025-004': { id:'VE-2025-004', projectName:'Chennai Fiber Network',  poNo:'PO-2025-002', indusId:'IND-1004', site:'Chennai South', region:'Tamil Nadu', type:'Fiber Installation', status:'in_progress', progress:45, poValue:1230000, billedAmount:500000, paidAmount:400000, startDate:'2025-04-20', endDate:'2025-07-15', rm:'Ramesh Kumar', pm:'Vijay Kumar', vendor:'', vendorContact:'', vendorPhone:'', vendorEmail:'', workScope:'Fiber laying along Station 5-12.', remarks:'Vendor not assigned yet.' },
+  'VE-2025-005': { id:'VE-2025-005', projectName:'Coimbatore Tower',       poNo:'PO-2025-003', indusId:'IND-1005', site:'Coimbatore',   region:'Tamil Nadu', type:'Tower Erection',    status:'pending', progress:10, poValue:2200000, billedAmount:0, paidAmount:0, startDate:'2025-05-01', endDate:'2025-08-31', rm:'Ramesh Kumar', pm:'Arun Kumar', vendor:'', vendorContact:'', vendorPhone:'', vendorEmail:'', workScope:'New tower erection at Coimbatore North.', remarks:'Site survey completed.' },
+  'VE-2025-006': { id:'VE-2025-006', projectName:'Pune Civil Works',       poNo:'PO-2025-003', indusId:'IND-1006', site:'Pune West',     region:'Maharashtra', type:'Civil Works',     status:'delayed', progress:20, poValue:540000, billedAmount:100000, paidAmount:80000, startDate:'2025-02-01', endDate:'2025-04-30', rm:'Amit Sharma', pm:'Pooja Mehta', vendor:'BuildRight Constructions', vendorContact:'Vikram Patel', vendorPhone:'+91 98765 43214', vendorEmail:'vikram@buildright.com', workScope:'RCC foundation and retaining wall.', remarks:'Severely delayed.' },
+  'VE-2025-007': { id:'VE-2025-007', projectName:'Mumbai Power Works',     poNo:'PO-2025-004', indusId:'IND-1007', site:'Mumbai Central', region:'Maharashtra', type:'Power Works',   status:'billing_review', progress:100, poValue:890000, billedAmount:890000, paidAmount:700000, startDate:'2025-04-05', endDate:'2025-05-31', rm:'Amit Sharma', pm:'Pooja Mehta', vendor:'PowerSys India', vendorContact:'Sunita Reddy', vendorPhone:'+91 98765 43215', vendorEmail:'sunita@powersys.com', workScope:'DG set installation and power cabling.', remarks:'Completed. Billing review pending.' },
+  'VE-2025-008': { id:'VE-2025-008', projectName:'Delhi NCR Maintenance',  poNo:'PO-2025-004', indusId:'IND-1008', site:'Delhi NCR',     region:'Delhi',      type:'Tower Maintenance', status:'in_progress', progress:55, poValue:380000, billedAmount:200000, paidAmount:180000, startDate:'2025-05-01', endDate:'2025-05-31', rm:'Amit Sharma', pm:'Rajeev Singh', vendor:'XYZ Infra Solutions', vendorContact:'Priya Sharma', vendorPhone:'+91 98765 43211', vendorEmail:'priya@xyzinfra.com', workScope:'Tower antenna realignment.', remarks:'In progress.' },
+  'VE-2025-009': { id:'VE-2025-009', projectName:'Kochi Component Repl.', poNo:'PO-2025-005', indusId:'IND-1009', site:'Kochi',         region:'Kerala',     type:'Component Replace', status:'delayed', progress:40, poValue:650000, billedAmount:250000, paidAmount:200000, startDate:'2025-03-01', endDate:'2025-04-30', rm:'Ramesh Kumar', pm:'Vijay Kumar', vendor:'TowerTech Pvt Ltd', vendorContact:'Arun Singh', vendorPhone:'+91 98765 43212', vendorEmail:'arun@towertech.com', workScope:'Feeder cable replacement.', remarks:'Delayed — parts awaited.' },
+  'VE-2025-010': { id:'VE-2025-010', projectName:'Kolkata Fiber Install.', poNo:'PO-2025-005', indusId:'IND-1010', site:'Kolkata North', region:'West Bengal', type:'Fiber Installation', status:'pending', progress:0, poValue:975000, billedAmount:0, paidAmount:0, startDate:'2025-06-01', endDate:'2025-08-31', rm:'Ramesh Kumar', pm:'Arun Kumar', vendor:'', vendorContact:'', vendorPhone:'', vendorEmail:'', workScope:'Underground fiber ducting.', remarks:'Not started.' },
 };
 
-const STATUS_FLOW: Record<string,{label:string;color:string}> = {
-  pending:       { label:'Pending',              color:'#D97706' },
-  in_progress:   { label:'In Progress',          color:'#2563EB' },
-  submitted:     { label:'Submitted for Review', color:'#7C3AED' },
-  under_review:  { label:'Under PM Review',      color:'#7C3AED' },
-  rejected:      { label:'Rejected',             color:'#DC2626' },
-  pm_approved:   { label:'PM Approved',          color:'#0D9488' },
-  billing_review:{ label:'Billing Review',       color:'#D97706' },
-  completed:     { label:'Completed',            color:'#16A34A' },
-  delayed:       { label:'Delayed',              color:'#DC2626' },
-};
+const VENDORS = ['ABC Telecom Services','XYZ Infra Solutions','TowerTech Pvt Ltd','NetConnect Services','PowerSys India','BuildRight Constructions'];
+const REGIONS  = ['Tamil Nadu','Karnataka','Telangana','Maharashtra','Delhi','Kerala','West Bengal'];
+const TYPES    = ['Tower Erection','Tower Maintenance','Component Replacement','Fiber Installation','Civil Works','Power Works'];
 
 const DOC_TYPES = [
-  { key:'safety_photos',    label:'Safety Photos'    },
-  { key:'site_photos',      label:'Site Photos'      },
-  { key:'jmr_document',     label:'JMR Document'     },
-  { key:'ac_certificate',   label:'AC Certificate'   },
-  { key:'noc_document',     label:'NOC Document'     },
-  { key:'drawing_document', label:'Drawing Document' },
+  { key:'safety_photos',   label:'Safety Photos',   icon:'📷', accept:'image/*'           },
+  { key:'site_photos',     label:'Site Photos',     icon:'🏗',  accept:'image/*'           },
+  { key:'jmr_document',   label:'JMR Document',    icon:'📄', accept:'.pdf,.doc,.docx'    },
+  { key:'ac_certificate', label:'AC Certificate',  icon:'🏅', accept:'.pdf,.doc,.docx'    },
+  { key:'noc_document',   label:'NOC Document',    icon:'📋', accept:'.pdf,.doc,.docx'    },
+  { key:'drawing_document',label:'Drawing Document',icon:'📐', accept:'.pdf,.dwg,.png,.jpg'},
 ];
 
-const activityLog = [
-  { date:'20/05/2025 04:45 PM', action:'Work status updated to In Progress', by:'Vendor', role:'Vendor'          },
-  { date:'20/05/2025 12:15 PM', action:'Site Photos uploaded',                by:'ABC Telecom', role:'Vendor'    },
-  { date:'20/05/2025 09:30 AM', action:'Safety Photos uploaded',              by:'ABC Telecom', role:'Vendor'    },
-  { date:'19/05/2025 05:00 PM', action:'Project allocated to vendor',          by:'Arun Kumar', role:'PM'        },
-  { date:'18/05/2025 10:00 AM', action:'Project created',                      by:'Ramesh Kumar', role:'RM'     },
+const MOCK_DOCS: Record<string, { name:string; size:string; url:string; isImage:boolean }[]> = {
+  safety_photos:    [{ name:'safety_site_01.jpg', size:'1.2 MB', url:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400', isImage:true },{ name:'safety_ppe.jpg', size:'980 KB', url:'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400', isImage:true }],
+  site_photos:      [{ name:'site_progress.jpg', size:'2.1 MB', url:'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400', isImage:true }],
+  jmr_document:     [{ name:'JMR_VE2025001.pdf', size:'456 KB', url:'', isImage:false }],
+  ac_certificate:   [],
+  noc_document:     [],
+  drawing_document: [{ name:'AsBuilt_Drawing_v2.pdf', size:'1.8 MB', url:'', isImage:false }],
+};
+
+const STATUS_FLOW = ['pending','in_progress','submitted','under_review','pm_approved','billing_review','completed','delayed'];
+const STATUS_LABELS: Record<string,string> = { pending:'Pending', in_progress:'In Progress', submitted:'Submitted', under_review:'Under Review', pm_approved:'PM Approved', billing_review:'Billing Review', completed:'Completed', delayed:'Delayed' };
+const STATUS_COLOR: Record<string,string>  = { pending:'#D97706', in_progress:'#2563EB', submitted:'#7C3AED', under_review:'#7C3AED', pm_approved:'#0D9488', billing_review:'#D97706', completed:'#16A34A', delayed:'#DC2626' };
+
+const ACTIVITY_LOG = [
+  { date:'20/05/2025 04:45 PM', action:'Site Photos uploaded by vendor', by:'ABC Telecom Services', role:'Vendor'  },
+  { date:'19/05/2025 05:00 PM', action:'Vendor assigned to project',     by:'Arun Kumar',           role:'PM'      },
+  { date:'18/05/2025 03:00 PM', action:'PM review notes added',          by:'Arun Kumar',           role:'PM'      },
+  { date:'17/05/2025 10:00 AM', action:'Invoice INV-2025-012 submitted', by:'Finance Team',         role:'Billing' },
+  { date:'15/05/2025 09:00 AM', action:'Project created',                by:'Ramesh Kumar',         role:'RM'      },
 ];
+
+const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
 
 export default function ProjectDetailPage() {
-  const router = useRouter();
+  const router  = useRouter();
   const { id }  = router.query;
   const { profile } = useAuth();
+  const { upload } = useUpload();
 
-  // All roles use the comprehensive PM view as canonical detail
-  React.useEffect(() => {
-    if (id && profile?.role === 'project_manager') {
-      router.replace(`/pm/projects/${id}`);
-    }
-  }, [id, profile?.role]);
-  const [projects, setProjects] = useState(allProjects);
-  const [toast, setToast] = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
-  const [reviewNotes, setReviewNotes] = useState('');
-  const [rejectReason, setRejectReason] = useState('');
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [billingChecklist, setBillingChecklist] = useState({ stn:false, srn:false, ptw:false });
+  const role       = profile?.role || 'viewer';
+  const canEdit    = ['super_admin','project_manager'].includes(role);
+  const canEditFin = role === 'super_admin';
+  const isBilling  = ['super_admin','accounting_team'].includes(role);
+
+  const [projects, setProjects] = useState(PROJECT_DB);
+  const [editMode, setEditMode] = useState(false);
+  const [saving,   setSaving]   = useState(false);
+  const [toast,    setToast]    = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
+
+  // Preview modal
+  const [previewDoc, setPreviewDoc] = useState<{name:string;url:string;isImage:boolean}|null>(null);
+
+  // Billing checklist
+  const [checklist, setChecklist] = useState({ stn:false, srn:false, ptw:false, materials:false });
   const [billingNotes, setBillingNotes] = useState('');
 
-  const project = id ? projects[id as string] : null;
-  const isAdmin = profile?.role !== 'vendor';
-  const isPM    = profile?.role === 'project_manager' || profile?.role === 'super_admin';
-  const isBilling = profile?.role === 'super_admin' || profile?.role === 'region_manager';
+  // PM review
+  const [reviewNotes,  setReviewNotes]  = useState('');
+  const [rejectReason, setRejectReason] = useState('');
+  const [showReject,   setShowReject]   = useState(false);
 
   if (!router.isReady) return (
     <Layout>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh', flexDirection:'column', gap:16 }}>
-        <div className="spinner" style={{ width:32, height:32, borderTopColor:T.primary, borderColor:T.primary+'30' }} />
-        <div style={{ fontSize:14, color:T.textMuted }}>Loading…</div>
+        <div className="spinner" style={{ width:32, height:32, borderTopColor:T.primary, borderColor:`${T.primary}30` }} />
+        <div style={{ fontSize:14, color:T.textMuted }}>Loading project…</div>
       </div>
     </Layout>
   );
+
+  const project = id ? projects[id as string] : null;
   if (!project) return (
     <Layout>
-      <div style={{ ...card, textAlign:'center', padding:60 }}>
+      <div style={{ ...card, textAlign:'center', padding:60, margin:20 }}>
         <div style={{ fontSize:48, marginBottom:16 }}>🔍</div>
-        <h2 style={{ fontSize:20, fontWeight:700, color:T.text, marginBottom:8 }}>Project Not Found</h2>
-        <Link href="/projects" style={{ background:T.primary, color:'#fff', borderRadius:8, padding:'10px 20px', fontSize:13, fontWeight:600, textDecoration:'none' }}>← Back to Projects</Link>
+        <h2 style={{ fontSize:20, fontWeight:700, color:T.text, marginBottom:12 }}>Project Not Found</h2>
+        <Link href="/projects" style={{ background:T.primary, color:'#fff', borderRadius:8, padding:'10px 20px', textDecoration:'none', fontSize:13, fontWeight:600 }}>← Back to Projects</Link>
       </div>
     </Layout>
   );
 
   const p = project;
-  const status = STATUS_FLOW[p.status] || STATUS_FLOW.pending;
-  const fmt = (v: number) => `₹${v.toLocaleString('en-IN')}`;
+  const isCompleted = ['completed','billing_review'].includes(p.status);
+  const stnData = STN_SRN_DATA.find(s => s.projectId === p.id);
+  const st = STATUS_COLOR[p.status] || '#64748B';
+
+  // Edit form state
+  const [form, setForm] = useState({ ...p });
+  const F = (label:string, key:string, type='text', options?:string[], readOnly=false) => (
+    <div style={{ marginBottom:14 }}>
+      <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>{label}</label>
+      {editMode && !readOnly && canEdit ? (
+        options ? (
+          <select value={(form as any)[key]} onChange={e=>setForm(f=>({...f,[key]:e.target.value}))} style={{ ...inputStyle(), width:'100%' }}>
+            {options.map(o=><option key={o}>{o}</option>)}
+          </select>
+        ) : (
+          <input type={type} value={(form as any)[key]||''} onChange={e=>setForm(f=>({...f,[key]:e.target.value}))}
+            style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
+        )
+      ) : (
+        <div style={{ fontSize:14, fontWeight:600, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>
+          {(p as any)[key] || '—'}
+        </div>
+      )}
+    </div>
+  );
+
+  const handleSave = () => {
+    setSaving(true);
+    setTimeout(() => {
+      setProjects(prev => ({ ...prev, [p.id]: { ...prev[p.id], ...form } }));
+      setSaving(false);
+      setEditMode(false);
+      setToast({ msg:'Project updated successfully!', type:'success' });
+    }, 600);
+  };
 
   const updateStatus = (newStatus: string, msg: string) => {
     setProjects(prev => ({ ...prev, [p.id]: { ...prev[p.id], status:newStatus } }));
     setToast({ msg, type:'success' });
   };
 
-  const handlePMApprove = () => {
-    updateStatus('pm_approved', 'Project approved and sent to Billing team!');
-  };
-
-  const handlePMReject = () => {
-    if (!rejectReason.trim()) { setToast({ msg:'Please provide rejection reason.', type:'error' }); return; }
-    updateStatus('rejected', `Project rejected and sent back to vendor. Reason: ${rejectReason}`);
-    setShowRejectModal(false); setRejectReason('');
-  };
-
   const handleBillingDone = () => {
-    if (!billingChecklist.stn || !billingChecklist.srn || !billingChecklist.ptw) {
-      setToast({ msg:'Please complete all checklist items before marking billing done.', type:'error' });
+    if (!checklist.stn || !checklist.srn || !checklist.ptw || !checklist.materials) {
+      setToast({ msg:'All 4 checklist items must be completed before releasing payment.', type:'error' });
       return;
     }
-    updateStatus('completed', 'Billing review complete. Project marked as Completed!');
+    updateStatus('completed', '✅ Billing complete! Project marked as Completed.');
   };
+
+  const sectionTitle = (icon:string, title:string, extra?:React.ReactNode) => (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, paddingBottom:10, borderBottom:`2px solid ${T.primaryMid}` }}>
+      <div style={{ fontSize:15, fontWeight:700, color:T.primary }}>{icon} {title}</div>
+      {extra}
+    </div>
+  );
+
+  const roleColor: Record<string,string> = { Vendor:T.info, PM:T.primary, RM:T.success, Billing:'#7C3AED' };
 
   return (
     <Layout>
       <div className="fade-in">
-        {/* Breadcrumb */}
-        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:20, fontSize:13 }}>
-          <Link href="/projects" style={{ color:T.primary, textDecoration:'none', fontWeight:500 }}>← Projects</Link>
-          <span style={{ color:T.textDim }}>/</span>
-          <span style={{ color:T.text, fontWeight:600 }}>{p.id}</span>
-        </div>
-
-        {/* Header */}
-        <div style={{ ...card, marginBottom:16, padding:'20px 24px' }}>
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:12 }}>
+        {/* ── Header ── */}
+        <div style={{ ...card, marginBottom:20, padding:'20px 24px' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:12, marginBottom:16 }}>
             <div>
               <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
+                <Link href="/projects" style={{ color:T.textMuted, textDecoration:'none', fontSize:13 }}>← Projects</Link>
+                <span style={{ color:T.textDim }}>/</span>
                 <h1 style={{ fontSize:20, fontWeight:800, color:T.text, margin:0 }}>{p.id}</h1>
-                <span style={{ background:`${status.color}15`, color:status.color, border:`1px solid ${status.color}40`, padding:'3px 12px', borderRadius:20, fontSize:12, fontWeight:700 }}>{status.label}</span>
+                <span style={{ background:`${st}18`, color:st, border:`1px solid ${st}40`, padding:'3px 12px', borderRadius:20, fontSize:12, fontWeight:700 }}>{STATUS_LABELS[p.status]||p.status}</span>
               </div>
-              <div style={{ fontSize:14, color:T.textMuted }}>{p.site} · {p.region} · {p.client}</div>
-              <div style={{ fontSize:13, color:T.textDim, marginTop:4 }}>📋 {p.type}</div>
+              <div style={{ fontSize:14, color:T.textMuted }}>{p.projectName} · {p.site} · {p.region}</div>
+              <div style={{ fontSize:13, color:T.textDim, marginTop:2 }}>PO: {p.poNo} · Indus ID: {p.indusId}</div>
+            </div>
+            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+              {canEdit && !editMode && (
+                <button onClick={()=>{ setForm({...p}); setEditMode(true); }} style={{ ...btnSecondary, fontSize:13 }}>✏️ Edit Project</button>
+              )}
+              {editMode && (
+                <>
+                  <button onClick={()=>setEditMode(false)} style={{ ...btnSecondary, fontSize:13 }}>Cancel</button>
+                  <button onClick={handleSave} disabled={saving} style={{ ...btnPrimary, fontSize:13, opacity:saving?0.8:1 }}>
+                    {saving?'Saving…':'💾 Save Changes'}
+                  </button>
+                </>
+              )}
+              {/* PM Review actions */}
+              {canEdit && (p.status==='submitted'||p.status==='under_review') && (
+                <>
+                  <button onClick={()=>updateStatus('pm_approved','Project approved and sent to billing!')} style={{ ...btnPrimary, background:T.success, fontSize:13 }}>✅ Approve</button>
+                  <button onClick={()=>setShowReject(true)} style={{ ...btnSecondary, borderColor:T.danger, color:T.danger, fontSize:13 }}>❌ Reject</button>
+                </>
+              )}
             </div>
           </div>
-          <div style={{ marginTop:16 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:T.textMuted, marginBottom:6 }}>
+          <div>
+            <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:T.textMuted, marginBottom:5 }}>
               <span>Overall Progress</span>
-              <span style={{ fontWeight:700, color:p.progress===100?T.success:p.status==='delayed'?T.danger:T.primary }}>{p.progress}%</span>
+              <span style={{ fontWeight:700, color:p.progress===100?T.success:st }}>{p.progress}%</span>
             </div>
             <div style={{ height:8, background:T.border, borderRadius:4 }}>
               <div style={{ height:'100%', width:`${p.progress}%`, background:p.progress===100?T.success:p.status==='delayed'?T.danger:T.primary, borderRadius:4, transition:'width 0.5s' }} />
@@ -151,193 +214,294 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
+        {/* ── 1. Project Details + Financial ── */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
-          {/* Project Details */}
           <div style={card}>
-            <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14, paddingBottom:10, borderBottom:`1px solid ${T.border}` }}>📋 Project Details</div>
-            {[
-              ['Project No',      p.id],
-              ['PO Number',       p.poNo],
-              ['Indus ID',        p.indusId],
-              ['Site Name',       p.site],
-              ['Region',          p.region],
-              ['Job Type',        p.type],
-              ['Start Date',      p.startDate],
-              ['End Date',        p.endDate],
-              ['Region Manager',  p.rm],
-              ['Project Manager', p.pm],
-              ['Vendor',          p.vendor || '—'],
-            ].map(([label, value]) => (
-              <div key={label} style={{ display:'flex', justifyContent:'space-between', padding:'7px 0', borderBottom:`1px solid ${T.border}`, fontSize:13 }}>
-                <span style={{ color:T.textMuted }}>{label}</span>
-                <span style={{ fontWeight:600, color:T.text, textAlign:'right', maxWidth:'60%' }}>{value}</span>
-              </div>
-            ))}
+            {sectionTitle('📋','Project Details')}
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
+              {F('Project No',       'id',          'text', undefined, true)}
+              {F('PO Number',        'poNo',        'text', undefined, true)}
+              {F('Indus ID',         'indusId',     'text', undefined, true)}
+              {F('Site Name',        'site')}
+              {F('Region',           'region',      'text', REGIONS)}
+              {F('Job Type',         'type',        'text', TYPES)}
+              {F('Start Date',       'startDate',   'date')}
+              {F('End Date',         'endDate',     'date')}
+              {F('Region Manager',   'rm',          'text', undefined, true)}
+              {F('Project Manager',  'pm')}
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Remarks</label>
+              {editMode && canEdit
+                ? <textarea value={form.remarks||''} onChange={e=>setForm(f=>({...f,remarks:e.target.value}))} rows={3} style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
+                : <div style={{ fontSize:13, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>{p.remarks||'—'}</div>
+              }
+            </div>
           </div>
 
-          {/* Financial — only for admin */}
-          {isAdmin && (
-            <div style={card}>
-              <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14, paddingBottom:10, borderBottom:`1px solid ${T.border}` }}>💰 Financial Summary</div>
-              {[
-                { label:'PO Value',       value:fmt(p.poValue),           color:T.text    },
-                { label:'Billed Amount',  value:fmt(p.poValue*0.63),      color:T.success },
-                { label:'Paid Amount',    value:fmt(p.poValue*0.56),      color:T.success },
-                { label:'Pending',        value:fmt(p.poValue*0.37),      color:T.warning },
-                { label:'PO Aging',       value:`${p.aging} days`,        color:p.aging>60?T.danger:p.aging>30?T.warning:T.success },
-              ].map((r) => (
-                <div key={r.label} style={{ display:'flex', justifyContent:'space-between', padding:'9px 0', borderBottom:`1px solid ${T.border}`, fontSize:13 }}>
-                  <span style={{ color:T.textMuted }}>{r.label}</span>
-                  <span style={{ fontWeight:700, color:r.color }}>{r.value}</span>
-                </div>
-              ))}
-              <div style={{ marginTop:12, padding:12, background:T.primaryLight, borderRadius:8 }}>
-                <div style={{ fontSize:11, color:T.textMuted, marginBottom:4 }}>Remarks</div>
-                <div style={{ fontSize:12, color:T.text, lineHeight:1.5 }}>{p.remarks}</div>
+          <div style={card}>
+            {sectionTitle('💰','Financial Summary', canEditFin && !editMode ? <button onClick={()=>{ setForm({...p}); setEditMode(true); }} style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:7, padding:'4px 12px', color:T.primary, cursor:'pointer', fontSize:12, fontWeight:600 }}>Edit</button> : undefined)}
+            {[
+              { label:'PO Value',      key:'poValue',      color:T.text    },
+              { label:'Billed Amount', key:'billedAmount', color:T.info    },
+              { label:'Paid Amount',   key:'paidAmount',   color:T.success },
+              { label:'Pending',       key:null,           color:T.warning, computed: p.billedAmount - p.paidAmount },
+            ].map((r,i)=>(
+              <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:`1px solid ${T.border}` }}>
+                <span style={{ fontSize:13, color:T.textMuted }}>{r.label}</span>
+                {editMode && canEditFin && r.key ? (
+                  <input type="number" value={(form as any)[r.key]||0} onChange={e=>setForm(f=>({...f,[r.key!]:Number(e.target.value)}))}
+                    style={{ ...inputStyle(), width:160, textAlign:'right' as const }} />
+                ) : (
+                  <span style={{ fontSize:14, fontWeight:700, color:r.color }}>{fmt(r.computed !== undefined ? r.computed : (p as any)[r.key!])}</span>
+                )}
               </div>
+            ))}
+            <div style={{ display:'flex', justifyContent:'space-between', padding:'12px 14px', background:T.primaryLight, borderRadius:8, marginTop:12 }}>
+              <span style={{ fontSize:13, fontWeight:700, color:T.primary }}>PO Aging</span>
+              <span style={{ fontSize:14, fontWeight:800, color:T.primary }}>
+                {Math.floor((Date.now() - new Date(p.startDate).getTime()) / 86400000)} days
+              </span>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Document Status */}
+        {/* ── 2. Vendor Assignment ── */}
+        <div style={{ ...card, marginBottom:16, opacity:isCompleted&&!editMode?0.8:1 }}>
+          {sectionTitle('🏢','Vendor Assignment', isCompleted ? <span style={{ fontSize:11, color:T.textDim, background:T.bg, border:`1px solid ${T.border}`, borderRadius:20, padding:'3px 12px' }}>🔒 Locked — Project Completed</span> : undefined)}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'0 16px' }}>
+            {[
+              ['Vendor Name',    'vendor',        undefined, isCompleted],
+              ['Contact Person', 'vendorContact', undefined, isCompleted],
+              ['Phone',          'vendorPhone',   undefined, isCompleted],
+              ['Email',          'vendorEmail',   undefined, isCompleted],
+            ].map(([label, key, opts, ro]:any) => F(label, key, 'text', opts, ro || (!editMode)))}
+          </div>
+          <div style={{ marginBottom:14 }}>
+            <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Work Scope</label>
+            {editMode && canEdit && !isCompleted
+              ? <textarea value={form.workScope||''} onChange={e=>setForm(f=>({...f,workScope:e.target.value}))} rows={2} style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
+              : <div style={{ fontSize:13, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>{p.workScope||'—'}</div>
+            }
+          </div>
+        </div>
+
+        {/* ── 3. Work Documents with thumbnails ── */}
         <div style={{ ...card, marginBottom:16 }}>
-          <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14, paddingBottom:10, borderBottom:`1px solid ${T.border}` }}>📂 Work Documents</div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:12 }}>
-            {DOC_TYPES.map((doc, i) => {
-              const uploaded = i < 2; // mock: first 2 are uploaded
+          {sectionTitle('📂','Work Documents')}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
+            {DOC_TYPES.map(doc => {
+              const docs = MOCK_DOCS[doc.key] || [];
+              const uploaded = docs.length > 0;
               return (
-                <div key={doc.key} style={{ textAlign:'center', padding:'14px 8px', background:uploaded?T.successBg:T.bg, border:`1px solid ${uploaded?'#BBF7D0':T.border}`, borderRadius:10, borderTop:`3px solid ${uploaded?T.success:T.border}` }}>
-                  <div style={{ fontSize:24, marginBottom:6 }}>
-                    {doc.key.includes('photo') ? '📷' : doc.key.includes('jmr') ? '📄' : doc.key.includes('ac') ? '🏅' : doc.key.includes('noc') ? '📋' : '📐'}
+                <div key={doc.key} style={{ border:`1.5px solid ${uploaded?T.success:T.border}`, borderRadius:10, padding:14, background:uploaded?T.successBg:'#fff' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+                    <span style={{ fontSize:18 }}>{doc.icon}</span>
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{doc.label}</div>
+                      <div style={{ fontSize:11, color:T.textDim }}>{docs.length} file(s)</div>
+                    </div>
+                    {uploaded && <span style={{ marginLeft:'auto', fontSize:10, fontWeight:700, color:T.success, background:T.successBg, padding:'2px 8px', borderRadius:10 }}>✓ Uploaded</span>}
                   </div>
-                  <div style={{ fontSize:11, fontWeight:600, color:T.text, marginBottom:4 }}>{doc.label}</div>
-                  <span style={{ fontSize:10, fontWeight:700, color:uploaded?T.success:T.textDim, background:uploaded?T.successBg:T.bg, padding:'2px 8px', borderRadius:10 }}>
-                    {uploaded ? '✓ Uploaded' : 'Pending'}
-                  </span>
+
+                  {/* Thumbnails */}
+                  {docs.length > 0 && (
+                    <div style={{ display:'flex', gap:6, flexWrap:'wrap' as const, marginBottom:6 }}>
+                      {docs.map((d,i) => (
+                        <div key={i} onClick={()=>setPreviewDoc(d)}
+                          style={{ width:56, height:56, borderRadius:6, overflow:'hidden', cursor:'pointer', border:`1px solid ${T.border}`, background:T.bg, display:'flex', alignItems:'center', justifyContent:'center', position:'relative' as const }}
+                          title={d.name}>
+                          {d.isImage && d.url
+                            ? <img src={d.url} alt={d.name} style={{ width:'100%', height:'100%', objectFit:'cover' as const }} onError={e=>(e.currentTarget.style.display='none')} />
+                            : <span style={{ fontSize:22 }}>📄</span>
+                          }
+                          <div style={{ position:'absolute' as const, inset:0, background:'rgba(0,0,0,0)', transition:'all 0.2s' }} className="doc-hover" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {docs.length === 0 && (
+                    <div style={{ textAlign:'center', padding:'12px 0', color:T.textDim, fontSize:12 }}>No files uploaded</div>
+                  )}
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* ── PM Review Section — visible after vendor submits ── */}
-        {isAdmin && (p.status === 'submitted' || p.status === 'under_review') && (
-          <div style={{ ...card, marginBottom:16, border:`2px solid ${T.purple}` }}>
-            <div style={{ fontSize:14, fontWeight:700, color:T.purple, marginBottom:14, paddingBottom:10, borderBottom:`1px solid ${T.border}` }}>
-              🔍 PM Review — Submitted for Approval
+        {/* ── 4. STN/SRN Materials ── */}
+        <div style={{ ...card, marginBottom:16 }}>
+          {sectionTitle('📦','STN/SRN — Materials Tracking (Indus)')}
+          {stnData ? (
+            <>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:14 }}>
+                {[
+                  { label:'STN Date',   value:stnData.stnDate,      color:T.primary },
+                  { label:'SRN Date',   value:stnData.srnDate||'Pending', color:stnData.srnDate?T.success:T.danger },
+                  { label:'Items Issued',  value:stnData.materials.reduce((a,m)=>a+m.stnQty,0), color:T.text },
+                  { label:'Balance Pending', value:stnData.materials.reduce((a,m)=>a+m.balance,0), color:stnData.materials.some(m=>m.balance>0)?T.danger:T.success },
+                ].map((s,i)=>(
+                  <div key={i} style={{ background:T.bg, borderRadius:8, padding:'10px 14px' }}>
+                    <div style={{ fontSize:11, color:T.textDim, marginBottom:3 }}>{s.label}</div>
+                    <div style={{ fontSize:14, fontWeight:700, color:s.color }}>{s.value}</div>
+                  </div>
+                ))}
+              </div>
+              <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+                <thead>
+                  <tr style={{ background:T.bg }}>
+                    {['Item Code','Description','UOM','STN Issued','SRN Returned','Balance','Status'].map(h=>(
+                      <th key={h} style={{ padding:'8px 10px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:'left', borderBottom:`2px solid ${T.border}` }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {stnData.materials.map((m,i)=>(
+                    <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}>
+                      <td style={{ padding:'9px 10px', color:T.primary, fontWeight:600, fontSize:12 }}>{m.code}</td>
+                      <td style={{ padding:'9px 10px', fontSize:13 }}>{m.description}</td>
+                      <td style={{ padding:'9px 10px', fontSize:12, color:T.textMuted }}>{m.uom}</td>
+                      <td style={{ padding:'9px 10px', fontWeight:600, textAlign:'right' as const }}>{m.stnQty}</td>
+                      <td style={{ padding:'9px 10px', fontWeight:600, color:T.success, textAlign:'right' as const }}>{m.srnQty}</td>
+                      <td style={{ padding:'9px 10px', fontWeight:700, color:m.balance>0?T.danger:T.success, textAlign:'right' as const }}>{m.balance}</td>
+                      <td style={{ padding:'9px 10px' }}>
+                        <span style={{ fontSize:11, fontWeight:600, color:m.balance===0?T.success:m.returnStatus==='Partially Returned'?'#D97706':T.danger, background:m.balance===0?T.successBg:m.returnStatus==='Partially Returned'?'#FFFBEB':'#FEF2F2', padding:'2px 8px', borderRadius:10 }}>
+                          {m.returnStatus}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          ) : (
+            <div style={{ textAlign:'center', padding:30, color:T.textDim }}>No STN/SRN records for this project yet.</div>
+          )}
+        </div>
+
+        {/* ── 5. Billing Review Checklist ── */}
+        {(isBilling || canEdit) && (
+          <div style={{ ...card, marginBottom:16, border:`1.5px solid ${!isCompleted?T.border:'#7C3AED'}`, opacity:!['pm_approved','billing_review','completed'].includes(p.status)?0.5:1, position:'relative' as const }}>
+            {sectionTitle('💳','Billing Review Checklist')}
+            {!['pm_approved','billing_review','completed'].includes(p.status) && (
+              <div style={{ position:'absolute' as const, inset:0, background:'rgba(255,255,255,0.7)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', zIndex:5 }}>
+                <div style={{ textAlign:'center' }}>
+                  <div style={{ fontSize:28, marginBottom:8 }}>🔒</div>
+                  <div style={{ fontSize:13, fontWeight:600, color:T.text }}>Available after PM approves the project</div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12, marginBottom:16 }}>
+              {[
+                { key:'stn',       label:'STN Done',                desc:'Store Transfer Note completed with Indus' },
+                { key:'srn',       label:'SRN Done',                desc:'Store Return Note completed with Indus'   },
+                { key:'ptw',       label:'PTW Done',                desc:'Permit to Work completed'                 },
+                { key:'materials', label:'Materials Returned to Indus', desc:'All materials from STN returned via SRN — MANDATORY', important:true },
+              ].map(item=>{
+                const checked = checklist[item.key as keyof typeof checklist];
+                return (
+                  <div key={item.key} onClick={()=>isBilling&&setChecklist(c=>({...c,[item.key]:!c[item.key as keyof typeof c]}))}
+                    style={{ padding:14, borderRadius:10, border:`2px solid ${checked?item.important?T.primary:T.success:item.important?'#EF4444':T.border}`, background:checked?item.important?T.primaryLight:T.successBg:'#fff', cursor:isBilling?'pointer':'default', transition:'all 0.15s' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                      <div style={{ width:22, height:22, borderRadius:6, border:`2px solid ${checked?item.important?T.primary:T.success:T.border}`, background:checked?item.important?T.primary:T.success:'#fff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                        {checked && <span style={{ color:'#fff', fontSize:13, fontWeight:700 }}>✓</span>}
+                      </div>
+                      <div>
+                        <div style={{ fontSize:13, fontWeight:700, color:T.text }}>
+                          {item.label}
+                          {item.important && <span style={{ fontSize:10, color:T.danger, marginLeft:6 }}>MANDATORY</span>}
+                        </div>
+                        <div style={{ fontSize:11, color:T.textMuted }}>{item.desc}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div style={{ background:'#F5F3FF', border:'1px solid #DDD6FE', borderRadius:8, padding:12, marginBottom:16, fontSize:13, color:'#5B21B6' }}>
-              Vendor has submitted this project for PM review. Please review all uploaded documents above before approving or rejecting.
-            </div>
+
             <div style={{ marginBottom:16 }}>
-              <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>Review Notes (optional)</label>
-              <textarea value={reviewNotes} onChange={e=>setReviewNotes(e.target.value)} placeholder="Add your review comments…" rows={3}
+              <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>Invoice Reference / Billing Notes</label>
+              <textarea value={billingNotes} onChange={e=>setBillingNotes(e.target.value)} placeholder="Enter invoice reference number or billing notes…" rows={2}
                 style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
             </div>
-            <div style={{ display:'flex', gap:10 }}>
-              <button onClick={handlePMApprove} style={{ ...btnPrimary, background:T.success }}>
-                ✅ Approve — Send to Billing
+
+            {isBilling && ['pm_approved','billing_review'].includes(p.status) && (
+              <button onClick={handleBillingDone}
+                style={{ ...btnPrimary, background:Object.values(checklist).every(Boolean)?T.success:T.border, cursor:Object.values(checklist).every(Boolean)?'pointer':'not-allowed' }}>
+                ✅ Mark Billing Done — Release Payment
               </button>
-              <button onClick={() => setShowRejectModal(true)} style={{ ...btnSecondary, borderColor:T.danger, color:T.danger }}>
-                ❌ Reject — Send Back to Vendor
-              </button>
-            </div>
+            )}
+
+            {p.status === 'completed' && (
+              <div style={{ background:T.successBg, border:`1px solid #BBF7D0`, borderRadius:8, padding:'10px 14px', fontSize:13, color:T.success, fontWeight:600 }}>
+                ✅ Billing complete. Payment released.
+              </div>
+            )}
           </div>
         )}
 
-        {/* ── Billing Review Section ── */}
-        {isAdmin && (p.status === 'pm_approved' || p.status === 'billing_review') && (
-          <div style={{ ...card, marginBottom:16, border:`2px solid ${T.warning}` }}>
-            <div style={{ fontSize:14, fontWeight:700, color:T.warning, marginBottom:14, paddingBottom:10, borderBottom:`1px solid ${T.border}` }}>
-              💳 Billing Review Checklist
-            </div>
-            <div style={{ background:T.warningBg, border:'1px solid #FDE68A', borderRadius:8, padding:12, marginBottom:16, fontSize:13, color:T.warning }}>
-              PM has approved this project. Complete the billing checklist to finalise.
-            </div>
-
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:16 }}>
-              {[
-                { key:'stn', label:'STN Done', desc:'Store Transfer Note completed' },
-                { key:'srn', label:'SRN Done', desc:'Store Return Note completed'   },
-                { key:'ptw', label:'PTW Done', desc:'Permit to Work completed'       },
-              ].map(item => (
-                <div key={item.key} onClick={()=>setBillingChecklist(prev=>({...prev,[item.key]:!prev[item.key as keyof typeof prev]}))}
-                  style={{ padding:14, borderRadius:10, border:`2px solid ${billingChecklist[item.key as keyof typeof billingChecklist]?T.success:T.border}`, background:billingChecklist[item.key as keyof typeof billingChecklist]?T.successBg:'#fff', cursor:'pointer', transition:'all 0.15s' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                    <div style={{ width:22, height:22, borderRadius:6, border:`2px solid ${billingChecklist[item.key as keyof typeof billingChecklist]?T.success:T.border}`, background:billingChecklist[item.key as keyof typeof billingChecklist]?T.success:'#fff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                      {billingChecklist[item.key as keyof typeof billingChecklist] && <span style={{ color:'#fff', fontSize:13, fontWeight:700 }}>✓</span>}
+        {/* ── 6. Activity Log ── */}
+        <div style={card}>
+          {sectionTitle('📝','Activity Log')}
+          <div style={{ position:'relative' as const }}>
+            <div style={{ position:'absolute' as const, left:12, top:0, bottom:0, width:2, background:T.border }} />
+            {ACTIVITY_LOG.map((log,i)=>{
+              const c = roleColor[log.role] || T.textDim;
+              return (
+                <div key={i} style={{ display:'flex', gap:14, marginBottom:16, paddingLeft:8 }}>
+                  <div style={{ width:22, height:22, borderRadius:'50%', background:c, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, zIndex:1, marginTop:2 }}>
+                    <span style={{ color:'#fff', fontSize:9, fontWeight:700 }}>{log.role[0]}</span>
+                  </div>
+                  <div style={{ flex:1, background:T.bg, borderRadius:10, padding:'10px 14px', border:`1px solid ${T.border}` }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
+                      <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{log.action}</span>
+                      <span style={{ fontSize:10, background:`${c}20`, color:c, padding:'2px 8px', borderRadius:20, fontWeight:600 }}>{log.role}</span>
                     </div>
-                    <div>
-                      <div style={{ fontSize:14, fontWeight:700, color:T.text }}>{item.label}</div>
-                      <div style={{ fontSize:11, color:T.textMuted }}>{item.desc}</div>
+                    <div style={{ display:'flex', justifyContent:'space-between' }}>
+                      <span style={{ fontSize:12, color:T.textMuted }}>{log.by}</span>
+                      <span style={{ fontSize:11, color:T.textDim }}>{log.date}</span>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            <div style={{ marginBottom:16 }}>
-              <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>Billing Notes / Invoice Reference</label>
-              <textarea value={billingNotes} onChange={e=>setBillingNotes(e.target.value)} placeholder="Add invoice reference number or billing notes…" rows={3}
-                style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
-            </div>
-
-            <button onClick={handleBillingDone} style={{ ...btnPrimary, background:T.success }}>
-              ✅ Mark Billing Done — Complete Project
-            </button>
+              );
+            })}
           </div>
-        )}
-
-        {/* Completed status */}
-        {p.status === 'completed' && (
-          <div style={{ ...card, marginBottom:16, background:T.successBg, border:`2px solid ${T.success}` }}>
-            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-              <div style={{ fontSize:32 }}>🎉</div>
-              <div>
-                <div style={{ fontSize:15, fontWeight:700, color:T.success }}>Project Completed!</div>
-                <div style={{ fontSize:13, color:T.textMuted }}>All stages complete. Billing has been processed.</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Activity Log */}
-        <div style={card}>
-          <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14, paddingBottom:10, borderBottom:`1px solid ${T.border}` }}>📝 Activity Log</div>
-          <table style={{ width:'100%' }}>
-            <thead><tr>{['Date & Time','Activity','By','Role'].map(h=><th key={h} style={th}>{h}</th>)}</tr></thead>
-            <tbody>
-              {activityLog.map((log, i) => (
-                <tr key={i}
-                  onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.bg}
-                  onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
-                  <td style={{ ...td, whiteSpace:'nowrap', color:T.textDim, fontSize:12 }}>{log.date}</td>
-                  <td style={{ ...td, color:T.text, fontWeight:500 }}>{log.action}</td>
-                  <td style={td}>{log.by}</td>
-                  <td style={td}><span style={{ fontSize:11, background:T.primaryLight, color:T.primary, padding:'2px 8px', borderRadius:5, fontWeight:500 }}>{log.role}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
 
+        {/* Document Preview Modal */}
+        {previewDoc && (
+          <Modal title={previewDoc.name} onClose={()=>setPreviewDoc(null)} width={700}>
+            {previewDoc.isImage && previewDoc.url ? (
+              <img src={previewDoc.url} alt={previewDoc.name} style={{ width:'100%', borderRadius:8, maxHeight:'70vh', objectFit:'contain' as const }} />
+            ) : (
+              <div style={{ textAlign:'center', padding:40 }}>
+                <div style={{ fontSize:64, marginBottom:16 }}>📄</div>
+                <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>{previewDoc.name}</div>
+                <a href={previewDoc.url||'#'} target="_blank" rel="noopener noreferrer"
+                  style={{ background:T.primary, color:'#fff', borderRadius:8, padding:'10px 20px', textDecoration:'none', fontSize:13, fontWeight:600 }}>
+                  Open PDF in New Tab ↗
+                </a>
+              </div>
+            )}
+          </Modal>
+        )}
+
         {/* Reject Modal */}
-        {showRejectModal && (
-          <Modal title="❌ Reject Project" onClose={() => setShowRejectModal(false)} width={460}>
-            <p style={{ fontSize:13, color:T.textMuted, marginBottom:16 }}>Provide the reason for rejection. This will be sent to the vendor.</p>
-            <div style={{ marginBottom:16 }}>
-              <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>Rejection Reason *</label>
-              <textarea value={rejectReason} onChange={e=>setRejectReason(e.target.value)} placeholder="e.g. Missing NOC document, safety photos unclear…" rows={4}
-                style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
-            </div>
+        {showReject && (
+          <Modal title="❌ Reject Project" onClose={()=>setShowReject(false)} width={460}>
+            <p style={{ fontSize:13, color:T.textMuted, marginBottom:16 }}>Provide reason for rejection — this will be sent to the vendor.</p>
+            <textarea value={rejectReason} onChange={e=>setRejectReason(e.target.value)} placeholder="e.g. Missing NOC document, safety photos unclear…" rows={4}
+              style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const, marginBottom:16 }} />
             <div style={{ display:'flex', justifyContent:'flex-end', gap:10 }}>
-              <button onClick={() => setShowRejectModal(false)} style={btnSecondary}>Cancel</button>
-              <button onClick={handlePMReject} style={{ ...btnPrimary, background:T.danger }}>❌ Reject & Notify Vendor</button>
+              <button onClick={()=>setShowReject(false)} style={btnSecondary}>Cancel</button>
+              <button onClick={()=>{ if(!rejectReason.trim()){setToast({msg:'Reason required.',type:'error'});return;} updateStatus('delayed',`Rejected: ${rejectReason}`); setShowReject(false); }} style={{ ...btnPrimary, background:T.danger }}>❌ Reject & Notify</button>
             </div>
           </Modal>
         )}
 
-        {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+        {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
       </div>
     </Layout>
   );

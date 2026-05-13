@@ -19,6 +19,67 @@ const REGIONS = ['Tamil Nadu','Karnataka','Telangana','Maharashtra','Delhi','Ker
 
 const emptyForm = () => ({ full_name:'', email:'', phone:'', designation:'', role:'project_manager' as UserRole, region:'Tamil Nadu' });
 
+
+// ── Isolated form component — prevents cursor jump on keystroke ──
+interface TeamFormProps {
+  initial: ReturnType<typeof emptyForm>;
+  editMember: any;
+  onSave: (form: ReturnType<typeof emptyForm>) => void;
+  onClose: () => void;
+  saving: boolean;
+}
+
+function TeamMemberForm({ initial, editMember, onSave, onClose, saving }: TeamFormProps) {
+  const [form, setForm] = React.useState(initial);
+
+  const inp = (label: string, field: string, type='text', placeholder='', readOnly=false) => (
+    <div style={{ marginBottom:14 }}>
+      <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>{label}</label>
+      <input
+        type={type}
+        value={(form as any)[field]}
+        onChange={e => { const v = e.target.value; setForm(p => ({ ...p, [field]: v })); }}
+        placeholder={placeholder}
+        readOnly={readOnly}
+        style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const, ...(readOnly?{background:T.bg,color:T.textMuted,cursor:'not-allowed'}:{}) }}
+      />
+    </div>
+  );
+
+  const sel = (label: string, field: string, options: string[]) => (
+    <div style={{ marginBottom:14 }}>
+      <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>{label}</label>
+      <select value={(form as any)[field]} onChange={e => { const v = e.target.value; setForm(p => ({ ...p, [field]: v })); }} style={{ ...inputStyle(), width:'100%' }}>
+        {options.map(o => <option key={o} value={o}>{ROLE_LABELS_EXT[o] || o}</option>)}
+      </select>
+    </div>
+  );
+
+  return (
+    <>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
+        <div style={{ gridColumn:'1/-1' }}>{inp('Full Name *', 'full_name', 'text', 'Full name')}</div>
+        {inp('Email Address *', 'email', 'email', 'email@venusenergy.com', !!editMember)}
+        {inp('Phone', 'phone', 'text', '9876543210')}
+        {sel('Role *', 'role', EXTENDED_ROLES)}
+        {sel('Region', 'region', REGIONS)}
+        <div style={{ gridColumn:'1/-1' }}>{inp('Designation', 'designation', 'text', 'e.g. Project Manager')}</div>
+      </div>
+      {!editMember && (
+        <div style={{ background:T.infoBg, border:'1px solid #BFDBFE', borderRadius:8, padding:'10px 14px', marginBottom:14, fontSize:12, color:T.info }}>
+          ℹ️ An invitation email will be sent to the user after creation.
+        </div>
+      )}
+      <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:8 }}>
+        <button onClick={onClose} style={btnSecondary}>Cancel</button>
+        <button onClick={() => onSave(form)} disabled={saving} style={{ ...btnPrimary, opacity:saving?0.8:1, minWidth:130 }}>
+          {saving ? <><div className="spinner" style={{ borderTopColor:'#fff', borderColor:'rgba(255,255,255,0.3)', width:14, height:14 }} /> Saving…</> : editMember ? '💾 Update' : '+ Add Member'}
+        </button>
+      </div>
+    </>
+  );
+}
+
 export default function TeamsPage() {
   const [members, setMembers]     = useState(TEAM_MEMBERS);
   const [search, setSearch]       = useState('');
@@ -42,7 +103,7 @@ export default function TeamsPage() {
   const openNew  = () => { setForm(emptyForm()); setEditMember(null); setShowModal(true); };
   const openEdit = (m: any) => { setForm({ full_name:m.full_name, email:m.email, phone:m.phone, designation:m.designation, role:m.role, region:m.region }); setEditMember(m); setShowModal(true); };
 
-  const handleSave = () => {
+  const handleSave = (form: ReturnType<typeof emptyForm>) => {
     if (!form.full_name || !form.email) { setToast({ msg:'Name and email are required.', type:'error' }); return; }
     setSaving(true);
     setTimeout(() => {
@@ -159,62 +220,14 @@ export default function TeamsPage() {
         {/* Add / Edit Modal */}
         {showModal && (
           <Modal title={editMember ? `Edit — ${editMember.full_name}` : '+ Add Team Member'} onClose={() => setShowModal(false)} width={500}>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
-              <div style={{ gridColumn:'1/-1', marginBottom:14 }}>
-                <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>Full Name *</label>
-                <input
-                  autoFocus
-                  value={form.full_name}
-                  onChange={e => { const v = e.target.value; setForm(prev => ({ ...prev, full_name: v })); }}
-                  placeholder="Full name"
-                  style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }}
-                />
-              </div>
-              <div style={{ marginBottom:14 }}>
-                <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>Email Address *</label>
-                <input type="email" value={form.email} readOnly={!!editMember}
-                  onChange={e => { const v = e.target.value; setForm(prev => ({ ...prev, email: v })); }}
-                  placeholder="email@venusenergy.com"
-                  style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const, ...(editMember?{background:T.bg,color:T.textMuted,cursor:'not-allowed'}:{}) }} />
-              </div>
-              <div style={{ marginBottom:14 }}>
-                <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>Phone</label>
-                <input value={form.phone}
-                  onChange={e => { const v = e.target.value; setForm(prev => ({ ...prev, phone: v })); }}
-                  placeholder="9876543210"
-                  style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
-              </div>
-              <div style={{ marginBottom:14 }}>
-                <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>Role *</label>
-                <select value={form.role} onChange={e => { const v = e.target.value; setForm(prev => ({ ...prev, role: v as UserRole })); }} style={{ ...inputStyle(), width:'100%' }}>
-                  {EXTENDED_ROLES.map(r=><option key={r} value={r}>{ROLE_LABELS_EXT[r]}</option>)}
-                </select>
-              </div>
-              <div style={{ marginBottom:14 }}>
-                <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>Region</label>
-                <select value={form.region} onChange={e => { const v = e.target.value; setForm(prev => ({ ...prev, region: v })); }} style={{ ...inputStyle(), width:'100%' }}>
-                  {REGIONS.map(r=><option key={r}>{r}</option>)}
-                </select>
-              </div>
-              <div style={{ marginBottom:14 }}>
-                <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>Designation</label>
-                <input value={form.designation}
-                  onChange={e => { const v = e.target.value; setForm(prev => ({ ...prev, designation: v })); }}
-                  placeholder="e.g. Project Manager"
-                  style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
-              </div>
-            </div>
-            {!editMember && (
-              <div style={{ background:T.infoBg, border:`1px solid #BFDBFE`, borderRadius:8, padding:'10px 14px', marginBottom:14, fontSize:12, color:T.info }}>
-                ℹ️ An invitation email will be sent to the user after creation.
-              </div>
-            )}
-            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:8 }}>
-              <button onClick={() => setShowModal(false)} style={btnSecondary}>Cancel</button>
-              <button onClick={handleSave} disabled={saving} style={{ ...btnPrimary, opacity:saving?0.8:1, minWidth:130 }}>
-                {saving ? <><div className="spinner" style={{ borderTopColor:'#fff', borderColor:'rgba(255,255,255,0.3)', width:14, height:14 }} /> Saving…</> : editMember ? '💾 Update' : '+ Add Member'}
-              </button>
-            </div>
+            <TeamMemberForm
+              key={editMember?.id || 'new'}
+              initial={form}
+              editMember={editMember}
+              onSave={handleSave}
+              onClose={() => setShowModal(false)}
+              saving={saving}
+            />
           </Modal>
         )}
 

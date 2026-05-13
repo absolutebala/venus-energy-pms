@@ -34,6 +34,8 @@ export default function ProjectsPage() {
   const [focused,      setFocused]      = useState(false);
   const [ageMin,       setAgeMin]       = useState<number|null>(null);
   const [ageMax,       setAgeMax]       = useState<number|null>(null);
+  const [pmFilter,     setPmFilter]     = useState('');
+  const [vendorFilter, setVendorFilter] = useState('');
 
   // Redirect PM
   useEffect(() => {
@@ -49,6 +51,8 @@ export default function ProjectsPage() {
     }
     if (qMin) setAgeMin(Number(qMin));
     if (qMax) setAgeMax(Number(qMax));
+    if (router.query.pm) setPmFilter(decodeURIComponent(router.query.pm as string));
+    if (router.query.vendor) setVendorFilter(decodeURIComponent(router.query.vendor as string));
   }, [router.isReady, router.query]);
 
   const searchMatch = (p: typeof MOCK_PROJECTS[0]) => {
@@ -68,6 +72,8 @@ export default function ProjectsPage() {
     if (typeFilter !== 'All' && p.type !== typeFilter) return false;
     if (ageMin !== null && p.aging < ageMin) return false;
     if (ageMax !== null && ageMax < 999 && p.aging > ageMax) return false;
+    if (pmFilter && (p as any).pm !== pmFilter) return false;
+    if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
     return searchMatch(p);
   });
 
@@ -116,6 +122,21 @@ export default function ProjectsPage() {
           </div>
         )}
 
+        {/* PM / Vendor filter banner */}
+        {(pmFilter || vendorFilter) && (
+          <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:'12px 18px', marginBottom:16, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <div>
+              <div style={{ fontSize:14, fontWeight:700, color:T.primary }}>
+                {pmFilter ? `📋 Projects for PM: ${pmFilter}` : `🏢 Projects for Vendor: ${vendorFilter}`}
+              </div>
+              <div style={{ fontSize:12, color:T.textMuted, marginTop:2 }}>{filtered.length} project(s) found</div>
+            </div>
+            <button onClick={()=>{ setPmFilter(''); setVendorFilter(''); router.push('/projects'); }}
+              style={{ background:'none', border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:'6px 14px', color:T.primary, cursor:'pointer', fontSize:12, fontWeight:600 }}>
+              × Clear Filter
+            </button>
+          </div>
+        )}
         {/* Summary cards */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
           {[
