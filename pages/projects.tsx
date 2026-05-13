@@ -124,17 +124,30 @@ export default function ProjectsPage() {
 
         {/* PM / Vendor filter banner */}
         {(pmFilter || vendorFilter) && (
-          <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:'12px 18px', marginBottom:16, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <div>
-              <div style={{ fontSize:14, fontWeight:700, color:T.primary }}>
-                {pmFilter ? `📋 Projects for PM: ${pmFilter}` : `🏢 Projects for Vendor: ${vendorFilter}`}
+          <div style={{ background:T.primaryLight, border:`1.5px solid ${T.primaryMid}`, borderRadius:12, padding:'16px 20px', marginBottom:16 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+              <div>
+                <div style={{ fontSize:15, fontWeight:700, color:T.primary, marginBottom:4 }}>
+                  {pmFilter ? `📋 Projects assigned to: ${pmFilter}` : `🏢 Projects for vendor: ${vendorFilter}`}
+                </div>
+                <div style={{ display:'flex', gap:12, flexWrap:'wrap' as const }}>
+                  <span style={{ fontSize:12, color:T.textMuted }}>{filtered.length} project(s)</span>
+                  <span style={{ fontSize:12, color:T.textMuted }}>
+                    PO Value: <strong style={{ color:T.text }}>₹{(filtered.reduce((a,p)=>{const pp=p as any;return a+(pp.poValue||0);},0)/100000).toFixed(1)}L</strong>
+                  </span>
+                  <span style={{ fontSize:12, color:T.danger }}>
+                    Delayed: <strong>{filtered.filter((p:any)=>p.status==='delayed').length}</strong>
+                  </span>
+                  <span style={{ fontSize:12, color:T.success }}>
+                    Completed: <strong>{filtered.filter((p:any)=>p.status==='completed'||p.status==='billing_review').length}</strong>
+                  </span>
+                </div>
               </div>
-              <div style={{ fontSize:12, color:T.textMuted, marginTop:2 }}>{filtered.length} project(s) found</div>
+              <button onClick={()=>{ setPmFilter(''); setVendorFilter(''); router.push('/projects'); }}
+                style={{ background:T.primary, border:'none', borderRadius:8, padding:'7px 16px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:600, flexShrink:0, marginLeft:12 }}>
+                × Clear Filter
+              </button>
             </div>
-            <button onClick={()=>{ setPmFilter(''); setVendorFilter(''); router.push('/projects'); }}
-              style={{ background:'none', border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:'6px 14px', color:T.primary, cursor:'pointer', fontSize:12, fontWeight:600 }}>
-              × Clear Filter
-            </button>
           </div>
         )}
         {/* Summary cards */}
