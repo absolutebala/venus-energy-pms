@@ -1,219 +1,169 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import Layout from '@/components/Layout';
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/router';
+import Toast from '@/components/Toast';
 import { T, card, btnPrimary } from '@/lib/theme';
-import { ROLE_LABELS, MODULE_LABELS, ALL_MODULES, UserRole, AppModule } from '@/types';
 import { DEFAULT_PERMISSIONS } from '@/lib/permissions';
-import { createClient } from '@/lib/supabase';
+import { UserRole } from '@/types';
 
-const EDITABLE_ROLES: UserRole[] = ['region_manager', 'project_manager', 'site_engineer', 'viewer'];
-type PermKey = 'can_create' | 'can_read' | 'can_edit' | 'can_delete';
-const PERM_KEYS: PermKey[] = ['can_create', 'can_read', 'can_edit', 'can_delete'];
-const PERM_LABELS: Record<PermKey, string> = { can_create:'Create', can_read:'Read', can_edit:'Edit', can_delete:'Delete' };
+const ROLES: { key: UserRole; label: string; icon: string; desc: string }[] = [
+  { key:'super_admin',    label:'Super Admin',    icon:'👑', desc:'Full access to all modules and settings'      },
+  { key:'region_manager', label:'Region Manager', icon:'📍', desc:'Manages projects and PMs in their region'     },
+  { key:'project_manager',label:'Project Manager',icon:'📋', desc:'Handles project execution and vendor assignment'},
+  { key:'site_engineer',  label:'Site Engineer',  icon:'👷', desc:'Views projects in their region'               },
+  { key:'accounting_team',label:'Accounting',     icon:'💳', desc:'Billing, STN/SRN reconciliation, reports'     },
+  { key:'vendor',         label:'Vendor',         icon:'🏢', desc:'Uploads work documents and material utilisation'},
+  { key:'viewer',         label:'Viewer',         icon:'👁',  desc:'Read-only access to all project data'        },
+];
 
-type PermMatrix = Record<string, Record<string, Record<PermKey, boolean>>>;
+const MODULES = [
+  { key:'dashboard',    label:'Dashboard',       icon:'▦',  desc:'Role-specific dashboard and KPIs'            },
+  { key:'projects',     label:'Projects',        icon:'📁', desc:'Project list, details, edit, vendor assign'  },
+  { key:'vendors',      label:'Vendors',         icon:'🏢', desc:'Vendor management, invite, activate'         },
+  { key:'srn_return',   label:'STN / SRN Status',icon:'📦', desc:'Material tracking, utilisation, returns'     },
+  { key:'site_expenses',label:'Site Expenses',   icon:'💰', desc:'Expense logging and approval'                },
+  { key:'ptw',          label:'PTW Management',  icon:'🔑', desc:'Permit to Work tickets, supervisor, dates'   },
+  { key:'reports',      label:'Reports',         icon:'📊', desc:'All management and performance reports'      },
+];
 
-export default function AdminRolesPage() {
-  const { profile } = useAuth();
-  const router = useRouter();
-  const supabase = createClient();
+type Action = 'can_create'|'can_read'|'can_edit'|'can_delete';
+const ACTIONS: { key: Action; label: string; short: string }[] = [
+  { key:'can_read',   label:'Read',   short:'R' },
+  { key:'can_create', label:'Create', short:'C' },
+  { key:'can_edit',   label:'Edit',   short:'E' },
+  { key:'can_delete', label:'Delete', short:'D' },
+];
 
-  const [selectedRole, setSelectedRole] = useState<UserRole>('region_manager');
-  const [matrix, setMatrix] = useState<PermMatrix>({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<{type:'success'|'error'; text:string}|null>(null);
+const ACTION_COLOR: Record<Action,{on:string;bg:string}> = {
+  can_read:   { on:'#2563EB', bg:'#EFF6FF' },
+  can_create: { on:'#16A34A', bg:'#F0FDF4' },
+  can_edit:   { on:'#D97706', bg:'#FFFBEB' },
+  can_delete: { on:'#DC2626', bg:'#FEF2F2' },
+};
 
-  useEffect(() => {
-    if (profile && profile.role !== 'super_admin') router.replace('/dashboard');
-  }, [profile, router]);
+export default function RolesPage() {
+  const [perms, setPerms]     = useState(() => JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS)));
+  const [activeRole, setRole] = useState<UserRole>('super_admin');
+  const [saving,   setSaving] = useState(false);
+  const [toast, setToast]     = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
 
-  const fetchPermissions = useCallback(async () => {
-    setLoading(true);
-    const { data } = await supabase.from('role_permissions').select('*');
-    const m: PermMatrix = {};
-
-    // Seed with defaults first
-    EDITABLE_ROLES.forEach(role => {
-      m[role] = {};
-      ALL_MODULES.forEach(mod => {
-        const def = DEFAULT_PERMISSIONS[role]?.[mod];
-        m[role][mod] = { can_create: def?.can_create??false, can_read: def?.can_read??true, can_edit: def?.can_edit??false, can_delete: def?.can_delete??false };
-      });
-    });
-
-    // Override with DB data
-    if (data) {
-      data.forEach((p: any) => {
-        if (!m[p.role]) m[p.role] = {};
-        if (!m[p.role][p.module]) m[p.role][p.module] = { can_create:false, can_read:true, can_edit:false, can_delete:false };
-        m[p.role][p.module] = { can_create:p.can_create, can_read:p.can_read, can_edit:p.can_edit, can_delete:p.can_delete };
-      });
-    }
-    setMatrix(m);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { fetchPermissions(); }, [fetchPermissions]);
-
-  const toggle = (module: AppModule, key: PermKey) => {
-    setMatrix(prev => {
-      const next = JSON.parse(JSON.stringify(prev));
-      if (!next[selectedRole]) next[selectedRole] = {};
-      if (!next[selectedRole][module]) next[selectedRole][module] = { can_create:false, can_read:true, can_edit:false, can_delete:false };
-      // can_read cannot be disabled
-      if (key === 'can_read') return next;
-      next[selectedRole][module][key] = !next[selectedRole][module][key];
-      return next;
-    });
-  };
-
-  const savePermissions = async () => {
-    setSaving(true);
-    setMsg(null);
-    const rolePerms = matrix[selectedRole];
-    if (!rolePerms) { setSaving(false); return; }
-
-    const upsertData = ALL_MODULES.map(mod => ({
-      role: selectedRole,
-      module: mod,
-      ...(rolePerms[mod] || { can_create:false, can_read:true, can_edit:false, can_delete:false }),
-      updated_at: new Date().toISOString(),
+  const toggle = (module: string, action: Action) => {
+    if (activeRole === 'super_admin') return; // SA always full
+    setPerms((p:any) => ({
+      ...p,
+      [activeRole]: {
+        ...p[activeRole],
+        [module]: { ...p[activeRole][module], [action]: !p[activeRole][module]?.[action] }
+      }
     }));
-
-    const { error } = await supabase.from('role_permissions').upsert(upsertData, { onConflict: 'role,module' });
-    setSaving(false);
-    if (error) setMsg({ type:'error', text: error.message });
-    else setMsg({ type:'success', text:`Permissions saved for ${ROLE_LABELS[selectedRole]}!` });
-    setTimeout(() => setMsg(null), 3000);
   };
 
-  const resetToDefault = () => {
-    setMatrix(prev => {
-      const next = JSON.parse(JSON.stringify(prev));
-      next[selectedRole] = {};
-      ALL_MODULES.forEach(mod => {
-        const def = DEFAULT_PERMISSIONS[selectedRole]?.[mod];
-        next[selectedRole][mod] = { can_create:def?.can_create??false, can_read:def?.can_read??true, can_edit:def?.can_edit??false, can_delete:def?.can_delete??false };
-      });
-      return next;
-    });
+  const handleSave = () => {
+    setSaving(true);
+    setTimeout(() => { setSaving(false); setToast({ msg:'Permissions saved!', type:'success' }); }, 600);
   };
 
-  const Checkbox = ({ checked, onChange, disabled=false }: { checked:boolean; onChange:()=>void; disabled?:boolean }) => (
-    <button onClick={!disabled?onChange:undefined} style={{
-      width:24, height:24, borderRadius:6, border:`2px solid`,
-      borderColor: disabled ? T.border : checked ? T.primary : T.border,
-      background: disabled ? T.bg : checked ? T.primary : T.surface,
-      display:'flex', alignItems:'center', justifyContent:'center',
-      cursor: disabled ? 'not-allowed' : 'pointer',
-      transition:'all 0.15s',
-    }}>
-      {checked && <span style={{ color:'#fff', fontSize:12, fontWeight:700, lineHeight:1 }}>✓</span>}
-    </button>
-  );
-
-  const currentPerms = matrix[selectedRole] || {};
+  const currentRole = ROLES.find(r=>r.key===activeRole)!;
 
   return (
     <Layout>
       <div className="fade-in">
-        <div style={{ display:'flex', gap:14, alignItems:'flex-start' }}>
-
-          {/* Role selector sidebar */}
-          <div style={{ ...card, width:200, flexShrink:0 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:14 }}>Roles</div>
-            {EDITABLE_ROLES.map(role => (
-              <button key={role} onClick={()=>setSelectedRole(role)} style={{
-                width:'100%', textAlign:'left', padding:'10px 12px', borderRadius:8, border:'none',
-                background: selectedRole===role ? T.primaryLight : 'transparent',
-                color: selectedRole===role ? T.primary : T.textMuted,
-                fontWeight: selectedRole===role ? 700 : 400,
-                fontSize:13, cursor:'pointer', marginBottom:4,
-                borderLeft: selectedRole===role ? `3px solid ${T.primary}` : '3px solid transparent',
-              }}>
-                {ROLE_LABELS[role]}
-              </button>
+        <div style={{ display:'grid', gridTemplateColumns:'220px 1fr', gap:16 }}>
+          {/* Role list */}
+          <div>
+            <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>Select Role</div>
+            {ROLES.map(r=>(
+              <div key={r.key} onClick={()=>setRole(r.key)}
+                style={{ padding:'12px 14px', borderRadius:10, marginBottom:8, cursor:'pointer', border:`1.5px solid ${activeRole===r.key?T.primary:T.border}`, background:activeRole===r.key?T.primaryLight:T.surface, transition:'all 0.15s' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
+                  <span style={{ fontSize:16 }}>{r.icon}</span>
+                  <span style={{ fontSize:13, fontWeight:700, color:activeRole===r.key?T.primary:T.text }}>{r.label}</span>
+                </div>
+                <div style={{ fontSize:11, color:T.textMuted, lineHeight:1.4 }}>{r.desc}</div>
+              </div>
             ))}
-
-            <div style={{ marginTop:14, padding:'12px', background:T.primaryLight, borderRadius:8 }}>
-              <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:4 }}>Super Admin</div>
-              <div style={{ fontSize:11, color:T.textMuted }}>Always has full access to all modules. Cannot be restricted.</div>
-            </div>
           </div>
 
-          {/* Permissions matrix */}
-          <div style={{ ...card, flex:1 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
-              <div>
-                <div style={{ fontSize:16, fontWeight:700, color:T.text }}>{ROLE_LABELS[selectedRole]}</div>
-                <div style={{ fontSize:12, color:T.textMuted }}>Click checkboxes to toggle permissions. Read access is always enabled.</div>
+          {/* Permission matrix */}
+          <div>
+            <div style={{ ...card, marginBottom:16 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+                <div>
+                  <div style={{ fontSize:16, fontWeight:700, color:T.text }}>{currentRole.icon} {currentRole.label} Permissions</div>
+                  <div style={{ fontSize:12, color:T.textMuted, marginTop:3 }}>{currentRole.desc}</div>
+                </div>
+                {activeRole !== 'super_admin' && (
+                  <button onClick={handleSave} disabled={saving} style={{ ...btnPrimary, opacity:saving?0.8:1 }}>
+                    {saving?'Saving…':'💾 Save Permissions'}
+                  </button>
+                )}
               </div>
-              <div style={{ display:'flex', gap:8 }}>
-                <button onClick={resetToDefault} style={{ background:T.bg, border:`1px solid ${T.border}`, borderRadius:7, padding:'7px 14px', fontSize:12, color:T.textMuted, cursor:'pointer' }}>
-                  ↩ Reset Defaults
-                </button>
-                <button onClick={savePermissions} disabled={saving} style={{ ...btnPrimary, opacity:saving?0.7:1 }}>
-                  {saving?'Saving…':'💾 Save Permissions'}
-                </button>
-              </div>
-            </div>
 
-            {msg && (
-              <div style={{ padding:'10px 14px', borderRadius:8, fontSize:13, marginBottom:16, marginTop:12, background:msg.type==='success'?T.successBg:T.dangerBg, border:`1px solid ${msg.type==='success'?'#BBF7D0':'#FECACA'}`, color:msg.type==='success'?T.success:T.danger }}>
-                {msg.type==='success'?'✅':'⚠️'} {msg.text}
-              </div>
-            )}
+              {activeRole === 'super_admin' && (
+                <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:13, color:T.primary, fontWeight:500 }}>
+                  👑 Super Admin has full access to all modules and cannot be restricted.
+                </div>
+              )}
 
-            {loading ? (
-              <div style={{ display:'flex', justifyContent:'center', padding:60 }}><div className="spinner" /></div>
-            ) : (
-              <div style={{ overflowX:'auto', marginTop:16 }}>
-                <table style={{ width:'100%', borderCollapse:'collapse' }}>
-                  <thead>
-                    <tr style={{ borderBottom:`2px solid ${T.border}` }}>
-                      <th style={{ textAlign:'left', padding:'10px 12px', fontSize:12, fontWeight:700, color:T.text, width:200 }}>Module</th>
-                      {PERM_KEYS.map(k => (
-                        <th key={k} style={{ textAlign:'center', padding:'10px 20px', fontSize:12, fontWeight:700, color:T.text }}>
-                          {PERM_LABELS[k]}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ALL_MODULES.map((mod, i) => {
-                      const perms = currentPerms[mod] || { can_create:false, can_read:true, can_edit:false, can_delete:false };
-                      return (
-                        <tr key={mod} style={{ background: i%2===0 ? T.bg : T.surface, borderBottom:`1px solid ${T.border}` }}>
-                          <td style={{ padding:'12px 12px' }}>
-                            <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{MODULE_LABELS[mod]}</div>
-                          </td>
-                          {PERM_KEYS.map(key => (
-                            <td key={key} style={{ textAlign:'center', padding:'12px 20px' }}>
-                              <div style={{ display:'flex', justifyContent:'center' }}>
-                                <Checkbox
-                                  checked={perms[key]}
-                                  onChange={() => toggle(mod, key)}
-                                  disabled={key==='can_read'}
-                                />
+              <table style={{ width:'100%', borderCollapse:'collapse' }}>
+                <thead>
+                  <tr style={{ background:T.bg }}>
+                    <th style={{ padding:'10px 14px', fontSize:12, fontWeight:700, color:T.textMuted, textAlign:'left', width:'40%' }}>Module</th>
+                    {ACTIONS.map(a=>(
+                      <th key={a.key} style={{ padding:'10px 14px', fontSize:12, fontWeight:700, color:ACTION_COLOR[a.key].on, textAlign:'center' }}>{a.label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {MODULES.map((mod,i)=>{
+                    const modPerms = perms[activeRole]?.[mod.key] || {};
+                    return (
+                      <tr key={mod.key} style={{ borderTop:`1px solid ${T.border}`, background:i%2===0?'#fff':T.bg }}>
+                        <td style={{ padding:'12px 14px' }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                            <span style={{ fontSize:16 }}>{mod.icon}</span>
+                            <div>
+                              <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{mod.label}</div>
+                              <div style={{ fontSize:11, color:T.textMuted }}>{mod.desc}</div>
+                            </div>
+                          </div>
+                        </td>
+                        {ACTIONS.map(action=>{
+                          const enabled = activeRole==='super_admin' ? true : !!modPerms[action.key];
+                          const c = ACTION_COLOR[action.key];
+                          return (
+                            <td key={action.key} style={{ padding:'12px 14px', textAlign:'center' }}>
+                              <div onClick={()=>toggle(mod.key,action.key)}
+                                style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?c.on:T.border}`, background:enabled?c.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:activeRole==='super_admin'?'not-allowed':'pointer', margin:'0 auto', transition:'all 0.15s' }}>
+                                {enabled && <span style={{ fontSize:14, fontWeight:700, color:c.on }}>✓</span>}
                               </div>
                             </td>
-                          ))}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
 
-            <div style={{ marginTop:14, padding:'10px 14px', background:T.bg, borderRadius:8, fontSize:11, color:T.textDim }}>
-              💡 Tip: Changes take effect on the user's next login or page refresh. Read access is always on and cannot be disabled.
+            {/* Legend */}
+            <div style={{ ...card }}>
+              <div style={{ fontSize:13, fontWeight:600, color:T.text, marginBottom:12 }}>Permission Legend</div>
+              <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
+                {ACTIONS.map(a=>(
+                  <div key={a.key} style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <div style={{ width:24, height:24, borderRadius:6, background:ACTION_COLOR[a.key].bg, border:`2px solid ${ACTION_COLOR[a.key].on}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                      <span style={{ fontSize:11, fontWeight:700, color:ACTION_COLOR[a.key].on }}>✓</span>
+                    </div>
+                    <span style={{ fontSize:13, color:T.text }}>{a.label} — {a.key==='can_read'?'View data':a.key==='can_create'?'Add new records':a.key==='can_edit'?'Modify existing':'Remove records'}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
+      {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
     </Layout>
   );
 }
