@@ -26,7 +26,7 @@ export default function RMProjectsPage() {
   const myProjects = ALL_PROJECTS.filter(p =>
     p.rm === (profile?.full_name || 'Ramesh Kumar') &&
     (statusFilter === 'All' || STATUS_DISPLAY[p.status] === statusFilter) &&
-    (!search || p.projectName.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase()))
+    (!search || p.projectName.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase()) || (p as any).poNo?.toLowerCase().includes(search.toLowerCase()) || (p as any).indusId?.toLowerCase().includes(search.toLowerCase()))
   );
 
   const counts = {
@@ -61,7 +61,7 @@ export default function RMProjectsPage() {
 
         <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:16, flexWrap:'wrap' }}>
           <input value={search} onChange={e=>setSearch(e.target.value)} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
-            placeholder="Search project…" style={{ ...inputStyle(focused), width:240 }} />
+            placeholder="Search project, PO number, Indus ID…" style={{ ...inputStyle(focused), width:240 }} />
           {['All','In Progress','Delayed','Pending','Completed'].map(f=>(
             <button key={f} onClick={()=>setStatusFilter(f)}
               style={{ padding:'6px 12px', borderRadius:6, border:'1px solid', borderColor:statusFilter===f?T.primary:T.border, background:statusFilter===f?T.primaryLight:'#fff', color:statusFilter===f?T.primary:T.textMuted, fontSize:12, cursor:'pointer', fontWeight:statusFilter===f?600:400 }}>{f}</button>
@@ -72,7 +72,7 @@ export default function RMProjectsPage() {
           <div style={{ overflowX:'auto' }}>
             <table style={{ width:'100%' }}>
               <thead>
-                <tr>{['Project ID','Project Name','Site','Type','Project Manager','PO Value','Aging','Progress','Status','Actions'].map(h=>(
+                <tr>{['Project ID','PO Number','Indus ID','Project Name','Site','Type','Project Manager','PO Value','Aging','Progress','Status','Actions'].map(h=>(
                   <th key={h} style={{ padding:'10px 12px', fontSize:11, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:'left', borderBottom:`2px solid ${T.border}`, whiteSpace:'nowrap' }}>{h}</th>
                 ))}</tr>
               </thead>
@@ -84,6 +84,8 @@ export default function RMProjectsPage() {
                     onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
                     onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
                     <td style={{ padding:'10px 12px', color:T.primary, fontWeight:700 }}>{p.id}</td>
+                    <td style={{ padding:'10px 12px', fontSize:12, color:T.text, fontWeight:600 }}>{(p as any).poNo||'—'}</td>
+                    <td style={{ padding:'10px 12px', fontSize:11, color:T.textMuted }}>{(p as any).indusId||'—'}</td>
                     <td style={{ padding:'10px 12px', fontWeight:500, color:T.text }}>{p.projectName}</td>
                     <td style={{ padding:'10px 12px', fontSize:12, color:T.textMuted }}>{p.site}</td>
                     <td style={{ padding:'10px 12px' }}><span style={{ fontSize:11, background:T.primaryLight, color:T.primary, padding:'2px 8px', borderRadius:5, fontWeight:500 }}>{p.type}</span></td>

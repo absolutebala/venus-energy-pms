@@ -5,14 +5,14 @@ import { useAuth } from '@/context/AuthContext';
 import { T, card, btnPrimary, inputStyle } from '@/lib/theme';
 
 const ALL_PROJECTS = [
-  { id:'VE-2025-001', projectName:'Chennai Metro Phase II',  site:'Chennai North',   type:'Tower Erection',     poValue:1850000, aging:12, status:'in_progress',   progress:65,  vendorAssigned:true,  vendor:'ABC Telecom Services',    deadline:'30/06/2025', pm:'Arun Kumar',   assignedAt:'2025-05-10' },
-  { id:'VE-2025-004', projectName:'Chennai Fiber Network',   site:'Chennai South',   type:'Fiber Installation', poValue:1230000, aging:12, status:'in_progress',   progress:45,  vendorAssigned:false, vendor:null,                      deadline:'15/07/2025', pm:'Arun Kumar',   assignedAt:'2025-05-08' },
-  { id:'VE-2025-005', projectName:'Coimbatore Tower Erect',  site:'Coimbatore',      type:'Tower Erection',     poValue:2200000, aging:8,  status:'pending',        progress:10,  vendorAssigned:false, vendor:null,                      deadline:'31/08/2025', pm:'Arun Kumar',   assignedAt:'2025-05-11' },
-  { id:'VE-2025-007', projectName:'Mumbai Power Works',      site:'Mumbai Central',  type:'Power Works',        poValue:890000,  aging:33, status:'billing_review', progress:100, vendorAssigned:true,  vendor:'PowerSys India',          deadline:'31/05/2025', pm:'Arun Kumar',   assignedAt:'2025-04-20' },
-  { id:'VE-2025-008', projectName:'Delhi NCR Maintenance',   site:'Delhi NCR',       type:'Tower Maintenance',  poValue:380000,  aging:18, status:'in_progress',   progress:75,  vendorAssigned:true,  vendor:'XYZ Infra Solutions',     deadline:'31/05/2025', pm:'Arun Kumar',   assignedAt:'2025-05-09' },
-  { id:'VE-2025-010', projectName:'Kolkata Fiber Install',   site:'Kolkata North',   type:'Fiber Installation', poValue:975000,  aging:5,  status:'completed',      progress:100, vendorAssigned:true,  vendor:'NetConnect Services',     deadline:'31/08/2025', pm:'Arun Kumar',   assignedAt:'2025-05-05' },
-  { id:'VE-2025-003', projectName:'Hyderabad Component Repl',site:'Hyderabad',       type:'Component Replace',  poValue:760000,  aging:22, status:'billing_review', progress:100, vendorAssigned:true,  vendor:'TowerTech Pvt Ltd',       deadline:'20/05/2025', pm:'Vijay Kumar',  assignedAt:'2025-04-15' },
-  { id:'VE-2025-009', projectName:'Kochi Component Delay',   site:'Kochi',           type:'Component Replace',  poValue:650000,  aging:62, status:'delayed',        progress:40,  vendorAssigned:false, vendor:null,                      deadline:'30/04/2025', pm:'Vijay Kumar',  assignedAt:'2025-04-10' },
+  { id:'VE-2025-001', projectName:'Chennai Metro Phase II',  poNo:'PO-2025-001', indusId:'IND-1001', site:'Chennai North',   type:'Tower Erection',     poValue:1850000, aging:12, status:'in_progress',   progress:65,  vendorAssigned:true,  vendor:'ABC Telecom Services',    deadline:'30/06/2025', pm:'Arun Kumar',   assignedAt:'2025-05-10' },
+  { id:'VE-2025-004', projectName:'Chennai Fiber Network',  poNo:'PO-2025-002', indusId:'IND-1004',   site:'Chennai South',   type:'Fiber Installation', poValue:1230000, aging:12, status:'in_progress',   progress:45,  vendorAssigned:false, vendor:null,                      deadline:'15/07/2025', pm:'Arun Kumar',   assignedAt:'2025-05-08' },
+  { id:'VE-2025-005', projectName:'Coimbatore Tower Erect', poNo:'PO-2025-003', indusId:'IND-1005',  site:'Coimbatore',      type:'Tower Erection',     poValue:2200000, aging:8,  status:'pending',        progress:10,  vendorAssigned:false, vendor:null,                      deadline:'31/08/2025', pm:'Arun Kumar',   assignedAt:'2025-05-11' },
+  { id:'VE-2025-007', projectName:'Mumbai Power Works',      poNo:'PO-2025-004', indusId:'IND-1007',      site:'Mumbai Central',  type:'Power Works',        poValue:890000,  aging:33, status:'billing_review', progress:100, vendorAssigned:true,  vendor:'PowerSys India',          deadline:'31/05/2025', pm:'Arun Kumar',   assignedAt:'2025-04-20' },
+  { id:'VE-2025-008', projectName:'Delhi NCR Maintenance',  poNo:'PO-2025-004', indusId:'IND-1008',   site:'Delhi NCR',       type:'Tower Maintenance',  poValue:380000,  aging:18, status:'in_progress',   progress:75,  vendorAssigned:true,  vendor:'XYZ Infra Solutions',     deadline:'31/05/2025', pm:'Arun Kumar',   assignedAt:'2025-05-09' },
+  { id:'VE-2025-010', projectName:'Kolkata Fiber Install',  poNo:'PO-2025-005', indusId:'IND-1010',   site:'Kolkata North',   type:'Fiber Installation', poValue:975000,  aging:5,  status:'completed',      progress:100, vendorAssigned:true,  vendor:'NetConnect Services',     deadline:'31/08/2025', pm:'Arun Kumar',   assignedAt:'2025-05-05' },
+  { id:'VE-2025-003', projectName:'Hyderabad Component Repl', poNo:'PO-2025-002', indusId:'IND-1003',site:'Hyderabad',       type:'Component Replace',  poValue:760000,  aging:22, status:'billing_review', progress:100, vendorAssigned:true,  vendor:'TowerTech Pvt Ltd',       deadline:'20/05/2025', pm:'Vijay Kumar',  assignedAt:'2025-04-15' },
+  { id:'VE-2025-009', projectName:'Kochi Component Delay',  poNo:'PO-2025-005', indusId:'IND-1009',   site:'Kochi',           type:'Component Replace',  poValue:650000,  aging:62, status:'delayed',        progress:40,  vendorAssigned:false, vendor:null,                      deadline:'30/04/2025', pm:'Vijay Kumar',  assignedAt:'2025-04-10' },
 ];
 
 const STATUS_COLOR: Record<string,string> = {
@@ -173,7 +173,7 @@ export default function PMProjectsPage() {
             ))}
           </div>
           <input value={search} onChange={e=>setSearch(e.target.value)} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
-            placeholder="Search project ID or name…" style={{ ...inputStyle(focused), width:220 }} />
+            placeholder="Search project, PO number, Indus ID…" style={{ ...inputStyle(focused), width:220 }} />
         </div>
 
         {filtered.length === 0 ? (

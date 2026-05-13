@@ -8,16 +8,16 @@ import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
 
 const allProjects: Record<string, any> = {
-  'VE-2025-001': { id:'VE-2025-001', site:'Chennai North',     client:'Airtel', type:'Tower Erection',       vendors:['ABC Telecom Services','XYZ Infra Solutions'],  poValue:1850000, aging:12,  status:'in_progress',  progress:65,  region:'TN', pm:'Arun Kumar',   rm:'Ramesh Kumar', startDate:'01/04/2025', endDate:'30/06/2025', remarks:'Foundation work and reinforcement in progress.' },
-  'VE-2025-002': { id:'VE-2025-002', site:'Bengaluru East',    client:'Jio',    type:'Tower Maintenance',    vendors:['XYZ Infra Solutions'],                           poValue:420000,  aging:78,  status:'submitted',    progress:80,  region:'KA', pm:'Priya Sharma', rm:'Ramesh Kumar', startDate:'01/03/2025', endDate:'30/04/2025', remarks:'Vendor has submitted for PM review.' },
-  'VE-2025-003': { id:'VE-2025-003', site:'Hyderabad Central', client:'Vi',     type:'Component Replacement',vendors:['TowerTech Pvt Ltd'],                             poValue:760000,  aging:22,  status:'pm_approved',  progress:100, region:'TS', pm:'Arun Kumar',   rm:'Ramesh Kumar', startDate:'01/04/2025', endDate:'20/05/2025', remarks:'PM approved. Awaiting billing review.' },
-  'VE-2025-004': { id:'VE-2025-004', site:'Chennai South',     client:'BSNL',   type:'Fiber Installation',   vendors:['NetConnect Services'],                           poValue:1230000, aging:12,  status:'in_progress',  progress:45,  region:'TN', pm:'Vijay Kumar',  rm:'Ramesh Kumar', startDate:'15/04/2025', endDate:'15/07/2025', remarks:'Fiber laying in progress.' },
-  'VE-2025-005': { id:'VE-2025-005', site:'Coimbatore',        client:'Airtel', type:'Tower Erection',       vendors:['ABC Telecom Services'],                          poValue:2200000, aging:8,   status:'pending',      progress:10,  region:'TN', pm:'Arun Kumar',   rm:'Suresh Patel', startDate:'15/05/2025', endDate:'31/08/2025', remarks:'Site survey completed.' },
-  'VE-2025-006': { id:'VE-2025-006', site:'Pune West',         client:'Jio',    type:'Civil Works',          vendors:['BuildRight Constructions'],                      poValue:540000,  aging:95,  status:'delayed',      progress:20,  region:'MH', pm:'Pooja Mehta',  rm:'Amit Sharma',  startDate:'01/02/2025', endDate:'30/04/2025', remarks:'Severely delayed.' },
-  'VE-2025-007': { id:'VE-2025-007', site:'Mumbai Central',    client:'Vi',     type:'Power Works',          vendors:['PowerSys India'],                                poValue:890000,  aging:33,  status:'billing_review',progress:100, region:'MH', pm:'Pooja Mehta',  rm:'Amit Sharma',  startDate:'01/04/2025', endDate:'31/05/2025', remarks:'Billing checklist pending.' },
-  'VE-2025-008': { id:'VE-2025-008', site:'Delhi NCR',         client:'Airtel', type:'Tower Maintenance',    vendors:['XYZ Infra Solutions'],                           poValue:380000,  aging:18,  status:'in_progress',  progress:55,  region:'DL', pm:'Rajeev Singh', rm:'Amit Sharma',  startDate:'01/05/2025', endDate:'31/05/2025', remarks:'Antenna replacement done.' },
-  'VE-2025-009': { id:'VE-2025-009', site:'Kochi',             client:'BSNL',   type:'Component Replacement',vendors:['TowerTech Pvt Ltd'],                             poValue:650000,  aging:62,  status:'delayed',      progress:40,  region:'KL', pm:'Vijay Kumar',  rm:'Suresh Patel', startDate:'01/03/2025', endDate:'30/04/2025', remarks:'Awaiting parts.' },
-  'VE-2025-010': { id:'VE-2025-010', site:'Kolkata North',     client:'Jio',    type:'Fiber Installation',   vendors:['NetConnect Services'],                           poValue:975000,  aging:5,   status:'pending',      progress:0,   region:'WB', pm:'Neha Verma',   rm:'Suresh Patel', startDate:'01/06/2025', endDate:'31/08/2025', remarks:'Not yet started.' },
+  'VE-2025-001': { id:'VE-2025-001', poNo:'PO-2025-001', indusId:'IND-1001', site:'Chennai North',     type:'Tower Erection',       vendors:['ABC Telecom Services','XYZ Infra Solutions'],  poValue:1850000, aging:12,  status:'in_progress',  progress:65,  region:'TN', pm:'Arun Kumar',   rm:'Ramesh Kumar', startDate:'01/04/2025', endDate:'30/06/2025', remarks:'Foundation work and reinforcement in progress.' },
+  'VE-2025-002': { id:'VE-2025-002', poNo:'PO-2025-001', indusId:'IND-1002', site:'Bengaluru East',    type:'Tower Maintenance',    vendors:['XYZ Infra Solutions'],                           poValue:420000,  aging:78,  status:'submitted',    progress:80,  region:'KA', pm:'Priya Sharma', rm:'Ramesh Kumar', startDate:'01/03/2025', endDate:'30/04/2025', remarks:'Vendor has submitted for PM review.' },
+  'VE-2025-003': { id:'VE-2025-003', poNo:'PO-2025-002', indusId:'IND-1003', site:'Hyderabad Central', type:'Component Replacement',vendors:['TowerTech Pvt Ltd'],                             poValue:760000,  aging:22,  status:'pm_approved',  progress:100, region:'TS', pm:'Arun Kumar',   rm:'Ramesh Kumar', startDate:'01/04/2025', endDate:'20/05/2025', remarks:'PM approved. Awaiting billing review.' },
+  'VE-2025-004': { id:'VE-2025-004', poNo:'PO-2025-002', indusId:'IND-1004', site:'Chennai South',     type:'Fiber Installation',   vendors:['NetConnect Services'],                           poValue:1230000, aging:12,  status:'in_progress',  progress:45,  region:'TN', pm:'Vijay Kumar',  rm:'Ramesh Kumar', startDate:'15/04/2025', endDate:'15/07/2025', remarks:'Fiber laying in progress.' },
+  'VE-2025-005': { id:'VE-2025-005', poNo:'PO-2025-003', indusId:'IND-1005', site:'Coimbatore',        type:'Tower Erection',       vendors:['ABC Telecom Services'],                          poValue:2200000, aging:8,   status:'pending',      progress:10,  region:'TN', pm:'Arun Kumar',   rm:'Suresh Patel', startDate:'15/05/2025', endDate:'31/08/2025', remarks:'Site survey completed.' },
+  'VE-2025-006': { id:'VE-2025-006', poNo:'PO-2025-003', indusId:'IND-1006', site:'Pune West',         type:'Civil Works',          vendors:['BuildRight Constructions'],                      poValue:540000,  aging:95,  status:'delayed',      progress:20,  region:'MH', pm:'Pooja Mehta',  rm:'Amit Sharma',  startDate:'01/02/2025', endDate:'30/04/2025', remarks:'Severely delayed.' },
+  'VE-2025-007': { id:'VE-2025-007', poNo:'PO-2025-004', indusId:'IND-1007', site:'Mumbai Central',    type:'Power Works',          vendors:['PowerSys India'],                                poValue:890000,  aging:33,  status:'billing_review',progress:100, region:'MH', pm:'Pooja Mehta',  rm:'Amit Sharma',  startDate:'01/04/2025', endDate:'31/05/2025', remarks:'Billing checklist pending.' },
+  'VE-2025-008': { id:'VE-2025-008', poNo:'PO-2025-004', indusId:'IND-1008', site:'Delhi NCR',         type:'Tower Maintenance',    vendors:['XYZ Infra Solutions'],                           poValue:380000,  aging:18,  status:'in_progress',  progress:55,  region:'DL', pm:'Rajeev Singh', rm:'Amit Sharma',  startDate:'01/05/2025', endDate:'31/05/2025', remarks:'Antenna replacement done.' },
+  'VE-2025-009': { id:'VE-2025-009', poNo:'PO-2025-005', indusId:'IND-1009', site:'Kochi',             type:'Component Replacement',vendors:['TowerTech Pvt Ltd'],                             poValue:650000,  aging:62,  status:'delayed',      progress:40,  region:'KL', pm:'Vijay Kumar',  rm:'Suresh Patel', startDate:'01/03/2025', endDate:'30/04/2025', remarks:'Awaiting parts.' },
+  'VE-2025-010': { id:'VE-2025-010', poNo:'PO-2025-005', indusId:'IND-1010', site:'Kolkata North',     type:'Fiber Installation',   vendors:['NetConnect Services'],                           poValue:975000,  aging:5,   status:'pending',      progress:0,   region:'WB', pm:'Neha Verma',   rm:'Suresh Patel', startDate:'01/06/2025', endDate:'31/08/2025', remarks:'Not yet started.' },
 };
 
 const STATUS_FLOW: Record<string,{label:string;color:string}> = {
@@ -157,15 +157,16 @@ export default function ProjectDetailPage() {
             <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14, paddingBottom:10, borderBottom:`1px solid ${T.border}` }}>📋 Project Details</div>
             {[
               ['Project No',      p.id],
+              ['PO Number',       p.poNo],
+              ['Indus ID',        p.indusId],
               ['Site Name',       p.site],
               ['Region',          p.region],
-              ['Client',          p.client],
               ['Job Type',        p.type],
               ['Start Date',      p.startDate],
               ['End Date',        p.endDate],
               ['Region Manager',  p.rm],
               ['Project Manager', p.pm],
-              ['Vendors',         p.vendors.join(', ')],
+              ['Vendors',         Array.isArray(p.vendors)?p.vendors.join(', '):p.vendors],
             ].map(([label, value]) => (
               <div key={label} style={{ display:'flex', justifyContent:'space-between', padding:'7px 0', borderBottom:`1px solid ${T.border}`, fontSize:13 }}>
                 <span style={{ color:T.textMuted }}>{label}</span>

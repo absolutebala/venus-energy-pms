@@ -48,7 +48,7 @@ export default function VendorsPage() {
   };
 
   const filtered = vendors.filter(v =>
-    !search || v.name.toLowerCase().includes(search.toLowerCase()) || v.contact.toLowerCase().includes(search.toLowerCase())
+    !search || v.name.toLowerCase().includes(search.toLowerCase()) || v.contact.toLowerCase().includes(search.toLowerCase()) || v.email.toLowerCase().includes(search.toLowerCase()) || v.gst.toLowerCase().includes(search.toLowerCase())
   );
 
   const openNew  = () => { setForm(emptyForm()); setEditVendor(null); setShowModal(true); };
@@ -150,7 +150,7 @@ export default function VendorsPage() {
 
         <div style={card}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-            <input value={search} onChange={e=>setSearch(e.target.value)} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} placeholder="Search vendor or contact…" style={{ ...inputStyle(focused), width:260 }} />
+            <input value={search} onChange={e=>setSearch(e.target.value)} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} placeholder="Search vendor, contact, email, GST…" style={{ ...inputStyle(focused), width:260 }} />
             <button onClick={openNew} style={btnPrimary}>+ Add Vendor</button>
           </div>
 

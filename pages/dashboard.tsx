@@ -8,15 +8,15 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 
 // ── Shared mock data ──────────────────────────────────────────────
 const ALL_PROJECTS = [
-  { id:'VE-2025-001', projectName:'Chennai Metro Phase II', site:'Chennai North',  client:'Airtel', type:'Tower Erection',    pm:'Arun Kumar',   rm:'Ramesh Kumar', vendor:'ABC Telecom Services',    poValue:1850000, aging:12, status:'in_progress',   progress:65,  region:'Tamil Nadu',  createdAt:'2025-04-01', assignedAt:'2025-05-10', vendorAssigned:true  },
-  { id:'VE-2025-002', projectName:'Bengaluru East Maint.',  site:'Bengaluru East', client:'Jio',    type:'Tower Maintenance', pm:'Priya Sharma', rm:'Amit Sharma',  vendor:'XYZ Infra Solutions',    poValue:420000,  aging:78, status:'delayed',        progress:30,  region:'Karnataka',   createdAt:'2025-03-15', assignedAt:'2025-04-01', vendorAssigned:true  },
-  { id:'VE-2025-003', projectName:'Hyderabad Component',   site:'Hyderabad',      client:'Vi',     type:'Component Replace', pm:'Arun Kumar',   rm:'Ramesh Kumar', vendor:'TowerTech Pvt Ltd',      poValue:760000,  aging:22, status:'billing_review', progress:100, region:'Tamil Nadu',  createdAt:'2025-04-10', assignedAt:'2025-04-15', vendorAssigned:true  },
-  { id:'VE-2025-004', projectName:'Chennai Fiber Network', site:'Chennai South',  client:'BSNL',   type:'Fiber Installation',pm:'Vijay Kumar',  rm:'Ramesh Kumar', vendor:null,                     poValue:1230000, aging:12, status:'in_progress',   progress:45,  region:'Tamil Nadu',  createdAt:'2025-04-20', assignedAt:'2025-05-08', vendorAssigned:false },
-  { id:'VE-2025-005', projectName:'Coimbatore Tower',      site:'Coimbatore',     client:'Airtel', type:'Tower Erection',    pm:'Arun Kumar',   rm:'Ramesh Kumar', vendor:null,                     poValue:2200000, aging:8,  status:'pending',        progress:10,  region:'Tamil Nadu',  createdAt:'2025-05-01', assignedAt:'2025-05-11', vendorAssigned:false },
-  { id:'VE-2025-006', projectName:'Pune Civil Works',      site:'Pune West',      client:'Jio',    type:'Civil Works',       pm:'Pooja Mehta',  rm:'Amit Sharma',  vendor:'BuildRight Constructions',poValue:540000,  aging:95, status:'delayed',        progress:20,  region:'Maharashtra', createdAt:'2025-02-01', assignedAt:'2025-03-01', vendorAssigned:true  },
-  { id:'VE-2025-007', projectName:'Mumbai Power Works',    site:'Mumbai Central', client:'Vi',     type:'Power Works',       pm:'Pooja Mehta',  rm:'Amit Sharma',  vendor:'PowerSys India',         poValue:890000,  aging:33, status:'billing_review', progress:100, region:'Maharashtra', createdAt:'2025-04-05', assignedAt:'2025-04-20', vendorAssigned:true  },
-  { id:'VE-2025-008', projectName:'Delhi NCR Maintenance', site:'Delhi NCR',      client:'Airtel', type:'Tower Maintenance', pm:'Rajeev Singh', rm:'Amit Sharma',  vendor:'XYZ Infra Solutions',    poValue:380000,  aging:18, status:'in_progress',   progress:55,  region:'Delhi',       createdAt:'2025-05-01', assignedAt:'2025-05-09', vendorAssigned:true  },
-  { id:'VE-2025-009', projectName:'Kochi Component Repl.', site:'Kochi',          client:'BSNL',   type:'Component Replace', pm:'Vijay Kumar',  rm:'Ramesh Kumar', vendor:'TowerTech Pvt Ltd',      poValue:650000,  aging:62, status:'delayed',        progress:40,  region:'Kerala',      createdAt:'2025-03-01', assignedAt:'2025-04-10', vendorAssigned:true  },
+  { id:'VE-2025-001', projectName:'Chennai Metro Phase II', site:'Chennai North',  poNo:'PO-2025-001', indusId:'IND-1001', type:'Tower Erection',    pm:'Arun Kumar',   rm:'Ramesh Kumar', vendor:'ABC Telecom Services',    poValue:1850000, aging:12, status:'in_progress',   progress:65,  region:'Tamil Nadu',  createdAt:'2025-04-01', assignedAt:'2025-05-10', vendorAssigned:true  },
+  { id:'VE-2025-002', projectName:'Bengaluru East Maint.',  site:'Bengaluru East', poNo:'PO-2025-001', indusId:'IND-1002', type:'Tower Maintenance', pm:'Priya Sharma', rm:'Amit Sharma',  vendor:'XYZ Infra Solutions',    poValue:420000,  aging:78, status:'delayed',        progress:30,  region:'Karnataka',   createdAt:'2025-03-15', assignedAt:'2025-04-01', vendorAssigned:true  },
+  { id:'VE-2025-003', projectName:'Hyderabad Component',   site:'Hyderabad',      poNo:'PO-2025-002', indusId:'IND-1003', type:'Component Replace', pm:'Arun Kumar',   rm:'Ramesh Kumar', vendor:'TowerTech Pvt Ltd',      poValue:760000,  aging:22, status:'billing_review', progress:100, region:'Tamil Nadu',  createdAt:'2025-04-10', assignedAt:'2025-04-15', vendorAssigned:true  },
+  { id:'VE-2025-004', projectName:'Chennai Fiber Network', site:'Chennai South',  poNo:'PO-2025-002', indusId:'IND-1004', type:'Fiber Installation',pm:'Vijay Kumar',  rm:'Ramesh Kumar', vendor:null,                     poValue:1230000, aging:12, status:'in_progress',   progress:45,  region:'Tamil Nadu',  createdAt:'2025-04-20', assignedAt:'2025-05-08', vendorAssigned:false },
+  { id:'VE-2025-005', projectName:'Coimbatore Tower',      site:'Coimbatore',     poNo:'PO-2025-003', indusId:'IND-1005', type:'Tower Erection',    pm:'Arun Kumar',   rm:'Ramesh Kumar', vendor:null,                     poValue:2200000, aging:8,  status:'pending',        progress:10,  region:'Tamil Nadu',  createdAt:'2025-05-01', assignedAt:'2025-05-11', vendorAssigned:false },
+  { id:'VE-2025-006', projectName:'Pune Civil Works',      site:'Pune West',      poNo:'PO-2025-003', indusId:'IND-1006', type:'Civil Works',       pm:'Pooja Mehta',  rm:'Amit Sharma',  vendor:'BuildRight Constructions',poValue:540000,  aging:95, status:'delayed',        progress:20,  region:'Maharashtra', createdAt:'2025-02-01', assignedAt:'2025-03-01', vendorAssigned:true  },
+  { id:'VE-2025-007', projectName:'Mumbai Power Works',    site:'Mumbai Central', poNo:'PO-2025-004', indusId:'IND-1007', type:'Power Works',       pm:'Pooja Mehta',  rm:'Amit Sharma',  vendor:'PowerSys India',         poValue:890000,  aging:33, status:'billing_review', progress:100, region:'Maharashtra', createdAt:'2025-04-05', assignedAt:'2025-04-20', vendorAssigned:true  },
+  { id:'VE-2025-008', projectName:'Delhi NCR Maintenance', site:'Delhi NCR',      poNo:'PO-2025-004', indusId:'IND-1008', type:'Tower Maintenance', pm:'Rajeev Singh', rm:'Amit Sharma',  vendor:'XYZ Infra Solutions',    poValue:380000,  aging:18, status:'in_progress',   progress:55,  region:'Delhi',       createdAt:'2025-05-01', assignedAt:'2025-05-09', vendorAssigned:true  },
+  { id:'VE-2025-009', projectName:'Kochi Component Repl.', site:'Kochi',          poNo:'PO-2025-005', indusId:'IND-1009', type:'Component Replace', pm:'Vijay Kumar',  rm:'Ramesh Kumar', vendor:'TowerTech Pvt Ltd',      poValue:650000,  aging:62, status:'delayed',        progress:40,  region:'Kerala',      createdAt:'2025-03-01', assignedAt:'2025-04-10', vendorAssigned:true  },
   { id:'VE-2025-010', projectName:'Kolkata Fiber Install.', site:'Kolkata North',  client:'Jio',    type:'Fiber Installation',pm:'Arun Kumar',   rm:'Ramesh Kumar', vendor:null,                     poValue:975000,  aging:5,  status:'pending',        progress:0,   region:'West Bengal', createdAt:'2025-05-10', assignedAt:'2025-05-11', vendorAssigned:false },
 ];
 
@@ -83,7 +83,8 @@ const ProjectRow = ({ p, href }: { p:any; href:string }) => {
       onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
       onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
       <td style={{ padding:'9px 10px', color:T.primary, fontWeight:700, fontSize:12 }}>{p.id}</td>
-      <td style={{ padding:'9px 10px', fontSize:13 }}>{p.projectName}</td>
+      <td style={{ padding:'9px 10px', fontSize:12, fontWeight:600, color:T.text }}>{(p as any).poNo||'—'}</td>
+      <td style={{ padding:'9px 10px', fontSize:11, color:T.textMuted }}>{(p as any).indusId||'—'}</td>
       <td style={{ padding:'9px 10px', fontSize:12, color:T.textMuted }}>{p.site}</td>
       <td style={{ padding:'9px 10px', fontWeight:600, whiteSpace:'nowrap' as const }}>{fmt(p.poValue)}</td>
       <td style={{ padding:'9px 10px' }}><span style={{ color:p.aging>60?T.danger:p.aging>30?T.warning:T.success, fontWeight:700 }}>{p.aging}d</span></td>
@@ -93,7 +94,7 @@ const ProjectRow = ({ p, href }: { p:any; href:string }) => {
 };
 
 const TableHead = () => (
-  <thead><tr>{['Project ID','Name','Site','PO Value','Aging','Status'].map(h=>(
+  <thead><tr>{['Project ID','PO No','Indus ID','Site','PO Value','Aging','Status'].map(h=>(
     <th key={h} style={{ padding:'8px 10px', fontSize:11, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:'left', borderBottom:`2px solid ${T.border}` }}>{h}</th>
   ))}</tr></thead>
 );
