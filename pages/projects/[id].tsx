@@ -90,16 +90,7 @@ export default function ProjectDetailPage() {
   const canEditVendor     = !loading && can('sec_vendor_assignment', 'edit');
   const canEditPTW        = !loading && can('sec_ptw',              'edit');
 
-  // Section visibility from permissions
-  const showFinancial     = !loading && can('sec_financial',        'read');
-  const showVendor        = !loading && can('sec_vendor_assignment', 'read');
   const showPTW           = !loading && can('sec_ptw',              'read');
-  const showDocs          = !loading && can('sec_work_documents',   'read');
-  const showSTNSRN        = !loading && can('sec_stn_srn',          'read');
-  const showBillingReview = !loading && can('sec_billing_review',   'read');
-  const showActivityLog   = !loading && can('sec_activity_log',     'read');
-  const canEditVendor     = !loading && can('sec_vendor_assignment', 'edit');
-  const canEditPTW        = !loading && can('sec_ptw',              'edit');
 
   const [projects, setProjects] = useState(PROJECT_DB);
   const [allTransactions, setAllTransactions] = React.useState(PAYMENT_TRANSACTIONS);
