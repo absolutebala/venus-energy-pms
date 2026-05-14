@@ -937,6 +937,12 @@ export default function ProjectDetailPage() {
           <PTWSectionCard projectId={p.id} vendorContact={p.vendorContact||''} canEdit={editing('ptw') && canEditPTW} />
         </div>}
 
+        {/* ── SRN — Material Utilisation & Return ── */}
+        <div style={{ ...card, marginBottom:16 }}>
+          {sectionTitle('📦','SRN — Material Utilisation & Return', 'srn', ['super_admin','project_manager','region_manager'].includes(role))}
+          <SRNSection projectId={p.id} role={role} onAllApproved={setSrnAllApproved} />
+        </div>
+
                 {/* ── 3. Work Documents ── */}
         {showDocs && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('📂','Work Documents', 'docs', false)}
