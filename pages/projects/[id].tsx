@@ -52,6 +52,12 @@ const PO_ITEMS_DB: Record<string,any[]> = {
     { id:2, description:'CPRI Fiber Cable 5m',          hsn:'8544', uom:'Nos', quantity:24,  rate:2500,   gst:18, amount:60000   },
   ],
 };
+const SRN_DATA_DB: Record<string, Record<number,{utilisedQty:number|null;returned:boolean;approved:boolean}>> = {
+  'VE-2025-001': { 1:{utilisedQty:4,returned:true,approved:true}, 2:{utilisedQty:140,returned:false,approved:false}, 3:{utilisedQty:96,returned:true,approved:false} },
+  'VE-2025-002': { 1:{utilisedQty:6,returned:false,approved:false}, 2:{utilisedQty:14,returned:true,approved:true} },
+  'VE-2025-003': { 1:{utilisedQty:6,returned:true,approved:true}, 2:{utilisedQty:22,returned:true,approved:true} },
+};
+
 const UOM_OPTIONS = ['Set','Nos','MT','RMT','Cum','Bag','Box','Lot','KG','Mtr'];
 const GST_OPTIONS = ['0','5','12','18','28'];
 
@@ -191,6 +197,199 @@ function POItemsSection({ projectId, editing }: { projectId: string; editing: bo
   );
 }
 
+
+// ── PTW Section Component ────────────────────────────────────────────────────
+function PTWSectionCard({ projectId, vendorContact, canEdit }: { projectId:string; vendorContact:string; canEdit:boolean }) {
+  const [form, setForm] = React.useState({
+    ticketId: '',
+    supervisor: vendorContact || '',
+    dateFrom: '',
+    dateTo: '',
+  });
+  const [saved, setSaved] = React.useState(false);
+
+  React.useEffect(() => {
+    setForm(f => ({ ...f, supervisor: vendorContact || '' }));
+  }, [vendorContact]);
+
+  const today = new Date();
+  const isExpired  = form.dateTo  && new Date(form.dateTo)  < today;
+  const isActive   = form.dateFrom && form.dateTo && new Date(form.dateFrom) <= today && new Date(form.dateTo) >= today;
+  const isUpcoming = form.dateFrom && new Date(form.dateFrom) > today;
+
+  const inp = (label: string, field: string, type='text', placeholder='') => (
+    <div style={{ marginBottom:14 }}>
+      <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase' as const, letterSpacing:0.3 }}>{label}</label>
+      {canEdit ? (
+        <input type={type} value={(form as any)[field]}
+          onChange={e=>{ const v=e.target.value; setForm(p=>({...p,[field]:v})); setSaved(false); }}
+          placeholder={placeholder}
+          style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
+      ) : (
+        <div style={{ fontSize:14, fontWeight:600, color:(form as any)[field]?T.text:T.textDim, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>
+          {type==='date'&&(form as any)[field] ? new Date((form as any)[field]).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : (form as any)[field]||'—'}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
+        {inp('PTW Ticket ID *',      'ticketId',   'text', 'e.g. PTW-2025-1234')}
+        {inp('Supervisor Name',      'supervisor', 'text', 'Vendor supervisor name')}
+        {inp('Allowed Date From *',  'dateFrom',   'date')}
+        {inp('Allowed Date To *',    'dateTo',     'date')}
+      </div>
+
+      {form.ticketId && form.dateFrom && form.dateTo && (
+        <div style={{ padding:'10px 14px', borderRadius:8, marginBottom:canEdit?14:0, background:isExpired?'#FEF2F2':isActive?T.successBg:'#FFFBEB', border:`1px solid ${isExpired?'#FECACA':isActive?'#BBF7D0':'#FDE68A'}` }}>
+          <span style={{ fontSize:12, fontWeight:700, color:isExpired?T.danger:isActive?T.success:'#D97706' }}>
+            {isExpired?'⚠️ PTW Expired — Renew before work resumes':isActive?`✅ PTW Active — Valid until ${new Date(form.dateTo).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}`:isUpcoming?'🕐 PTW Not Yet Active':''}
+          </span>
+        </div>
+      )}
+
+      {!form.ticketId && (
+        <div style={{ padding:'10px 14px', borderRadius:8, background:'#FEF2F2', border:'1px solid #FECACA' }}>
+          <span style={{ fontSize:12, fontWeight:600, color:T.danger }}>⚠️ No PTW issued — Required before vendor commences site work</span>
+        </div>
+      )}
+
+      {canEdit && (
+        <button onClick={()=>setSaved(true)} style={{ ...btnPrimary, fontSize:12, marginTop:14, opacity:!form.ticketId||!form.dateFrom||!form.dateTo?0.5:1 }}
+          disabled={!form.ticketId||!form.dateFrom||!form.dateTo}>
+          {saved?'✅ PTW Saved':'💾 Save PTW'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── SRN Section Component ─────────────────────────────────────────────────────
+function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role:string; onAllApproved:(v:boolean)=>void }) {
+  const poItems = PO_ITEMS_DB[projectId] || [];
+  const srnDefaults = SRN_DATA_DB[projectId] || {};
+
+  const [items, setItems] = React.useState(() =>
+    poItems.map((po:any) => ({
+      poItemId:    po.id,
+      description: po.description,
+      hsn:         po.hsn,
+      uom:         po.uom,
+      poQty:       po.quantity,
+      utilisedQty: srnDefaults[po.id]?.utilisedQty ?? null,
+      returned:    srnDefaults[po.id]?.returned ?? false,
+      approved:    srnDefaults[po.id]?.approved ?? false,
+    }))
+  );
+
+  const isVendor  = role === 'vendor';
+  const canApprove= ['super_admin','project_manager','region_manager'].includes(role);
+
+  const updateItem = (id:number, field:string, val:any) => {
+    setItems(prev => {
+      const updated = prev.map((item:any) => item.poItemId === id ? { ...item, [field]: val } : item);
+      const allApproved = updated.every((i:any) => i.approved);
+      onAllApproved(allApproved);
+      return updated;
+    });
+  };
+
+  const allApproved = items.every((i:any) => i.approved);
+  const allReturned = items.every((i:any) => i.returned);
+
+  if (poItems.length === 0) return (
+    <div style={{ textAlign:'center', padding:30, color:T.textDim, fontSize:13 }}>
+      No PO items found. Add items in the PO Items section first.
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Status banner */}
+      <div style={{ display:'flex', gap:12, marginBottom:14, flexWrap:'wrap' as const }}>
+        <span style={{ fontSize:12, fontWeight:600, color:allApproved?T.success:T.warning, background:allApproved?T.successBg:T.warningBg, padding:'4px 12px', borderRadius:20 }}>
+          {allApproved?'✅ All Items Approved':'⏳ Pending Approval'}
+        </span>
+        <span style={{ fontSize:12, fontWeight:600, color:allReturned?T.success:T.textMuted, background:allReturned?T.successBg:T.bg, padding:'4px 12px', borderRadius:20 }}>
+          {allReturned?'✅ All Returned':'📦 Returns Pending'}
+        </span>
+        {allApproved && <span style={{ fontSize:12, color:T.info, fontWeight:600 }}>🔓 Billing Review now unlockable</span>}
+      </div>
+
+      <div style={{ overflowX:'auto' as const }}>
+        <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:760 }}>
+          <thead>
+            <tr style={{ background:T.bg }}>
+              {['#','Item Description','UOM','PO Qty','Utilised','Balance','Returned','Approved'].map((h,i)=>(
+                <th key={i} style={{ padding:'9px 10px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:i>=3?['#2563EB','#16A34A','#D97706','#7C3AED','#0D9488'][i-3]:T.textMuted, textAlign:i>=3?'center' as const:'left' as const, borderBottom:`2px solid ${T.border}`, whiteSpace:'nowrap' as const }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item:any, idx:number) => {
+              const balance = (item.poQty || 0) - (item.utilisedQty || 0);
+              return (
+                <tr key={item.poItemId} style={{ borderBottom:`1px solid ${T.border}`, background:item.approved?`${T.success}08`:item.returned?`${T.info}06`:'transparent' }}>
+                  <td style={{ padding:'10px', color:T.textMuted, fontSize:12 }}>{idx+1}</td>
+                  <td style={{ padding:'10px' }}>
+                    <div style={{ fontSize:13, fontWeight:500, color:T.text }}>{item.description}</div>
+                    {item.hsn && <div style={{ fontSize:11, color:T.textDim }}>HSN: {item.hsn}</div>}
+                  </td>
+                  <td style={{ padding:'10px', fontSize:12, color:T.textMuted }}>{item.uom}</td>
+                  <td style={{ padding:'10px', textAlign:'center' as const, fontWeight:700, color:T.text }}>{item.poQty}</td>
+                  <td style={{ padding:'10px', textAlign:'center' as const }}>
+                    {isVendor && !item.approved ? (
+                      <input type="number" min="0" max={item.poQty}
+                        value={item.utilisedQty ?? ''}
+                        onChange={e=>updateItem(item.poItemId,'utilisedQty',e.target.value===''?null:Number(e.target.value))}
+                        style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 8px', fontSize:12, width:70, textAlign:'center' as const, outline:'none' }} />
+                    ) : (
+                      <span style={{ fontSize:13, fontWeight:600, color:item.utilisedQty!==null?T.info:T.textDim }}>
+                        {item.utilisedQty ?? '—'}
+                      </span>
+                    )}
+                  </td>
+                  <td style={{ padding:'10px', textAlign:'center' as const }}>
+                    <span style={{ fontSize:13, fontWeight:700, color:balance>0?T.danger:T.success }}>
+                      {item.utilisedQty!==null ? balance : '—'}
+                    </span>
+                  </td>
+                  <td style={{ padding:'10px', textAlign:'center' as const }}>
+                    {isVendor ? (
+                      <input type="checkbox" checked={item.returned} disabled={item.utilisedQty===null}
+                        onChange={e=>updateItem(item.poItemId,'returned',e.target.checked)}
+                        style={{ width:18, height:18, cursor:'pointer', accentColor:T.primary }} />
+                    ) : (
+                      <span style={{ fontSize:16 }}>{item.returned?'✅':'—'}</span>
+                    )}
+                  </td>
+                  <td style={{ padding:'10px', textAlign:'center' as const }}>
+                    {canApprove ? (
+                      <input type="checkbox" checked={item.approved} disabled={!item.returned}
+                        onChange={e=>updateItem(item.poItemId,'approved',e.target.checked)}
+                        style={{ width:18, height:18, cursor:item.returned?'pointer':'not-allowed', accentColor:T.success }} />
+                    ) : (
+                      <span style={{ fontSize:16 }}>{item.approved?'✅':'—'}</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {canApprove && !allApproved && (
+        <div style={{ marginTop:12, fontSize:12, color:T.textMuted }}>
+          ℹ️ Approve each item only after verifying physical return from vendor. All items must be approved to unlock Billing Review.
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProjectDetailPage() {
   const router  = useRouter();
   const { id }  = router.query;
@@ -223,6 +422,7 @@ export default function ProjectDetailPage() {
 
   const [projects, setProjects] = useState(PROJECT_DB);
   const [allTransactions, setAllTransactions] = React.useState(PAYMENT_TRANSACTIONS);
+  const [srnAllApproved, setSrnAllApproved] = React.useState(false);
   const [editingSection, setEditingSection] = useState<string|null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -661,13 +861,13 @@ export default function ProjectDetailPage() {
         })()}
         {/* ── 5. Billing Review Checklist ── */}
         {showBillingReview && (isBilling || canEdit) && (
-          <div style={{ ...card, marginBottom:16, border:`1.5px solid ${!isCompleted?T.border:'#7C3AED'}`, opacity:!['pm_approved','billing_review','completed'].includes(p.status)?0.5:1, position:'relative' as const }}>
+          <div style={{ ...card, marginBottom:16, border:`1.5px solid ${!isCompleted&&srnAllApproved?'#7C3AED':T.border}`, opacity:!['pm_approved','billing_review','completed'].includes(p.status)&&!srnAllApproved?0.5:1, position:'relative' as const }}>
             {sectionTitle('💳','Billing Review Checklist', 'billing', isBilling)}
-            {!['pm_approved','billing_review','completed'].includes(p.status) && (
+            {(!['pm_approved','billing_review','completed'].includes(p.status) || !srnAllApproved) && (
               <div style={{ position:'absolute' as const, inset:0, background:'rgba(255,255,255,0.7)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', zIndex:5 }}>
                 <div style={{ textAlign:'center' }}>
                   <div style={{ fontSize:28, marginBottom:8 }}>🔒</div>
-                  <div style={{ fontSize:13, fontWeight:600, color:T.text }}>Available after PM approves the project</div>
+                  <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{!srnAllApproved?'All SRN items must be approved to unlock Billing Review':'Available after PM approves the project'}</div>
                 </div>
               </div>
             )}
