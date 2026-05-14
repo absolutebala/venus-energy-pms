@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
 import Modal from '@/components/Modal';
+import CreatableSelect from '@/components/CreatableSelect';
 import Toast from '@/components/Toast';
 import { useAuth } from '@/context/AuthContext';
 import { useUpload } from '@/lib/useUpload';
@@ -24,6 +25,16 @@ const PROJECT_DB: Record<string,any> = {
   'VE-2025-009': { id:'VE-2025-009', ptwTicketId:'', ptwSupervisor:'', ptwDateFrom:'', ptwDateTo:'', projectName:'Kochi Component Repl.', poNo:'PO-2025-005', indusId:'IND-1009', site:'Kochi',         region:'Kerala',     type:'Component Replace', status:'delayed', progress:40, poValue:650000, billedAmount:250000, paidAmount:200000, startDate:'2025-03-01', endDate:'2025-04-30', rm:'Ramesh Kumar', pm:'Vijay Kumar', vendor:'TowerTech Pvt Ltd', vendorContact:'Arun Singh', vendorPhone:'+91 98765 43212', vendorEmail:'arun@towertech.com', workScope:'Feeder cable replacement.', remarks:'Delayed — parts awaited.' },
   'VE-2025-010': { id:'VE-2025-010', ptwTicketId:'', ptwSupervisor:'', ptwDateFrom:'', ptwDateTo:'', projectName:'Kolkata Fiber Install.', poNo:'PO-2025-005', indusId:'IND-1010', site:'Kolkata North', region:'West Bengal', type:'Fiber Installation', status:'pending', progress:0, poValue:975000, billedAmount:0, paidAmount:0, startDate:'2025-06-01', endDate:'2025-08-31', rm:'Ramesh Kumar', pm:'Arun Kumar', vendor:'', vendorContact:'', vendorPhone:'', vendorEmail:'', workScope:'Underground fiber ducting.', remarks:'Not started.' },
 };
+
+
+const VENDOR_LIST = [
+  { name:'ABC Telecom Services',     contact:'Rajesh Kumar',  phone:'+91 98765 43210', email:'rajesh@abctelecom.com'  },
+  { name:'XYZ Infra Solutions',      contact:'Priya Sharma',  phone:'+91 98765 43211', email:'priya@xyzinfra.com'     },
+  { name:'TowerTech Pvt Ltd',        contact:'Arun Singh',    phone:'+91 98765 43212', email:'arun@towertech.com'     },
+  { name:'NetConnect Services',      contact:'Deepa Nair',    phone:'+91 98765 43213', email:'deepa@netconnect.com'   },
+  { name:'PowerSys India',           contact:'Sunita Reddy',  phone:'+91 98765 43215', email:'sunita@powersys.com'    },
+  { name:'BuildRight Constructions', contact:'Vikram Patel',  phone:'+91 98765 43214', email:'vikram@buildright.com'  },
+];
 
 const VENDORS = ['ABC Telecom Services','XYZ Infra Solutions','TowerTech Pvt Ltd','NetConnect Services','PowerSys India','BuildRight Constructions'];
 const REGIONS  = ['Tamil Nadu','Karnataka','Telangana','Maharashtra','Delhi','Kerala','West Bengal'];
@@ -300,34 +311,51 @@ export default function ProjectDetailPage() {
         {/* ── 2. Vendor Assignment ── */}
         {showVendor && <div style={{ ...card, marginBottom:16, opacity:isCompleted&&!editMode?0.8:1 }}>
           {sectionTitle('🏢','Vendor Assignment', isCompleted ? <span style={{ fontSize:11, color:T.textDim, background:T.bg, border:`1px solid ${T.border}`, borderRadius:20, padding:'3px 12px' }}>🔒 Locked — Project Completed</span> : undefined)}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'0 16px' }}>
-            {[
-              ['Vendor Name',    'vendor',        undefined, isCompleted],
-              ['Contact Person', 'vendorContact', undefined, isCompleted],
-              ['Phone',          'vendorPhone',   undefined, isCompleted],
-              ['Email',          'vendorEmail',   undefined, isCompleted],
-            ].map(([label, key, opts, ro]:any) => {
-              if (key === 'vendor' && editMode && canEditVendor && !isCompleted) {
-                return (
-                  <div key={key} style={{ marginBottom:14 }}>
-                    <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>{label}</label>
-                    <select value={(form as any)[key]||''} onChange={e=>setForm((f:any)=>({...f,[key]:e.target.value}))} style={{ ...inputStyle(), width:'100%' }}>
-                      <option value="">— Select Vendor —</option>
-                      {['ABC Telecom Services','XYZ Infra Solutions','TowerTech Pvt Ltd','NetConnect Services','PowerSys India','BuildRight Constructions'].map(v=>(
-                        <option key={v} value={v}>{v}</option>
-                      ))}
-                      <option value="__new__">+ Add New Vendor</option>
-                    </select>
-                    {(form as any)[key]==='__new__' && (
-                      <input autoFocus placeholder="Enter new vendor name" style={{ ...inputStyle(), width:'100%', marginTop:8, boxSizing:'border-box' as const }}
-                        onChange={e=>setForm((f:any)=>({...f,[key]:e.target.value}))} />
-                    )}
+          {/* Vendor selection with auto-populate */}
+          {editMode && canEditVendor && !isCompleted ? (
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
+              <div style={{ gridColumn:'1/-1' }}>
+                <CreatableSelect
+                  label="Vendor Name *"
+                  value={form.vendor||''}
+                  options={VENDOR_LIST.map(v=>v.name)}
+                  placeholder="Select or create vendor…"
+                  onChange={v => {
+                    const found = VENDOR_LIST.find(vl => vl.name === v);
+                    setForm((f:any) => ({
+                      ...f,
+                      vendor:        v,
+                      vendorContact: found?.contact || f.vendorContact,
+                      vendorPhone:   found?.phone   || f.vendorPhone,
+                      vendorEmail:   found?.email   || f.vendorEmail,
+                    }));
+                  }}
+                  onCreateNew={v => setForm((f:any) => ({ ...f, vendor:v, vendorContact:'', vendorPhone:'', vendorEmail:'' }))}
+                />
+              </div>
+              {[['Contact Person','vendorContact'],['Phone','vendorPhone'],['Email','vendorEmail']].map(([label,key])=>(
+                <div key={key} style={{ marginBottom:14 }}>
+                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>{label}</label>
+                  <input value={(form as any)[key]||''} onChange={e=>setForm((f:any)=>({...f,[key]:e.target.value}))}
+                    style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'0 16px' }}>
+              {[
+                ['Vendor Name','vendor'],['Contact Person','vendorContact'],
+                ['Phone','vendorPhone'],['Email','vendorEmail'],
+              ].map(([label,key])=>(
+                <div key={key} style={{ marginBottom:14 }}>
+                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>{label}</label>
+                  <div style={{ fontSize:14, fontWeight:600, color:p[key]?T.text:T.textDim, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>
+                    {(p as any)[key]||'—'}
                   </div>
-                );
-              }
-              return F(label, key, 'text', opts, ro || (!editMode), canEditVendor);
-            })}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
           <div style={{ marginBottom:14 }}>
             <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Work Scope</label>
             {editMode && canEditVendor && !isCompleted
