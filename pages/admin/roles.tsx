@@ -6,48 +6,41 @@ import { DEFAULT_PERMISSIONS } from '@/lib/permissions';
 import { UserRole } from '@/types';
 
 const ROLES: { key: UserRole; label: string; icon: string; desc: string }[] = [
-  { key:'super_admin',    label:'Super Admin',    icon:'👑', desc:'Full access to all modules and settings'      },
-  { key:'region_manager', label:'Region Manager', icon:'📍', desc:'Manages projects and PMs in their region'     },
-  { key:'project_manager',label:'Project Manager',icon:'📋', desc:'Handles project execution and vendor assignment'},
-  { key:'site_engineer',  label:'Site Engineer',  icon:'👷', desc:'Views projects in their region'               },
-  { key:'accounting_team',label:'Accounting',     icon:'💳', desc:'Billing, STN/SRN reconciliation, reports'     },
-  { key:'vendor',         label:'Vendor',         icon:'🏢', desc:'Uploads work documents and material utilisation'},
-  { key:'viewer',         label:'Viewer',         icon:'👁',  desc:'Read-only access to all project data'        },
+  { key:'super_admin',    label:'Super Admin',    icon:'👑', desc:'Full access — all modules'                              },
+  { key:'region_manager', label:'Region Manager', icon:'📍', desc:'Regional projects, vendors, PTW, approve utilisations'  },
+  { key:'project_manager',label:'Project Manager',icon:'📋', desc:'Project edit, vendor assign, PTW, approve utilisations' },
+  { key:'site_engineer',  label:'Site Engineer',  icon:'👷', desc:'Read-only — projects in their region'                   },
+  { key:'accounting_team',label:'Accounting',     icon:'💳', desc:'Site Expenses full access, STN/SRN reconciliation'     },
+  { key:'vendor',         label:'Vendor',         icon:'🏢', desc:'Upload docs, submit utilisation per item'               },
+  { key:'viewer',         label:'Viewer',         icon:'👁',  desc:'Read-only access to all modules'                       },
 ];
 
-const MODULES = [
-  { key:'dashboard',    label:'Dashboard',       icon:'▦',  desc:'Role-specific dashboard and KPIs'            },
-  { key:'projects',     label:'Projects',        icon:'📁', desc:'Project list, details, edit, vendor assign'  },
-  { key:'vendors',      label:'Vendors',         icon:'🏢', desc:'Vendor management, invite, activate'         },
-  { key:'srn_return',   label:'STN / SRN Status',icon:'📦', desc:'Material tracking, utilisation, returns'     },
-  { key:'site_expenses',label:'Site Expenses',   icon:'💰', desc:'Expense logging and approval'                },
-  { key:'ptw',          label:'PTW Management',  icon:'🔑', desc:'Permit to Work tickets, supervisor, dates'   },
-  { key:'reports',      label:'Reports',         icon:'📊', desc:'All management and performance reports'      },
+const MODULES: { key: string; label: string; icon: string; desc: string; note?: string }[] = [
+  { key:'dashboard',    label:'Dashboard',        icon:'▦',  desc:'Role-specific dashboard and KPIs'                      },
+  { key:'projects',     label:'Projects',         icon:'📁', desc:'Project list, details, edit, vendor assign, PTW'       },
+  { key:'vendors',      label:'Vendors',          icon:'🏢', desc:'Vendor management, invite, activate, deactivate'       },
+  { key:'srn_return',   label:'STN / SRN Status', icon:'📦', desc:'Material tracking — Read: all | Edit: SA/RM/PM approve, Vendor submit utilisation', note:'⚠️ Create = recording STN from Indus (future feature). Currently Indus issues STN externally.' },
+  { key:'site_expenses',label:'Site Expenses',    icon:'💰', desc:'Payments to vendors per project | Accounting adds, others view only'                },
+  { key:'ptw',          label:'PTW Management',   icon:'🔑', desc:'Permit to Work inside project detail | SA/RM/PM can create & edit'                 },
+  { key:'reports',      label:'Reports',          icon:'📊', desc:'Auto-generated reports — Read only for all roles (no manual create)'               },
 ];
 
 type Action = 'can_create'|'can_read'|'can_edit'|'can_delete';
-const ACTIONS: { key: Action; label: string; short: string }[] = [
-  { key:'can_read',   label:'Read',   short:'R' },
-  { key:'can_create', label:'Create', short:'C' },
-  { key:'can_edit',   label:'Edit',   short:'E' },
-  { key:'can_delete', label:'Delete', short:'D' },
+const ACTIONS: { key: Action; label: string; color: string; bg: string; what: string }[] = [
+  { key:'can_read',   label:'Read',   color:'#2563EB', bg:'#EFF6FF', what:'View data'          },
+  { key:'can_create', label:'Create', color:'#16A34A', bg:'#F0FDF4', what:'Add new records'    },
+  { key:'can_edit',   label:'Edit',   color:'#D97706', bg:'#FFFBEB', what:'Modify existing'    },
+  { key:'can_delete', label:'Delete', color:'#DC2626', bg:'#FEF2F2', what:'Remove records'     },
 ];
-
-const ACTION_COLOR: Record<Action,{on:string;bg:string}> = {
-  can_read:   { on:'#2563EB', bg:'#EFF6FF' },
-  can_create: { on:'#16A34A', bg:'#F0FDF4' },
-  can_edit:   { on:'#D97706', bg:'#FFFBEB' },
-  can_delete: { on:'#DC2626', bg:'#FEF2F2' },
-};
 
 export default function RolesPage() {
   const [perms, setPerms]     = useState(() => JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS)));
   const [activeRole, setRole] = useState<UserRole>('super_admin');
-  const [saving,   setSaving] = useState(false);
+  const [saving,    setSaving] = useState(false);
   const [toast, setToast]     = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
 
   const toggle = (module: string, action: Action) => {
-    if (activeRole === 'super_admin') return; // SA always full
+    if (activeRole === 'super_admin') return;
     setPerms((p:any) => ({
       ...p,
       [activeRole]: {
@@ -57,21 +50,16 @@ export default function RolesPage() {
     }));
   };
 
-  const handleSave = () => {
-    setSaving(true);
-    setTimeout(() => { setSaving(false); setToast({ msg:'Permissions saved!', type:'success' }); }, 600);
-  };
-
-  const currentRole = ROLES.find(r=>r.key===activeRole)!;
+  const currentRole = ROLES.find(r => r.key === activeRole)!;
 
   return (
     <Layout>
       <div className="fade-in">
-        <div style={{ display:'grid', gridTemplateColumns:'220px 1fr', gap:16 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'240px 1fr', gap:16 }}>
           {/* Role list */}
           <div>
             <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>Select Role</div>
-            {ROLES.map(r=>(
+            {ROLES.map(r => (
               <div key={r.key} onClick={()=>setRole(r.key)}
                 style={{ padding:'12px 14px', borderRadius:10, marginBottom:8, cursor:'pointer', border:`1.5px solid ${activeRole===r.key?T.primary:T.border}`, background:activeRole===r.key?T.primaryLight:T.surface, transition:'all 0.15s' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
@@ -85,61 +73,69 @@ export default function RolesPage() {
 
           {/* Permission matrix */}
           <div>
-            <div style={{ ...card, marginBottom:16 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+            <div style={card}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 }}>
                 <div>
-                  <div style={{ fontSize:16, fontWeight:700, color:T.text }}>{currentRole.icon} {currentRole.label} Permissions</div>
+                  <div style={{ fontSize:16, fontWeight:700, color:T.text }}>{currentRole.icon} {currentRole.label}</div>
                   <div style={{ fontSize:12, color:T.textMuted, marginTop:3 }}>{currentRole.desc}</div>
                 </div>
                 {activeRole !== 'super_admin' && (
-                  <button onClick={handleSave} disabled={saving} style={{ ...btnPrimary, opacity:saving?0.8:1 }}>
-                    {saving?'Saving…':'💾 Save Permissions'}
+                  <button onClick={()=>{ setSaving(true); setTimeout(()=>{ setSaving(false); setToast({ msg:'Permissions saved!', type:'success' }); },600); }}
+                    disabled={saving} style={{ ...btnPrimary, opacity:saving?0.8:1 }}>
+                    {saving?'Saving…':'💾 Save'}
                   </button>
                 )}
               </div>
 
               {activeRole === 'super_admin' && (
-                <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:13, color:T.primary, fontWeight:500 }}>
-                  👑 Super Admin has full access to all modules and cannot be restricted.
+                <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:13, color:T.primary }}>
+                  👑 Super Admin has full access and cannot be restricted.
                 </div>
               )}
 
               <table style={{ width:'100%', borderCollapse:'collapse' }}>
                 <thead>
                   <tr style={{ background:T.bg }}>
-                    <th style={{ padding:'10px 14px', fontSize:12, fontWeight:700, color:T.textMuted, textAlign:'left', width:'40%' }}>Module</th>
+                    <th style={{ padding:'10px 14px', fontSize:12, fontWeight:700, color:T.textMuted, textAlign:'left', width:'45%', borderBottom:`2px solid ${T.border}` }}>Module</th>
                     {ACTIONS.map(a=>(
-                      <th key={a.key} style={{ padding:'10px 14px', fontSize:12, fontWeight:700, color:ACTION_COLOR[a.key].on, textAlign:'center' }}>{a.label}</th>
+                      <th key={a.key} style={{ padding:'10px 14px', fontSize:12, fontWeight:700, color:a.color, textAlign:'center', borderBottom:`2px solid ${T.border}` }}>
+                        <div>{a.label}</div>
+                        <div style={{ fontSize:10, color:T.textDim, fontWeight:400 }}>{a.what}</div>
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {MODULES.map((mod,i)=>{
+                  {MODULES.map((mod, i) => {
                     const modPerms = perms[activeRole]?.[mod.key] || {};
                     return (
-                      <tr key={mod.key} style={{ borderTop:`1px solid ${T.border}`, background:i%2===0?'#fff':T.bg }}>
-                        <td style={{ padding:'12px 14px' }}>
-                          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                            <span style={{ fontSize:16 }}>{mod.icon}</span>
-                            <div>
-                              <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{mod.label}</div>
-                              <div style={{ fontSize:11, color:T.textMuted }}>{mod.desc}</div>
-                            </div>
-                          </div>
-                        </td>
-                        {ACTIONS.map(action=>{
-                          const enabled = activeRole==='super_admin' ? true : !!modPerms[action.key];
-                          const c = ACTION_COLOR[action.key];
-                          return (
-                            <td key={action.key} style={{ padding:'12px 14px', textAlign:'center' }}>
-                              <div onClick={()=>toggle(mod.key,action.key)}
-                                style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?c.on:T.border}`, background:enabled?c.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:activeRole==='super_admin'?'not-allowed':'pointer', margin:'0 auto', transition:'all 0.15s' }}>
-                                {enabled && <span style={{ fontSize:14, fontWeight:700, color:c.on }}>✓</span>}
+                      <React.Fragment key={mod.key}>
+                        <tr style={{ borderTop:`1px solid ${T.border}`, background:i%2===0?'#fff':T.bg }}>
+                          <td style={{ padding:'12px 14px' }}>
+                            <div style={{ display:'flex', alignItems:'flex-start', gap:8 }}>
+                              <span style={{ fontSize:16, flexShrink:0, marginTop:2 }}>{mod.icon}</span>
+                              <div>
+                                <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{mod.label}</div>
+                                <div style={{ fontSize:11, color:T.textMuted, lineHeight:1.4, marginTop:2 }}>{mod.desc}</div>
+                                {mod.note && <div style={{ fontSize:10, color:'#D97706', marginTop:3, background:'#FFFBEB', padding:'2px 6px', borderRadius:4 }}>{mod.note}</div>}
                               </div>
-                            </td>
-                          );
-                        })}
-                      </tr>
+                            </div>
+                          </td>
+                          {ACTIONS.map(action => {
+                            const enabled = activeRole==='super_admin'
+                              ? perms['super_admin']?.[mod.key]?.[action.key] ?? false
+                              : !!modPerms[action.key];
+                            return (
+                              <td key={action.key} style={{ padding:'12px 14px', textAlign:'center' }}>
+                                <div onClick={()=>toggle(mod.key, action.key)}
+                                  style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?action.color:T.border}`, background:enabled?action.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:activeRole==='super_admin'?'not-allowed':'pointer', margin:'0 auto', transition:'all 0.15s' }}>
+                                  {enabled && <span style={{ fontSize:14, fontWeight:700, color:action.color }}>✓</span>}
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
@@ -147,17 +143,20 @@ export default function RolesPage() {
             </div>
 
             {/* Legend */}
-            <div style={{ ...card }}>
-              <div style={{ fontSize:13, fontWeight:600, color:T.text, marginBottom:12 }}>Permission Legend</div>
-              <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
+            <div style={{ ...card, marginTop:14 }}>
+              <div style={{ fontSize:13, fontWeight:600, color:T.text, marginBottom:10 }}>Permission Legend</div>
+              <div style={{ display:'flex', gap:20, flexWrap:'wrap' }}>
                 {ACTIONS.map(a=>(
                   <div key={a.key} style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <div style={{ width:24, height:24, borderRadius:6, background:ACTION_COLOR[a.key].bg, border:`2px solid ${ACTION_COLOR[a.key].on}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                      <span style={{ fontSize:11, fontWeight:700, color:ACTION_COLOR[a.key].on }}>✓</span>
+                    <div style={{ width:22, height:22, borderRadius:6, background:a.bg, border:`2px solid ${a.color}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                      <span style={{ fontSize:11, fontWeight:700, color:a.color }}>✓</span>
                     </div>
-                    <span style={{ fontSize:13, color:T.text }}>{a.label} — {a.key==='can_read'?'View data':a.key==='can_create'?'Add new records':a.key==='can_edit'?'Modify existing':'Remove records'}</span>
+                    <span style={{ fontSize:12, color:T.text }}><strong>{a.label}</strong> — {a.what}</span>
                   </div>
                 ))}
+              </div>
+              <div style={{ marginTop:12, padding:'10px 14px', background:'#FFFBEB', borderRadius:8, fontSize:12, color:'#92400E' }}>
+                ℹ️ These permissions reflect what is currently available in the UI. Grayed checkboxes indicate the feature is not yet implemented for that role.
               </div>
             </div>
           </div>

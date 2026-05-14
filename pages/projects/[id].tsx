@@ -68,7 +68,7 @@ export default function ProjectDetailPage() {
   const { upload } = useUpload();
 
   const role       = profile?.role || 'viewer';
-  const canEdit    = ['super_admin','project_manager'].includes(role);
+  const canEdit    = ['super_admin','project_manager','region_manager'].includes(role);
   const canEditFin = role === 'super_admin';
   const isBilling  = ['super_admin','accounting_team'].includes(role);
 
