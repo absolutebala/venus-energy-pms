@@ -36,6 +36,25 @@ const VENDOR_LIST = [
   { name:'BuildRight Constructions', contact:'Vikram Patel',  phone:'+91 98765 43214', email:'vikram@buildright.com'  },
 ];
 
+
+const PO_ITEMS_DB: Record<string,any[]> = {
+  'VE-2025-001': [
+    { id:1, description:'Tower Steel Sections (30m)',   hsn:'7308', uom:'Set', quantity:4,   rate:125000, gst:18, amount:500000  },
+    { id:2, description:'Foundation Concrete M30',      hsn:'3824', uom:'Cum', quantity:150, rate:8500,   gst:12, amount:1275000 },
+    { id:3, description:'High-tensile Anchor Bolts M36',hsn:'7318', uom:'Nos', quantity:120, rate:450,    gst:18, amount:54000   },
+  ],
+  'VE-2025-002': [
+    { id:1, description:'Antenna Mounting Brackets',    hsn:'7326', uom:'Set', quantity:8,   rate:12500,  gst:18, amount:100000  },
+    { id:2, description:'Coaxial Cable 50m',            hsn:'8544', uom:'Nos', quantity:20,  rate:4500,   gst:18, amount:90000   },
+  ],
+  'VE-2025-003': [
+    { id:1, description:'RRU Units 4T',                 hsn:'8525', uom:'Nos', quantity:6,   rate:85000,  gst:18, amount:510000  },
+    { id:2, description:'CPRI Fiber Cable 5m',          hsn:'8544', uom:'Nos', quantity:24,  rate:2500,   gst:18, amount:60000   },
+  ],
+};
+const UOM_OPTIONS = ['Set','Nos','MT','RMT','Cum','Bag','Box','Lot','KG','Mtr'];
+const GST_OPTIONS = ['0','5','12','18','28'];
+
 const VENDORS = ['ABC Telecom Services','XYZ Infra Solutions','TowerTech Pvt Ltd','NetConnect Services','PowerSys India','BuildRight Constructions'];
 const REGIONS  = ['Tamil Nadu','Karnataka','Telangana','Maharashtra','Delhi','Kerala','West Bengal'];
 const TYPES    = ['Tower Erection','Tower Maintenance','Component Replacement','Fiber Installation','Civil Works','Power Works'];
@@ -73,6 +92,105 @@ const BASE_ACTIVITY_LOG = [
 
 const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
 
+
+// ── PO Items Component ───────────────────────────────────────────────────────
+function POItemsSection({ projectId, editing }: { projectId: string; editing: boolean }) {
+  const [items, setItems] = React.useState<any[]>(() => PO_ITEMS_DB[projectId] || []);
+  const nextId = () => Math.max(0, ...items.map((i:any)=>i.id)) + 1;
+
+  const addItem = () => setItems(prev => [...prev, { id:nextId(), description:'', hsn:'', uom:'Nos', quantity:0, rate:0, gst:18, amount:0 }]);
+  const removeItem = (id:number) => setItems(prev => prev.filter((i:any)=>i.id!==id));
+  const updateItem = (id:number, field:string, val:any) => setItems(prev => prev.map((item:any) => {
+    if (item.id !== id) return item;
+    const updated = { ...item, [field]: val };
+    updated.amount = Number(updated.quantity) * Number(updated.rate);
+    return updated;
+  }));
+
+  const totalAmount = items.reduce((a:number,i:any)=>a+Number(i.amount),0);
+  const totalGST    = items.reduce((a:number,i:any)=>a+(Number(i.amount)*Number(i.gst)/100),0);
+
+  const inpStyle: React.CSSProperties = { border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 7px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text };
+  const selStyle: React.CSSProperties = { ...inpStyle, cursor:'pointer' };
+
+  return (
+    <div>
+      <div style={{ overflowX:'auto' as const }}>
+        <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:800 }}>
+          <thead>
+            <tr style={{ background:T.bg }}>
+              {['#','Item Description *','HSN / SAC','UOM *','Quantity *','Rate (₹) *','GST (%)','Amount (₹)',''].map((h,i)=>(
+                <th key={i} style={{ padding:'9px 10px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:i>=4?'right' as const:'left' as const, borderBottom:`2px solid ${T.border}`, whiteSpace:'nowrap' as const }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {items.length === 0 && (
+              <tr><td colSpan={9} style={{ padding:'24px', textAlign:'center' as const, color:T.textDim, fontSize:13 }}>No PO items yet. Click "+ Add Item" to begin.</td></tr>
+            )}
+            {items.map((item:any, idx:number) => (
+              <tr key={item.id} style={{ borderBottom:`1px solid ${T.border}` }}>
+                <td style={{ padding:'8px 10px', color:T.textMuted, fontSize:12, width:36 }}>{idx+1}</td>
+                <td style={{ padding:'8px 10px', minWidth:200 }}>
+                  {editing ? <input value={item.description} onChange={e=>updateItem(item.id,'description',e.target.value)} style={inpStyle} placeholder="Item description" />
+                  : <span style={{ fontSize:13, color:T.text }}>{item.description||'—'}</span>}
+                </td>
+                <td style={{ padding:'8px 10px', width:90 }}>
+                  {editing ? <input value={item.hsn} onChange={e=>updateItem(item.id,'hsn',e.target.value)} style={inpStyle} placeholder="HSN" />
+                  : <span style={{ fontSize:12, color:T.textMuted }}>{item.hsn||'—'}</span>}
+                </td>
+                <td style={{ padding:'8px 10px', width:90 }}>
+                  {editing ? (
+                    <select value={item.uom} onChange={e=>updateItem(item.id,'uom',e.target.value)} style={selStyle}>
+                      {UOM_OPTIONS.map(u=><option key={u}>{u}</option>)}
+                    </select>
+                  ) : <span style={{ fontSize:12, color:T.textMuted }}>{item.uom}</span>}
+                </td>
+                <td style={{ padding:'8px 10px', width:100, textAlign:'right' as const }}>
+                  {editing ? <input type="number" value={item.quantity} onChange={e=>updateItem(item.id,'quantity',e.target.value)} style={{ ...inpStyle, textAlign:'right' as const }} />
+                  : <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{Number(item.quantity).toLocaleString('en-IN')}</span>}
+                </td>
+                <td style={{ padding:'8px 10px', width:120, textAlign:'right' as const }}>
+                  {editing ? <input type="number" value={item.rate} onChange={e=>updateItem(item.id,'rate',e.target.value)} style={{ ...inpStyle, textAlign:'right' as const }} />
+                  : <span style={{ fontSize:13, fontWeight:600, color:T.text }}>₹{Number(item.rate).toLocaleString('en-IN')}</span>}
+                </td>
+                <td style={{ padding:'8px 10px', width:90, textAlign:'right' as const }}>
+                  {editing ? (
+                    <select value={item.gst} onChange={e=>updateItem(item.id,'gst',e.target.value)} style={{ ...selStyle, textAlign:'right' as const }}>
+                      {GST_OPTIONS.map(g=><option key={g} value={g}>{g}%</option>)}
+                    </select>
+                  ) : <span style={{ fontSize:12, color:T.textMuted }}>{item.gst}%</span>}
+                </td>
+                <td style={{ padding:'8px 10px', fontWeight:700, color:T.primary, textAlign:'right' as const, whiteSpace:'nowrap' as const }}>
+                  ₹{Number(item.amount).toLocaleString('en-IN')}
+                </td>
+                <td style={{ padding:'8px 10px', width:36 }}>
+                  {editing && <button onClick={()=>removeItem(item.id)} style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:16 }}>🗑</button>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {editing && (
+        <button onClick={addItem}
+          style={{ margin:'12px 0 4px', background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8, padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
+          + Add Item
+        </button>
+      )}
+
+      {items.length > 0 && (
+        <div style={{ display:'flex', justifyContent:'flex-end', gap:20, marginTop:12, padding:'10px 14px', background:T.primaryLight, borderRadius:8, fontSize:13 }}>
+          <span style={{ color:T.textMuted }}>Subtotal: <strong style={{ color:T.text }}>₹{totalAmount.toLocaleString('en-IN')}</strong></span>
+          <span style={{ color:T.textMuted }}>Total GST: <strong style={{ color:T.text }}>₹{Math.round(totalGST).toLocaleString('en-IN')}</strong></span>
+          <span style={{ color:T.primary, fontWeight:700 }}>Grand Total: ₹{Math.round(totalAmount+totalGST).toLocaleString('en-IN')}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProjectDetailPage() {
   const router  = useRouter();
   const { id }  = router.query;
@@ -105,8 +223,21 @@ export default function ProjectDetailPage() {
 
   const [projects, setProjects] = useState(PROJECT_DB);
   const [allTransactions, setAllTransactions] = React.useState(PAYMENT_TRANSACTIONS);
-  const [editMode, setEditMode] = useState(false);
-  const [saving,   setSaving]   = useState(false);
+  const [editingSection, setEditingSection] = useState<string|null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const editing    = (s: string) => editingSection === s;
+  const notEditing = editingSection === null;
+  const startEdit  = (s: string) => { setForm({...p}); setEditingSection(s); };
+  const cancelEdit = () => { setForm({...p}); setEditingSection(null); };
+  const saveSection = () => {
+    setSaving(true);
+    setTimeout(() => {
+      setProjects((prev:any) => ({ ...prev, [p.id]: { ...prev[p.id], ...form } }));
+      setSaving(false); setEditingSection(null);
+      setToast({ msg:'Section saved!', type:'success' });
+    }, 500);
+  };
   const [toast,    setToast]    = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
 
   // Preview modal
@@ -148,10 +279,10 @@ export default function ProjectDetailPage() {
 
   // Edit form state
   const [form, setForm] = useState({ ...p });
-  const F = (label:string, key:string, type='text', options?:string[], readOnly=false, sectionCanEdit=canEditDetails) => (
+  const F = (label:string, key:string, type='text', options?:string[], readOnly=false, sectionCanEdit=editing('details') && canEditDetails) => (
     <div style={{ marginBottom:14 }}>
       <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>{label}</label>
-      {editMode && !readOnly && sectionCanEdit ? (
+      {editingSection !== null && !readOnly && sectionCanEdit ? (
         options ? (
           <select value={(form as any)[key]} onChange={e=>setForm((f:any)=>({...f,[key]:e.target.value}))} style={{ ...inputStyle(), width:'100%' }}>
             {options.map(o=><option key={o}>{o}</option>)}
@@ -191,10 +322,30 @@ export default function ProjectDetailPage() {
     updateStatus('completed', '✅ Billing complete! Project marked as Completed.');
   };
 
-  const sectionTitle = (icon:string, title:string, extra?:React.ReactNode) => (
+  const sectionTitle = (icon:string, title:string, sectionKey:string, canEditSection=true, locked?:React.ReactNode) => (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, paddingBottom:10, borderBottom:`2px solid ${T.primaryMid}` }}>
       <div style={{ fontSize:15, fontWeight:700, color:T.primary }}>{icon} {title}</div>
-      {extra}
+      <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+        {locked}
+        {canEditSection && notEditing && (
+          <button onClick={()=>startEdit(sectionKey)}
+            style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:7, padding:'4px 12px', color:T.primary, cursor:'pointer', fontSize:12, fontWeight:600 }}>
+            ✏️ Edit
+          </button>
+        )}
+        {editing(sectionKey) && (
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={cancelEdit}
+              style={{ background:T.bg, border:`1px solid ${T.border}`, borderRadius:7, padding:'4px 12px', color:T.text, cursor:'pointer', fontSize:12 }}>
+              Cancel
+            </button>
+            <button onClick={saveSection} disabled={saving}
+              style={{ ...btnPrimary, fontSize:12, padding:'4px 14px', opacity:saving?0.8:1 }}>
+              {saving?'Saving…':'💾 Save'}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 
@@ -225,19 +376,9 @@ export default function ProjectDetailPage() {
               <div style={{ fontSize:13, color:T.textDim, marginTop:2 }}>PO: {p.poNo} · Indus ID: {p.indusId}</div>
             </div>
             <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-              {canEdit && !editMode && (
-                <button onClick={()=>{ setForm({...p}); setEditMode(true); }} style={{ ...btnSecondary, fontSize:13 }}>✏️ Edit Project</button>
-              )}
-              {editMode && (
-                <>
-                  <button onClick={()=>setEditMode(false)} style={{ ...btnSecondary, fontSize:13 }}>Cancel</button>
-                  <button onClick={handleSave} disabled={saving} style={{ ...btnPrimary, fontSize:13, opacity:saving?0.8:1 }}>
-                    {saving?'Saving…':'💾 Save Changes'}
-                  </button>
-                </>
-              )}
+
               {/* PM Review actions */}
-              {canEdit && (p.status==='submitted'||p.status==='under_review') && (
+              {notEditing && canEdit && (p.status==='submitted'||p.status==='under_review') && (
                 <>
                   <button onClick={()=>updateStatus('pm_approved','Project approved and sent to billing!')} style={{ ...btnPrimary, background:T.success, fontSize:13 }}>✅ Approve</button>
                   <button onClick={()=>setShowReject(true)} style={{ ...btnSecondary, borderColor:T.danger, color:T.danger, fontSize:13 }}>❌ Reject</button>
@@ -259,7 +400,7 @@ export default function ProjectDetailPage() {
         {/* ── 1. Project Details + Financial ── */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
           <div style={card}>
-            {sectionTitle('📋','Project Details')}
+            {sectionTitle('📋','Project Details', 'details', canEditDetails)}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
               {F('Project No',       'id',          'text', undefined, true)}
               {F('PO Number',        'poNo',        'text', undefined, true)}
@@ -274,7 +415,7 @@ export default function ProjectDetailPage() {
             </div>
             <div style={{ marginBottom:14 }}>
               <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Remarks</label>
-              {editMode && canEdit
+              {editing('details') && canEditDetails
                 ? <textarea value={form.remarks||''} onChange={e=>setForm((f:any)=>({...f,remarks:e.target.value}))} rows={3} style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
                 : <div style={{ fontSize:13, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>{p.remarks||'—'}</div>
               }
@@ -282,7 +423,7 @@ export default function ProjectDetailPage() {
           </div>
 
           {showFinancial && <div style={card}>
-            {sectionTitle('💰','Financial Summary', canEditFin && !editMode ? <button onClick={()=>{ setForm({...p}); setEditMode(true); }} style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:7, padding:'4px 12px', color:T.primary, cursor:'pointer', fontSize:12, fontWeight:600 }}>Edit</button> : undefined)}
+            {sectionTitle('💰','Financial Summary', 'financial', canEditFin)}
             {[
               { label:'PO Value',      key:'poValue',      color:T.text    },
               { label:'Billed Amount', key:'billedAmount', color:T.info    },
@@ -291,7 +432,7 @@ export default function ProjectDetailPage() {
             ].map((r,i)=>(
               <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:`1px solid ${T.border}` }}>
                 <span style={{ fontSize:13, color:T.textMuted }}>{r.label}</span>
-                {editMode && canEditFin && r.key ? (
+                {editing('financial') && canEditFin && r.key ? (
                   <input type="number" value={(form as any)[r.key]||0} onChange={e=>setForm((f:any)=>({...f,[r.key!]:Number(e.target.value)}))}
                     style={{ ...inputStyle(), width:160, textAlign:'right' as const }} />
                 ) : (
@@ -310,7 +451,7 @@ export default function ProjectDetailPage() {
 
         {/* ── 2. Vendor Assignment ── */}
         {showVendor && <div style={{ ...card, marginBottom:16, opacity:isCompleted&&!editMode?0.8:1 }}>
-          {sectionTitle('🏢','Vendor Assignment', isCompleted ? <span style={{ fontSize:11, color:T.textDim, background:T.bg, border:`1px solid ${T.border}`, borderRadius:20, padding:'3px 12px' }}>🔒 Locked — Project Completed</span> : undefined)}
+          {sectionTitle('🏢','Vendor Assignment', 'vendor', canEditVendor && !isCompleted, isCompleted ? <span style={{ fontSize:11, color:T.textDim, background:T.bg, border:`1px solid ${T.border}`, borderRadius:20, padding:'3px 12px' }}>🔒 Locked</span> : undefined)}
           {/* Vendor selection with auto-populate */}
           {editMode && canEditVendor && !isCompleted ? (
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
@@ -358,7 +499,7 @@ export default function ProjectDetailPage() {
           )}
           <div style={{ marginBottom:14 }}>
             <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Work Scope</label>
-            {editMode && canEditVendor && !isCompleted
+            {editing('vendor') && canEditVendor && !isCompleted
               ? <textarea value={form.workScope||''} onChange={e=>setForm((f:any)=>({...f,workScope:e.target.value}))} rows={2} style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
               : <div style={{ fontSize:13, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>{p.workScope||'—'}</div>
             }
@@ -367,7 +508,7 @@ export default function ProjectDetailPage() {
 
         {/* ── 3. Work Documents ── */}
         {showDocs && <div style={{ ...card, marginBottom:16 }}>
-          {sectionTitle('📂','Work Documents')}
+          {sectionTitle('📂','Work Documents', 'docs', false)}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
             {DOC_TYPES.map(doc => {
               const docs = MOCK_DOCS[doc.key] || [];
@@ -411,7 +552,7 @@ export default function ProjectDetailPage() {
 
         {/* ── 4. STN/SRN Materials ── */}
         {showSTNSRN && <div style={{ ...card, marginBottom:16 }}>
-          {sectionTitle('📦','STN/SRN — Materials Tracking (Indus)')}
+          {sectionTitle('📦','STN/SRN — Materials Tracking (Indus)', 'stnsrn', false)}
           {stnData ? (
             <>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:14 }}>
@@ -514,7 +655,7 @@ export default function ProjectDetailPage() {
         {/* ── 5. Billing Review Checklist ── */}
         {showBillingReview && (isBilling || canEdit) && (
           <div style={{ ...card, marginBottom:16, border:`1.5px solid ${!isCompleted?T.border:'#7C3AED'}`, opacity:!['pm_approved','billing_review','completed'].includes(p.status)?0.5:1, position:'relative' as const }}>
-            {sectionTitle('💳','Billing Review Checklist')}
+            {sectionTitle('💳','Billing Review Checklist', 'billing', isBilling)}
             {!['pm_approved','billing_review','completed'].includes(p.status) && (
               <div style={{ position:'absolute' as const, inset:0, background:'rgba(255,255,255,0.7)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', zIndex:5 }}>
                 <div style={{ textAlign:'center' }}>
@@ -575,7 +716,7 @@ export default function ProjectDetailPage() {
 
         {/* ── 6. Activity Log ── */}
         {showActivityLog && <div style={card}>
-          {sectionTitle('📝','Activity Log')}
+          {sectionTitle('📝','Activity Log', 'activity', false)}
           <div style={{ position:'relative' as const }}>
             <div style={{ position:'absolute' as const, left:12, top:0, bottom:0, width:2, background:T.border }} />
             {ACTIVITY_LOG.map((log,i)=>{
