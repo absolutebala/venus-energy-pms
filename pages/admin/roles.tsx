@@ -122,12 +122,11 @@ const ACTIONS: { key: Action; label: string; color: string; bg: string; what: st
 export default function RolesPage() {
   const [perms, setPerms]         = useState(() => JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS)));
   const [sectionPerms, setSectionPerms] = useState(() => JSON.parse(JSON.stringify(DEFAULT_SECTION_PERMS)));
-  const [activeRole, setRole] = useState<UserRole>('region_manager');
+  const [activeRole, setRole] = useState<UserRole>('super_admin');
   const [saving,    setSaving] = useState(false);
   const [toast, setToast]     = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
 
   const toggle = (module: string, action: Action) => {
-    if (activeRole === 'super_admin') return;
     setPerms((p:any) => ({
       ...p,
       [activeRole]: {
@@ -138,7 +137,6 @@ export default function RolesPage() {
   };
 
   const toggleSection = (section: string, action: Action) => {
-    if (activeRole === 'super_admin') return;
     setSectionPerms((p:any) => ({
       ...p,
       [activeRole]: {
@@ -170,10 +168,7 @@ export default function RolesPage() {
                     <span style={{ fontSize:16 }}>{r.icon}</span>
                     <span style={{ fontSize:13, fontWeight:700, color:activeRole===r.key?T.primary:T.text }}>{r.label}</span>
                   </div>
-                  {r.key === 'super_admin'
-                    ? <span style={{ fontSize:9, color:T.textDim, background:T.bg, padding:'2px 6px', borderRadius:4, fontWeight:600 }}>LOCKED</span>
-                    : <span style={{ fontSize:9, color:T.success, background:T.successBg, padding:'2px 6px', borderRadius:4, fontWeight:600 }}>EDITABLE</span>
-                  }
+<span style={{ fontSize:9, color:T.success, background:T.successBg, padding:'2px 6px', borderRadius:4, fontWeight:600 }}>EDITABLE</span>
                 </div>
                 <div style={{ fontSize:11, color:T.textMuted, lineHeight:1.4 }}>{r.desc}</div>
               </div>
@@ -196,12 +191,7 @@ export default function RolesPage() {
                 )}
               </div>
 
-              {activeRole === 'super_admin' && (
-                <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:'12px 16px', marginBottom:16 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:T.primary, marginBottom:4 }}>👑 Super Admin — Always Full Access</div>
-                  <div style={{ fontSize:12, color:T.textMuted }}>Super Admin permissions are fixed and cannot be changed. Select any other role from the left panel to view and edit their permissions.</div>
-                </div>
-              )}
+
 
               <table style={{ width:'100%', borderCollapse:'collapse' }}>
                 <thead>
@@ -232,13 +222,11 @@ export default function RolesPage() {
                             </div>
                           </td>
                           {ACTIONS.map(action => {
-                            const enabled = activeRole==='super_admin'
-                              ? perms['super_admin']?.[mod.key]?.[action.key] ?? false
-                              : !!modPerms[action.key];
+                            const enabled = !!modPerms[action.key];
                             return (
                               <td key={action.key} style={{ padding:'12px 14px', textAlign:'center' }}>
                                 <div onClick={()=>toggle(mod.key, action.key)}
-                                  style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?action.color:T.border}`, background:enabled?action.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:activeRole==='super_admin'?'default':'pointer', margin:'0 auto', transition:'all 0.15s' }}>
+                                  style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?action.color:T.border}`, background:enabled?action.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', margin:'0 auto', transition:'all 0.15s' }}>
                                   {enabled && <span style={{ fontSize:14, fontWeight:700, color:action.color }}>✓</span>}
                                 </div>
                               </td>
@@ -287,13 +275,11 @@ export default function RolesPage() {
                           </div>
                         </td>
                         {ACTIONS.map(action => {
-                          const enabled = activeRole==='super_admin'
-                            ? DEFAULT_SECTION_PERMS['super_admin']?.[sec.key]?.[action.key] ?? false
-                            : !!secPerms[action.key];
+                          const enabled = !!secPerms[action.key];
                           return (
                             <td key={action.key} style={{ padding:'12px 14px', textAlign:'center' as const }}>
                               <div onClick={()=>toggleSection(sec.key, action.key)}
-                                style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?action.color:T.border}`, background:enabled?action.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:activeRole==='super_admin'?'default':'pointer', margin:'0 auto', transition:'all 0.15s' }}>
+                                style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?action.color:T.border}`, background:enabled?action.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', margin:'0 auto', transition:'all 0.15s' }}>
                                 {enabled && <span style={{ fontSize:14, fontWeight:700, color:action.color }}>✓</span>}
                               </div>
                             </td>
