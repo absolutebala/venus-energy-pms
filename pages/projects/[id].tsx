@@ -1,3 +1,4 @@
+// v-fix-braces
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -306,7 +307,7 @@ export default function ProjectDetailPage() {
               : <div style={{ fontSize:13, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>{p.workScope||'—'}</div>
             }
           </div>
-        </div>
+        </div>}
 
         {/* ── 3. Work Documents ── */}
         {showDocs && <div style={{ ...card, marginBottom:16 }}>
@@ -400,7 +401,7 @@ export default function ProjectDetailPage() {
           ) : (
             <div style={{ textAlign:'center', padding:30, color:T.textDim }}>No STN/SRN records for this project yet.</div>
           )}
-        </div>
+        </div>}
 
 
         {/* ── Admin Utilisation Review (SA only) ── */}
