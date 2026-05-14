@@ -69,7 +69,14 @@ export default function ProjectDetailPage() {
   const { upload } = useUpload();
 
   const role       = profile?.role || 'viewer';
-  const canEdit    = !loading && can('sec_project_details', 'edit');
+  // Show Edit button if user can edit ANY section
+  const canEditDetails = !loading && can('sec_project_details',   'edit');
+  const canEdit        = !loading && (
+    can('sec_project_details',   'edit') ||
+    can('sec_vendor_assignment', 'edit') ||
+    can('sec_ptw',               'edit') ||
+    can('sec_financial',         'edit')
+  );
   const canEditFin = !loading && can('sec_financial', 'edit');
   const isBilling  = !loading && can('sec_billing_review', 'edit');
 
@@ -129,10 +136,10 @@ export default function ProjectDetailPage() {
 
   // Edit form state
   const [form, setForm] = useState({ ...p });
-  const F = (label:string, key:string, type='text', options?:string[], readOnly=false) => (
+  const F = (label:string, key:string, type='text', options?:string[], readOnly=false, sectionCanEdit=canEditDetails) => (
     <div style={{ marginBottom:14 }}>
       <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>{label}</label>
-      {editMode && !readOnly && canEdit ? (
+      {editMode && !readOnly && sectionCanEdit ? (
         options ? (
           <select value={(form as any)[key]} onChange={e=>setForm((f:any)=>({...f,[key]:e.target.value}))} style={{ ...inputStyle(), width:'100%' }}>
             {options.map(o=><option key={o}>{o}</option>)}
@@ -298,11 +305,11 @@ export default function ProjectDetailPage() {
               ['Contact Person', 'vendorContact', undefined, isCompleted],
               ['Phone',          'vendorPhone',   undefined, isCompleted],
               ['Email',          'vendorEmail',   undefined, isCompleted],
-            ].map(([label, key, opts, ro]:any) => F(label, key, 'text', opts, ro || (!editMode)))}
+            ].map(([label, key, opts, ro]:any) => F(label, key, 'text', opts, ro || (!editMode), canEditVendor))}
           </div>
           <div style={{ marginBottom:14 }}>
             <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Work Scope</label>
-            {editMode && canEdit && !isCompleted
+            {editMode && canEditVendor && !isCompleted
               ? <textarea value={form.workScope||''} onChange={e=>setForm((f:any)=>({...f,workScope:e.target.value}))} rows={2} style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
               : <div style={{ fontSize:13, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>{p.workScope||'—'}</div>
             }

@@ -147,6 +147,30 @@ export default function RolesPage() {
     }));
   };
 
+
+  // Load current permissions from DB when role changes
+  React.useEffect(() => {
+    const loadPerms = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.from('role_permissions').select('*').eq('role', activeRole);
+      if (data && data.length > 0) {
+        const moduleMap: any = { ...DEFAULT_PERMISSIONS[activeRole] };
+        const sectionMap: any = { ...DEFAULT_SECTION_PERMS[activeRole] };
+        data.forEach((row: any) => {
+          const p = { can_create:row.can_create, can_read:row.can_read, can_edit:row.can_edit, can_delete:row.can_delete };
+          if (row.module.startsWith('sec_')) {
+            sectionMap[row.module] = p;
+          } else {
+            moduleMap[row.module] = p;
+          }
+        });
+        setPerms((prev:any) => ({ ...prev, [activeRole]: moduleMap }));
+        setSectionPerms((prev:any) => ({ ...prev, [activeRole]: sectionMap }));
+      }
+    };
+    loadPerms();
+  }, [activeRole]);
+
   const currentRole = ROLES.find(r => r.key === activeRole)!;
 
   return (
@@ -190,8 +214,8 @@ export default function RolesPage() {
                     const supabase = createClient();
                     // Delete existing rows for this role
                     await supabase.from('role_permissions').delete().eq('role', activeRole);
-                    // Build module rows
-                    const moduleRows = Object.entries(perms[activeRole] || {}).map(([module, perm]: any) => ({
+                    // Build module rows (exclude sec_ — handled separately)
+                    const moduleRows = Object.entries(perms[activeRole] || {}).filter(([m]) => !m.startsWith('sec_')).map(([module, perm]: any) => ({
                       role: activeRole, module,
                       can_create: perm.can_create, can_read: perm.can_read,
                       can_edit: perm.can_edit,     can_delete: perm.can_delete,
