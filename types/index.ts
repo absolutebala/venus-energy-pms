@@ -22,6 +22,7 @@ export const ALL_MODULES = [
   'site_expenses', 'reports',
   'sec_project_details', 'sec_financial', 'sec_vendor_assignment',
   'sec_ptw', 'sec_work_documents', 'sec_stn_srn', 'sec_billing_review', 'sec_activity_log',
+  'sec_expenses', 'sec_po_items', 'sec_ptw_detail', 'sec_srn_detail',
 ] as const;
 
 export type AppModule =
