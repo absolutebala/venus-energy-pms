@@ -41,6 +41,10 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_stn_srn:           perm(false,true, true, false),
     sec_billing_review:    perm(false,true, false,false),
     sec_activity_log:      perm(false,true, false,false),
+    sec_expenses:   perm(false,true, false,false),
+    sec_po_items:   perm(false,true, true, false),
+    sec_ptw_detail: perm(true, true, true, false),
+    sec_srn_detail: perm(false,true, true, false),
   },
 
   project_manager: {
@@ -59,6 +63,10 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_stn_srn:           perm(false,true, true, false),
     sec_billing_review:    perm(false,true, true, false),
     sec_activity_log:      perm(false,true, false,false),
+    sec_expenses:   perm(false,true, false,false),
+    sec_po_items:   perm(true, true, true, false),
+    sec_ptw_detail: perm(true, true, true, false),
+    sec_srn_detail: perm(false,true, true, false),
   },
 
   site_engineer: {
@@ -77,6 +85,10 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_stn_srn:           perm(false,true, false,false),
     sec_billing_review:    perm(false,false,false,false),
     sec_activity_log:      perm(false,true, false,false),
+    sec_expenses:   perm(false,true, false,false),
+    sec_po_items:   perm(false,true, false,false),
+    sec_ptw_detail: perm(false,true, false,false),
+    sec_srn_detail: perm(false,true, false,false),
   },
 
   accounting_team: {
@@ -95,6 +107,10 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_stn_srn:           perm(false,true, false,false),
     sec_billing_review:    perm(false,true, true, false),
     sec_activity_log:      perm(false,true, false,false),
+    sec_expenses:   perm(true, true, true, false),
+    sec_po_items:   perm(false,true, false,false),
+    sec_ptw_detail: perm(false,true, false,false),
+    sec_srn_detail: perm(false,true, false,false),
   },
 
   vendor: {
@@ -113,6 +129,10 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_stn_srn:           perm(false,true, true, false),
     sec_billing_review:    perm(false,false,false,false),
     sec_activity_log:      perm(false,true, false,false),
+    sec_expenses:   perm(false,false,false,false),
+    sec_po_items:   perm(false,true, false,false),
+    sec_ptw_detail: perm(false,true, false,false),
+    sec_srn_detail: perm(false,true, true, false),
   },
 
   viewer: {
@@ -131,6 +151,10 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_stn_srn:           perm(false,true, false,false),
     sec_billing_review:    perm(false,true, false,false),
     sec_activity_log:      perm(false,true, false,false),
+    sec_expenses:   perm(false,true, false,false),
+    sec_po_items:   perm(false,true, false,false),
+    sec_ptw_detail: perm(false,true, false,false),
+    sec_srn_detail: perm(false,true, false,false),
   },
 };
 
