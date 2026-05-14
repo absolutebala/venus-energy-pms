@@ -39,7 +39,11 @@ export type AppModule =
   | 'sec_work_documents'
   | 'sec_stn_srn'
   | 'sec_billing_review'
-  | 'sec_activity_log';
+  | 'sec_activity_log'
+  | 'sec_expenses'
+  | 'sec_po_items'
+  | 'sec_ptw_detail'
+  | 'sec_srn_detail';
 
 export const MODULE_LABELS: Record<AppModule, string> = {
   dashboard:              'Dashboard',
