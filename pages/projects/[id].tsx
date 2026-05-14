@@ -34,7 +34,7 @@ const VENDOR_LIST = [
   { name:'NetConnect Services',      contact:'Deepa Nair',    phone:'+91 98765 43213', email:'deepa@netconnect.com'   },
   { name:'PowerSys India',           contact:'Sunita Reddy',  phone:'+91 98765 43215', email:'sunita@powersys.com'    },
   { name:'BuildRight Constructions', contact:'Vikram Patel',  phone:'+91 98765 43214', email:'vikram@buildright.com'  },
-  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+
 ];
 
 
@@ -64,11 +64,11 @@ const UOM_OPTIONS = ['Set','Nos','MT','RMT','Cum','Bag','Box','Lot','KG','Mtr'
 const GST_OPTIONS = ['0','5','12','18','28'
 ];
 
-const VENDORS = ['ABC Telecom Services','XYZ Infra Solutions','TowerTech Pvt Ltd','NetConnect Services','PowerSys India','BuildRight Constructions'  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+const VENDORS = ['ABC Telecom Services','XYZ Infra Solutions','TowerTech Pvt Ltd','NetConnect Services','PowerSys India','BuildRight Constructions'
 ];
-const REGIONS  = ['Tamil Nadu','Karnataka','Telangana','Maharashtra','Delhi','Kerala','West Bengal'  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+const REGIONS  = ['Tamil Nadu','Karnataka','Telangana','Maharashtra','Delhi','Kerala','West Bengal'
 ];
-const TYPES    = ['Tower Erection','Tower Maintenance','Component Replacement','Fiber Installation','Civil Works','Power Works'  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+const TYPES    = ['Tower Erection','Tower Maintenance','Component Replacement','Fiber Installation','Civil Works','Power Works'
 ];
 
 const DOC_TYPES = [
@@ -78,8 +78,9 @@ const DOC_TYPES = [
   { key:'ac_certificate', label:'AC Certificate',  icon:'🏅', accept:'.pdf,.doc,.docx'    },
   { key:'noc_document',   label:'NOC Document',    icon:'📋', accept:'.pdf,.doc,.docx'    },
   { key:'drawing_document',label:'Drawing Document',icon:'📐', accept:'.pdf,.dwg,.png,.jpg'},
-  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
-  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+  { key:'ptw_document',   label:'PTW Document',     icon:'🔑', accept:'.pdf,.doc,.docx'    },
+
+
 ];
 
 const MOCK_DOCS: Record<string, { name:string; size:string; url:string; isImage:boolean }[]> = {
@@ -91,7 +92,7 @@ const MOCK_DOCS: Record<string, { name:string; size:string; url:string; isImage:
   drawing_document: [{ name:'AsBuilt_Drawing_v2.pdf', size:'1.8 MB', url:'', isImage:false }],
 };
 
-const STATUS_FLOW = ['pending','in_progress','submitted','under_review','pm_approved','billing_review','completed','delayed'  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+const STATUS_FLOW = ['pending','in_progress','submitted','under_review','pm_approved','billing_review','completed','delayed'
 ];
 const STATUS_LABELS: Record<string,string> = { pending:'Pending', in_progress:'In Progress', submitted:'Submitted', under_review:'Under Review', pm_approved:'PM Approved', billing_review:'Billing Review', completed:'Completed', delayed:'Delayed' };
 const STATUS_COLOR: Record<string,string>  = { pending:'#D97706', in_progress:'#2563EB', submitted:'#7C3AED', under_review:'#7C3AED', pm_approved:'#0D9488', billing_review:'#D97706', completed:'#16A34A', delayed:'#DC2626' };
@@ -103,7 +104,7 @@ const BASE_ACTIVITY_LOG = [
   { date:'18/05/2025 03:00 PM', action:'PM review notes added',          by:'Arun Kumar',           role:'PM'      },
   { date:'17/05/2025 10:00 AM', action:'Invoice INV-2025-012 submitted', by:'Finance Team',         role:'Billing' },
   { date:'15/05/2025 09:00 AM', action:'Project created',                by:'Ramesh Kumar',         role:'RM'      },
-  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+
 ];
 
 const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
@@ -320,7 +321,7 @@ function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { pr
 }
 // ── SRN Section Component ─────────────────────────────────────────────────────
 function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role:string; onAllApproved:(v:boolean)=>void }) {
-  const poItems = PO_ITEMS_DB[projectId] || [  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+  const poItems = PO_ITEMS_DB[projectId] || [
 ];
   const srnDefaults = SRN_DATA_DB[projectId] || {};
 
@@ -464,9 +465,9 @@ const EXPENSES_DB: Record<string, any[]> = {
     { id:3, txnRef:'TXN-2025-022', date:'2025-05-05', site:'Kurla Junction Tower',  expenseType:'Miscellaneous',     amount:8500,   paymentMode:'UPI'           },
   ],
 };
-const EXPENSE_TYPES   = ['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+const EXPENSE_TYPES   = ['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'
 ];
-const PAYMENT_MODES   = ['Cash','Bank Transfer','Cheque','UPI','DD'  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+const PAYMENT_MODES   = ['Cash','Bank Transfer','Cheque','UPI','DD'
 ];
 
 function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boolean }) {
@@ -782,7 +783,7 @@ export default function ProjectDetailPage() {
     by: t.addedBy,
     role: 'Payment' as const,
   }));
-  const ACTIVITY_LOG = [...txnLogs, ...BASE_ACTIVITY_LOG  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+  const ACTIVITY_LOG = [...txnLogs, ...BASE_ACTIVITY_LOG
 ];
 
   return (
@@ -958,7 +959,7 @@ export default function ProjectDetailPage() {
           {sectionTitle('📂','Work Documents', 'docs', false)}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
             {DOC_TYPES.map(doc => {
-              const docs = MOCK_DOCS[doc.key] || [  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+              const docs = MOCK_DOCS[doc.key] || [
 ];
               const uploaded = docs.length > 0;
               return (
@@ -1012,7 +1013,7 @@ export default function ProjectDetailPage() {
                 { key:'ptw',       label:'PTW Done',                desc:'Permit to Work completed'                 },
                 { key:'materials', label:'Materials Returned to Indus', desc:'All materials from STN returned via SRN — MANDATORY', important:true },
               ].map(item=>{
-                const checked = checklist[item.key as keyof typeof checklist  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+                const checked = checklist[item.key as keyof typeof checklist
 ];
                 return (
                   <div key={item.key} onClick={()=>isBilling&&setChecklist(c=>({...c,[item.key]:!c[item.key as keyof typeof c]}))}
