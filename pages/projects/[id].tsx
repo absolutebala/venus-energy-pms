@@ -59,9 +59,9 @@ const SRN_DATA_DB: Record<string, Record<number,{utilisedQty:number|null;returne
   'VE-2025-003': { 1:{utilisedQty:6,returned:true,approved:true}, 2:{utilisedQty:22,returned:true,approved:true} },
 };
 
-const UOM_OPTIONS = ['Set','Nos','MT','RMT','Cum','Bag','Box','Lot','KG','Mtr'  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+const UOM_OPTIONS = ['Set','Nos','MT','RMT','Cum','Bag','Box','Lot','KG','Mtr'
 ];
-const GST_OPTIONS = ['0','5','12','18','28'  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
+const GST_OPTIONS = ['0','5','12','18','28'
 ];
 
 const VENDORS = ['ABC Telecom Services','XYZ Infra Solutions','TowerTech Pvt Ltd','NetConnect Services','PowerSys India','BuildRight Constructions'  { key:'ptw_document', label:'PTW Document', icon:'🔑' },
