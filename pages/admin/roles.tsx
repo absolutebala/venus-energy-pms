@@ -122,7 +122,7 @@ const ACTIONS: { key: Action; label: string; color: string; bg: string; what: st
 export default function RolesPage() {
   const [perms, setPerms]         = useState(() => JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS)));
   const [sectionPerms, setSectionPerms] = useState(() => JSON.parse(JSON.stringify(DEFAULT_SECTION_PERMS)));
-  const [activeRole, setRole] = useState<UserRole>('super_admin');
+  const [activeRole, setRole] = useState<UserRole>('region_manager');
   const [saving,    setSaving] = useState(false);
   const [toast, setToast]     = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
 
@@ -157,12 +157,23 @@ export default function RolesPage() {
           {/* Role list */}
           <div>
             <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>Select Role</div>
+            <div style={{ fontSize:11, color:T.textMuted, marginBottom:10, fontWeight:500 }}>
+              Click a role to edit its permissions:
+            </div>
             {ROLES.map(r => (
               <div key={r.key} onClick={()=>setRole(r.key)}
-                style={{ padding:'12px 14px', borderRadius:10, marginBottom:8, cursor:'pointer', border:`1.5px solid ${activeRole===r.key?T.primary:T.border}`, background:activeRole===r.key?T.primaryLight:T.surface, transition:'all 0.15s' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3 }}>
-                  <span style={{ fontSize:16 }}>{r.icon}</span>
-                  <span style={{ fontSize:13, fontWeight:700, color:activeRole===r.key?T.primary:T.text }}>{r.label}</span>
+                style={{ padding:'12px 14px', borderRadius:10, marginBottom:8, cursor:'pointer', border:`1.5px solid ${activeRole===r.key?T.primary:T.border}`, background:activeRole===r.key?T.primaryLight:T.surface, transition:'all 0.15s' }}
+                onMouseEnter={e=>{if(r.key!=='super_admin')(e.currentTarget as HTMLDivElement).style.borderColor=T.primaryMid;}}
+                onMouseLeave={e=>{(e.currentTarget as HTMLDivElement).style.borderColor=activeRole===r.key?T.primary:T.border;}}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:3 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <span style={{ fontSize:16 }}>{r.icon}</span>
+                    <span style={{ fontSize:13, fontWeight:700, color:activeRole===r.key?T.primary:T.text }}>{r.label}</span>
+                  </div>
+                  {r.key === 'super_admin'
+                    ? <span style={{ fontSize:9, color:T.textDim, background:T.bg, padding:'2px 6px', borderRadius:4, fontWeight:600 }}>LOCKED</span>
+                    : <span style={{ fontSize:9, color:T.success, background:T.successBg, padding:'2px 6px', borderRadius:4, fontWeight:600 }}>EDITABLE</span>
+                  }
                 </div>
                 <div style={{ fontSize:11, color:T.textMuted, lineHeight:1.4 }}>{r.desc}</div>
               </div>
@@ -178,16 +189,17 @@ export default function RolesPage() {
                   <div style={{ fontSize:12, color:T.textMuted, marginTop:3 }}>{currentRole.desc}</div>
                 </div>
                 {activeRole !== 'super_admin' && (
-                  <button onClick={()=>{ setSaving(true); setTimeout(()=>{ setSaving(false); setToast({ msg:'Permissions saved!', type:'success' }); },600); }}
+                  <button onClick={()=>{ setSaving(true); setTimeout(()=>{ setSaving(false); setToast({ msg:`Permissions saved for ${ROLES.find(r=>r.key===activeRole)?.label}!`, type:'success' }); },600); }}
                     disabled={saving} style={{ ...btnPrimary, opacity:saving?0.8:1 }}>
-                    {saving?'Saving…':'💾 Save'}
+                    {saving ? 'Saving…' : `💾 Save ${ROLES.find(r=>r.key===activeRole)?.label} Permissions`}
                   </button>
                 )}
               </div>
 
               {activeRole === 'super_admin' && (
-                <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:13, color:T.primary }}>
-                  👑 Super Admin has full access and cannot be restricted.
+                <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:'12px 16px', marginBottom:16 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.primary, marginBottom:4 }}>👑 Super Admin — Always Full Access</div>
+                  <div style={{ fontSize:12, color:T.textMuted }}>Super Admin permissions are fixed and cannot be changed. Select any other role from the left panel to view and edit their permissions.</div>
                 </div>
               )}
 
@@ -226,7 +238,7 @@ export default function RolesPage() {
                             return (
                               <td key={action.key} style={{ padding:'12px 14px', textAlign:'center' }}>
                                 <div onClick={()=>toggle(mod.key, action.key)}
-                                  style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?action.color:T.border}`, background:enabled?action.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:activeRole==='super_admin'?'not-allowed':'pointer', margin:'0 auto', transition:'all 0.15s' }}>
+                                  style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?action.color:T.border}`, background:enabled?action.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:activeRole==='super_admin'?'default':'pointer', margin:'0 auto', transition:'all 0.15s' }}>
                                   {enabled && <span style={{ fontSize:14, fontWeight:700, color:action.color }}>✓</span>}
                                 </div>
                               </td>
@@ -281,7 +293,7 @@ export default function RolesPage() {
                           return (
                             <td key={action.key} style={{ padding:'12px 14px', textAlign:'center' as const }}>
                               <div onClick={()=>toggleSection(sec.key, action.key)}
-                                style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?action.color:T.border}`, background:enabled?action.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:activeRole==='super_admin'?'not-allowed':'pointer', margin:'0 auto', transition:'all 0.15s' }}>
+                                style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?action.color:T.border}`, background:enabled?action.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:activeRole==='super_admin'?'default':'pointer', margin:'0 auto', transition:'all 0.15s' }}>
                                 {enabled && <span style={{ fontSize:14, fontWeight:700, color:action.color }}>✓</span>}
                               </div>
                             </td>
