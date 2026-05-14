@@ -713,6 +713,13 @@ export default function ProjectDetailPage() {
           <POItemsSection projectId={p.id} editing={editing('poitems')} />
         </div>
 
+
+        {/* ── SRN — Material Utilisation & Return ── */}
+        <div style={{ ...card, marginBottom:16 }}>
+          {sectionTitle('📦','SRN — Material Utilisation & Return', 'srn', false)}
+          <SRNSection projectId={p.id} role={role} onAllApproved={setSrnAllApproved} />
+        </div>
+
         {/* ── 3. Work Documents ── */}
         {showDocs && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('📂','Work Documents', 'docs', false)}
