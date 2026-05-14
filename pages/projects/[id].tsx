@@ -506,6 +506,13 @@ export default function ProjectDetailPage() {
           </div>
         </div>}
 
+
+        {/* ── PO Items ── */}
+        <div style={{ ...card, marginBottom:16 }}>
+          {sectionTitle('📋','PO Items', 'poitems', canEdit)}
+          <POItemsSection projectId={p.id} editing={editing('poitems')} />
+        </div>
+
         {/* ── 3. Work Documents ── */}
         {showDocs && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('📂','Work Documents', 'docs', false)}
