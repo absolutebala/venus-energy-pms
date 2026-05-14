@@ -762,13 +762,7 @@ export default function ProjectDetailPage() {
         </div>
 
 
-        {/* ── SRN — Material Utilisation & Return ── */}
-        <div style={{ ...card, marginBottom:16 }}>
-          {sectionTitle('📦','SRN — Material Utilisation & Return', 'srn', false)}
-          <SRNSection projectId={p.id} role={role} onAllApproved={setSrnAllApproved} />
-        </div>
-
-
+        
         {/* ── PTW — Permit to Work ── */}
         {showPTW && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('🔑','PTW — Permit to Work', 'ptw', canEditPTW)}
@@ -825,120 +819,12 @@ export default function ProjectDetailPage() {
           </div>
         </div>}
 
-        {/* ── 4. STN/SRN Materials ── */}
-        {showSTNSRN && <div style={{ ...card, marginBottom:16 }}>
-          {sectionTitle('📦','STN/SRN — Materials Tracking (Indus)', 'stnsrn', false)}
-          {stnData ? (
-            <>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:14 }}>
-                {[
-                  { label:'STN Date',   value:stnData.stnDate,      color:T.primary },
-                  { label:'SRN Date',   value:stnData.srnDate||'Pending', color:stnData.srnDate?T.success:T.danger },
-                  { label:'Items Issued',  value:stnData.materials.reduce((a,m)=>a+m.stnQty,0), color:T.text },
-                  { label:'Balance Pending', value:stnData.materials.reduce((a,m)=>a+m.returnQty,0), color:stnData.materials.some(m=>m.returnQty>0)?T.danger:T.success },
-                ].map((s,i)=>(
-                  <div key={i} style={{ background:T.bg, borderRadius:8, padding:'10px 14px' }}>
-                    <div style={{ fontSize:11, color:T.textDim, marginBottom:3 }}>{s.label}</div>
-                    <div style={{ fontSize:14, fontWeight:700, color:s.color }}>{s.value}</div>
-                  </div>
-                ))}
-              </div>
-              <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
-                <thead>
-                  <tr style={{ background:T.bg }}>
-                    {['Item Code','Description','UOM','STN Issued','SRN Returned','Balance','Status'].map(h=>(
-                      <th key={h} style={{ padding:'8px 10px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:'left', borderBottom:`2px solid ${T.border}` }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {stnData.materials.map((m,i)=>(
-                    <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}>
-                      <td style={{ padding:'9px 10px', color:T.primary, fontWeight:600, fontSize:12 }}>{m.code}</td>
-                      <td style={{ padding:'9px 10px', fontSize:13 }}>{m.description}</td>
-                      <td style={{ padding:'9px 10px', fontSize:12, color:T.textMuted }}>{m.uom}</td>
-                      <td style={{ padding:'9px 10px', fontWeight:600, textAlign:'right' as const }}>{m.stnQty}</td>
-                      <td style={{ padding:'9px 10px', fontWeight:600, color:T.success, textAlign:'right' as const }}>{m.srnQty}</td>
-                      <td style={{ padding:'9px 10px', fontWeight:700, color:m.returnQty>0?T.danger:T.success, textAlign:'right' as const }}>{m.returnQty}</td>
-                      <td style={{ padding:'9px 10px' }}>
-                        <span style={{ fontSize:11, fontWeight:600, color:m.returnQty===0?T.success:m.utilisedStatus==='pm_approved'?'#D97706':T.danger, background:m.returnQty===0?T.successBg:m.utilisedStatus==='pm_approved'?'#FFFBEB':'#FEF2F2', padding:'2px 8px', borderRadius:10 }}>
-                          {m.returnQty===0?'Fully Returned':m.utilisedStatus==='pm_approved'?'Partially Returned':'Pending Return'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          ) : (
-            <div style={{ textAlign:'center', padding:30, color:T.textDim }}>No STN/SRN records for this project yet.</div>
-          )}
-        </div>}
 
 
-        {/* ── Admin Utilisation Review (SA only) ── */}
-        {role === 'super_admin' && (() => {
-          const stnD = id ? STN_SRN_DATA.find(s => s.projectId === id) : null;
-          if (!stnD) return null;
-          const reviewItems = stnD.materials.filter(m => m.utilisedStatus === 'submitted' || m.utilisedStatus === 'pm_approved' || m.utilisedStatus === 'pm_rejected');
-          if (reviewItems.length === 0) return null;
-          return (
-            <div style={{ ...card, marginBottom:16 }}>
-              <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:6, paddingBottom:10, borderBottom:`2px solid ${T.primaryMid}` }}>
-                🔍 Utilisation Review (Admin)
-              </div>
-              <div style={{ fontSize:12, color:T.textMuted, marginBottom:16 }}>
-                Vendor utilisation submissions — you can approve or reject each item.
-              </div>
-              <div style={{ display:'flex', flexDirection:'column' as const, gap:12 }}>
-                {stnD.materials.map((item: any) => {
-                  const BADGE: Record<string,{color:string;bg:string;label:string}> = {
-                    pending:     { color:'#64748B', bg:'#F1F5F9', label:'Pending Input'   },
-                    submitted:   { color:'#2563EB', bg:'#EFF6FF', label:'Submitted to PM' },
-                    pm_approved: { color:'#16A34A', bg:'#F0FDF4', label:'PM Approved'     },
-                    pm_rejected: { color:'#DC2626', bg:'#FEF2F2', label:'PM Rejected'     },
-                  };
-                  const b = BADGE[item.utilisedStatus] || BADGE.pending;
-                  return (
-                    <div key={item.code} style={{ border:`1.5px solid ${item.utilisedStatus==='pm_approved'?T.success:item.utilisedStatus==='pm_rejected'?T.danger:item.utilisedStatus==='submitted'?T.info:T.border}`, borderRadius:10, padding:14 }}>
-                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-                        <div>
-                          <div style={{ fontSize:11, fontWeight:700, color:T.primary }}>{item.code}</div>
-                          <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{item.description}</div>
-                          <div style={{ fontSize:11, color:T.textMuted }}>STN: {item.stnQty} {item.uom} | Vendor Input: {item.utilisedQty ?? 'Not submitted'} {item.uom}</div>
-                        </div>
-                        <span style={{ fontSize:11, fontWeight:700, color:b.color, background:b.bg, padding:'3px 10px', borderRadius:20 }}>{b.label}</span>
-                      </div>
-                      {item.utilisedStatus === 'submitted' && (
-                        <div style={{ display:'flex', gap:10, marginTop:8 }}>
-                          <button onClick={()=>{ setToast({ msg:`${item.description} approved!`, type:'success' }); }}
-                            style={{ ...btnPrimary, background:T.success, fontSize:12, padding:'6px 14px' }}>✅ Approve</button>
-                          <button onClick={()=>{ setToast({ msg:`${item.description} rejected.`, type:'info' }); }}
-                            style={{ ...btnSecondary, borderColor:T.danger, color:T.danger, fontSize:12, padding:'6px 14px' }}>❌ Reject</button>
-                        </div>
-                      )}
-                      {item.utilisedStatus === 'pm_approved' && (
-                        <div style={{ fontSize:12, color:T.success }}>✅ Approved — Return Qty: {item.returnQty} {item.uom}</div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
         {/* ── 5. Billing Review Checklist ── */}
-        {showBillingReview && (isBilling || canEdit) && (
-          <div style={{ ...card, marginBottom:16, border:`1.5px solid ${!isCompleted&&srnAllApproved?'#7C3AED':T.border}`, opacity:!['pm_approved','billing_review','completed'].includes(p.status)&&!srnAllApproved?0.5:1, position:'relative' as const }}>
+        {showBillingReview && (
+          <div style={{ ...card, marginBottom:16, border:`1.5px solid ${T.border}`, }}>
             {sectionTitle('💳','Billing Review Checklist', 'billing', isBilling)}
-            {(!['pm_approved','billing_review','completed'].includes(p.status) || !srnAllApproved) && (
-              <div style={{ position:'absolute' as const, inset:0, background:'rgba(255,255,255,0.7)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', zIndex:5 }}>
-                <div style={{ textAlign:'center' }}>
-                  <div style={{ fontSize:28, marginBottom:8 }}>🔒</div>
-                  <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{!srnAllApproved?'All SRN items must be approved to unlock Billing Review':'Available after PM approves the project'}</div>
-                </div>
-              </div>
-            )}
 
             <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12, marginBottom:16 }}>
               {[
