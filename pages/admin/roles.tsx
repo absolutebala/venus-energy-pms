@@ -38,6 +38,7 @@ const PROJECT_SECTIONS: { key: string; label: string; icon: string; desc: string
   { key:'sec_po_items',  label:'PO Items',                 icon:'📋', desc:'Line items from the Indus PO — Description, HSN, UOM, Qty, Rate, GST, Amount' },
   { key:'sec_ptw_detail',label:'PTW Section',               icon:'🔑', desc:'Permit to Work — Ticket ID, Supervisor Name, From/To Date, status indicator'    },
   { key:'sec_srn_detail', label:'SRN — Utilisation & Return',icon:'📦', desc:'Material utilisation per item, Balance, Returned (vendor), Approved (PM/Admin)'  },
+  { key:'sec_expenses',         label:'Expenses',                  icon:'💸', desc:'Project expenses — Advances, Materials, Labour, Transport, Equipment Rental, Misc' },
   { key:'sec_activity_log',     label:'Activity Log',             icon:'📝', desc:'Full timeline — project creation to billing, all actions by all roles'  },
 ];
 
@@ -54,6 +55,13 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_po_items:   { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
     sec_ptw_detail: { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
     sec_srn_detail: { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
+    sec_expenses: { can_read:true, can_create:true, can_edit:true, can_delete:true },
+    sec_expenses: { can_read:true, can_create:false,can_edit:false,can_delete:false },
+    sec_expenses: { can_read:true, can_create:false,can_edit:false,can_delete:false },
+    sec_expenses: { can_read:true, can_create:false,can_edit:false,can_delete:false },
+    sec_expenses: { can_read:true, can_create:true, can_edit:true, can_delete:true  },
+    sec_expenses: { can_read:false,can_create:false,can_edit:false,can_delete:false },
+    sec_expenses: { can_read:true, can_create:false,can_edit:false,can_delete:false },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   region_manager: {

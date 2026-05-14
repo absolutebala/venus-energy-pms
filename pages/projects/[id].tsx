@@ -438,6 +438,172 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
   );
 }
 
+
+// ── Expenses Section Component ───────────────────────────────────────────────
+const EXPENSES_DB: Record<string, any[]> = {
+  'VE-2025-001': [
+    { id:1, txnRef:'TXN-2025-001', date:'2025-04-05', site:'Andheri Tower Site',    expenseType:'Advance',           amount:50000,  paymentMode:'Bank Transfer' },
+    { id:2, txnRef:'TXN-2025-002', date:'2025-04-12', site:'Andheri Tower Site',    expenseType:'Material Purchase', amount:125000, paymentMode:'Cheque'        },
+    { id:3, txnRef:'TXN-2025-003', date:'2025-04-20', site:'Andheri Tower Site',    expenseType:'Labour Charge',     amount:35000,  paymentMode:'Cash'          },
+    { id:4, txnRef:'TXN-2025-004', date:'2025-05-02', site:'Andheri Tower Site',    expenseType:'Transport',         amount:12500,  paymentMode:'UPI'           },
+  ],
+  'VE-2025-002': [
+    { id:1, txnRef:'TXN-2025-010', date:'2025-03-10', site:'Bandra Roof Site',      expenseType:'Advance',           amount:30000,  paymentMode:'Bank Transfer' },
+    { id:2, txnRef:'TXN-2025-011', date:'2025-03-22', site:'Bandra Roof Site',      expenseType:'Equipment Rental',  amount:18000,  paymentMode:'Cheque'        },
+  ],
+  'VE-2025-003': [
+    { id:1, txnRef:'TXN-2025-020', date:'2025-04-15', site:'Kurla Junction Tower',  expenseType:'Material Purchase', amount:85000,  paymentMode:'Bank Transfer' },
+    { id:2, txnRef:'TXN-2025-021', date:'2025-04-28', site:'Kurla Junction Tower',  expenseType:'Labour Charge',     amount:42000,  paymentMode:'Cash'          },
+    { id:3, txnRef:'TXN-2025-022', date:'2025-05-05', site:'Kurla Junction Tower',  expenseType:'Miscellaneous',     amount:8500,   paymentMode:'UPI'           },
+  ],
+};
+const EXPENSE_TYPES   = ['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'];
+const PAYMENT_MODES   = ['Cash','Bank Transfer','Cheque','UPI','DD'];
+
+function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boolean }) {
+  const [items, setItems] = React.useState<any[]>(() => EXPENSES_DB[projectId] || []);
+  const [adding, setAdding] = React.useState(false);
+  const [newRow, setNewRow] = React.useState({ txnRef:'', date:'', site:'', expenseType:'Advance', amount:'', paymentMode:'Bank Transfer' });
+
+  const nextId = () => Math.max(0, ...items.map((i:any)=>i.id)) + 1;
+
+  const saveNew = () => {
+    if (!newRow.txnRef || !newRow.date || !newRow.amount) return;
+    setItems(prev => [...prev, { id:nextId(), ...newRow, amount:Number(newRow.amount) }]);
+    setNewRow({ txnRef:'', date:'', site:'', expenseType:'Advance', amount:'', paymentMode:'Bank Transfer' });
+    setAdding(false);
+  };
+
+  const removeItem = (id:number) => setItems(prev => prev.filter((i:any)=>i.id!==id));
+
+  const totalAmount = items.reduce((a:number,i:any)=>a+Number(i.amount),0);
+
+  const cellStyle: React.CSSProperties = { padding:'10px 12px', fontSize:13, borderBottom:`1px solid ${T.border}`, color:T.text };
+  const inpStyle:  React.CSSProperties = { border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text };
+  const selStyle:  React.CSSProperties = { ...inpStyle, cursor:'pointer' };
+
+  const TYPE_COLORS: Record<string,string> = {
+    'Advance':'#2563EB','Material Purchase':'#7C3AED','Labour Charge':'#D97706',
+    'Transport':'#0D9488','Equipment Rental':'#DC2626','Miscellaneous':'#6B7280',
+  };
+
+  return (
+    <div>
+      {items.length === 0 && !adding && (
+        <div style={{ textAlign:'center', padding:30, color:T.textDim, fontSize:13 }}>
+          No expenses recorded yet.{canAdd && ' Click "+ Add Expense" to begin.'}
+        </div>
+      )}
+
+      {items.length > 0 && (
+        <div style={{ overflowX:'auto' as const }}>
+          <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:800 }}>
+            <thead>
+              <tr style={{ background:T.bg }}>
+                {['Sr.','Transaction Ref','Date','Site Name','Expense Type','Amount (₹)','Payment Mode',''].map((h,i)=>(
+                  <th key={i} style={{ padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:i===5?'right' as const:'left' as const, borderBottom:`2px solid ${T.border}`, whiteSpace:'nowrap' as const }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item:any, idx:number) => (
+                <tr key={item.id} style={{ borderBottom:`1px solid ${T.border}` }}>
+                  <td style={{ ...cellStyle, color:T.textMuted, width:40 }}>{idx+1}</td>
+                  <td style={{ ...cellStyle, fontWeight:600 }}>{item.txnRef}</td>
+                  <td style={{ ...cellStyle, whiteSpace:'nowrap' as const, color:T.textMuted }}>
+                    {new Date(item.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
+                  </td>
+                  <td style={{ ...cellStyle }}>{item.site||'—'}</td>
+                  <td style={{ ...cellStyle }}>
+                    <span style={{ fontSize:11, fontWeight:600, color:TYPE_COLORS[item.expenseType]||T.textMuted, background:`${TYPE_COLORS[item.expenseType]||T.textMuted}15`, padding:'2px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>
+                      {item.expenseType}
+                    </span>
+                  </td>
+                  <td style={{ ...cellStyle, fontWeight:700, color:T.primary, textAlign:'right' as const, whiteSpace:'nowrap' as const }}>
+                    ₹{Number(item.amount).toLocaleString('en-IN')}
+                  </td>
+                  <td style={{ ...cellStyle }}>
+                    <span style={{ fontSize:11, color:T.textMuted, background:T.bg, border:`1px solid ${T.border}`, padding:'2px 8px', borderRadius:6 }}>
+                      {item.paymentMode}
+                    </span>
+                  </td>
+                  <td style={{ ...cellStyle, width:36 }}>
+                    {canAdd && (
+                      <button onClick={()=>removeItem(item.id)} style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:15 }}>🗑</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Add new row inline */}
+      {adding && (
+        <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:14, marginTop:12 }}>
+          <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New Expense Entry</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
+            <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Transaction Ref *</label>
+              <input value={newRow.txnRef} onChange={e=>setNewRow(p=>({...p,txnRef:e.target.value}))} placeholder="TXN-2025-XXX" style={inpStyle} />
+            </div>
+            <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Date *</label>
+              <input type="date" value={newRow.date} onChange={e=>setNewRow(p=>({...p,date:e.target.value}))} style={inpStyle} />
+            </div>
+            <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Site Name</label>
+              <input value={newRow.site} onChange={e=>setNewRow(p=>({...p,site:e.target.value}))} placeholder="Site name" style={inpStyle} />
+            </div>
+            <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Expense Type *</label>
+              <select value={newRow.expenseType} onChange={e=>setNewRow(p=>({...p,expenseType:e.target.value}))} style={selStyle}>
+                {EXPENSE_TYPES.map(t=><option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Amount (₹) *</label>
+              <input type="number" value={newRow.amount} onChange={e=>setNewRow(p=>({...p,amount:e.target.value}))} placeholder="0.00" style={{ ...inpStyle, textAlign:'right' as const }} />
+            </div>
+            <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Payment Mode</label>
+              <select value={newRow.paymentMode} onChange={e=>setNewRow(p=>({...p,paymentMode:e.target.value}))} style={selStyle}>
+                {PAYMENT_MODES.map(m=><option key={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ display:'flex', gap:10 }}>
+            <button onClick={saveNew}
+              disabled={!newRow.txnRef||!newRow.date||!newRow.amount}
+              style={{ ...btnPrimary, opacity:!newRow.txnRef||!newRow.date||!newRow.amount?0.5:1 }}>
+              ✅ Save Entry
+            </button>
+            <button onClick={()=>setAdding(false)}
+              style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', color:T.text, cursor:'pointer', fontSize:13 }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:14 }}>
+        {canAdd && !adding && (
+          <button onClick={()=>setAdding(true)}
+            style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8, padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
+            + Add Expense
+          </button>
+        )}
+        {items.length > 0 && (
+          <div style={{ marginLeft:'auto', fontSize:13, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'8px 18px', borderRadius:8 }}>
+            Total Expenses: ₹{totalAmount.toLocaleString('en-IN')}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ProjectDetailPage() {
   const router  = useRouter();
   const { id }  = router.query;
@@ -463,6 +629,8 @@ export default function ProjectDetailPage() {
   const showSTNSRN        = !loading && can('sec_stn_srn',          'read');
   const showBillingReview = !loading && can('sec_billing_review',   'read');
   const showActivityLog   = !loading && can('sec_activity_log',     'read');
+  const showExpenses      = !loading && can('sec_expenses',         'read');
+  const canAddExpenses    = !loading && can('sec_expenses',         'create');
   const canEditVendor     = !loading && can('sec_vendor_assignment', 'edit');
   const canEditPTW        = !loading && can('sec_ptw',              'edit');
 
@@ -769,13 +937,7 @@ export default function ProjectDetailPage() {
           <PTWSectionCard projectId={p.id} vendorContact={p.vendorContact||''} canEdit={editing('ptw') && canEditPTW} />
         </div>}
 
-        {/* ── SRN — Material Utilisation & Return ── */}
-        <div style={{ ...card, marginBottom:16 }}>
-          {sectionTitle('📦','SRN — Material Utilisation & Return', 'srn', ['super_admin','project_manager','region_manager'].includes(role))}
-          <SRNSection projectId={p.id} role={role} onAllApproved={setSrnAllApproved} />
-        </div>
-
-        {/* ── 3. Work Documents ── */}
+                {/* ── 3. Work Documents ── */}
         {showDocs && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('📂','Work Documents', 'docs', false)}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
@@ -874,6 +1036,13 @@ export default function ProjectDetailPage() {
             )}
           </div>
         )}
+
+
+        {/* ── Expenses ── */}
+        {showExpenses && <div style={{ ...card, marginBottom:16 }}>
+          {sectionTitle('💸','Expenses', 'expenses', canAddExpenses)}
+          <ExpensesSection projectId={p.id} canAdd={editing('expenses') && canAddExpenses} />
+        </div>}
 
         {/* ── 6. Activity Log ── */}
         {showActivityLog && <div style={card}>
