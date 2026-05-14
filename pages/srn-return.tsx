@@ -18,7 +18,7 @@ const RETURN_COLOR: Record<string,string> = {
 };
 
 export default function STNSRNPage() {
-  const { profile } = useAuth();
+  const { profile, can, loading } = useAuth();
   const router = useRouter();
   const role = profile?.role || 'viewer';
 
@@ -227,7 +227,7 @@ export default function STNSRNPage() {
             }
 
             {/* Reconciliation summary for accounting */}
-            {(role === 'super_admin' || role === 'accounting_team') && completedProjects.length > 0 && (
+            {!loading && can('site_expenses', 'edit') && completedProjects.length > 0 && (
               <div style={{ ...card, border:`1.5px solid #7C3AED`, marginTop:20 }}>
                 <div style={{ fontSize:14, fontWeight:700, color:'#7C3AED', marginBottom:14 }}>💳 Payment Clearance Summary</div>
                 <table style={{ width:'100%' }}>

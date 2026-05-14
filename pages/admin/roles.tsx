@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createClient } from '@/lib/supabase';
 import Layout from '@/components/Layout';
 import Toast from '@/components/Toast';
 import { T, card, btnPrimary } from '@/lib/theme';
@@ -183,12 +184,32 @@ export default function RolesPage() {
                   <div style={{ fontSize:16, fontWeight:700, color:T.text }}>{currentRole.icon} {currentRole.label}</div>
                   <div style={{ fontSize:12, color:T.textMuted, marginTop:3 }}>{currentRole.desc}</div>
                 </div>
-                {activeRole !== 'super_admin' && (
-                  <button onClick={()=>{ setSaving(true); setTimeout(()=>{ setSaving(false); setToast({ msg:`Permissions saved for ${ROLES.find(r=>r.key===activeRole)?.label}!`, type:'success' }); },600); }}
-                    disabled={saving} style={{ ...btnPrimary, opacity:saving?0.8:1 }}>
-                    {saving ? 'Saving…' : `💾 Save ${ROLES.find(r=>r.key===activeRole)?.label} Permissions`}
-                  </button>
-                )}
+                <button onClick={async () => {
+                  setSaving(true);
+                  try {
+                    const supabase = createClient();
+                    // Delete existing rows for this role
+                    await supabase.from('role_permissions').delete().eq('role', activeRole);
+                    // Insert updated permissions
+                    const rows = Object.entries(perms[activeRole] || {}).map(([module, perm]: any) => ({
+                      role: activeRole,
+                      module,
+                      can_create: perm.can_create,
+                      can_read:   perm.can_read,
+                      can_edit:   perm.can_edit,
+                      can_delete: perm.can_delete,
+                    }));
+                    const { error } = await supabase.from('role_permissions').insert(rows);
+                    if (error) throw error;
+                    setToast({ msg:`✅ Permissions saved for ${ROLES.find(r=>r.key===activeRole)?.label}! Changes apply on next login.`, type:'success' });
+                  } catch (err: any) {
+                    setToast({ msg:`Error: ${err.message}`, type:'error' });
+                  }
+                  setSaving(false);
+                }}
+                  disabled={saving} style={{ ...btnPrimary, opacity:saving?0.8:1 }}>
+                  {saving ? 'Saving to DB…' : `💾 Save ${ROLES.find(r=>r.key===activeRole)?.label} Permissions`}
+                </button>
               </div>
 
 

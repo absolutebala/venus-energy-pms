@@ -10,10 +10,10 @@ const fmt = (v: number) => `₹${v.toLocaleString('en-IN')}`;
 const VENDORS = Object.keys(VENDOR_PROJECTS);
 
 export default function SiteExpensesPage() {
-  const { profile } = useAuth();
+  const { profile, can, loading } = useAuth();
   const role          = profile?.role || 'viewer';
-  const isAccounting  = role === 'accounting_team' || role === 'super_admin';
-  const canAdd        = role === 'accounting_team';
+  const isAccounting  = !loading && can('site_expenses', 'read');
+  const canAdd        = !loading && can('site_expenses', 'create');
 
   const [transactions, setTransactions] = useState<PaymentTransaction[]>(PAYMENT_TRANSACTIONS);
   const [selectedVendor,  setSelectedVendor]  = useState('');

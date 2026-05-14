@@ -23,8 +23,8 @@ const MOCK_DRAFTS = [
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const { profile } = useAuth();
-  const isAdmin = profile?.role === 'super_admin' || profile?.role === 'region_manager';
+  const { profile, can, loading } = useAuth();
+  const isAdmin = !loading && (can('projects', 'create') || can('projects', 'delete'));
 
   const [projects, setProjects] = useState(MOCK_PROJECTS);
   const [drafts, setDrafts]     = useState(MOCK_DRAFTS);

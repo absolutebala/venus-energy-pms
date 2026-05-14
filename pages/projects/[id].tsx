@@ -64,13 +64,13 @@ const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
 export default function ProjectDetailPage() {
   const router  = useRouter();
   const { id }  = router.query;
-  const { profile } = useAuth();
+  const { profile, can, loading } = useAuth();
   const { upload } = useUpload();
 
   const role       = profile?.role || 'viewer';
-  const canEdit    = ['super_admin','project_manager','region_manager'].includes(role);
-  const canEditFin = role === 'super_admin';
-  const isBilling  = ['super_admin','accounting_team'].includes(role);
+  const canEdit    = !loading && can('projects', 'edit');
+  const canEditFin = !loading && can('site_expenses', 'edit');
+  const isBilling  = !loading && (can('site_expenses', 'edit') || can('projects', 'edit'));
 
   const [projects, setProjects] = useState(PROJECT_DB);
   const [allTransactions, setAllTransactions] = React.useState(PAYMENT_TRANSACTIONS);
