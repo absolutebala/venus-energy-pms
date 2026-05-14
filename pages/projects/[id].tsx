@@ -198,74 +198,120 @@ function POItemsSection({ projectId, editing }: { projectId: string; editing: bo
 }
 
 
-// ── PTW Section Component ────────────────────────────────────────────────────
+// ── PTW List Component ───────────────────────────────────────────────────────
+const PTW_DB: Record<string, any[]> = {
+  'VE-2025-001': [
+    { id:1, ticketId:'PTW-2025-1001', supervisor:'Rajesh Kumar',  dateFrom:'2025-04-01', dateTo:'2025-06-30' },
+    { id:2, ticketId:'PTW-2025-1045', supervisor:'Mohan Lal',     dateFrom:'2025-07-01', dateTo:'2025-09-30' },
+  ],
+  'VE-2025-002': [
+    { id:1, ticketId:'PTW-2025-1002', supervisor:'Vikram Singh',  dateFrom:'2025-03-01', dateTo:'2025-04-30' },
+  ],
+  'VE-2025-003': [
+    { id:1, ticketId:'PTW-2025-1003', supervisor:'Arun Singh',    dateFrom:'2025-04-10', dateTo:'2025-05-20' },
+  ],
+};
+
 function PTWSectionCard({ projectId, vendorContact, canEdit }: { projectId:string; vendorContact:string; canEdit:boolean }) {
-  const [form, setForm] = React.useState({
-    ticketId: '',
-    supervisor: vendorContact || '',
-    dateFrom: '',
-    dateTo: '',
-  });
-  const [saved, setSaved] = React.useState(false);
+  const [items, setItems] = React.useState<any[]>(() => PTW_DB[projectId] || []);
+  const nextId = () => Math.max(0, ...items.map((i:any)=>i.id)) + 1;
 
-  React.useEffect(() => {
-    setForm(f => ({ ...f, supervisor: vendorContact || '' }));
-  }, [vendorContact]);
+  const addPTW = () => setItems(prev => [...prev, {
+    id: nextId(), ticketId:'', supervisor: vendorContact||'', dateFrom:'', dateTo:''
+  }]);
 
-  const today = new Date();
-  const isExpired  = form.dateTo  && new Date(form.dateTo)  < today;
-  const isActive   = form.dateFrom && form.dateTo && new Date(form.dateFrom) <= today && new Date(form.dateTo) >= today;
-  const isUpcoming = form.dateFrom && new Date(form.dateFrom) > today;
+  const removeItem = (id:number) => setItems(prev => prev.filter((i:any)=>i.id!==id));
 
-  const inp = (label: string, field: string, type='text', placeholder='') => (
-    <div style={{ marginBottom:14 }}>
-      <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase' as const, letterSpacing:0.3 }}>{label}</label>
-      {canEdit ? (
-        <input type={type} value={(form as any)[field]}
-          onChange={e=>{ const v=e.target.value; setForm(p=>({...p,[field]:v})); setSaved(false); }}
-          placeholder={placeholder}
-          style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
-      ) : (
-        <div style={{ fontSize:14, fontWeight:600, color:(form as any)[field]?T.text:T.textDim, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>
-          {type==='date'&&(form as any)[field] ? new Date((form as any)[field]).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : (form as any)[field]||'—'}
-        </div>
-      )}
-    </div>
+  const update = (id:number, field:string, val:string) =>
+    setItems(prev => prev.map((item:any) => item.id===id ? {...item,[field]:val} : item));
+
+  const getStatus = (from:string, to:string) => {
+    if (!from || !to) return null;
+    const today = new Date(), f = new Date(from), t = new Date(to);
+    if (today < f) return { label:'🕐 Upcoming',  color:'#D97706', bg:'#FFFBEB', border:'#FDE68A' };
+    if (today > t) return { label:'⚠️ Expired',   color:T.danger,  bg:'#FEF2F2', border:'#FECACA' };
+    return          { label:'✅ Active',            color:T.success, bg:T.successBg, border:'#BBF7D0' };
+  };
+
+  const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  const inp = (val:string, field:string, id:number, type='text', ph='') => (
+    <input type={type} value={val} placeholder={ph}
+      onChange={e=>update(id,field,e.target.value)}
+      style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text }} />
+  );
+
+  if (items.length === 0 && !canEdit) return (
+    <div style={{ textAlign:'center', padding:24, color:T.textDim, fontSize:13 }}>No PTW records yet.</div>
   );
 
   return (
     <div>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
-        {inp('PTW Ticket ID *',      'ticketId',   'text', 'e.g. PTW-2025-1234')}
-        {inp('Supervisor Name',      'supervisor', 'text', 'Vendor supervisor name')}
-        {inp('Allowed Date From *',  'dateFrom',   'date')}
-        {inp('Allowed Date To *',    'dateTo',     'date')}
-      </div>
-
-      {form.ticketId && form.dateFrom && form.dateTo && (
-        <div style={{ padding:'10px 14px', borderRadius:8, marginBottom:canEdit?14:0, background:isExpired?'#FEF2F2':isActive?T.successBg:'#FFFBEB', border:`1px solid ${isExpired?'#FECACA':isActive?'#BBF7D0':'#FDE68A'}` }}>
-          <span style={{ fontSize:12, fontWeight:700, color:isExpired?T.danger:isActive?T.success:'#D97706' }}>
-            {isExpired?'⚠️ PTW Expired — Renew before work resumes':isActive?`✅ PTW Active — Valid until ${new Date(form.dateTo).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}`:isUpcoming?'🕐 PTW Not Yet Active':''}
-          </span>
-        </div>
-      )}
-
-      {!form.ticketId && (
-        <div style={{ padding:'10px 14px', borderRadius:8, background:'#FEF2F2', border:'1px solid #FECACA' }}>
-          <span style={{ fontSize:12, fontWeight:600, color:T.danger }}>⚠️ No PTW issued — Required before vendor commences site work</span>
-        </div>
+      {items.length > 0 && (
+        <table style={{ width:'100%', borderCollapse:'collapse' as const, marginBottom:14 }}>
+          <thead>
+            <tr style={{ background:T.bg }}>
+              {['#','Ticket ID *','Supervisor Name','From Date *','To Date *','Status',''].map((h,i)=>(
+                <th key={i} style={{ padding:'9px 10px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:'left' as const, borderBottom:`2px solid ${T.border}`, whiteSpace:'nowrap' as const }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item:any, idx:number) => {
+              const status = getStatus(item.dateFrom, item.dateTo);
+              return (
+                <tr key={item.id} style={{ borderBottom:`1px solid ${T.border}` }}>
+                  <td style={{ padding:'10px', color:T.textMuted, fontSize:12, width:32 }}>{idx+1}</td>
+                  <td style={{ padding:'8px 10px', minWidth:160 }}>
+                    {canEdit ? inp(item.ticketId,'ticketId',item.id,'text','PTW-2025-XXXX')
+                    : <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{item.ticketId||'—'}</span>}
+                  </td>
+                  <td style={{ padding:'8px 10px', minWidth:160 }}>
+                    {canEdit ? inp(item.supervisor,'supervisor',item.id,'text','Supervisor name')
+                    : <span style={{ fontSize:13, color:T.text }}>{item.supervisor||'—'}</span>}
+                  </td>
+                  <td style={{ padding:'8px 10px', width:140 }}>
+                    {canEdit ? inp(item.dateFrom,'dateFrom',item.id,'date')
+                    : <span style={{ fontSize:12, color:T.textMuted }}>{fmt(item.dateFrom)}</span>}
+                  </td>
+                  <td style={{ padding:'8px 10px', width:140 }}>
+                    {canEdit ? inp(item.dateTo,'dateTo',item.id,'date')
+                    : <span style={{ fontSize:12, color:T.textMuted }}>{fmt(item.dateTo)}</span>}
+                  </td>
+                  <td style={{ padding:'8px 10px', width:140 }}>
+                    {status ? (
+                      <span style={{ fontSize:11, fontWeight:600, color:status.color, background:status.bg, border:`1px solid ${status.border}`, padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>
+                        {status.label}
+                      </span>
+                    ) : <span style={{ fontSize:12, color:T.textDim }}>—</span>}
+                  </td>
+                  <td style={{ padding:'8px 10px', width:36 }}>
+                    {canEdit && (
+                      <button onClick={()=>removeItem(item.id)}
+                        style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:16, padding:2 }}>🗑</button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       )}
 
       {canEdit && (
-        <button onClick={()=>setSaved(true)} style={{ ...btnPrimary, fontSize:12, marginTop:14, opacity:!form.ticketId||!form.dateFrom||!form.dateTo?0.5:1 }}
-          disabled={!form.ticketId||!form.dateFrom||!form.dateTo}>
-          {saved?'✅ PTW Saved':'💾 Save PTW'}
+        <button onClick={addPTW}
+          style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8, padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
+          + Add PTW
         </button>
+      )}
+
+      {!canEdit && items.length === 0 && (
+        <div style={{ padding:'10px 14px', borderRadius:8, background:'#FEF2F2', border:'1px solid #FECACA' }}>
+          <span style={{ fontSize:12, fontWeight:600, color:T.danger }}>⚠️ No PTW issued — Required before vendor commences work</span>
+        </div>
       )}
     </div>
   );
 }
-
 // ── SRN Section Component ─────────────────────────────────────────────────────
 function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role:string; onAllApproved:(v:boolean)=>void }) {
   const poItems = PO_ITEMS_DB[projectId] || [];
@@ -726,11 +772,7 @@ export default function ProjectDetailPage() {
         {/* ── PTW — Permit to Work ── */}
         {showPTW && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('🔑','PTW — Permit to Work', 'ptw', canEditPTW)}
-          <PTWSectionCard
-            projectId={p.id}
-            vendorContact={p.vendorContact||''}
-            canEdit={editing('ptw') && canEditPTW}
-          />
+          <PTWSectionCard projectId={p.id} vendorContact={p.vendorContact||''} canEdit={editing('ptw') && canEditPTW} />
         </div>}
 
         {/* ── SRN — Material Utilisation & Return ── */}
