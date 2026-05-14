@@ -25,6 +25,92 @@ const MODULES: { key: string; label: string; icon: string; desc: string; note?: 
   { key:'reports',      label:'Reports',          icon:'📊', desc:'Auto-generated reports — Read only for all roles (no manual create)'               },
 ];
 
+
+const PROJECT_SECTIONS: { key: string; label: string; icon: string; desc: string }[] = [
+  { key:'sec_project_details',  label:'Project Details',         icon:'📋', desc:'Project No, PO Number, Indus ID, Site, Region, Job Type, Dates, PM, RM' },
+  { key:'sec_financial',        label:'Financial Summary',        icon:'💰', desc:'PO Value, Billed Amount, Paid Amount, Pending, PO Aging'                },
+  { key:'sec_vendor_assignment',label:'Vendor Assignment',        icon:'🏢', desc:'Vendor selection, contact details, work scope'                          },
+  { key:'sec_ptw',              label:'PTW — Permit to Work',     icon:'🔑', desc:'Ticket ID, Supervisor Name, Allowed Date From/To, status indicator'     },
+  { key:'sec_work_documents',   label:'Work Documents',           icon:'📂', desc:'6 document types with thumbnail preview and upload'                     },
+  { key:'sec_stn_srn',          label:'STN/SRN Material Tracking',icon:'📦', desc:'Materials issued by Indus, utilisation per item, return qty'            },
+  { key:'sec_billing_review',   label:'Billing Review Checklist', icon:'✅', desc:'STN ✓ SRN ✓ PTW ✓ Materials Returned to Indus ✓ — payment release'      },
+  { key:'sec_activity_log',     label:'Activity Log',             icon:'📝', desc:'Full timeline — project creation to billing, all actions by all roles'  },
+];
+
+// Default section permissions per role
+const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolean>>> = {
+  super_admin: {
+    sec_project_details:   { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
+    sec_financial:         { can_read:true,  can_create:true,  can_edit:true,  can_delete:false },
+    sec_vendor_assignment: { can_read:true,  can_create:true,  can_edit:true,  can_delete:false },
+    sec_ptw:               { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
+    sec_work_documents:    { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
+    sec_stn_srn:           { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
+    sec_billing_review:    { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
+    sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+  },
+  region_manager: {
+    sec_project_details:   { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
+    sec_financial:         { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_vendor_assignment: { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
+    sec_ptw:               { can_read:true,  can_create:true,  can_edit:true,  can_delete:false },
+    sec_work_documents:    { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_stn_srn:           { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
+    sec_billing_review:    { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+  },
+  project_manager: {
+    sec_project_details:   { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
+    sec_financial:         { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_vendor_assignment: { can_read:true,  can_create:true,  can_edit:true,  can_delete:false },
+    sec_ptw:               { can_read:true,  can_create:true,  can_edit:true,  can_delete:false },
+    sec_work_documents:    { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_stn_srn:           { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
+    sec_billing_review:    { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
+    sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+  },
+  site_engineer: {
+    sec_project_details:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_financial:         { can_read:false, can_create:false, can_edit:false, can_delete:false },
+    sec_vendor_assignment: { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_ptw:               { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_work_documents:    { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_stn_srn:           { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_billing_review:    { can_read:false, can_create:false, can_edit:false, can_delete:false },
+    sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+  },
+  accounting_team: {
+    sec_project_details:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_financial:         { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
+    sec_vendor_assignment: { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_ptw:               { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_work_documents:    { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_stn_srn:           { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_billing_review:    { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
+    sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+  },
+  vendor: {
+    sec_project_details:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_financial:         { can_read:false, can_create:false, can_edit:false, can_delete:false },
+    sec_vendor_assignment: { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_ptw:               { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_work_documents:    { can_read:true,  can_create:true,  can_edit:true,  can_delete:false },
+    sec_stn_srn:           { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
+    sec_billing_review:    { can_read:false, can_create:false, can_edit:false, can_delete:false },
+    sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+  },
+  viewer: {
+    sec_project_details:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_financial:         { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_vendor_assignment: { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_ptw:               { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_work_documents:    { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_stn_srn:           { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_billing_review:    { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+  },
+};
+
 type Action = 'can_create'|'can_read'|'can_edit'|'can_delete';
 const ACTIONS: { key: Action; label: string; color: string; bg: string; what: string }[] = [
   { key:'can_read',   label:'Read',   color:'#2563EB', bg:'#EFF6FF', what:'View data'          },
@@ -34,7 +120,8 @@ const ACTIONS: { key: Action; label: string; color: string; bg: string; what: st
 ];
 
 export default function RolesPage() {
-  const [perms, setPerms]     = useState(() => JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS)));
+  const [perms, setPerms]         = useState(() => JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS)));
+  const [sectionPerms, setSectionPerms] = useState(() => JSON.parse(JSON.stringify(DEFAULT_SECTION_PERMS)));
   const [activeRole, setRole] = useState<UserRole>('super_admin');
   const [saving,    setSaving] = useState(false);
   const [toast, setToast]     = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
@@ -46,6 +133,17 @@ export default function RolesPage() {
       [activeRole]: {
         ...p[activeRole],
         [module]: { ...p[activeRole][module], [action]: !p[activeRole][module]?.[action] }
+      }
+    }));
+  };
+
+  const toggleSection = (section: string, action: Action) => {
+    if (activeRole === 'super_admin') return;
+    setSectionPerms((p:any) => ({
+      ...p,
+      [activeRole]: {
+        ...p[activeRole],
+        [section]: { ...(p[activeRole]?.[section] || {}), [action]: !p[activeRole]?.[section]?.[action] }
       }
     }));
   };
@@ -136,6 +234,60 @@ export default function RolesPage() {
                           })}
                         </tr>
                       </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+
+            {/* Project Detail Sections */}
+            <div style={{ ...card, marginTop:14 }}>
+              <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:4 }}>📁 Project Detail Sections</div>
+              <div style={{ fontSize:12, color:T.textMuted, marginBottom:14 }}>
+                Fine-grained permissions for each section within a project. Controls what each role can see and do inside the project detail view.
+              </div>
+
+              <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+                <thead>
+                  <tr style={{ background:T.bg }}>
+                    <th style={{ padding:'10px 14px', fontSize:12, fontWeight:700, color:T.textMuted, textAlign:'left', width:'45%', borderBottom:`2px solid ${T.border}` }}>Project Section</th>
+                    {ACTIONS.map(a=>(
+                      <th key={a.key} style={{ padding:'10px 14px', fontSize:12, fontWeight:700, color:a.color, textAlign:'center', borderBottom:`2px solid ${T.border}` }}>
+                        <div>{a.label}</div>
+                        <div style={{ fontSize:10, color:T.textDim, fontWeight:400 }}>{a.what}</div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {PROJECT_SECTIONS.map((sec, i) => {
+                    const secPerms = sectionPerms[activeRole]?.[sec.key] || {};
+                    return (
+                      <tr key={sec.key} style={{ borderTop:`1px solid ${T.border}`, background:i%2===0?'#fff':T.bg }}>
+                        <td style={{ padding:'12px 14px' }}>
+                          <div style={{ display:'flex', alignItems:'flex-start', gap:8 }}>
+                            <span style={{ fontSize:16, flexShrink:0, marginTop:2 }}>{sec.icon}</span>
+                            <div>
+                              <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{sec.label}</div>
+                              <div style={{ fontSize:11, color:T.textMuted, marginTop:2 }}>{sec.desc}</div>
+                            </div>
+                          </div>
+                        </td>
+                        {ACTIONS.map(action => {
+                          const enabled = activeRole==='super_admin'
+                            ? DEFAULT_SECTION_PERMS['super_admin']?.[sec.key]?.[action.key] ?? false
+                            : !!secPerms[action.key];
+                          return (
+                            <td key={action.key} style={{ padding:'12px 14px', textAlign:'center' as const }}>
+                              <div onClick={()=>toggleSection(sec.key, action.key)}
+                                style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?action.color:T.border}`, background:enabled?action.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:activeRole==='super_admin'?'not-allowed':'pointer', margin:'0 auto', transition:'all 0.15s' }}>
+                                {enabled && <span style={{ fontSize:14, fontWeight:700, color:action.color }}>✓</span>}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
                     );
                   })}
                 </tbody>
