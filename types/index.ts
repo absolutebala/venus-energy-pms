@@ -62,6 +62,10 @@ export const MODULE_LABELS: Record<AppModule, string> = {
   sec_stn_srn:            'STN/SRN Section',
   sec_billing_review:     'Billing Review Section',
   sec_activity_log:       'Activity Log Section',
+  sec_expenses:           'Expenses Section',
+  sec_po_items:           'PO Items Section',
+  sec_ptw_detail:         'PTW Detail Section',
+  sec_srn_detail:         'SRN Detail Section',
 };
 
 export interface Permission {
