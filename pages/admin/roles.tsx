@@ -190,16 +190,19 @@ export default function RolesPage() {
                     const supabase = createClient();
                     // Delete existing rows for this role
                     await supabase.from('role_permissions').delete().eq('role', activeRole);
-                    // Insert updated permissions
-                    const rows = Object.entries(perms[activeRole] || {}).map(([module, perm]: any) => ({
-                      role: activeRole,
-                      module,
-                      can_create: perm.can_create,
-                      can_read:   perm.can_read,
-                      can_edit:   perm.can_edit,
-                      can_delete: perm.can_delete,
+                    // Build module rows
+                    const moduleRows = Object.entries(perms[activeRole] || {}).map(([module, perm]: any) => ({
+                      role: activeRole, module,
+                      can_create: perm.can_create, can_read: perm.can_read,
+                      can_edit: perm.can_edit,     can_delete: perm.can_delete,
                     }));
-                    const { error } = await supabase.from('role_permissions').insert(rows);
+                    // Build section rows
+                    const sectionRows = Object.entries(sectionPerms[activeRole] || {}).map(([section, perm]: any) => ({
+                      role: activeRole, module: section,
+                      can_create: perm.can_create, can_read: perm.can_read,
+                      can_edit: perm.can_edit,     can_delete: perm.can_delete,
+                    }));
+                    const { error } = await supabase.from('role_permissions').insert([...moduleRows, ...sectionRows]);
                     if (error) throw error;
                     setToast({ msg:`✅ Permissions saved for ${ROLES.find(r=>r.key===activeRole)?.label}! Changes apply on next login.`, type:'success' });
                   } catch (err: any) {

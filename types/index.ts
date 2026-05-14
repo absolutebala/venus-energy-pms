@@ -20,6 +20,8 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 export const ALL_MODULES = [
   'dashboard', 'projects', 'vendors', 'srn_return', 'ptw',
   'site_expenses', 'reports',
+  'sec_project_details', 'sec_financial', 'sec_vendor_assignment',
+  'sec_ptw', 'sec_work_documents', 'sec_stn_srn', 'sec_billing_review', 'sec_activity_log',
 ] as const;
 
 export type AppModule =
@@ -29,16 +31,32 @@ export type AppModule =
   | 'srn_return'
   | 'site_expenses'
   | 'ptw'
-  | 'reports';
+  | 'reports'
+  | 'sec_project_details'
+  | 'sec_financial'
+  | 'sec_vendor_assignment'
+  | 'sec_ptw'
+  | 'sec_work_documents'
+  | 'sec_stn_srn'
+  | 'sec_billing_review'
+  | 'sec_activity_log';
 
 export const MODULE_LABELS: Record<AppModule, string> = {
-  dashboard:    'Dashboard',
-  projects:     'Projects',
-  vendors:      'Vendors',
-  srn_return:   'STN / SRN Status',
-  site_expenses:'Site Expenses',
-  ptw:          'PTW Management',
-  reports:      'Reports',
+  dashboard:              'Dashboard',
+  projects:               'Projects',
+  vendors:                'Vendors',
+  srn_return:             'STN / SRN Status',
+  site_expenses:          'Site Expenses',
+  ptw:                    'PTW Management',
+  reports:                'Reports',
+  sec_project_details:    'Project Details Section',
+  sec_financial:          'Financial Summary Section',
+  sec_vendor_assignment:  'Vendor Assignment Section',
+  sec_ptw:                'PTW Section',
+  sec_work_documents:     'Work Documents Section',
+  sec_stn_srn:            'STN/SRN Section',
+  sec_billing_review:     'Billing Review Section',
+  sec_activity_log:       'Activity Log Section',
 };
 
 export interface Permission {

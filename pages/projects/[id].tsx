@@ -68,9 +68,20 @@ export default function ProjectDetailPage() {
   const { upload } = useUpload();
 
   const role       = profile?.role || 'viewer';
-  const canEdit    = !loading && can('projects', 'edit');
-  const canEditFin = !loading && can('site_expenses', 'edit');
-  const isBilling  = !loading && (can('site_expenses', 'edit') || can('projects', 'edit'));
+  const canEdit    = !loading && can('sec_project_details', 'edit');
+  const canEditFin = !loading && can('sec_financial', 'edit');
+  const isBilling  = !loading && can('sec_billing_review', 'edit');
+
+  // Section visibility from permissions
+  const showFinancial     = !loading && can('sec_financial',        'read');
+  const showVendor        = !loading && can('sec_vendor_assignment', 'read');
+  const showPTW           = !loading && can('sec_ptw',              'read');
+  const showDocs          = !loading && can('sec_work_documents',   'read');
+  const showSTNSRN        = !loading && can('sec_stn_srn',          'read');
+  const showBillingReview = !loading && can('sec_billing_review',   'read');
+  const showActivityLog   = !loading && can('sec_activity_log',     'read');
+  const canEditVendor     = !loading && can('sec_vendor_assignment', 'edit');
+  const canEditPTW        = !loading && can('sec_ptw',              'edit');
 
   const [projects, setProjects] = useState(PROJECT_DB);
   const [allTransactions, setAllTransactions] = React.useState(PAYMENT_TRANSACTIONS);
@@ -250,7 +261,7 @@ export default function ProjectDetailPage() {
             </div>
           </div>
 
-          <div style={card}>
+          {showFinancial && <div style={card}>
             {sectionTitle('💰','Financial Summary', canEditFin && !editMode ? <button onClick={()=>{ setForm({...p}); setEditMode(true); }} style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:7, padding:'4px 12px', color:T.primary, cursor:'pointer', fontSize:12, fontWeight:600 }}>Edit</button> : undefined)}
             {[
               { label:'PO Value',      key:'poValue',      color:T.text    },
@@ -274,11 +285,11 @@ export default function ProjectDetailPage() {
                 {Math.floor((Date.now() - new Date(p.startDate).getTime()) / 86400000)} days
               </span>
             </div>
-          </div>
+          </div>}
         </div>
 
         {/* ── 2. Vendor Assignment ── */}
-        <div style={{ ...card, marginBottom:16, opacity:isCompleted&&!editMode?0.8:1 }}>
+        {showVendor && <div style={{ ...card, marginBottom:16, opacity:isCompleted&&!editMode?0.8:1 }}>
           {sectionTitle('🏢','Vendor Assignment', isCompleted ? <span style={{ fontSize:11, color:T.textDim, background:T.bg, border:`1px solid ${T.border}`, borderRadius:20, padding:'3px 12px' }}>🔒 Locked — Project Completed</span> : undefined)}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'0 16px' }}>
             {[
@@ -297,8 +308,8 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        {/* ── 3. Work Documents with thumbnails ── */}
-        <div style={{ ...card, marginBottom:16 }}>
+        {/* ── 3. Work Documents ── */}
+        {showDocs && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('📂','Work Documents')}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
             {DOC_TYPES.map(doc => {
@@ -339,10 +350,10 @@ export default function ProjectDetailPage() {
               );
             })}
           </div>
-        </div>
+        </div>}
 
         {/* ── 4. STN/SRN Materials ── */}
-        <div style={{ ...card, marginBottom:16 }}>
+        {showSTNSRN && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('📦','STN/SRN — Materials Tracking (Indus)')}
           {stnData ? (
             <>
@@ -444,7 +455,7 @@ export default function ProjectDetailPage() {
           );
         })()}
         {/* ── 5. Billing Review Checklist ── */}
-        {(isBilling || canEdit) && (
+        {showBillingReview && (isBilling || canEdit) && (
           <div style={{ ...card, marginBottom:16, border:`1.5px solid ${!isCompleted?T.border:'#7C3AED'}`, opacity:!['pm_approved','billing_review','completed'].includes(p.status)?0.5:1, position:'relative' as const }}>
             {sectionTitle('💳','Billing Review Checklist')}
             {!['pm_approved','billing_review','completed'].includes(p.status) && (
@@ -506,7 +517,7 @@ export default function ProjectDetailPage() {
         )}
 
         {/* ── 6. Activity Log ── */}
-        <div style={card}>
+        {showActivityLog && <div style={card}>
           {sectionTitle('📝','Activity Log')}
           <div style={{ position:'relative' as const }}>
             <div style={{ position:'absolute' as const, left:12, top:0, bottom:0, width:2, background:T.border }} />
@@ -531,7 +542,7 @@ export default function ProjectDetailPage() {
               );
             })}
           </div>
-        </div>
+        </div>}
 
         {/* Document Preview Modal */}
         {previewDoc && (

@@ -33,6 +33,14 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     site_expenses: perm(false, true,  false, false), // read-only
     ptw:           perm(true,  true,  true,  false), // can create/edit PTW
     reports:       perm(false, true,  false, false),
+      sec_project_details:   perm(false,true, true, false),
+    sec_financial:         perm(false,true, false,false),
+    sec_vendor_assignment: perm(false,true, true, false),
+    sec_ptw:               perm(true, true, true, false),
+    sec_work_documents:    perm(false,true, false,false),
+    sec_stn_srn:           perm(false,true, true, false),
+    sec_billing_review:    perm(false,true, false,false),
+    sec_activity_log:      perm(false,true, false,false),
   },
 
   project_manager: {
@@ -43,6 +51,14 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     site_expenses: perm(false, true,  false, false), // read-only
     ptw:           perm(true,  true,  true,  false), // create/edit PTW
     reports:       perm(false, true,  false, false),
+      sec_project_details:   perm(false,true, true, false),
+    sec_financial:         perm(false,true, false,false),
+    sec_vendor_assignment: perm(true, true, true, false),
+    sec_ptw:               perm(true, true, true, false),
+    sec_work_documents:    perm(false,true, false,false),
+    sec_stn_srn:           perm(false,true, true, false),
+    sec_billing_review:    perm(false,true, true, false),
+    sec_activity_log:      perm(false,true, false,false),
   },
 
   site_engineer: {
@@ -53,6 +69,14 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     site_expenses: perm(false, false, false, false),
     ptw:           perm(false, true,  false, false), // read-only
     reports:       perm(false, false, false, false),
+      sec_project_details:   perm(false,true, false,false),
+    sec_financial:         perm(false,false,false,false),
+    sec_vendor_assignment: perm(false,true, false,false),
+    sec_ptw:               perm(false,true, false,false),
+    sec_work_documents:    perm(false,true, false,false),
+    sec_stn_srn:           perm(false,true, false,false),
+    sec_billing_review:    perm(false,false,false,false),
+    sec_activity_log:      perm(false,true, false,false),
   },
 
   accounting_team: {
@@ -63,6 +87,14 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     site_expenses: perm(true,  true,  true,  false), // full access — add payments
     ptw:           perm(false, true,  false, false), // read-only
     reports:       perm(false, true,  false, false), // read all reports
+      sec_project_details:   perm(false,true, false,false),
+    sec_financial:         perm(false,true, true, false),
+    sec_vendor_assignment: perm(false,true, false,false),
+    sec_ptw:               perm(false,true, false,false),
+    sec_work_documents:    perm(false,true, false,false),
+    sec_stn_srn:           perm(false,true, false,false),
+    sec_billing_review:    perm(false,true, true, false),
+    sec_activity_log:      perm(false,true, false,false),
   },
 
   vendor: {
@@ -73,6 +105,14 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     site_expenses: perm(false, false, false, false),
     ptw:           perm(false, true,  false, false), // read-only (upload PTW doc)
     reports:       perm(false, false, false, false),
+      sec_project_details:   perm(false,true, false,false),
+    sec_financial:         perm(false,false,false,false),
+    sec_vendor_assignment: perm(false,true, false,false),
+    sec_ptw:               perm(false,true, false,false),
+    sec_work_documents:    perm(true, true, true, false),
+    sec_stn_srn:           perm(false,true, true, false),
+    sec_billing_review:    perm(false,false,false,false),
+    sec_activity_log:      perm(false,true, false,false),
   },
 
   viewer: {
@@ -83,6 +123,14 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     site_expenses: perm(false, true,  false, false),
     ptw:           perm(false, true,  false, false),
     reports:       perm(false, true,  false, false),
+      sec_project_details:   perm(false,true, false,false),
+    sec_financial:         perm(false,true, false,false),
+    sec_vendor_assignment: perm(false,true, false,false),
+    sec_ptw:               perm(false,true, false,false),
+    sec_work_documents:    perm(false,true, false,false),
+    sec_stn_srn:           perm(false,true, false,false),
+    sec_billing_review:    perm(false,true, false,false),
+    sec_activity_log:      perm(false,true, false,false),
   },
 };
 
