@@ -357,7 +357,9 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
                     </span>
                   </td>
                   <td style={{ padding:'10px', textAlign:'center' as const }}>
-                    {isVendor ? (
+                    {balance === 0 ? (
+                      <span style={{ fontSize:12, color:T.textMuted }}>N/A</span>
+                    ) : isVendor ? (
                       <input type="checkbox" checked={item.returned} disabled={item.utilisedQty===null}
                         onChange={e=>updateItem(item.poItemId,'returned',e.target.checked)}
                         style={{ width:18, height:18, cursor:'pointer', accentColor:T.primary }} />
@@ -367,7 +369,7 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
                   </td>
                   <td style={{ padding:'10px', textAlign:'center' as const }}>
                     {canApprove ? (
-                      <input type="checkbox" checked={item.approved} disabled={!item.returned}
+                      <input type="checkbox" checked={item.approved} disabled={balance > 0 && !item.returned}
                         onChange={e=>updateItem(item.poItemId,'approved',e.target.checked)}
                         style={{ width:18, height:18, cursor:item.returned?'pointer':'not-allowed', accentColor:T.success }} />
                     ) : (
@@ -717,6 +719,23 @@ export default function ProjectDetailPage() {
         {/* ── SRN — Material Utilisation & Return ── */}
         <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('📦','SRN — Material Utilisation & Return', 'srn', false)}
+          <SRNSection projectId={p.id} role={role} onAllApproved={setSrnAllApproved} />
+        </div>
+
+
+        {/* ── PTW — Permit to Work ── */}
+        {showPTW && <div style={{ ...card, marginBottom:16 }}>
+          {sectionTitle('🔑','PTW — Permit to Work', 'ptw', canEditPTW)}
+          <PTWSectionCard
+            projectId={p.id}
+            vendorContact={p.vendorContact||''}
+            canEdit={editing('ptw') && canEditPTW}
+          />
+        </div>}
+
+        {/* ── SRN — Material Utilisation & Return ── */}
+        <div style={{ ...card, marginBottom:16 }}>
+          {sectionTitle('📦','SRN — Material Utilisation & Return', 'srn', ['super_admin','project_manager','region_manager'].includes(role))}
           <SRNSection projectId={p.id} role={role} onAllApproved={setSrnAllApproved} />
         </div>
 
