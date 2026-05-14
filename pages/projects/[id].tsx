@@ -304,7 +304,7 @@ export default function ProjectDetailPage() {
     setTimeout(() => {
       setProjects(prev => ({ ...prev, [p.id]: { ...prev[p.id], ...form } }));
       setSaving(false);
-      setEditMode(false);
+      setEditingSection(null);
       setToast({ msg:'Project updated successfully!', type:'success' });
     }, 600);
   };
@@ -450,10 +450,10 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* ── 2. Vendor Assignment ── */}
-        {showVendor && <div style={{ ...card, marginBottom:16, opacity:isCompleted&&!editMode?0.8:1 }}>
+        {showVendor && <div style={{ ...card, marginBottom:16, opacity:isCompleted&&!editingSection !== null?0.8:1 }}>
           {sectionTitle('🏢','Vendor Assignment', 'vendor', canEditVendor && !isCompleted, isCompleted ? <span style={{ fontSize:11, color:T.textDim, background:T.bg, border:`1px solid ${T.border}`, borderRadius:20, padding:'3px 12px' }}>🔒 Locked</span> : undefined)}
           {/* Vendor selection with auto-populate */}
-          {editMode && canEditVendor && !isCompleted ? (
+          {editingSection !== null && canEditVendor && !isCompleted ? (
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
               <div style={{ gridColumn:'1/-1' }}>
                 <CreatableSelect
