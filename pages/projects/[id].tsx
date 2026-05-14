@@ -306,7 +306,27 @@ export default function ProjectDetailPage() {
               ['Contact Person', 'vendorContact', undefined, isCompleted],
               ['Phone',          'vendorPhone',   undefined, isCompleted],
               ['Email',          'vendorEmail',   undefined, isCompleted],
-            ].map(([label, key, opts, ro]:any) => F(label, key, 'text', opts, ro || (!editMode), canEditVendor))}
+            ].map(([label, key, opts, ro]:any) => {
+              if (key === 'vendor' && editMode && canEditVendor && !isCompleted) {
+                return (
+                  <div key={key} style={{ marginBottom:14 }}>
+                    <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>{label}</label>
+                    <select value={(form as any)[key]||''} onChange={e=>setForm((f:any)=>({...f,[key]:e.target.value}))} style={{ ...inputStyle(), width:'100%' }}>
+                      <option value="">— Select Vendor —</option>
+                      {['ABC Telecom Services','XYZ Infra Solutions','TowerTech Pvt Ltd','NetConnect Services','PowerSys India','BuildRight Constructions'].map(v=>(
+                        <option key={v} value={v}>{v}</option>
+                      ))}
+                      <option value="__new__">+ Add New Vendor</option>
+                    </select>
+                    {(form as any)[key]==='__new__' && (
+                      <input autoFocus placeholder="Enter new vendor name" style={{ ...inputStyle(), width:'100%', marginTop:8, boxSizing:'border-box' as const }}
+                        onChange={e=>setForm((f:any)=>({...f,[key]:e.target.value}))} />
+                    )}
+                  </div>
+                );
+              }
+              return F(label, key, 'text', opts, ro || (!editMode), canEditVendor);
+            })}
           </div>
           <div style={{ marginBottom:14 }}>
             <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Work Scope</label>
