@@ -5,6 +5,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
 import { MOCK_PROJECTS } from '@/lib/projectData';
+import { PROJ_START_MAP } from '@/lib/seedData';
 
 const fmt = (v: number) => `₹${(v / 100000).toFixed(2)}L`;
 
@@ -49,7 +50,8 @@ const PROJ_DELIVERY: Record<string,string> = {
   'VE-2025-007':'2025-08-15','VE-2025-008':'2025-11-30','VE-2025-009':'2025-12-31',
   'VE-2025-010':'2025-04-30',
 };
-const PROJ_START: Record<string,string> = {
+// PROJ_START now derived from seedData
+const PROJ_START_OLD: Record<string,string> = {
   'VE-2025-001':'2025-01-15','VE-2025-002':'2025-02-01','VE-2025-003':'2025-02-10',
   'VE-2025-004':'2025-03-01','VE-2025-005':'2024-12-01','VE-2025-006':'2025-03-15',
   'VE-2025-007':'2025-02-20','VE-2025-008':'2025-04-01','VE-2025-009':'2025-04-15',
@@ -103,7 +105,7 @@ export default function ProjectsPage() {
   };
 
   const agingThreshold = 60; // days
-  const getAgeDays = (id: string) => PROJ_START[id] ? Math.floor((new Date().getTime() - new Date(PROJ_START[id]).getTime()) / 86400000) : 0;
+  const getAgeDays = (id: string) => { const p = mapped.find((x:any)=>x.id===id); return p?.startDate ? Math.floor((new Date().getTime() - new Date(p.startDate).getTime()) / 86400000) : (p?.aging||0); };
   const filtered = projects.filter(p => {
     const displayStatus = STATUS_DISPLAY[p.status] || p.status;
     if (statusFilter === 'Aging') return getAgeDays(p.id) > agingThreshold;
