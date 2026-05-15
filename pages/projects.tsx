@@ -104,7 +104,7 @@ export default function ProjectsPage() {
   };
 
   const agingThreshold = 60; // days
-  const getAgeDays = (id: string) => { const p = mapped.find((x:any)=>x.id===id); return p?.startDate ? Math.floor((new Date().getTime() - new Date(p.startDate).getTime()) / 86400000) : (p?.aging||0); };
+  const getAgeDays = (id: string) => { const p = (projects as any[]).find((x:any)=>x.id===id); return p?.startDate ? Math.floor((new Date().getTime() - new Date(p.startDate).getTime()) / 86400000) : (p?.aging||0); };
   const filtered = projects.filter(p => {
     const displayStatus = STATUS_DISPLAY[p.status] || p.status;
     if (statusFilter === 'Aging') return getAgeDays(p.id) > agingThreshold;
