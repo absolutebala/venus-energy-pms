@@ -103,13 +103,13 @@ const TableHead = () => (
 
 // ── Project Status Table ──────────────────────────────────────────────────────
 const DOC_COLS = [
-  { key:'safety_photos',    label:'Safety Photos'    },
-  { key:'site_photos',      label:'Site Photos'      },
-  { key:'jmr_document',    label:'JMR Document'     },
-  { key:'ac_certificate',  label:'AC Certificate'   },
-  { key:'noc_document',    label:'NOC Document'     },
-  { key:'drawing_document',label:'Drawing Document' },
-  { key:'ptw_document',    label:'PTW Document'     },
+  { key:'safety_photos',    label:'Safety'    },
+  { key:'site_photos',      label:'Site Photos'},
+  { key:'jmr_document',    label:'JMR'        },
+  { key:'ac_certificate',  label:'AC Cert'    },
+  { key:'noc_document',    label:'NOC'        },
+  { key:'drawing_document',label:'Drawing'    },
+  { key:'ptw_document',    label:'PTW'        },
 ];
 
 const MOCK_DOC_STATUS: Record<string, Record<string, boolean>> = {
@@ -138,6 +138,18 @@ const MOCK_UPDATED: Record<string,{date:string;by:string}> = {
   'VE-2025-007':{date:'09-05-2025',by:'Arun Kumar'},   'VE-2025-008':{date:'08-05-2025',by:'Ramesh Kumar'},
   'VE-2025-009':{date:'07-05-2025',by:'Priya Sharma'}, 'VE-2025-010':{date:'06-05-2025',by:'Arun Kumar'},
 };
+const MOCK_DELIVERY: Record<string,string> = {
+  'VE-2025-001':'2025-07-30','VE-2025-002':'2025-08-31','VE-2025-003':'2025-09-15',
+  'VE-2025-004':'2025-10-31','VE-2025-005':'2025-03-31','VE-2025-006':'2025-09-30',
+  'VE-2025-007':'2025-08-15','VE-2025-008':'2025-11-30','VE-2025-009':'2025-12-31',
+  'VE-2025-010':'2025-04-30',
+};
+const MOCK_START: Record<string,string> = {
+  'VE-2025-001':'2025-01-15','VE-2025-002':'2025-02-01','VE-2025-003':'2025-02-10',
+  'VE-2025-004':'2025-03-01','VE-2025-005':'2024-12-01','VE-2025-006':'2025-03-15',
+  'VE-2025-007':'2025-02-20','VE-2025-008':'2025-04-01','VE-2025-009':'2025-04-15',
+  'VE-2025-010':'2024-11-01',
+};
 
 const WORK_STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
   in_progress:    { label:'In Progress',    color:'#D97706', bg:'#FFFBEB' },
@@ -151,21 +163,12 @@ const WORK_STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
   on_hold:        { label:'On Hold',        color:'#6B7280', bg:'#F9FAFB' },
 };
 
-const PO_STATUS_MAP: Record<string,string> = {
-  in_progress:'Partially Done', completed:'Done', delayed:'Partially Done',
-  not_started:'Not Started', billing_review:'Done', pm_approved:'Done',
-  submitted:'Partially Done', under_review:'Partially Done', on_hold:'Partially Done',
-};
+
 
 function StatusBadge({ done }: { done: boolean }) {
   return (
-    <span style={{
-      fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const,
-      color: done ? '#0D9488' : '#D97706',
-      background: done ? '#F0FDFA' : '#FFFBEB',
-      border: `1px solid ${done ? '#99F6E4' : '#FDE68A'}`,
-    }}>
-      {done ? '✓ Done' : '⏳ Pending'}
+    <span style={{ fontSize:16, lineHeight:1 }} title={done ? 'Completed' : 'Pending'}>
+      {done ? '✅' : '⏳'}
     </span>
   );
 }
@@ -215,7 +218,8 @@ function ProjectStatusTable({ projects }: { projects: any[] }) {
               <th style={thStyle}>Project No</th>
               <th style={thStyle}>Site / Project</th>
               <th style={thStyle}>Work Status</th>
-              <th style={thStyle}>PO Status</th>
+              <th style={thStyle}>Delivery Date</th>
+              <th style={thStyle}>Aging</th>
               {DOC_COLS.map(d => <th key={d.key} style={thStyle}>{d.label}</th>)}
               <th style={thStyle}>STN Return</th>
               <th style={thStyle}>Last Updated</th>
@@ -234,6 +238,7 @@ function ProjectStatusTable({ projects }: { projects: any[] }) {
                   <td style={{ ...tdStyle, color:'#9CA3AF', fontWeight:600 }}>{(page-1)*PER_PAGE+idx+1}</td>
                   <td style={{ ...tdStyle }}>
                     <a href={`/projects/${p.id}`} style={{ color:'#0D9488', fontWeight:700, textDecoration:'none', fontSize:13 }}>{p.id}</a>
+                    {p.poNo && <div style={{ fontSize:10, color:'#9CA3AF', marginTop:2 }}>{p.poNo}</div>}
                   </td>
                   <td style={{ ...tdStyle }}>
                     <div style={{ fontWeight:600, color:'#111827', fontSize:13 }}>{p.site}</div>
@@ -244,7 +249,28 @@ function ProjectStatusTable({ projects }: { projects: any[] }) {
                       {wsCfg.label}
                     </span>
                   </td>
-                  <td style={{ ...tdStyle, color:'#6B7280', fontSize:12 }}>{PO_STATUS_MAP[p.status]||'—'}</td>
+                  <td style={{ ...tdStyle, whiteSpace:'nowrap' as const }}>
+                    {(() => {
+                      const d = MOCK_DELIVERY[p.id];
+                      if (!d) return <span style={{ color:'#9CA3AF' }}>—</span>;
+                      const dt = new Date(d);
+                      const isPast = dt < new Date();
+                      return <span style={{ fontSize:12, color:isPast?'#DC2626':'#374151', fontWeight:isPast?600:400 }}>
+                        {dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
+                        {isPast && <span style={{ fontSize:10, color:'#DC2626', display:'block' }}>Overdue</span>}
+                      </span>;
+                    })()}
+                  </td>
+                  <td style={{ ...tdStyle }}>
+                    {(() => {
+                      const start = MOCK_START[p.id];
+                      if (!start) return <span style={{ color:'#9CA3AF' }}>—</span>;
+                      const days = Math.floor((new Date().getTime() - new Date(start).getTime()) / 86400000);
+                      const color = days > 90 ? '#DC2626' : days > 60 ? '#D97706' : '#0D9488';
+                      const bg    = days > 90 ? '#FEF2F2' : days > 60 ? '#FFFBEB' : '#F0FDFA';
+                      return <span style={{ fontSize:12, fontWeight:600, color, background:bg, padding:'2px 8px', borderRadius:10, whiteSpace:'nowrap' as const }}>{days}d</span>;
+                    })()}
+                  </td>
                   {DOC_COLS.map(d => (
                     <td key={d.key} style={{ ...tdStyle }}>
                       <StatusBadge done={!!docs[d.key]} />
