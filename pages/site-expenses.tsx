@@ -26,8 +26,8 @@ export default function SiteExpensesPage() {
   const [focused, setFocused] = useState<string|null>(null);
 
   const vendorProjects = selectedVendor ? VENDOR_PROJECTS[selectedVendor] || [] : [];
-  const projectTxns    = selectedProject ? getProjectTransactions(selectedProject, transactions) : [];
-  const totalPaid      = selectedProject ? getPaidAmount(selectedProject, transactions) : 0;
+  const projectTxns    = selectedProject ? getProjectTransactions(selectedProject) : [];
+  const totalPaid      = selectedProject ? getPaidAmount(selectedProject) : 0;
   const selectedProjectData = vendorProjects.find(p => p.id === selectedProject);
 
   const handleAddPayment = () => {
