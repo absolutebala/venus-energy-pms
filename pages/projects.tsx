@@ -21,7 +21,7 @@ const MOCK_DRAFTS = [
   { id:'DRAFT-002', projectName:'Vizag Fiber Installation',       poNo:'PO-2025-007', indusId:'IND-2002', savedAt:'06/05/2025 03:42 PM', region:'Andhra Pradesh', type:'Fiber Installation' },
 ];
 
-export default 
+ 
 const DOC_COLS_P = [
   { key:'safety_photos',    label:'Safety'     },
   { key:'site_photos',      label:'Site Photos' },
@@ -55,7 +55,7 @@ const PROJ_START: Record<string,string> = {
   'VE-2025-007':'2025-02-20','VE-2025-008':'2025-04-01','VE-2025-009':'2025-04-15',
   'VE-2025-010':'2024-11-01',
 };
-function ProjectsPage() {
+export default function ProjectsPage() {
   const router = useRouter();
   const { profile, can, loading } = useAuth();
   const isAdmin = !loading && (can('projects', 'create') || can('projects', 'delete'));
