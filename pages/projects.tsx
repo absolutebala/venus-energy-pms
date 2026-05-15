@@ -68,6 +68,8 @@ export default function ProjectsPage() {
   const [focused,      setFocused]      = useState(false);
   const [ageMin,       setAgeMin]       = useState<number|null>(null);
   const [ageMax,       setAgeMax]       = useState<number|null>(null);
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 10;
   const [pmFilter,     setPmFilter]     = useState('');
   const [vendorFilter, setVendorFilter] = useState('');
 
