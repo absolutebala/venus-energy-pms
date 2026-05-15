@@ -288,29 +288,71 @@ const pgBtn: React.CSSProperties = {
 
 
 // ── STN/SRN Summary Data ──────────────────────────────────────────────────────
-const STN_SRN_SUMMARY = {
-  vendors: [
-    { name:'ABC Telecom Services',    projects:3, issued:24, utilised:18, pendingReturn:4, approved:14, region:'Tamil Nadu'   },
-    { name:'XYZ Infra Solutions',     projects:2, issued:16, utilised:12, pendingReturn:2, approved:10, region:'Karnataka'    },
-    { name:'TowerTech Pvt Ltd',       projects:4, issued:32, utilised:28, pendingReturn:6, approved:22, region:'Maharashtra'  },
-    { name:'NetConnect Services',     projects:1, issued:8,  utilised:5,  pendingReturn:1, approved:4,  region:'Telangana'    },
-    { name:'PowerSys India',          projects:2, issued:14, utilised:10, pendingReturn:3, approved:7,  region:'Kerala'       },
-    { name:'BuildRight Constructions',projects:1, issued:6,  utilised:6,  pendingReturn:0, approved:6,  region:'Delhi'        },
+const VENDOR_PROJECT_DATA: Record<string, any[]> = {
+  'ABC Telecom Services': [
+    { id:'VE-2025-001', name:'Andheri Tower Site',    status:'in_progress', deliveryDate:'30 Jul 2025', issued:12, utilised:10, pendingReturn:2, approvalStatus:'Pending'  },
+    { id:'VE-2025-007', name:'Dadar Junction Node',   status:'in_progress', deliveryDate:'15 Aug 2025', issued:8,  utilised:5,  pendingReturn:1, approvalStatus:'Pending'  },
+    { id:'VE-2025-010', name:'Versova Tower',         status:'completed',   deliveryDate:'30 Apr 2025', issued:4,  utilised:4,  pendingReturn:0, approvalStatus:'Yes'      },
   ],
-  sites: [
-    { name:'Andheri Tower Site',   region:'Maharashtra', issued:12, utilised:10, balance:2,  returned:8,  approved:8  },
-    { name:'Bandra Roof Site',     region:'Maharashtra', issued:8,  utilised:6,  balance:2,  returned:4,  approved:4  },
-    { name:'Kurla Junction Tower', region:'Maharashtra', issued:10, utilised:8,  balance:2,  returned:6,  approved:5  },
-    { name:'Chennai Hub Site',     region:'Tamil Nadu',  issued:14, utilised:12, balance:2,  returned:10, approved:9  },
-    { name:'Bangalore Central',    region:'Karnataka',   issued:9,  utilised:7,  balance:2,  returned:5,  approved:5  },
-    { name:'Hyderabad Node',       region:'Telangana',   issued:6,  utilised:4,  balance:2,  returned:2,  approved:2  },
-    { name:'Kochi Tower A',        region:'Kerala',      issued:8,  utilised:6,  balance:2,  returned:4,  approved:3  },
-    { name:'Delhi NCR Site',       region:'Delhi',       issued:6,  utilised:6,  balance:0,  returned:6,  approved:6  },
+  'XYZ Infra Solutions': [
+    { id:'VE-2025-002', name:'Bandra Roof Site',      status:'in_progress', deliveryDate:'31 Aug 2025', issued:16, utilised:12, pendingReturn:2, approvalStatus:'Pending'  },
+    { id:'VE-2025-008', name:'Santacruz Hub',         status:'delayed',     deliveryDate:'30 Jun 2025', issued:6,  utilised:3,  pendingReturn:1, approvalStatus:'Rejected' },
+  ],
+  'TowerTech Pvt Ltd': [
+    { id:'VE-2025-003', name:'Kurla Junction Tower',  status:'in_progress', deliveryDate:'15 Sep 2025', issued:14, utilised:11, pendingReturn:3, approvalStatus:'Pending'  },
+    { id:'VE-2025-004', name:'Ghatkopar Site A',      status:'in_progress', deliveryDate:'31 Oct 2025', issued:10, utilised:6,  pendingReturn:2, approvalStatus:'Pending'  },
+    { id:'VE-2025-005', name:'Mulund Tower',          status:'completed',   deliveryDate:'28 Feb 2025', issued:8,  utilised:8,  pendingReturn:0, approvalStatus:'Yes'      },
+    { id:'VE-2025-009', name:'Thane Central Node',    status:'on_hold',     deliveryDate:'30 Nov 2025', issued:6,  utilised:2,  pendingReturn:1, approvalStatus:'Pending'  },
+  ],
+  'NetConnect Services': [
+    { id:'VE-2025-006', name:'Pune Kharadi Site',     status:'in_progress', deliveryDate:'30 Sep 2025', issued:8,  utilised:5,  pendingReturn:1, approvalStatus:'Pending'  },
+  ],
+  'PowerSys India': [
+    { id:'VE-2025-011', name:'Chennai Hub Site',      status:'in_progress', deliveryDate:'31 Oct 2025', issued:10, utilised:7,  pendingReturn:2, approvalStatus:'Pending'  },
+    { id:'VE-2025-012', name:'Coimbatore Tower',      status:'in_progress', deliveryDate:'15 Nov 2025', issued:8,  utilised:4,  pendingReturn:1, approvalStatus:'Pending'  },
+  ],
+  'BuildRight Constructions': [
+    { id:'VE-2025-013', name:'Bangalore MG Road',     status:'completed',   deliveryDate:'30 Apr 2025', issued:6,  utilised:6,  pendingReturn:0, approvalStatus:'Yes'      },
   ],
 };
 
+const SITE_SUMMARY = [
+  { name:'Andheri Tower Site',   region:'Maharashtra', issued:12, utilised:10, balance:2, returned:8,  approvalStatus:'Pending'  },
+  { name:'Bandra Roof Site',     region:'Maharashtra', issued:8,  utilised:6,  balance:2, returned:4,  approvalStatus:'Pending'  },
+  { name:'Kurla Junction Tower', region:'Maharashtra', issued:10, utilised:8,  balance:2, returned:6,  approvalStatus:'Pending'  },
+  { name:'Chennai Hub Site',     region:'Tamil Nadu',  issued:14, utilised:12, balance:2, returned:10, approvalStatus:'Yes'      },
+  { name:'Bangalore Central',    region:'Karnataka',   issued:9,  utilised:7,  balance:2, returned:5,  approvalStatus:'Yes'      },
+  { name:'Hyderabad Node',       region:'Telangana',   issued:6,  utilised:4,  balance:2, returned:2,  approvalStatus:'Pending'  },
+  { name:'Kochi Tower A',        region:'Kerala',      issued:8,  utilised:6,  balance:2, returned:4,  approvalStatus:'Rejected' },
+  { name:'Delhi NCR Site',       region:'Delhi',       issued:6,  utilised:6,  balance:0, returned:6,  approvalStatus:'Yes'      },
+];
+
+function ApprovalBadge({ status }: { status: string }) {
+  const cfg: Record<string,{color:string;bg:string;border:string;icon:string}> = {
+    'Yes':      { color:'#0D9488', bg:'#F0FDFA', border:'#99F6E4', icon:'✅' },
+    'Pending':  { color:'#D97706', bg:'#FFFBEB', border:'#FDE68A', icon:'⏳' },
+    'Rejected': { color:'#DC2626', bg:'#FEF2F2', border:'#FECACA', icon:'❌' },
+  };
+  const c = cfg[status] || cfg['Pending'];
+  return (
+    <span style={{ fontSize:11, fontWeight:700, color:c.color, background:c.bg, border:`1px solid ${c.border}`, padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>
+      {c.icon} {status}
+    </span>
+  );
+}
+
 function STNSRNSummary() {
   const [view, setView] = React.useState<'vendor'|'site'>('vendor');
+
+  // Track selected project per vendor
+  const [selectedProj, setSelectedProj] = React.useState<Record<string,string>>(() => {
+    const defaults: Record<string,string> = {};
+    Object.entries(VENDOR_PROJECT_DATA).forEach(([vendor, projects]) => {
+      const active = (projects as any[]).find(p => p.status === 'in_progress') || (projects as any[])[0];
+      if (active) defaults[vendor] = active.id;
+    });
+    return defaults;
+  });
 
   const tabBtn = (v: 'vendor'|'site', label: string) => (
     <button onClick={()=>setView(v)} style={{
@@ -323,12 +365,14 @@ function STNSRNSummary() {
 
   const pct = (a:number, b:number) => b===0 ? 0 : Math.round((a/b)*100);
 
-  const ProgressBar = ({ value, color='#0D9488' }: { value:number; color?:string }) => (
+  const ProgressBar = ({ value }: { value:number }) => (
     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
       <div style={{ flex:1, height:6, background:'#E5E7EB', borderRadius:3, overflow:'hidden' }}>
-        <div style={{ width:`${value}%`, height:'100%', background:color, borderRadius:3, transition:'width 0.3s' }} />
+        <div style={{ width:`${value}%`, height:'100%', borderRadius:3, transition:'width 0.3s',
+          background: value===100?'#0D9488':value>60?'#D97706':'#DC2626' }} />
       </div>
-      <span style={{ fontSize:11, fontWeight:600, color, width:32, textAlign:'right' as const }}>{value}%</span>
+      <span style={{ fontSize:11, fontWeight:600, width:32, textAlign:'right' as const,
+        color: value===100?'#0D9488':value>60?'#D97706':'#DC2626' }}>{value}%</span>
     </div>
   );
 
@@ -341,7 +385,7 @@ function STNSRNSummary() {
     padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const,
   };
 
-  const badge = (n:number, color:string, bg:string) => (
+  const numBadge = (n:number, color:string, bg:string) => (
     <span style={{ fontSize:12, fontWeight:700, color, background:bg, padding:'2px 10px', borderRadius:12 }}>{n}</span>
   );
 
@@ -361,37 +405,46 @@ function STNSRNSummary() {
               <tr>
                 <th style={thS}>#</th>
                 <th style={thS}>Vendor</th>
-                <th style={thS}>Projects</th>
-                <th style={{ ...thS, textAlign:'center' as const }}>Items Issued</th>
+                <th style={thS}>Project</th>
+                <th style={thS}>PO Delivery</th>
+                <th style={{ ...thS, textAlign:'center' as const }}>Issued</th>
                 <th style={{ ...thS, textAlign:'center' as const }}>Utilised</th>
                 <th style={{ ...thS, textAlign:'center' as const }}>Pending Return</th>
-                <th style={{ ...thS, textAlign:'center' as const }}>Approved</th>
-                <th style={{ ...thS, minWidth:140 }}>Completion</th>
+                <th style={thS}>Approval Status</th>
+                <th style={{ ...thS, minWidth:130 }}>Completion</th>
               </tr>
             </thead>
             <tbody>
-              {STN_SRN_SUMMARY.vendors.map((v, i) => {
-                const completionPct = pct(v.approved, v.issued);
-                const returnPct     = pct(v.utilised, v.issued);
+              {Object.entries(VENDOR_PROJECT_DATA).map(([vendor, projects], i) => {
+                const selId  = selectedProj[vendor] || (projects as any[])[0]?.id;
+                const proj   = (projects as any[]).find(p => p.id === selId) || (projects as any[])[0];
+                const compPct = pct(proj?.utilised||0, proj?.issued||1);
                 return (
-                  <tr key={v.name} style={{ background:i%2===0?'#fff':T.bg }}
+                  <tr key={vendor} style={{ background:i%2===0?'#fff':T.bg }}
                     onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
                     onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=i%2===0?'#fff':T.bg}>
                     <td style={{ ...tdS, color:T.textMuted, width:32 }}>{i+1}</td>
                     <td style={{ ...tdS }}>
-                      <div style={{ fontWeight:600, color:T.text }}>{v.name}</div>
-                      <div style={{ fontSize:11, color:T.textMuted }}>{v.region}</div>
+                      <div style={{ fontWeight:600, color:T.text, fontSize:13 }}>{vendor}</div>
+                      <div style={{ fontSize:11, color:T.textMuted }}>{(projects as any[]).length} project{(projects as any[]).length>1?'s':''}</div>
                     </td>
-                    <td style={{ ...tdS }}>{badge(v.projects, T.primary, T.primaryLight)}</td>
-                    <td style={{ ...tdS, textAlign:'center' as const, fontWeight:700, color:T.text }}>{v.issued}</td>
-                    <td style={{ ...tdS, textAlign:'center' as const }}>{badge(v.utilised, '#2563EB','#EFF6FF')}</td>
+                    <td style={{ ...tdS, minWidth:200 }}>
+                      <select value={selId}
+                        onChange={e=>setSelectedProj(p=>({...p,[vendor]:e.target.value}))}
+                        style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, color:T.text, background:'#fff', cursor:'pointer', width:'100%', outline:'none' }}>
+                        {(projects as any[]).map(p=>(
+                          <option key={p.id} value={p.id}>{p.id} — {p.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td style={{ ...tdS, whiteSpace:'nowrap' as const, color:T.textMuted, fontSize:12 }}>{proj?.deliveryDate||'—'}</td>
+                    <td style={{ ...tdS, textAlign:'center' as const, fontWeight:700, color:T.text }}>{proj?.issued||0}</td>
+                    <td style={{ ...tdS, textAlign:'center' as const }}>{numBadge(proj?.utilised||0,'#2563EB','#EFF6FF')}</td>
                     <td style={{ ...tdS, textAlign:'center' as const }}>
-                      {badge(v.pendingReturn, v.pendingReturn>0?'#D97706':'#0D9488', v.pendingReturn>0?'#FFFBEB':'#F0FDFA')}
+                      {numBadge(proj?.pendingReturn||0, (proj?.pendingReturn||0)>0?'#D97706':'#0D9488', (proj?.pendingReturn||0)>0?'#FFFBEB':'#F0FDFA')}
                     </td>
-                    <td style={{ ...tdS, textAlign:'center' as const }}>{badge(v.approved,'#0D9488','#F0FDFA')}</td>
-                    <td style={{ ...tdS, minWidth:140 }}>
-                      <ProgressBar value={completionPct} color={completionPct===100?'#0D9488':completionPct>60?'#D97706':'#DC2626'} />
-                    </td>
+                    <td style={{ ...tdS }}><ApprovalBadge status={proj?.approvalStatus||'Pending'} /></td>
+                    <td style={{ ...tdS, minWidth:130 }}><ProgressBar value={compPct} /></td>
                   </tr>
                 );
               })}
@@ -413,13 +466,13 @@ function STNSRNSummary() {
                 <th style={{ ...thS, textAlign:'center' as const }}>Utilised</th>
                 <th style={{ ...thS, textAlign:'center' as const }}>Balance</th>
                 <th style={{ ...thS, textAlign:'center' as const }}>Returned</th>
-                <th style={{ ...thS, textAlign:'center' as const }}>Approved</th>
-                <th style={{ ...thS, minWidth:140 }}>Approval Progress</th>
+                <th style={thS}>Approval Status</th>
+                <th style={{ ...thS, minWidth:130 }}>Progress</th>
               </tr>
             </thead>
             <tbody>
-              {STN_SRN_SUMMARY.sites.map((s, i) => {
-                const appPct = pct(s.approved, s.issued);
+              {SITE_SUMMARY.map((s, i) => {
+                const appPct = pct(s.returned, s.issued);
                 return (
                   <tr key={s.name} style={{ background:i%2===0?'#fff':T.bg }}
                     onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
@@ -430,15 +483,13 @@ function STNSRNSummary() {
                       <span style={{ fontSize:11, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10 }}>{s.region}</span>
                     </td>
                     <td style={{ ...tdS, textAlign:'center' as const, fontWeight:700 }}>{s.issued}</td>
-                    <td style={{ ...tdS, textAlign:'center' as const }}>{badge(s.utilised,'#2563EB','#EFF6FF')}</td>
+                    <td style={{ ...tdS, textAlign:'center' as const }}>{numBadge(s.utilised,'#2563EB','#EFF6FF')}</td>
                     <td style={{ ...tdS, textAlign:'center' as const }}>
-                      {badge(s.balance, s.balance>0?'#D97706':'#0D9488', s.balance>0?'#FFFBEB':'#F0FDFA')}
+                      {numBadge(s.balance,s.balance>0?'#D97706':'#0D9488',s.balance>0?'#FFFBEB':'#F0FDFA')}
                     </td>
-                    <td style={{ ...tdS, textAlign:'center' as const }}>{badge(s.returned,'#7C3AED','#F5F3FF')}</td>
-                    <td style={{ ...tdS, textAlign:'center' as const }}>{badge(s.approved,'#0D9488','#F0FDFA')}</td>
-                    <td style={{ ...tdS, minWidth:140 }}>
-                      <ProgressBar value={appPct} color={appPct===100?'#0D9488':appPct>60?'#D97706':'#DC2626'} />
-                    </td>
+                    <td style={{ ...tdS, textAlign:'center' as const }}>{numBadge(s.returned,'#7C3AED','#F5F3FF')}</td>
+                    <td style={{ ...tdS }}><ApprovalBadge status={s.approvalStatus} /></td>
+                    <td style={{ ...tdS, minWidth:130 }}><ProgressBar value={appPct} /></td>
                   </tr>
                 );
               })}
@@ -446,157 +497,6 @@ function STNSRNSummary() {
           </table>
         </div>
       )}
-    </div>
-  );
-}
-
-function SuperAdminDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
-  const router = useRouter();
-  const pmGroups     = projects.filter(p=>p.pm).reduce((acc:any,p)=>{ if(!acc[p.pm!])acc[p.pm!]=[]; acc[p.pm!].push(p); return acc; },{});
-  const vendorGroups = projects.filter(p=>p.vendor).reduce((acc:any,p)=>{ if(!acc[p.vendor!])acc[p.vendor!]=[]; acc[p.vendor!].push(p); return acc; },{});
-  const unassigned   = projects.filter(p=>!p.pm||!p.vendor);
-  const recent       = [...projects].sort((a,b)=>new Date(b.createdAt).getTime()-new Date(a.createdAt).getTime()).slice(0,5);
-
-  const statusData = [
-    { name:'In Progress', value:projects.filter(p=>p.status==='in_progress').length,  color:'#2563EB', status:'in_progress'  },
-    { name:'Delayed',     value:projects.filter(p=>p.status==='delayed').length,       color:'#DC2626', status:'delayed'      },
-    { name:'Completed',   value:projects.filter(p=>p.status==='completed').length,     color:'#16A34A', status:'completed'    },
-    { name:'Pending',     value:projects.filter(p=>p.status==='pending').length,       color:'#D97706', status:'pending'      },
-    { name:'Billing',     value:projects.filter(p=>p.status==='billing_review').length,color:'#7C3AED', status:'billing_review'},
-  ];
-
-  return (
-    <div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-        <KpiCard label="Total Projects"    value={projects.length}                           icon="📁" color={T.primary} onClick={()=>router.push('/projects')} />
-        <KpiCard label="Total PO Value"    value={fmtCr(projects.reduce((a,p)=>a+p.poValue,0))} icon="💰" color={T.success} />
-        <KpiCard label="PO Aging >30d"     value={projects.filter(p=>p.aging>30).length}    icon="⏰" color={T.danger}  onClick={()=>router.push('/projects?ageMin=31&ageMax=999')} />
-        <KpiCard label="Unassigned"        value={unassigned.length}                         icon="⚠️" color={T.warning} onClick={()=>router.push('/projects')} />
-      </div>
-
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:14, marginBottom:20 }}>
-        {/* Status Distribution */}
-        <div style={card}>
-          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Status Distribution</div>
-          <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
-            <ResponsiveContainer width={110} height={110}>
-              <PieChart><Pie data={statusData} cx="50%" cy="50%" innerRadius={28} outerRadius={50} dataKey="value" paddingAngle={3}
-                onClick={(e:any)=>router.push(`/projects?status=${e.status}`)}>
-                {statusData.map((d,i)=><Cell key={i} fill={d.color} cursor="pointer" />)}
-              </Pie><Tooltip contentStyle={{ fontSize:12 }} /></PieChart>
-            </ResponsiveContainer>
-          </div>
-          {statusData.map((d,i)=>(
-            <div key={i} onClick={()=>router.push(`/projects?status=${d.status}`)}
-              style={{ display:'flex', alignItems:'center', gap:8, marginBottom:7, cursor:'pointer', padding:'3px 5px', borderRadius:5 }}
-              onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}
-              onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='transparent'}>
-              <div style={{ width:8, height:8, borderRadius:2, background:d.color, flexShrink:0 }} />
-              <span style={{ fontSize:12, color:T.textMuted, flex:1 }}>{d.name}</span>
-              <span style={{ fontSize:12, fontWeight:700, color:T.text }}>{d.value}</span>
-            </div>
-          ))}
-        </div>
-        {/* Projects by PM */}
-        <div style={card}>
-          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Projects by PM</div>
-          <div style={{ display:'flex', flexDirection:'column' as const, gap:6 }}>
-            {Object.entries(pmGroups).slice(0,5).map(([pm,ps]:any)=>(
-              <div key={pm} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pm)}`)}
-                style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', transition:'all 0.15s' }}
-                onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
-                onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
-                  <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{pm}</span>
-                  <span style={{ fontSize:11, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10 }}>{(ps as any[]).length} →</span>
-                </div>
-                <div style={{ display:'flex', gap:5, flexWrap:'wrap' as const }}>
-                  {(ps as any[]).filter((p:any)=>p.status==='in_progress').length>0 && <span style={{ fontSize:10, color:T.info, background:`${T.info}15`, padding:'1px 7px', borderRadius:8 }}>{(ps as any[]).filter((p:any)=>p.status==='in_progress').length} active</span>}
-                  {(ps as any[]).filter((p:any)=>p.status==='delayed').length>0 && <span style={{ fontSize:10, color:T.danger, background:`${T.danger}15`, padding:'1px 7px', borderRadius:8 }}>{(ps as any[]).filter((p:any)=>p.status==='delayed').length} delayed</span>}
-                  {(ps as any[]).filter((p:any)=>['completed','billing_review'].includes(p.status)).length>0 && <span style={{ fontSize:10, color:T.success, background:`${T.success}15`, padding:'1px 7px', borderRadius:8 }}>{(ps as any[]).filter((p:any)=>['completed','billing_review'].includes(p.status)).length} done</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* Projects by Vendor */}
-        <div style={card}>
-          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Projects by Vendor</div>
-          <div style={{ display:'flex', flexDirection:'column' as const, gap:6 }}>
-            {Object.entries(vendorGroups).slice(0,5).map(([v,ps]:any)=>(
-              <div key={v} onClick={()=>router.push(`/projects?vendor=${encodeURIComponent(v)}`)}
-                style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', transition:'all 0.15s' }}
-                onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
-                onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
-                  <span style={{ fontSize:12, fontWeight:600, color:T.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const, maxWidth:160 }}>{v}</span>
-                  <span style={{ fontSize:11, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10, flexShrink:0 }}>{(ps as any[]).length} →</span>
-                </div>
-                <div style={{ fontSize:11, color:T.textMuted }}>₹{((ps as any[]).reduce((a:number,p:any)=>a+p.poValue,0)/100000).toFixed(1)}L total PO</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {unassigned.length > 0 && (
-        <div style={{ ...card, border:`1.5px solid ${T.warning}`, marginBottom:20 }}>
-          <div style={{ fontSize:14, fontWeight:700, color:T.warning, marginBottom:12 }}>⚠️ Unassigned Projects ({unassigned.length})</div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
-            {unassigned.map((p,i)=>(
-              <div key={i} onClick={()=>router.push(`/projects/${p.id}`)} style={{ background:T.warningBg, border:`1px solid #FDE68A`, borderRadius:9, padding:12, cursor:'pointer' }}>
-                <div style={{ fontSize:12, fontWeight:700, color:T.primary }}>{p.id}</div>
-                <div style={{ fontSize:12, color:T.text, margin:'3px 0' }}>{p.projectName}</div>
-                <div style={{ display:'flex', gap:6 }}>
-                  {!p.pm     && <span style={{ fontSize:10, background:'#FEF2F2', color:T.danger, padding:'2px 7px', borderRadius:10, fontWeight:600 }}>No PM</span>}
-                  {!p.vendor && <span style={{ fontSize:10, background:'#FEF2F2', color:T.danger, padding:'2px 7px', borderRadius:10, fontWeight:600 }}>No Vendor</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-
-      {/* Project Status Table */}
-      <div style={card}>
-        <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14, display:'flex', alignItems:'center', gap:8 }}>
-          📊 Project Status
-        </div>
-        <ProjectStatusTable projects={projects} />
-      </div>
-
-
-      {/* STN/SRN Summary */}
-      <div style={{ ...card, marginBottom:20 }}>
-        <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>📦 STN / SRN Summary</div>
-        <STNSRNSummary />
-      </div>
-
-
-
-      <div style={card}>
-        <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>🔔 Alerts</div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12 }}>
-          {[
-            { type:'#7C3AED', title:'Material Returns Overdue', count:3, link:'/srn-return', msg:'3 projects with pending material returns to Indus' },
-            { type:T.danger,  title:'Delayed >60d',       count:projects.filter(p=>p.aging>60).length,             link:'/projects?status=delayed' },
-            { type:T.warning, title:'No PM Assigned',      count:projects.filter(p=>!p.pm).length,                  link:'/projects'                },
-            { type:'#7C3AED', title:'Pending Billing',     count:projects.filter(p=>p.status==='billing_review').length, link:'/billing'             },
-            { type:T.warning, title:'No Vendor Assigned',  count:projects.filter(p=>!p.vendor).length,              link:'/vendors'                 },
-          ].map((a,i)=>(
-            <Link key={i} href={a.link} style={{ textDecoration:'none' }}>
-              <div style={{ padding:14, borderLeft:`4px solid ${a.type}`, background:`${a.type}12`, borderRadius:8, cursor:'pointer' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}>
-                  <span style={{ fontSize:12, fontWeight:600, color:T.text }}>{a.title}</span>
-                  <span style={{ background:a.type, color:'#fff', borderRadius:12, padding:'2px 8px', fontSize:11, fontWeight:700 }}>{a.count}</span>
-                </div>
-                <span style={{ fontSize:11, color:a.type, fontWeight:600 }}>View →</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
