@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
 import Modal from '@/components/Modal';
+import { SHARED_INVOICES } from '@/lib/invoiceData';
 import CreatableSelect from '@/components/CreatableSelect';
 import Toast from '@/components/Toast';
 import { useAuth } from '@/context/AuthContext';
@@ -631,19 +632,20 @@ const PAY_STATUS_COLORS: any = {
   Partial:{'color':'#2563EB','bg':'#EFF6FF','border':'#BFDBFE'},
 };
 
-function InvoiceSection({ projectId, canAdd }: { projectId:string; canAdd:boolean }) {
-  const [items, setItems] = React.useState<any[]>([
-    { id:1, invoiceNo:'INV-2025-0012', invoiceDate:'2025-05-20', workBoqRef:'BOQ-CIV-001', invoiceAmount:1250000, gst:225000, totalAmount:1475000, invoiceStatus:'Approved',  paymentStatus:'Paid',    dueDate:'2025-06-19' },
-    { id:2, invoiceNo:'INV-2025-0011', invoiceDate:'2025-05-15', workBoqRef:'BOQ-STR-002', invoiceAmount:1875000, gst:337500, totalAmount:2212500, invoiceStatus:'Submitted', paymentStatus:'Pending', dueDate:'2025-06-14' },
-  ]);
+function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:string; canAdd:boolean; projectPoNo?:string }) {
+  const [items, setItems] = React.useState<any[]>(() =>
+    SHARED_INVOICES.filter(i => i.projectId === projectId)
+  );
   const [adding, setAdding]  = React.useState(false);
-  const [newRow, setNewRow]  = React.useState({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending' });
+  const [newRow, setNewRow]  = React.useState({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo });
 
   const saveNew = () => {
     if (!newRow.invoiceNo||!newRow.invoiceDate||!newRow.invoiceAmount) return;
     const amt=Number(newRow.invoiceAmount), gst=Number(newRow.gst);
-    setItems(prev=>[...prev,{ id:Date.now(), ...newRow, invoiceAmount:amt, gst, totalAmount:amt+gst }]);
-    setNewRow({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending' });
+    const newItem = { id:Date.now(), ...newRow, invoiceAmount:amt, gst, totalAmount:amt+gst, projectId };
+    SHARED_INVOICES.push(newItem as any);
+    setItems(prev=>[...prev, newItem]);
+    setNewRow({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:'' });
     setAdding(false);
   };
 
@@ -711,7 +713,7 @@ function InvoiceSection({ projectId, canAdd }: { projectId:string; canAdd:boolea
         <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:14, marginTop:12 }}>
           <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New Invoice Entry</div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
-            {[['Invoice No *','invoiceNo','text','INV-2025-XXXX'],['Work/BOQ Ref','workBoqRef','text','BOQ-XXX-001'],['Invoice Date *','invoiceDate','date',''],['Due Date','dueDate','date',''],['Amount (₹) *','invoiceAmount','number',''],['GST (₹)','gst','number','']].map(([label,field,type,ph])=>(
+            {[['PO Number','poNo','text','PO-IND-2025-XXX'],['Invoice No *','invoiceNo','text','INV-2025-XXXX'],['Work/BOQ Ref','workBoqRef','text','BOQ-XXX-001'],['Invoice Date *','invoiceDate','date',''],['Due Date','dueDate','date',''],['Amount (₹) *','invoiceAmount','number',''],['GST (₹)','gst','number','']].map(([label,field,type,ph])=>(
               <div key={field}>
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</label>
                 <input type={type} value={(newRow as any)[field]} placeholder={ph}
@@ -1216,7 +1218,7 @@ export default function ProjectDetailPage() {
         {/* ── Invoice ── */}
         {showInvoice && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('🧾','Invoice', 'invoice', canAddInvoice)}
-          <InvoiceSection projectId={p.id} canAdd={canAddInvoice} />
+          <InvoiceSection projectId={p.id} canAdd={canAddInvoice} projectPoNo={p.poNo||''} />
         </div>}
 
         {/* ── 6. Activity Log ── */}

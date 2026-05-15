@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
+import { SHARED_INVOICES, INVOICE_PROJECTS, matchesPO } from '@/lib/invoiceData';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, btnPrimary, btnSecondary } from '@/lib/theme';
 import Toast from '@/components/Toast';
 
-// ── Mock Data ─────────────────────────────────────────────────────────────────
-const MOCK_INVOICES: any[] = [
+// ── Shared Data (imported) ───────────────────────────────────────────────────
+// Data moved to lib/invoiceData.ts
+const MOCK_INVOICES_UNUSED: any[] = [
   { id:'INV-001', invoiceNo:'INV-2025-0012', invoiceDate:'2025-05-20', workBoqRef:'BOQ-CIV-001', invoiceAmount:1250000, gst:225000, totalAmount:1475000, invoiceStatus:'Approved',     paymentStatus:'Paid',    dueDate:'2025-06-19', projectId:'VE-2025-001', poNo:'PO-IND-2025-001', createdAt:'2025-05-20' },
   { id:'INV-002', invoiceNo:'INV-2025-0011', invoiceDate:'2025-05-15', workBoqRef:'BOQ-STR-002', invoiceAmount:1875000, gst:337500, totalAmount:2212500, invoiceStatus:'Submitted',    paymentStatus:'Pending', dueDate:'2025-06-14', projectId:'VE-2025-001', poNo:'PO-IND-2025-001', createdAt:'2025-05-15' },
   { id:'INV-003', invoiceNo:'INV-2025-0010', invoiceDate:'2025-05-10', workBoqRef:'BOQ-CIV-003', invoiceAmount:980000,  gst:176400, totalAmount:1156400, invoiceStatus:'Under Review', paymentStatus:'Pending', dueDate:'2025-06-09', projectId:'VE-2025-002', poNo:'PO-IND-2025-002', createdAt:'2025-05-10' },
@@ -17,7 +19,7 @@ const MOCK_INVOICES: any[] = [
   { id:'INV-008', invoiceNo:'INV-2025-0005', invoiceDate:'2025-04-10', workBoqRef:'BOQ-CIV-004', invoiceAmount:925000,  gst:166500, totalAmount:1091500, invoiceStatus:'Submitted',    paymentStatus:'Pending', dueDate:'2025-05-10', projectId:'VE-2025-005', poNo:'PO-IND-2025-005', createdAt:'2025-04-10' },
 ];
 
-const MOCK_PROJECTS: any = {
+const INVOICE_PROJECTS: any = {
   'VE-2025-001': { id:'VE-2025-001', site:'Andheri Tower Site',    region:'Maharashtra', pm:'Arun Kumar',   poNo:'PO-IND-2025-001', poValue:5000000,  status:'in_progress',    startDate:'2025-01-15', endDate:'2025-07-30' },
   'VE-2025-002': { id:'VE-2025-002', site:'Bandra Roof Site',      region:'Maharashtra', pm:'Priya Sharma', poNo:'PO-IND-2025-002', poValue:3500000,  status:'in_progress',    startDate:'2025-02-01', endDate:'2025-08-31' },
   'VE-2025-003': { id:'VE-2025-003', site:'Kurla Junction Tower',  region:'Maharashtra', pm:'Arun Kumar',   poNo:'PO-IND-2025-003', poValue:4200000,  status:'billing_review', startDate:'2025-02-10', endDate:'2025-09-15' },
@@ -68,15 +70,14 @@ export default function InvoicesPage() {
   const [sortDir,    setSortDir]    = useState<'asc'|'desc'>('desc');
   const [showForm,   setShowForm]   = useState(false);
   const [toast,      setToast]      = useState<any>(null);
-  const [invoices,   setInvoices]   = useState(MOCK_INVOICES);
+  const [invoices,   setInvoices]   = useState([...SHARED_INVOICES]);
   const [newInv,     setNewInv]     = useState({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', projectId:'', poNo:'' });
 
   // Find project by PO
-  const normalize = (s:string) => s.toLowerCase().replace(/[-_\s]/g,'');
   const matchedProject = poSearch
-    ? (Object.values(MOCK_PROJECTS) as any[]).find(p =>
-        normalize(p.poNo).includes(normalize(poSearch)) ||
-        normalize(p.id).includes(normalize(poSearch))
+    ? (Object.values(INVOICE_PROJECTS) as any[]).find(p =>
+        matchesPO(p.poNo, poSearch) ||
+        p.id.toLowerCase().includes(poSearch.toLowerCase())
       ) || null
     : null;
 
@@ -112,7 +113,7 @@ export default function InvoicesPage() {
     const amt = Number(newInv.invoiceAmount);
     const gst = Number(newInv.gst);
     // Auto-link project from PO if not from search
-    const linkedProj = matchedProject || (Object.values(MOCK_PROJECTS) as any[]).find(p => normalize(p.poNo).includes(normalize(newInv.poNo||'')));
+    const linkedProj = matchedProject || (Object.values(INVOICE_PROJECTS) as any[]).find(p => normalize(p.poNo).includes(normalize(newInv.poNo||'')));
     setInvoices(prev=>[{ id:"INV-"+Date.now(), ...newInv, invoiceAmount:amt, gst, totalAmount:amt+gst, projectId:linkedProj?.id||'', poNo:newInv.poNo||linkedProj?.poNo||'', createdAt:new Date().toISOString().split('T')[0] }, ...prev]);
     setNewInv({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', projectId:'', poNo:'' });
     setShowForm(false);
@@ -255,7 +256,7 @@ export default function InvoicesPage() {
                   <tr><td colSpan={11} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No invoices found</td></tr>
                 )}
                 {displayInvoices.map((inv,idx)=>{
-                  const proj = MOCK_PROJECTS[inv.projectId];
+                  const proj = INVOICE_PROJECTS[inv.projectId];
                   return (
                     <tr key={inv.id} style={{ background:idx%2===0?'#fff':T.bg, cursor:'pointer' }}
                       onClick={()=>inv.projectId&&router.push(`/projects/${inv.projectId}`)}
@@ -264,7 +265,7 @@ export default function InvoicesPage() {
                       <td style={{ ...tdStyle, color:T.textMuted, width:36 }}>{idx+1}</td>
                       <td style={{ ...tdStyle }}>
                         <div style={{ fontWeight:700, color:T.primary, fontSize:13 }}>{inv.invoiceNo}</div>
-                        {inv.projectId && <div style={{ fontSize:10, color:T.textMuted }}>{MOCK_PROJECTS[inv.projectId]?.site||inv.projectId}</div>}
+                        {inv.poNo && <div style={{ fontSize:10, color:T.textMuted }}>{inv.poNo}</div>}
                       </td>
                       <td style={{ ...tdStyle, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtDate(inv.invoiceDate)}</td>
                       <td style={{ ...tdStyle, color:T.text }}>{inv.workBoqRef}</td>
