@@ -5,7 +5,6 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
 import { MOCK_PROJECTS } from '@/lib/projectData';
-import { PROJ_START_MAP } from '@/lib/seedData';
 
 const fmt = (v: number) => `₹${(v / 100000).toFixed(2)}L`;
 
