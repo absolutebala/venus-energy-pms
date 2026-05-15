@@ -22,12 +22,10 @@ const fmtCr   = (v:number) => `₹${(v/10000000).toFixed(2)} Cr`;
 const PCT_CLR = (v:number) => v>=80?T.success:v>=50?T.info:T.danger;
 
 const REPORTS = [
-  { key:'executive',  label:'Executive Summary',        icon:'📊', desc:'KPIs, trends, top-level health check'         },
   { key:'status',     label:'Project Status Report',    icon:'📋', desc:'All projects by status, region, aging'        },
   { key:'aging',      label:'PO Aging Analysis',        icon:'⏰', desc:'Aging buckets, overdue projects'              },
   { key:'financial',  label:'Financial Summary',        icon:'💰', desc:'PO value, billed, paid, pending by PM/region' },
   { key:'vendor',     label:'Vendor Performance',       icon:'🏢', desc:'Completion rate, delays, material compliance' },
-  { key:'pm',         label:'PM Performance',           icon:'👤', desc:'Projects handled, on-time %, assignment speed'},
   { key:'stnsrn',     label:'STN/SRN Material Report',  icon:'📦', desc:'Utilisation, returns, pending per project'    },
   { key:'ptw',        label:'PTW Compliance Report',    icon:'🔑', desc:'Permits issued, expiry, compliance status'    },
 ];
