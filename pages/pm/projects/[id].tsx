@@ -130,14 +130,14 @@ function PMReviewForm({ item, onApprove, onReject }: { item: MaterialItem; onApp
       <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:'0 12px', marginBottom:12 }}>
         <div>
           <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.text, marginBottom:4 }}>
-            Approved Qty ({item.uom}) <span style={{ color:T.textDim }}>max {item.stnQty}</span>
+            Approved Qty ({item.uom}) <span style={{ color:T.textDim }}>max {(item.stnQty??item.srnQty??0)}</span>
           </label>
-          <input type="number" min="0" max={item.stnQty} value={approvedQty}
+          <input type="number" min="0" max={(item.stnQty??item.srnQty??0)} value={approvedQty}
             onChange={e=>setApprovedQty(e.target.value)}
             style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
-          {approvedQty !== '' && Number(approvedQty) <= item.stnQty && (
+          {approvedQty !== '' && Number(approvedQty) <= (item.stnQty??item.srnQty??0) && (
             <div style={{ fontSize:11, color:T.warning, marginTop:3 }}>
-              Return to Indus: {item.stnQty - Number(approvedQty)} {item.uom}
+              Return to Indus: {(item.stnQty??item.srnQty??0) - Number(approvedQty)} {item.uom}
             </div>
           )}
         </div>
@@ -157,7 +157,7 @@ function PMReviewForm({ item, onApprove, onReject }: { item: MaterialItem; onApp
       )}
 
       <div style={{ display:'flex', gap:10 }}>
-        <button onClick={()=>{ if(!approvedQty||Number(approvedQty)<0||Number(approvedQty)>item.stnQty) return; onApprove(Number(approvedQty),pmRemarks); }}
+        <button onClick={()=>{ if(!approvedQty||Number(approvedQty)<0||Number(approvedQty)>(item.stnQty??item.srnQty??0)) return; onApprove(Number(approvedQty),pmRemarks); }}
           style={{ ...btnPrimary, background:T.success, fontSize:12, padding:'7px 16px' }}>
           Approve
         </button>
