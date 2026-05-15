@@ -453,10 +453,9 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
 
 
 // ── Expenses Section Component ───────────────────────────────────────────────
-const EXPENSES_DB: Record<string,any[]> = {}; // loaded from SHARED_EXPENSES per projectconst EXPENSE_TYPES   = ['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'
-];
-const PAYMENT_MODES   = ['Cash','Bank Transfer','Cheque','UPI','DD'
-];
+const EXPENSES_DB: Record<string,any[]> = {};
+const EXPENSE_TYPES   = ['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'];
+const PAYMENT_MODES   = ['Cash','Bank Transfer','Cheque','UPI','DD'];
 
 function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boolean }) {
   const [items, setItems] = React.useState<any[]>(() => (SHARED_EXPENSES || []).filter((e:any)=>e.projectId===projectId));
