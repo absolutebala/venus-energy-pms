@@ -69,10 +69,16 @@ export default function InvoicesPage() {
   const [showForm,   setShowForm]   = useState(false);
   const [toast,      setToast]      = useState<any>(null);
   const [invoices,   setInvoices]   = useState(MOCK_INVOICES);
-  const [newInv,     setNewInv]     = useState({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', projectId:'' });
+  const [newInv,     setNewInv]     = useState({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', projectId:'', poNo:'' });
 
   // Find project by PO
-  const matchedProject = poSearch ? Object.values(MOCK_PROJECTS).find((p:any) => p.poNo.toLowerCase().includes(poSearch.toLowerCase()) || p.id.toLowerCase().includes(poSearch.toLowerCase())) as any : null;
+  const normalize = (s:string) => s.toLowerCase().replace(/[-_\s]/g,'');
+  const matchedProject = poSearch
+    ? (Object.values(MOCK_PROJECTS) as any[]).find(p =>
+        normalize(p.poNo).includes(normalize(poSearch)) ||
+        normalize(p.id).includes(normalize(poSearch))
+      ) || null
+    : null;
 
   const displayInvoices = useMemo(() => {
     let list = poSearch && matchedProject ? invoices.filter(i => i.projectId === matchedProject.id) : [...invoices];
@@ -105,7 +111,9 @@ export default function InvoicesPage() {
     if (!newInv.invoiceNo||!newInv.invoiceDate||!newInv.invoiceAmount) return;
     const amt = Number(newInv.invoiceAmount);
     const gst = Number(newInv.gst);
-    setInvoices(prev=>[{ id:`INV-${Date.now()}`, ...newInv, invoiceAmount:amt, gst, totalAmount:amt+gst, projectId:matchedProject?.id||'', poNo:matchedProject?.poNo||'', createdAt:new Date().toISOString().split('T')[0] }, ...prev]);
+    // Auto-link project from PO if not from search
+    const linkedProj = matchedProject || (Object.values(MOCK_PROJECTS) as any[]).find(p => normalize(p.poNo).includes(normalize(newInv.poNo||'')));
+    setInvoices(prev=>[{ id:\`INV-\${Date.now()}\`, ...newInv, invoiceAmount:amt, gst, totalAmount:amt+gst, projectId:linkedProj?.id||'', poNo:newInv.poNo||linkedProj?.poNo||'', createdAt:new Date().toISOString().split('T')[0] }, ...prev]);
     setNewInv({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', projectId:'' });
     setShowForm(false);
     setToast({ msg:'✅ Invoice added successfully', type:'success' });
@@ -182,7 +190,7 @@ export default function InvoicesPage() {
           <div style={{ ...card, marginBottom:16, border:`1.5px solid ${T.primaryMid}`, background:T.primaryLight }}>
             <div style={{ fontSize:14, fontWeight:700, color:T.primary, marginBottom:14 }}>+ New Invoice</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
-              {[['Invoice No *','invoiceNo','text','INV-2025-XXXX'],['Work/BOQ Ref','workBoqRef','text','BOQ-XXX-001'],['Invoice Date *','invoiceDate','date',''],['Due Date','dueDate','date',''],['Invoice Amount (₹) *','invoiceAmount','number','0'],['GST (₹)','gst','number','0']].map(([label,field,type,ph])=>(
+              {[['PO Number','poNo','text','PO-IND-2025-XXX'],['Invoice No *','invoiceNo','text','INV-2025-XXXX'],['Work/BOQ Ref','workBoqRef','text','BOQ-XXX-001'],['Invoice Date *','invoiceDate','date',''],['Due Date','dueDate','date',''],['Invoice Amount (₹) *','invoiceAmount','number','0'],['GST (₹)','gst','number','0']].map(([label,field,type,ph])=>(
                 <div key={field}>
                   <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</label>
                   <input type={type} value={(newInv as any)[field]} placeholder={ph}
@@ -239,7 +247,7 @@ export default function InvoicesPage() {
                       {label}<SortIcon active={sortKey===key} dir={sortDir} />
                     </th>
                   ))}
-                  <th style={thStyle()}>Actions</th>
+
                 </tr>
               </thead>
               <tbody>
@@ -250,10 +258,14 @@ export default function InvoicesPage() {
                   const proj = MOCK_PROJECTS[inv.projectId];
                   return (
                     <tr key={inv.id} style={{ background:idx%2===0?'#fff':T.bg, cursor:'pointer' }}
+                      onClick={()=>inv.projectId&&router.push(`/projects/${inv.projectId}`)}
                       onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
                       onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=idx%2===0?'#fff':T.bg}>
                       <td style={{ ...tdStyle, color:T.textMuted, width:36 }}>{idx+1}</td>
-                      <td style={{ ...tdStyle, fontWeight:700, color:T.primary }}>{inv.invoiceNo}</td>
+                      <td style={{ ...tdStyle }}>
+                        <div style={{ fontWeight:700, color:T.primary, fontSize:13 }}>{inv.invoiceNo}</div>
+                        {inv.projectId && <div style={{ fontSize:10, color:T.textMuted }}>{MOCK_PROJECTS[inv.projectId]?.site||inv.projectId}</div>}
+                      </td>
                       <td style={{ ...tdStyle, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtDate(inv.invoiceDate)}</td>
                       <td style={{ ...tdStyle, color:T.text }}>{inv.workBoqRef}</td>
                       <td style={{ ...tdStyle, textAlign:'right' as const, fontWeight:600 }}>{fmt(inv.invoiceAmount)}</td>
@@ -262,15 +274,7 @@ export default function InvoicesPage() {
                       <td style={tdStyle}><StatusPill label={inv.invoiceStatus} cfg={INV_STATUS_CFG[inv.invoiceStatus]||INV_STATUS_CFG.Draft} /></td>
                       <td style={tdStyle}><StatusPill label={inv.paymentStatus} cfg={PAY_STATUS_CFG[inv.paymentStatus]||PAY_STATUS_CFG.Pending} /></td>
                       <td style={{ ...tdStyle, whiteSpace:'nowrap' as const, color:T.textMuted }}>{fmtDate(inv.dueDate)}</td>
-                      <td style={{ ...tdStyle }}>
-                        <div style={{ display:'flex', gap:8 }}>
-                          <button onClick={()=>router.push(`/projects/${inv.projectId}`)}
-                            title="View Project"
-                            style={{ background:'none', border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 8px', cursor:'pointer', fontSize:14, color:T.primary }}>👁</button>
-                          <button title="Download"
-                            style={{ background:'none', border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 8px', cursor:'pointer', fontSize:14, color:T.textMuted }}>↓</button>
-                        </div>
-                      </td>
+
                     </tr>
                   );
                 })}
