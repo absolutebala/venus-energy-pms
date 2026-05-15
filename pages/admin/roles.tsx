@@ -58,13 +58,8 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_ptw_detail:        { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
     sec_srn_detail:        { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
     sec_expenses:          { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
-    sec_invoice: { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
-    sec_invoice: { can_read:true,  can_create:false, can_edit:false, can_delete:false },
-    sec_invoice: { can_read:true,  can_create:false, can_edit:false, can_delete:false },
-    sec_invoice: { can_read:false, can_create:false, can_edit:false, can_delete:false },
-    sec_invoice: { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
-    sec_invoice: { can_read:false, can_create:false, can_edit:false, can_delete:false },
-    sec_invoice: { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_stn_srn_summary:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_invoice:           { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   region_manager: {
@@ -79,6 +74,8 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_ptw_detail:        { can_read:true,  can_create:true,  can_edit:true,  can_delete:false },
     sec_srn_detail:        { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
     sec_expenses:          { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_stn_srn_summary:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_invoice:           { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   project_manager: {
@@ -93,6 +90,8 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_ptw_detail:        { can_read:true,  can_create:true,  can_edit:true,  can_delete:false },
     sec_srn_detail:        { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
     sec_expenses:          { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_stn_srn_summary:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_invoice:           { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   site_engineer: {
@@ -107,6 +106,8 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_ptw_detail:        { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_srn_detail:        { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_expenses:          { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_stn_srn_summary:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_invoice:           { can_read:false, can_create:false, can_edit:false, can_delete:false },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   accounting_team: {
@@ -121,6 +122,8 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_ptw_detail:        { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_srn_detail:        { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_expenses:          { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
+    sec_stn_srn_summary:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_invoice:           { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   vendor: {
@@ -135,6 +138,8 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_ptw_detail:        { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_srn_detail:        { can_read:true,  can_create:true,  can_edit:true,  can_delete:false },
     sec_expenses:          { can_read:false, can_create:false, can_edit:false, can_delete:false },
+    sec_stn_srn_summary:   { can_read:false, can_create:false, can_edit:false, can_delete:false },
+    sec_invoice:           { can_read:false, can_create:false, can_edit:false, can_delete:false },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   viewer: {
@@ -149,6 +154,8 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_ptw_detail:        { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_srn_detail:        { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_expenses:          { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_stn_srn_summary:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_invoice:           { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
 };
