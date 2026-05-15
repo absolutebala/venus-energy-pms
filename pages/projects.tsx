@@ -102,6 +102,8 @@ export default function ProjectsPage() {
            (p.vendor||'').toLowerCase().includes(s);
   };
 
+  const agingThreshold = 60; // days
+  const getAgeDays = (id: string) => PROJ_START[id] ? Math.floor((new Date().getTime() - new Date(PROJ_START[id]).getTime()) / 86400000) : 0;
   const filtered = projects.filter(p => {
     const displayStatus = STATUS_DISPLAY[p.status] || p.status;
     if (statusFilter === 'Aging') return getAgeDays(p.id) > agingThreshold;
@@ -114,8 +116,6 @@ export default function ProjectsPage() {
     return searchMatch(p);
   });
 
-  const agingThreshold = 60; // days
-  const getAgeDays = (id: string) => PROJ_START[id] ? Math.floor((new Date().getTime() - new Date(PROJ_START[id]).getTime()) / 86400000) : 0;
   const counts = {
     total: projects.length,
     inProgress: projects.filter(p=>p.status==='in_progress').length,
