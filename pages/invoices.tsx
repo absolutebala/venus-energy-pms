@@ -78,7 +78,7 @@ export default function InvoicesPage() {
     let list = poSearch && matchedProject ? invoices.filter(i => i.projectId === matchedProject.id) : [...invoices];
     list.sort((a,b) => {
       let va = a[sortKey], vb = b[sortKey];
-      if (typeof va === 'number') return sortDir==='asc' ? va-vb : vb-va;
+      if (typeof va === 'number') return sortDir==='asc' ? (va as number)-(vb as number) : (vb as number)-(va as number);
       return sortDir==='asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
     });
     return list;
