@@ -614,6 +614,154 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
   );
 }
 
+
+// ── Invoice Section Component ─────────────────────────────────────────────────
+const INV_STATUS_OPTS = ['Draft','Submitted','Under Review','Approved','Rejected'];
+const PAY_STATUS_OPTS = ['Pending','Partial','Paid'];
+const INV_STATUS_COLORS: any = {
+  Approved:{'color':'#0D9488','bg':'#F0FDFA','border':'#99F6E4'},
+  Submitted:{'color':'#2563EB','bg':'#EFF6FF','border':'#BFDBFE'},
+  'Under Review':{'color':'#7C3AED','bg':'#F5F3FF','border':'#DDD6FE'},
+  Rejected:{'color':'#DC2626','bg':'#FEF2F2','border':'#FECACA'},
+  Draft:{'color':'#6B7280','bg':'#F9FAFB','border':'#E5E7EB'},
+};
+const PAY_STATUS_COLORS: any = {
+  Paid:{'color':'#0D9488','bg':'#F0FDFA','border':'#99F6E4'},
+  Pending:{'color':'#D97706','bg':'#FFFBEB','border':'#FDE68A'},
+  Partial:{'color':'#2563EB','bg':'#EFF6FF','border':'#BFDBFE'},
+};
+
+function InvoiceSection({ projectId, canAdd }: { projectId:string; canAdd:boolean }) {
+  const [items, setItems] = React.useState<any[]>([
+    { id:1, invoiceNo:'INV-2025-0012', invoiceDate:'2025-05-20', workBoqRef:'BOQ-CIV-001', invoiceAmount:1250000, gst:225000, totalAmount:1475000, invoiceStatus:'Approved',  paymentStatus:'Paid',    dueDate:'2025-06-19' },
+    { id:2, invoiceNo:'INV-2025-0011', invoiceDate:'2025-05-15', workBoqRef:'BOQ-STR-002', invoiceAmount:1875000, gst:337500, totalAmount:2212500, invoiceStatus:'Submitted', paymentStatus:'Pending', dueDate:'2025-06-14' },
+  ]);
+  const [adding, setAdding]  = React.useState(false);
+  const [newRow, setNewRow]  = React.useState({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending' });
+
+  const saveNew = () => {
+    if (!newRow.invoiceNo||!newRow.invoiceDate||!newRow.invoiceAmount) return;
+    const amt=Number(newRow.invoiceAmount), gst=Number(newRow.gst);
+    setItems(prev=>[...prev,{ id:Date.now(), ...newRow, invoiceAmount:amt, gst, totalAmount:amt+gst }]);
+    setNewRow({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending' });
+    setAdding(false);
+  };
+
+  const removeItem = (id:number) => setItems(prev=>prev.filter((i:any)=>i.id!==id));
+  const fmt = (n:number) => '₹'+n.toLocaleString('en-IN',{minimumFractionDigits:2});
+  const fmtD = (d:string) => d?new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—';
+  const inpS: React.CSSProperties = { border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text };
+  const selS: React.CSSProperties = { ...inpS, cursor:'pointer' };
+  const thS:  React.CSSProperties = { padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, background:T.primaryLight, whiteSpace:'nowrap' as const };
+  const tdS:  React.CSSProperties = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
+
+  const totalAmt  = items.reduce((a:number,i:any)=>a+Number(i.invoiceAmount),0);
+  const totalGst  = items.reduce((a:number,i:any)=>a+Number(i.gst),0);
+  const totalTot  = items.reduce((a:number,i:any)=>a+Number(i.totalAmount),0);
+
+  const Pill = ({label,cfg}:{label:string;cfg:any}) => (
+    <span style={{ fontSize:11, fontWeight:700, color:cfg.color, background:cfg.bg, border:`1px solid ${cfg.border}`, padding:'2px 8px', borderRadius:20, whiteSpace:'nowrap' as const }}>{label}</span>
+  );
+
+  return (
+    <div>
+      {items.length > 0 && (
+        <div style={{ overflowX:'auto' as const }}>
+          <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:900 }}>
+            <thead>
+              <tr>
+                {['#','Invoice No','Invoice Date','Work/BOQ Ref','Amount (₹)','GST (₹)','Total (₹)','Inv. Status','Pay Status','Due Date',''].map((h,i)=>(
+                  <th key={i} style={{ ...thS, textAlign:i>=4&&i<=6?'right' as const:'left' as const }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item:any,idx:number)=>(
+                <tr key={item.id} style={{ borderBottom:`1px solid ${T.border}`, background:idx%2===0?'#fff':T.bg }}>
+                  <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
+                  <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{item.invoiceNo}</td>
+                  <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD(item.invoiceDate)}</td>
+                  <td style={tdS}>{item.workBoqRef||'—'}</td>
+                  <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600 }}>{fmt(item.invoiceAmount)}</td>
+                  <td style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>{fmt(item.gst)}</td>
+                  <td style={{ ...tdS, textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(item.totalAmount)}</td>
+                  <td style={tdS}><Pill label={item.invoiceStatus} cfg={INV_STATUS_COLORS[item.invoiceStatus]||INV_STATUS_COLORS.Draft} /></td>
+                  <td style={tdS}><Pill label={item.paymentStatus} cfg={PAY_STATUS_COLORS[item.paymentStatus]||PAY_STATUS_COLORS.Pending} /></td>
+                  <td style={{ ...tdS, whiteSpace:'nowrap' as const, color:T.textMuted }}>{fmtD(item.dueDate)}</td>
+                  <td style={{ ...tdS, width:36 }}>
+                    {canAdd && <button onClick={()=>removeItem(item.id)} style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:15 }}>🗑</button>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr style={{ background:T.primaryLight, fontWeight:700 }}>
+                <td colSpan={4} style={{ ...tdS, color:T.primary }}>Total</td>
+                <td style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>{fmt(totalAmt)}</td>
+                <td style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>{fmt(totalGst)}</td>
+                <td style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>{fmt(totalTot)}</td>
+                <td colSpan={4} style={tdS}></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+
+      {adding && (
+        <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:14, marginTop:12 }}>
+          <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New Invoice Entry</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
+            {[['Invoice No *','invoiceNo','text','INV-2025-XXXX'],['Work/BOQ Ref','workBoqRef','text','BOQ-XXX-001'],['Invoice Date *','invoiceDate','date',''],['Due Date','dueDate','date',''],['Amount (₹) *','invoiceAmount','number',''],['GST (₹)','gst','number','']].map(([label,field,type,ph])=>(
+              <div key={field}>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</label>
+                <input type={type} value={(newRow as any)[field]} placeholder={ph}
+                  onChange={e=>setNewRow(p=>({...p,[field]:e.target.value}))}
+                  style={inpS} />
+              </div>
+            ))}
+            <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Invoice Status</label>
+              <select value={newRow.invoiceStatus} onChange={e=>setNewRow(p=>({...p,invoiceStatus:e.target.value}))} style={selS}>
+                {INV_STATUS_OPTS.map(s=><option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Payment Status</label>
+              <select value={newRow.paymentStatus} onChange={e=>setNewRow(p=>({...p,paymentStatus:e.target.value}))} style={selS}>
+                {PAY_STATUS_OPTS.map(s=><option key={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ display:'flex', gap:10 }}>
+            <button onClick={saveNew} disabled={!newRow.invoiceNo||!newRow.invoiceDate||!newRow.invoiceAmount}
+              style={{ ...btnPrimary, opacity:!newRow.invoiceNo||!newRow.invoiceDate||!newRow.invoiceAmount?0.5:1, fontSize:13 }}>
+              ✅ Save Invoice
+            </button>
+            <button onClick={()=>setAdding(false)}
+              style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', color:T.text, cursor:'pointer', fontSize:13 }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:14 }}>
+        {canAdd && !adding && (
+          <button onClick={()=>setAdding(true)}
+            style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8, padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
+            + Add Invoice
+          </button>
+        )}
+        {items.length>0 && (
+          <div style={{ marginLeft:'auto', fontSize:13, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'8px 18px', borderRadius:8 }}>
+            Grand Total: {fmt(totalTot)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ProjectDetailPage() {
   const router  = useRouter();
   const { id }  = router.query;
@@ -639,6 +787,8 @@ export default function ProjectDetailPage() {
   const showSTNSRN        = !loading && can('sec_stn_srn',          'read');
   const showBillingReview = !loading && can('sec_billing_review',   'read');
   const showActivityLog   = !loading && can('sec_activity_log',     'read');
+  const showInvoice       = !loading && can('sec_invoice',            'read');
+  const canAddInvoice     = !loading && can('sec_invoice',            'create');
   const showExpenses      = !loading && can('sec_expenses',         'read');
   const canAddExpenses    = !loading && can('sec_expenses',         'create');
   const canEditVendor     = !loading && can('sec_vendor_assignment', 'edit');
@@ -1061,6 +1211,12 @@ export default function ProjectDetailPage() {
         {showExpenses && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('💸','Expenses', 'expenses', canAddExpenses)}
           <ExpensesSection projectId={p.id} canAdd={canAddExpenses} />
+        </div>}
+
+        {/* ── Invoice ── */}
+        {showInvoice && <div style={{ ...card, marginBottom:16 }}>
+          {sectionTitle('🧾','Invoice', 'invoice', canAddInvoice)}
+          <InvoiceSection projectId={p.id} canAdd={canAddInvoice} />
         </div>}
 
         {/* ── 6. Activity Log ── */}

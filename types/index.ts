@@ -22,7 +22,7 @@ export const ALL_MODULES = [
   'site_expenses', 'reports',
   'sec_project_details', 'sec_financial', 'sec_vendor_assignment',
   'sec_ptw', 'sec_work_documents', 'sec_stn_srn', 'sec_billing_review', 'sec_activity_log',
-  'sec_expenses', 'sec_po_items', 'sec_ptw_detail', 'sec_srn_detail', 'sec_stn_srn_summary',
+  'sec_expenses', 'sec_po_items', 'sec_ptw_detail', 'sec_srn_detail', 'sec_stn_srn_summary', 'sec_invoice',
 ] as const;
 
 export type AppModule =
@@ -33,6 +33,7 @@ export type AppModule =
   | 'site_expenses'
   | 'ptw'
   | 'reports'
+  | 'invoices'
   | 'sec_project_details'
   | 'sec_financial'
   | 'sec_vendor_assignment'
@@ -41,6 +42,7 @@ export type AppModule =
   | 'sec_stn_srn'
   | 'sec_billing_review'
   | 'sec_activity_log'
+  | 'sec_invoice'
   | 'sec_stn_srn_summary'
   | 'sec_expenses'
   | 'sec_po_items'
@@ -54,6 +56,7 @@ export const MODULE_LABELS: Record<AppModule, string> = {
   srn_return:             'STN / SRN Status',
   site_expenses:          'Site Expenses',
   ptw:                    'PTW Management',
+  invoices:             'Invoices',
   reports:                'Reports',
   sec_project_details:    'Project Details Section',
   sec_financial:          'Financial Summary Section',
@@ -63,6 +66,7 @@ export const MODULE_LABELS: Record<AppModule, string> = {
   sec_stn_srn:            'STN/SRN Section',
   sec_billing_review:     'Billing Review Section',
   sec_stn_srn_summary:    'STN/SRN Summary Section',
+  sec_invoice:           'Invoice Section',
   sec_activity_log:       'Activity Log Section',
   sec_expenses:           'Expenses Section',
   sec_po_items:           'PO Items Section',

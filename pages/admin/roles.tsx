@@ -23,6 +23,7 @@ const MODULES: { key: string; label: string; icon: string; desc: string; note?: 
   { key:'srn_return',   label:'STN / SRN Status', icon:'📦', desc:'Material tracking — Read: all | Edit: SA/RM/PM approve, Vendor submit utilisation', note:'⚠️ Create = recording STN from Indus (future feature). Currently Indus issues STN externally.' },
   { key:'site_expenses',label:'Site Expenses',    icon:'💰', desc:'Payments to vendors per project | Accounting adds, others view only'                },
   { key:'ptw',          label:'PTW Management',   icon:'🔑', desc:'Permit to Work inside project detail | SA/RM/PM can create & edit'                 },
+  { key:'invoices', label:'Invoices', icon:'🧾', desc:'Invoice management — create, track and manage project invoices. PO search, financial summary, sortable table' },
   { key:'reports',      label:'Reports',          icon:'📊', desc:'Auto-generated reports — Read only for all roles (no manual create)'               },
 ];
 
@@ -39,6 +40,7 @@ const PROJECT_SECTIONS: { key: string; label: string; icon: string; desc: string
   { key:'sec_ptw_detail',label:'PTW Section',               icon:'🔑', desc:'Permit to Work — Ticket ID, Supervisor Name, From/To Date, status indicator'    },
   { key:'sec_srn_detail', label:'SRN — Utilisation & Return',icon:'📦', desc:'Material utilisation per item, Balance, Returned (vendor), Approved (PM/Admin)'  },
   { key:'sec_stn_srn_summary', label:'STN/SRN Dashboard Summary', icon:'📦', desc:'Vendor-wise and site-wise STN/SRN material utilisation and return summary' },
+  { key:'sec_invoice', label:'Invoice', icon:'🧾', desc:'Invoice records per project — Invoice No, Date, BOQ Ref, Amount, GST, Status, Payment Status, Due Date' },
   { key:'sec_activity_log',     label:'Activity Log',             icon:'📝', desc:'Full timeline — project creation to billing, all actions by all roles'  },
 ];
 
@@ -56,6 +58,13 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_ptw_detail:        { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
     sec_srn_detail:        { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
     sec_expenses:          { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
+    sec_invoice: { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
+    sec_invoice: { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_invoice: { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_invoice: { can_read:false, can_create:false, can_edit:false, can_delete:false },
+    sec_invoice: { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
+    sec_invoice: { can_read:false, can_create:false, can_edit:false, can_delete:false },
+    sec_invoice: { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   region_manager: {
