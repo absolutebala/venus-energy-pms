@@ -30,3 +30,23 @@ export const STN_SRN_DATA: any[] = [
 ];
 
 export type UtilisedStatus = 'pending'|'submitted'|'pm_approved'|'pm_rejected';
+
+export interface MaterialItem {
+  id: number;
+  code: string;
+  description: string;
+  uom: string;
+  issuedQty: number;
+  utilisedQty: number | null;
+  utilisedStatus: UtilisedStatus;
+  pmApprovedQty: number;
+  returnQty: number;
+  srnQty: number;
+}
+
+export const STATUS_BADGE_COLOR: Record<string,{color:string;bg:string}> = {
+  pending:     { color:"#6B7280", bg:"#F9FAFB" },
+  submitted:   { color:"#2563EB", bg:"#EFF6FF" },
+  pm_approved: { color:"#0D9488", bg:"#F0FDFA" },
+  pm_rejected: { color:"#DC2626", bg:"#FEF2F2" },
+};
