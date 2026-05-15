@@ -504,6 +504,7 @@ function STNSRNSummary() {
 // ── 2. REGION MANAGER DASHBOARD ──────────────────────────────────
 
 function SuperAdminDashboard({ projects }: { projects: any[] }) {
+  const router = useRouter();
   const statusData = [
     { name:'In Progress',    value: projects.filter(p=>p.status==='in_progress').length,    color:'#3B82F6', status:'in_progress'    },
     { name:'Completed',      value: projects.filter(p=>p.status==='completed').length,       color:'#10B981', status:'completed'       },
