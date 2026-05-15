@@ -229,7 +229,7 @@ function ProjectStatusTable({ projects }: { projects: any[] }) {
           <tbody>
             {paged.map((p, idx) => {
               const wsCfg = WORK_STATUS_CFG[p.status] || WORK_STATUS_CFG.not_started;
-              const docs  = SEED_DOC_STATUS[p.id] || {};
+              const docs  = MOCK_DOC_STATUS[p.id] || {};
               const upd   = MOCK_UPDATED[p.id] || { date:'—', by:'—' };
               return (
                 <tr key={p.id} style={{ background: idx%2===0 ? '#fff' : '#FAFAFA' }}
