@@ -96,7 +96,7 @@ export default function ProjectsPage() {
     if (!search) return true;
     const s = search.toLowerCase();
     return p.id.toLowerCase().includes(s) ||
-           p.projectName.toLowerCase().includes(s) ||
+           p.site.toLowerCase().includes(s) ||
            p.site.toLowerCase().includes(s) ||
            p.poNo.toLowerCase().includes(s) ||
            p.indusId.toLowerCase().includes(s) ||
