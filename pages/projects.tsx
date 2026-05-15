@@ -13,7 +13,7 @@ const STATUS_DISPLAY: Record<string,string> = {
   submitted:'Submitted', pm_approved:'PM Approved', billing_review:'Billing Review',
 };
 
-const STATUSES_FILTER = ['All','In Progress','Delayed','Completed','Pending','Billing Review'];
+const STATUSES_FILTER = ['All','In Progress','Aging','Delayed','Completed','Pending','Billing Review'];
 const TYPES = ['All','Tower Erection','Tower Maintenance','Component Replacement','Fiber Installation','Civil Works','Power Works'];
 
 const MOCK_DRAFTS = [
@@ -104,6 +104,7 @@ export default function ProjectsPage() {
 
   const filtered = projects.filter(p => {
     const displayStatus = STATUS_DISPLAY[p.status] || p.status;
+    if (statusFilter === 'Aging') return getAgeDays(p.id) > agingThreshold;
     if (statusFilter !== 'All' && displayStatus !== statusFilter) return false;
     if (typeFilter !== 'All' && p.type !== typeFilter) return false;
     if (ageMin !== null && p.aging < ageMin) return false;
