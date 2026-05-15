@@ -219,7 +219,7 @@ function ProjectStatusTable({ projects }: { projects: any[] }) {
               {DOC_COLS.map(d => <th key={d.key} style={thStyle}>{d.label}</th>)}
               <th style={thStyle}>STN Return</th>
               <th style={thStyle}>Last Updated</th>
-              <th style={thStyle}>Updated By</th>
+
             </tr>
           </thead>
           <tbody>
@@ -254,7 +254,7 @@ function ProjectStatusTable({ projects }: { projects: any[] }) {
                     <StatusBadge done={!!MOCK_STN_RETURN[p.id]} />
                   </td>
                   <td style={{ ...tdStyle, color:'#6B7280', whiteSpace:'nowrap' as const }}>{upd.date}</td>
-                  <td style={{ ...tdStyle, color:'#374151', fontWeight:500 }}>{upd.by}</td>
+
                 </tr>
               );
             })}
@@ -285,6 +285,170 @@ const pgBtn: React.CSSProperties = {
   cursor:'pointer', fontSize:13, color:'#374151', display:'flex', alignItems:'center',
   justifyContent:'center', fontWeight:500,
 };
+
+
+// ── STN/SRN Summary Data ──────────────────────────────────────────────────────
+const STN_SRN_SUMMARY = {
+  vendors: [
+    { name:'ABC Telecom Services',    projects:3, issued:24, utilised:18, pendingReturn:4, approved:14, region:'Tamil Nadu'   },
+    { name:'XYZ Infra Solutions',     projects:2, issued:16, utilised:12, pendingReturn:2, approved:10, region:'Karnataka'    },
+    { name:'TowerTech Pvt Ltd',       projects:4, issued:32, utilised:28, pendingReturn:6, approved:22, region:'Maharashtra'  },
+    { name:'NetConnect Services',     projects:1, issued:8,  utilised:5,  pendingReturn:1, approved:4,  region:'Telangana'    },
+    { name:'PowerSys India',          projects:2, issued:14, utilised:10, pendingReturn:3, approved:7,  region:'Kerala'       },
+    { name:'BuildRight Constructions',projects:1, issued:6,  utilised:6,  pendingReturn:0, approved:6,  region:'Delhi'        },
+  ],
+  sites: [
+    { name:'Andheri Tower Site',   region:'Maharashtra', issued:12, utilised:10, balance:2,  returned:8,  approved:8  },
+    { name:'Bandra Roof Site',     region:'Maharashtra', issued:8,  utilised:6,  balance:2,  returned:4,  approved:4  },
+    { name:'Kurla Junction Tower', region:'Maharashtra', issued:10, utilised:8,  balance:2,  returned:6,  approved:5  },
+    { name:'Chennai Hub Site',     region:'Tamil Nadu',  issued:14, utilised:12, balance:2,  returned:10, approved:9  },
+    { name:'Bangalore Central',    region:'Karnataka',   issued:9,  utilised:7,  balance:2,  returned:5,  approved:5  },
+    { name:'Hyderabad Node',       region:'Telangana',   issued:6,  utilised:4,  balance:2,  returned:2,  approved:2  },
+    { name:'Kochi Tower A',        region:'Kerala',      issued:8,  utilised:6,  balance:2,  returned:4,  approved:3  },
+    { name:'Delhi NCR Site',       region:'Delhi',       issued:6,  utilised:6,  balance:0,  returned:6,  approved:6  },
+  ],
+};
+
+function STNSRNSummary() {
+  const [view, setView] = React.useState<'vendor'|'site'>('vendor');
+
+  const tabBtn = (v: 'vendor'|'site', label: string) => (
+    <button onClick={()=>setView(v)} style={{
+      padding:'6px 20px', borderRadius:20, fontSize:13, fontWeight:600, cursor:'pointer', border:'none',
+      background: view===v ? T.primary : T.bg,
+      color: view===v ? '#fff' : T.textMuted,
+      transition:'all 0.15s',
+    }}>{label}</button>
+  );
+
+  const pct = (a:number, b:number) => b===0 ? 0 : Math.round((a/b)*100);
+
+  const ProgressBar = ({ value, color='#0D9488' }: { value:number; color?:string }) => (
+    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+      <div style={{ flex:1, height:6, background:'#E5E7EB', borderRadius:3, overflow:'hidden' }}>
+        <div style={{ width:`${value}%`, height:'100%', background:color, borderRadius:3, transition:'width 0.3s' }} />
+      </div>
+      <span style={{ fontSize:11, fontWeight:600, color, width:32, textAlign:'right' as const }}>{value}%</span>
+    </div>
+  );
+
+  const thS: React.CSSProperties = {
+    padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase',
+    color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`,
+    background:T.primaryLight, whiteSpace:'nowrap' as const,
+  };
+  const tdS: React.CSSProperties = {
+    padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const,
+  };
+
+  const badge = (n:number, color:string, bg:string) => (
+    <span style={{ fontSize:12, fontWeight:700, color, background:bg, padding:'2px 10px', borderRadius:12 }}>{n}</span>
+  );
+
+  return (
+    <div>
+      {/* Toggle */}
+      <div style={{ display:'flex', gap:8, marginBottom:16, background:T.bg, padding:4, borderRadius:24, width:'fit-content' }}>
+        {tabBtn('vendor','🏢 Vendor-wise')}
+        {tabBtn('site',  '📍 Site-wise'  )}
+      </div>
+
+      {/* Vendor View */}
+      {view==='vendor' && (
+        <div style={{ overflowX:'auto' as const }}>
+          <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+            <thead>
+              <tr>
+                <th style={thS}>#</th>
+                <th style={thS}>Vendor</th>
+                <th style={thS}>Projects</th>
+                <th style={{ ...thS, textAlign:'center' as const }}>Items Issued</th>
+                <th style={{ ...thS, textAlign:'center' as const }}>Utilised</th>
+                <th style={{ ...thS, textAlign:'center' as const }}>Pending Return</th>
+                <th style={{ ...thS, textAlign:'center' as const }}>Approved</th>
+                <th style={{ ...thS, minWidth:140 }}>Completion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {STN_SRN_SUMMARY.vendors.map((v, i) => {
+                const completionPct = pct(v.approved, v.issued);
+                const returnPct     = pct(v.utilised, v.issued);
+                return (
+                  <tr key={v.name} style={{ background:i%2===0?'#fff':T.bg }}
+                    onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
+                    onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=i%2===0?'#fff':T.bg}>
+                    <td style={{ ...tdS, color:T.textMuted, width:32 }}>{i+1}</td>
+                    <td style={{ ...tdS }}>
+                      <div style={{ fontWeight:600, color:T.text }}>{v.name}</div>
+                      <div style={{ fontSize:11, color:T.textMuted }}>{v.region}</div>
+                    </td>
+                    <td style={{ ...tdS }}>{badge(v.projects, T.primary, T.primaryLight)}</td>
+                    <td style={{ ...tdS, textAlign:'center' as const, fontWeight:700, color:T.text }}>{v.issued}</td>
+                    <td style={{ ...tdS, textAlign:'center' as const }}>{badge(v.utilised, '#2563EB','#EFF6FF')}</td>
+                    <td style={{ ...tdS, textAlign:'center' as const }}>
+                      {badge(v.pendingReturn, v.pendingReturn>0?'#D97706':'#0D9488', v.pendingReturn>0?'#FFFBEB':'#F0FDFA')}
+                    </td>
+                    <td style={{ ...tdS, textAlign:'center' as const }}>{badge(v.approved,'#0D9488','#F0FDFA')}</td>
+                    <td style={{ ...tdS, minWidth:140 }}>
+                      <ProgressBar value={completionPct} color={completionPct===100?'#0D9488':completionPct>60?'#D97706':'#DC2626'} />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Site View */}
+      {view==='site' && (
+        <div style={{ overflowX:'auto' as const }}>
+          <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+            <thead>
+              <tr>
+                <th style={thS}>#</th>
+                <th style={thS}>Site Name</th>
+                <th style={thS}>Region</th>
+                <th style={{ ...thS, textAlign:'center' as const }}>Issued</th>
+                <th style={{ ...thS, textAlign:'center' as const }}>Utilised</th>
+                <th style={{ ...thS, textAlign:'center' as const }}>Balance</th>
+                <th style={{ ...thS, textAlign:'center' as const }}>Returned</th>
+                <th style={{ ...thS, textAlign:'center' as const }}>Approved</th>
+                <th style={{ ...thS, minWidth:140 }}>Approval Progress</th>
+              </tr>
+            </thead>
+            <tbody>
+              {STN_SRN_SUMMARY.sites.map((s, i) => {
+                const appPct = pct(s.approved, s.issued);
+                return (
+                  <tr key={s.name} style={{ background:i%2===0?'#fff':T.bg }}
+                    onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
+                    onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=i%2===0?'#fff':T.bg}>
+                    <td style={{ ...tdS, color:T.textMuted, width:32 }}>{i+1}</td>
+                    <td style={{ ...tdS, fontWeight:600, color:T.text }}>{s.name}</td>
+                    <td style={{ ...tdS }}>
+                      <span style={{ fontSize:11, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10 }}>{s.region}</span>
+                    </td>
+                    <td style={{ ...tdS, textAlign:'center' as const, fontWeight:700 }}>{s.issued}</td>
+                    <td style={{ ...tdS, textAlign:'center' as const }}>{badge(s.utilised,'#2563EB','#EFF6FF')}</td>
+                    <td style={{ ...tdS, textAlign:'center' as const }}>
+                      {badge(s.balance, s.balance>0?'#D97706':'#0D9488', s.balance>0?'#FFFBEB':'#F0FDFA')}
+                    </td>
+                    <td style={{ ...tdS, textAlign:'center' as const }}>{badge(s.returned,'#7C3AED','#F5F3FF')}</td>
+                    <td style={{ ...tdS, textAlign:'center' as const }}>{badge(s.approved,'#0D9488','#F0FDFA')}</td>
+                    <td style={{ ...tdS, minWidth:140 }}>
+                      <ProgressBar value={appPct} color={appPct===100?'#0D9488':appPct>60?'#D97706':'#DC2626'} />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SuperAdminDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
   const router = useRouter();
@@ -402,13 +566,14 @@ function SuperAdminDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
         <ProjectStatusTable projects={projects} />
       </div>
 
+
+      {/* STN/SRN Summary */}
       <div style={{ ...card, marginBottom:20 }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-          <div style={{ fontSize:14, fontWeight:600, color:T.text }}>Recent Projects</div>
-          <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none', fontWeight:500 }}>View All →</Link>
-        </div>
-        <table style={{ width:'100%' }}><TableHead /><tbody>{recent.map(p=><ProjectRow key={p.id} p={p} href={`/projects/${p.id}`} />)}</tbody></table>
+        <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>📦 STN / SRN Summary</div>
+        <STNSRNSummary />
       </div>
+
+
 
       <div style={card}>
         <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>🔔 Alerts</div>

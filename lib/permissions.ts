@@ -89,6 +89,11 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_po_items:   perm(false,true, false,false),
     sec_ptw_detail: perm(false,true, false,false),
     sec_srn_detail: perm(false,true, false,false),
+    sec_stn_srn_summary: perm(false,true, false,false),
+    sec_stn_srn_summary: perm(false,true, false,false),
+    sec_stn_srn_summary: perm(false,true, false,false),
+    sec_stn_srn_summary: perm(false,true, false,false),
+    sec_stn_srn_summary: perm(false,true, false,false),
   },
 
   accounting_team: {
