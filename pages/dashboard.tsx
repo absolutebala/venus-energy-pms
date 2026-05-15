@@ -370,7 +370,6 @@ function ApprovalBadge({ status }: { status: string }) {
 
 function STNSRNSummary() {
   const [view,          setView]         = React.useState<'vendor'|'site'>('vendor');
-  const [expandedVendor,setExpandedVendor] = React.useState<string|null>(null);
 
   // Track selected project per vendor
   const [selectedProj, setSelectedProj] = React.useState<Record<string,string>>(() => {
@@ -452,12 +451,8 @@ function STNSRNSummary() {
                     onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
                     onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=i%2===0?'#fff':T.bg}>
                     <td style={{ ...tdS, color:T.textMuted, width:32 }}>{i+1}</td>
-                    <td style={{ ...tdS, cursor:'pointer' }}
-                      onClick={()=>setExpandedVendor(ev=>ev===vendor?null:vendor)}>
-                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                        <span style={{ fontWeight:700, color:T.primary, fontSize:13, textDecoration:'underline', cursor:'pointer' }}>{vendor}</span>
-                        <span style={{ fontSize:10, color:T.textMuted }}>{expandedVendor===vendor?'▲':'▼'}</span>
-                      </div>
+                    <td style={{ ...tdS }}>
+                      <div style={{ fontWeight:600, color:T.text, fontSize:13 }}>{vendor}</div>
                       <div style={{ fontSize:11, color:T.textMuted }}>{(projects as any[]).length} project{(projects as any[]).length>1?'s':''}</div>
                     </td>
                     <td style={{ ...tdS, minWidth:200 }}>
@@ -478,36 +473,7 @@ function STNSRNSummary() {
                     <td style={{ ...tdS }}><ApprovalBadge status={proj?.approvalStatus||'Pending'} /></td>
                     <td style={{ ...tdS, minWidth:130 }}><ProgressBar value={compPct} /></td>
                   </tr>
-                  {expandedVendor===vendor && (
-                    <tr key={vendor+'-detail'}>
-                      <td colSpan={9} style={{ padding:'0 12px 12px 48px', background:'#F0FDFA' }}>
-                        <div style={{ fontSize:12, fontWeight:600, color:T.primary, margin:'8px 0 6px' }}>Projects for {vendor}</div>
-                        <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
-                          <thead>
-                            <tr style={{ background:T.primaryLight }}>
-                              {['Project No','Site','Delivery Date','Issued','Utilised','Approval'].map(h=>(
-                                <th key={h} style={{ padding:'6px 10px', fontSize:10, fontWeight:700, color:T.primary, textAlign:'left' as const, borderBottom:`1px solid ${T.primaryMid}` }}>{h}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(projects as any[]).map((p:any)=>(
-                              <tr key={p.id} style={{ borderBottom:`1px solid ${T.border}`, cursor:'pointer' }}>
-                                <td style={{ padding:'6px 10px', fontWeight:700, color:T.primary, fontSize:12 }}>{p.id}</td>
-                                <td style={{ padding:'6px 10px', fontSize:12, color:T.text }}>{p.name}</td>
-                                <td style={{ padding:'6px 10px', fontSize:11, color:T.textMuted }}>{p.deliveryDate}</td>
-                                <td style={{ padding:'6px 10px', fontSize:12, textAlign:'center' as const }}>{p.issued}</td>
-                                <td style={{ padding:'6px 10px', fontSize:12, textAlign:'center' as const }}>{p.utilised}</td>
-                                <td style={{ padding:'6px 10px' }}><ApprovalBadge status={p.approvalStatus} /></td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-                );
+                  </tr>;
               })}
             </tbody>
           </table>
@@ -552,36 +518,7 @@ function STNSRNSummary() {
                     <td style={{ ...tdS }}><ApprovalBadge status={s.approvalStatus} /></td>
                     <td style={{ ...tdS, minWidth:130 }}><ProgressBar value={appPct} /></td>
                   </tr>
-                  {expandedVendor===vendor && (
-                    <tr key={vendor+'-detail'}>
-                      <td colSpan={9} style={{ padding:'0 12px 12px 48px', background:'#F0FDFA' }}>
-                        <div style={{ fontSize:12, fontWeight:600, color:T.primary, margin:'8px 0 6px' }}>Projects for {vendor}</div>
-                        <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
-                          <thead>
-                            <tr style={{ background:T.primaryLight }}>
-                              {['Project No','Site','Delivery Date','Issued','Utilised','Approval'].map(h=>(
-                                <th key={h} style={{ padding:'6px 10px', fontSize:10, fontWeight:700, color:T.primary, textAlign:'left' as const, borderBottom:`1px solid ${T.primaryMid}` }}>{h}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(projects as any[]).map((p:any)=>(
-                              <tr key={p.id} style={{ borderBottom:`1px solid ${T.border}`, cursor:'pointer' }}>
-                                <td style={{ padding:'6px 10px', fontWeight:700, color:T.primary, fontSize:12 }}>{p.id}</td>
-                                <td style={{ padding:'6px 10px', fontSize:12, color:T.text }}>{p.name}</td>
-                                <td style={{ padding:'6px 10px', fontSize:11, color:T.textMuted }}>{p.deliveryDate}</td>
-                                <td style={{ padding:'6px 10px', fontSize:12, textAlign:'center' as const }}>{p.issued}</td>
-                                <td style={{ padding:'6px 10px', fontSize:12, textAlign:'center' as const }}>{p.utilised}</td>
-                                <td style={{ padding:'6px 10px' }}><ApprovalBadge status={p.approvalStatus} /></td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-                );
+                  </tr>;
               })}
             </tbody>
           </table>
