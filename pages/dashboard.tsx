@@ -443,7 +443,7 @@ function STNSRNSummary() {
               </tr>
             </thead>
             <tbody>
-              {Object.entries(VENDOR_PROJECT_DATA).map(([vendor, projects], i) => { return (
+              {Object.entries(VENDOR_PROJECT_DATA).map(([vendor, projects], i) => {
                 const selId  = selectedProj[vendor] || (projects as any[])[0]?.id;
                 const proj   = (projects as any[]).find(p => p.id === selId) || (projects as any[])[0];
                 const compPct = pct(proj?.utilised||0, proj?.issued||1);
