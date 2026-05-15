@@ -473,7 +473,6 @@ function STNSRNSummary() {
                     <td style={{ ...tdS }}><ApprovalBadge status={proj?.approvalStatus||'Pending'} /></td>
                     <td style={{ ...tdS, minWidth:130 }}><ProgressBar value={compPct} /></td>
                   </tr>
-                  </tr>;
               })}
             </tbody>
           </table>
