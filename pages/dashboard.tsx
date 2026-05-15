@@ -102,45 +102,14 @@ const DOC_COLS = [
   { key:'ptw_document',    label:'PTW'        },
 ];
 
-const MOCK_DOC_STATUS: Record<string, Record<string, boolean>> = {
-  'VE-2025-001': { safety_photos:true,  site_photos:true,  jmr_document:false, ac_certificate:true,  noc_document:false, drawing_document:true,  ptw_document:true  },
-  'VE-2025-002': { safety_photos:true,  site_photos:true,  jmr_document:true,  ac_certificate:true,  noc_document:true,  drawing_document:true,  ptw_document:false },
-  'VE-2025-003': { safety_photos:true,  site_photos:false, jmr_document:false, ac_certificate:true,  noc_document:false, drawing_document:false, ptw_document:false },
-  'VE-2025-004': { safety_photos:false, site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
-  'VE-2025-005': { safety_photos:true,  site_photos:true,  jmr_document:true,  ac_certificate:true,  noc_document:true,  drawing_document:true,  ptw_document:true  },
-  'VE-2025-006': { safety_photos:false, site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
-  'VE-2025-007': { safety_photos:true,  site_photos:true,  jmr_document:false, ac_certificate:true,  noc_document:true,  drawing_document:false, ptw_document:false },
-  'VE-2025-008': { safety_photos:true,  site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
-  'VE-2025-009': { safety_photos:false, site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
-  'VE-2025-010': { safety_photos:true,  site_photos:true,  jmr_document:true,  ac_certificate:true,  noc_document:true,  drawing_document:true,  ptw_document:true  },
-};
-
+const MOCK_DOC_STATUS = DOC_STATUS;
 const MOCK_STN_RETURN: Record<string, boolean> = {
   'VE-2025-001':false,'VE-2025-002':true,'VE-2025-003':false,'VE-2025-004':false,
   'VE-2025-005':true, 'VE-2025-006':false,'VE-2025-007':false,'VE-2025-008':false,
   'VE-2025-009':false,'VE-2025-010':true,
 };
 
-const MOCK_UPDATED: Record<string,{date:string;by:string}> = {
-  'VE-2025-001':{date:'15-05-2025',by:'Arun Kumar'},   'VE-2025-002':{date:'14-05-2025',by:'Priya Sharma'},
-  'VE-2025-003':{date:'13-05-2025',by:'Arun Kumar'},   'VE-2025-004':{date:'12-05-2025',by:'Ramesh Kumar'},
-  'VE-2025-005':{date:'11-05-2025',by:'Arun Kumar'},   'VE-2025-006':{date:'10-05-2025',by:'Priya Sharma'},
-  'VE-2025-007':{date:'09-05-2025',by:'Arun Kumar'},   'VE-2025-008':{date:'08-05-2025',by:'Ramesh Kumar'},
-  'VE-2025-009':{date:'07-05-2025',by:'Priya Sharma'}, 'VE-2025-010':{date:'06-05-2025',by:'Arun Kumar'},
-};
-const MOCK_DELIVERY: Record<string,string> = {
-  'VE-2025-001':'2025-07-30','VE-2025-002':'2025-08-31','VE-2025-003':'2025-09-15',
-  'VE-2025-004':'2025-10-31','VE-2025-005':'2025-03-31','VE-2025-006':'2025-09-30',
-  'VE-2025-007':'2025-08-15','VE-2025-008':'2025-11-30','VE-2025-009':'2025-12-31',
-  'VE-2025-010':'2025-04-30',
-};
-const MOCK_START: Record<string,string> = {
-  'VE-2025-001':'2025-01-15','VE-2025-002':'2025-02-01','VE-2025-003':'2025-02-10',
-  'VE-2025-004':'2025-03-01','VE-2025-005':'2024-12-01','VE-2025-006':'2025-03-15',
-  'VE-2025-007':'2025-02-20','VE-2025-008':'2025-04-01','VE-2025-009':'2025-04-15',
-  'VE-2025-010':'2024-11-01',
-};
-
+const MOCK_UPDATED = Object.fromEntries(SEED_PROJECTS.map(p=>[p.id,{date:new Date(p.startDate).toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'numeric'}),by:p.pm}]));const MOCK_DELIVERY = Object.fromEntries(SEED_PROJECTS.map(p=>[p.id, p.endDate]));const MOCK_START = Object.fromEntries(SEED_PROJECTS.map(p=>[p.id, p.startDate]));
 const WORK_STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
   in_progress:    { label:'In Progress',    color:'#D97706', bg:'#FFFBEB' },
   completed:      { label:'Completed',      color:'#0D9488', bg:'#F0FDFA' },

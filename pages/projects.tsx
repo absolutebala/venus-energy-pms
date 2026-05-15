@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
+import { DOC_STATUS as PROJ_DOC_STATUS_DATA } from '@/lib/seedData';
 import { MOCK_PROJECTS } from '@/lib/projectData';
 
 const fmt = (v: number) => `₹${(v / 100000).toFixed(2)}L`;
@@ -31,19 +32,7 @@ const DOC_COLS_P = [
   { key:'drawing_document',label:'Drawing'     },
   { key:'ptw_document',    label:'PTW'         },
 ];
-const PROJ_DOC_STATUS: Record<string, Record<string, boolean>> = {
-  'VE-2025-001': { safety_photos:true,  site_photos:true,  jmr_document:false, ac_certificate:true,  noc_document:false, drawing_document:true,  ptw_document:true  },
-  'VE-2025-002': { safety_photos:true,  site_photos:true,  jmr_document:true,  ac_certificate:true,  noc_document:true,  drawing_document:true,  ptw_document:false },
-  'VE-2025-003': { safety_photos:true,  site_photos:false, jmr_document:false, ac_certificate:true,  noc_document:false, drawing_document:false, ptw_document:false },
-  'VE-2025-004': { safety_photos:false, site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
-  'VE-2025-005': { safety_photos:true,  site_photos:true,  jmr_document:true,  ac_certificate:true,  noc_document:true,  drawing_document:true,  ptw_document:true  },
-  'VE-2025-006': { safety_photos:false, site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
-  'VE-2025-007': { safety_photos:true,  site_photos:true,  jmr_document:false, ac_certificate:true,  noc_document:true,  drawing_document:false, ptw_document:false },
-  'VE-2025-008': { safety_photos:true,  site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
-  'VE-2025-009': { safety_photos:false, site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
-  'VE-2025-010': { safety_photos:true,  site_photos:true,  jmr_document:true,  ac_certificate:true,  noc_document:true,  drawing_document:true,  ptw_document:true  },
-};
-const PROJ_DELIVERY: Record<string,string> = {
+const PROJ_DOC_STATUS = PROJ_DOC_STATUS_DATA;const PROJ_DELIVERY: Record<string,string> = {
   'VE-2025-001':'2025-07-30','VE-2025-002':'2025-08-31','VE-2025-003':'2025-09-15',
   'VE-2025-004':'2025-10-31','VE-2025-005':'2025-03-31','VE-2025-006':'2025-09-30',
   'VE-2025-007':'2025-08-15','VE-2025-008':'2025-11-30','VE-2025-009':'2025-12-31',

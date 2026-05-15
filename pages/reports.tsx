@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
+import { PROJECTS as REPORT_PROJECTS } from '@/lib/seedData';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, badge } from '@/lib/theme';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts';

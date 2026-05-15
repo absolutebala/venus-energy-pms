@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
+import { PROJECTS } from '@/lib/seedData';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, btnPrimary, inputStyle, badge } from '@/lib/theme';
 

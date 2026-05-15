@@ -40,22 +40,7 @@ const VENDOR_LIST = [
 ];
 
 
-const PO_ITEMS_DB: Record<string,any[]> = {
-  'VE-2025-001': [
-    { id:1, description:'Tower Steel Sections (30m)',   hsn:'7308', uom:'Set', quantity:4,   rate:125000, gst:18, amount:500000  },
-    { id:2, description:'Foundation Concrete M30',      hsn:'3824', uom:'Cum', quantity:150, rate:8500,   gst:12, amount:1275000 },
-    { id:3, description:'High-tensile Anchor Bolts M36',hsn:'7318', uom:'Nos', quantity:120, rate:450,    gst:18, amount:54000   },
-  ],
-  'VE-2025-002': [
-    { id:1, description:'Antenna Mounting Brackets',    hsn:'7326', uom:'Set', quantity:8,   rate:12500,  gst:18, amount:100000  },
-    { id:2, description:'Coaxial Cable 50m',            hsn:'8544', uom:'Nos', quantity:20,  rate:4500,   gst:18, amount:90000   },
-  ],
-  'VE-2025-003': [
-    { id:1, description:'RRU Units 4T',                 hsn:'8525', uom:'Nos', quantity:6,   rate:85000,  gst:18, amount:510000  },
-    { id:2, description:'CPRI Fiber Cable 5m',          hsn:'8544', uom:'Nos', quantity:24,  rate:2500,   gst:18, amount:60000   },
-  ],
-};
-const SRN_DATA_DB: Record<string, Record<number,{utilisedQty:number|null;returned:boolean;approved:boolean}>> = {
+const PO_ITEMS_DB = PO_ITEMS;const SRN_DATA_DB: Record<string, Record<number,{utilisedQty:number|null;returned:boolean;approved:boolean}>> = {
   'VE-2025-001': { 1:{utilisedQty:4,returned:true,approved:true}, 2:{utilisedQty:140,returned:false,approved:false}, 3:{utilisedQty:96,returned:true,approved:false} },
   'VE-2025-002': { 1:{utilisedQty:6,returned:false,approved:false}, 2:{utilisedQty:14,returned:true,approved:true} },
   'VE-2025-003': { 1:{utilisedQty:6,returned:true,approved:true}, 2:{utilisedQty:22,returned:true,approved:true} },
@@ -450,30 +435,13 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
 
 
 // ── Expenses Section Component ───────────────────────────────────────────────
-const EXPENSES_DB: Record<string, any[]> = {
-  'VE-2025-001': [
-    { id:1, txnRef:'TXN-2025-001', date:'2025-04-05', site:'Andheri Tower Site',    expenseType:'Advance',           amount:50000,  paymentMode:'Bank Transfer' },
-    { id:2, txnRef:'TXN-2025-002', date:'2025-04-12', site:'Andheri Tower Site',    expenseType:'Material Purchase', amount:125000, paymentMode:'Cheque'        },
-    { id:3, txnRef:'TXN-2025-003', date:'2025-04-20', site:'Andheri Tower Site',    expenseType:'Labour Charge',     amount:35000,  paymentMode:'Cash'          },
-    { id:4, txnRef:'TXN-2025-004', date:'2025-05-02', site:'Andheri Tower Site',    expenseType:'Transport',         amount:12500,  paymentMode:'UPI'           },
-  ],
-  'VE-2025-002': [
-    { id:1, txnRef:'TXN-2025-010', date:'2025-03-10', site:'Bandra Roof Site',      expenseType:'Advance',           amount:30000,  paymentMode:'Bank Transfer' },
-    { id:2, txnRef:'TXN-2025-011', date:'2025-03-22', site:'Bandra Roof Site',      expenseType:'Equipment Rental',  amount:18000,  paymentMode:'Cheque'        },
-  ],
-  'VE-2025-003': [
-    { id:1, txnRef:'TXN-2025-020', date:'2025-04-15', site:'Kurla Junction Tower',  expenseType:'Material Purchase', amount:85000,  paymentMode:'Bank Transfer' },
-    { id:2, txnRef:'TXN-2025-021', date:'2025-04-28', site:'Kurla Junction Tower',  expenseType:'Labour Charge',     amount:42000,  paymentMode:'Cash'          },
-    { id:3, txnRef:'TXN-2025-022', date:'2025-05-05', site:'Kurla Junction Tower',  expenseType:'Miscellaneous',     amount:8500,   paymentMode:'UPI'           },
-  ],
-};
-const EXPENSE_TYPES   = ['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'
+const EXPENSES_DB: Record<string,any[]> = {}; // loaded from SHARED_EXPENSES per projectconst EXPENSE_TYPES   = ['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'
 ];
 const PAYMENT_MODES   = ['Cash','Bank Transfer','Cheque','UPI','DD'
 ];
 
 function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boolean }) {
-  const [items, setItems] = React.useState<any[]>(() => EXPENSES_DB[projectId] || []);
+  const [items, setItems] = React.useState<any[]>(() => (SHARED_EXPENSES || []).filter((e:any)=>e.projectId===projectId));
   const [adding, setAdding] = React.useState(false);
   const [newRow, setNewRow] = React.useState({ txnRef:'', date:'', site:'', expenseType:'Advance', amount:'', paymentMode:'Bank Transfer' });
 
