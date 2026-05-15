@@ -5,3 +5,13 @@ export type { Expense } from './seedData';
 export const PAYMENT_TRANSACTIONS = [] as any[];
 export const getPaidAmount = (projectId: string) => 0;
 export const getProjectTransactions = (projectId: string) => [] as any[];
+
+export interface PaymentTransaction {
+  id: string;
+  projectId: string;
+  vendor: string;
+  amount: number;
+  date: string;
+  bankTxnNo: string;
+  notes?: string;
+}
