@@ -19,13 +19,6 @@ const MOCK_INVOICES_UNUSED: any[] = [
   { id:'INV-008', invoiceNo:'INV-2025-0005', invoiceDate:'2025-04-10', workBoqRef:'BOQ-CIV-004', invoiceAmount:925000,  gst:166500, totalAmount:1091500, invoiceStatus:'Submitted',    paymentStatus:'Pending', dueDate:'2025-05-10', projectId:'VE-2025-005', poNo:'PO-IND-2025-005', createdAt:'2025-04-10' },
 ];
 
-const INVOICE_PROJECTS: any = {
-  'VE-2025-001': { id:'VE-2025-001', site:'Andheri Tower Site',    region:'Maharashtra', pm:'Arun Kumar',   poNo:'PO-IND-2025-001', poValue:5000000,  status:'in_progress',    startDate:'2025-01-15', endDate:'2025-07-30' },
-  'VE-2025-002': { id:'VE-2025-002', site:'Bandra Roof Site',      region:'Maharashtra', pm:'Priya Sharma', poNo:'PO-IND-2025-002', poValue:3500000,  status:'in_progress',    startDate:'2025-02-01', endDate:'2025-08-31' },
-  'VE-2025-003': { id:'VE-2025-003', site:'Kurla Junction Tower',  region:'Maharashtra', pm:'Arun Kumar',   poNo:'PO-IND-2025-003', poValue:4200000,  status:'billing_review', startDate:'2025-02-10', endDate:'2025-09-15' },
-  'VE-2025-004': { id:'VE-2025-004', site:'Pune Kharadi Site',     region:'Maharashtra', pm:'Priya Sharma', poNo:'PO-IND-2025-004', poValue:2800000,  status:'in_progress',    startDate:'2025-03-01', endDate:'2025-10-31' },
-  'VE-2025-005': { id:'VE-2025-005', site:'Chennai Hub Site',      region:'Tamil Nadu',  pm:'Arun Kumar',   poNo:'PO-IND-2025-005', poValue:6500000,  status:'completed',      startDate:'2024-12-01', endDate:'2025-03-31' },
-};
 
 const INV_STATUS_CFG: any = {
   'Approved':     { color:'#0D9488', bg:'#F0FDFA', border:'#99F6E4' },
