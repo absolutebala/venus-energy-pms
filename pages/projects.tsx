@@ -118,7 +118,7 @@ export default function ProjectsPage() {
   const counts = {
     total: projects.length,
     inProgress: projects.filter(p=>p.status==='in_progress').length,
-    delayed: projects.filter(p=>p.status==='delayed').length,
+    aging: filtered.filter(p=>getAgeDays(p.id)>agingThreshold).length,
     completed: projects.filter(p=>p.status==='completed').length,
   };
 
@@ -193,7 +193,7 @@ export default function ProjectsPage() {
           {[
             { label:'Total Projects', value:counts.total,      color:T.primary, icon:'📁', filter:'All'          },
             { label:'In Progress',    value:counts.inProgress, color:T.info,    icon:'⚡', filter:'In Progress'  },
-            { label:'Delayed',        value:counts.delayed,    color:T.danger,  icon:'⚠️', filter:'Delayed'      },
+            { label:'Aging (60d+)',   value:counts.aging,      color:'#D97706', icon:'⏱',  filter:'Aging'        },
             { label:'Completed',      value:counts.completed,  color:T.success, icon:'✅', filter:'Completed'    },
           ].map((s,i)=>(
             <div key={i} onClick={()=>{ setStatusFilter(statusFilter===s.filter?'All':s.filter); setAgeMin(null); setAgeMax(null); }}
