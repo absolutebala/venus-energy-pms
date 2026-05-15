@@ -106,7 +106,7 @@ export default function InvoicesPage() {
     const amt = Number(newInv.invoiceAmount);
     const gst = Number(newInv.gst);
     // Auto-link project from PO if not from search
-    const linkedProj = matchedProject || (Object.values(INVOICE_PROJECTS) as any[]).find(p => normalize(p.poNo).includes(normalize(newInv.poNo||'')));
+    const linkedProj = matchedProject || (Object.values(INVOICE_PROJECTS) as any[]).find(p => matchesPO(p.poNo, newInv.poNo||''));
     setInvoices(prev=>[{ id:"INV-"+Date.now(), ...newInv, invoiceAmount:amt, gst, totalAmount:amt+gst, projectId:linkedProj?.id||'', poNo:newInv.poNo||linkedProj?.poNo||'', createdAt:new Date().toISOString().split('T')[0] }, ...prev]);
     setNewInv({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', projectId:'', poNo:'' });
     setShowForm(false);
