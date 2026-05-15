@@ -21,7 +21,41 @@ const MOCK_DRAFTS = [
   { id:'DRAFT-002', projectName:'Vizag Fiber Installation',       poNo:'PO-2025-007', indusId:'IND-2002', savedAt:'06/05/2025 03:42 PM', region:'Andhra Pradesh', type:'Fiber Installation' },
 ];
 
-export default function ProjectsPage() {
+export default 
+const DOC_COLS_P = [
+  { key:'safety_photos',    label:'Safety'     },
+  { key:'site_photos',      label:'Site Photos' },
+  { key:'jmr_document',    label:'JMR'         },
+  { key:'ac_certificate',  label:'AC Cert'     },
+  { key:'noc_document',    label:'NOC'         },
+  { key:'drawing_document',label:'Drawing'     },
+  { key:'ptw_document',    label:'PTW'         },
+];
+const PROJ_DOC_STATUS: Record<string, Record<string, boolean>> = {
+  'VE-2025-001': { safety_photos:true,  site_photos:true,  jmr_document:false, ac_certificate:true,  noc_document:false, drawing_document:true,  ptw_document:true  },
+  'VE-2025-002': { safety_photos:true,  site_photos:true,  jmr_document:true,  ac_certificate:true,  noc_document:true,  drawing_document:true,  ptw_document:false },
+  'VE-2025-003': { safety_photos:true,  site_photos:false, jmr_document:false, ac_certificate:true,  noc_document:false, drawing_document:false, ptw_document:false },
+  'VE-2025-004': { safety_photos:false, site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
+  'VE-2025-005': { safety_photos:true,  site_photos:true,  jmr_document:true,  ac_certificate:true,  noc_document:true,  drawing_document:true,  ptw_document:true  },
+  'VE-2025-006': { safety_photos:false, site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
+  'VE-2025-007': { safety_photos:true,  site_photos:true,  jmr_document:false, ac_certificate:true,  noc_document:true,  drawing_document:false, ptw_document:false },
+  'VE-2025-008': { safety_photos:true,  site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
+  'VE-2025-009': { safety_photos:false, site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
+  'VE-2025-010': { safety_photos:true,  site_photos:true,  jmr_document:true,  ac_certificate:true,  noc_document:true,  drawing_document:true,  ptw_document:true  },
+};
+const PROJ_DELIVERY: Record<string,string> = {
+  'VE-2025-001':'2025-07-30','VE-2025-002':'2025-08-31','VE-2025-003':'2025-09-15',
+  'VE-2025-004':'2025-10-31','VE-2025-005':'2025-03-31','VE-2025-006':'2025-09-30',
+  'VE-2025-007':'2025-08-15','VE-2025-008':'2025-11-30','VE-2025-009':'2025-12-31',
+  'VE-2025-010':'2025-04-30',
+};
+const PROJ_START: Record<string,string> = {
+  'VE-2025-001':'2025-01-15','VE-2025-002':'2025-02-01','VE-2025-003':'2025-02-10',
+  'VE-2025-004':'2025-03-01','VE-2025-005':'2024-12-01','VE-2025-006':'2025-03-15',
+  'VE-2025-007':'2025-02-20','VE-2025-008':'2025-04-01','VE-2025-009':'2025-04-15',
+  'VE-2025-010':'2024-11-01',
+};
+function ProjectsPage() {
   const router = useRouter();
   const { profile, can, loading } = useAuth();
   const isAdmin = !loading && (can('projects', 'create') || can('projects', 'delete'));
@@ -77,6 +111,8 @@ export default function ProjectsPage() {
     return searchMatch(p);
   });
 
+  const agingThreshold = 60; // days
+  const getAgeDays = (id: string) => PROJ_START[id] ? Math.floor((new Date().getTime() - new Date(PROJ_START[id]).getTime()) / 86400000) : 0;
   const counts = {
     total: projects.length,
     inProgress: projects.filter(p=>p.status==='in_progress').length,
@@ -216,52 +252,77 @@ export default function ProjectsPage() {
             </div>
           </div>
           <div style={{ overflowX:'auto' }}>
-            <table style={{ width:'100%' }}>
+            <div style={{ overflowX:'auto' as const, borderRadius:10, border:`1px solid ${T.border}` }}>
+            <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:1400 }}>
               <thead>
-                <tr>{['#','Project No','PO Number','Indus ID','Site / Region','Job Type','Vendor','PO Value','Aging','Progress','Status','Actions'].map(h=><th key={h} style={th}>{h}</th>)}</tr>
+                <tr>
+                  {['#','Project No','Site / Project','Work Status','Delivery Date','Aging',
+                    ...DOC_COLS_P.map(d=>d.label),
+                    'STN Return','Last Updated'].map((h,i)=>(
+                    <th key={i} style={{ padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
+                      color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`,
+                      whiteSpace:'nowrap' as const, background:T.primaryLight }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
               </thead>
               <tbody>
-                {filtered.length===0 ? (
-                  <tr><td colSpan={12} style={{ ...td, textAlign:'center', padding:40, color:T.textDim }}>No projects match the current filter.</td></tr>
-                ) : filtered.map((p,i)=>(
-                  <tr key={i} onClick={()=>router.push(`/projects/${p.id}`)} style={{ cursor:'pointer' }}
-                    onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
-                    onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
-                    <td style={{ ...td, color:T.textDim }}>{i+1}</td>
-                    <td style={{ ...td, color:T.primary, fontWeight:700 }}>{p.projectNo}</td>
-                    <td style={{ ...td }}>
-                      <div style={{ fontWeight:600, color:T.text }}>{p.poNo}</div>
-                      {poCount(p.poNo) > 1 && (
-                        <div style={{ fontSize:10, color:T.info, marginTop:2 }}>+{poCount(p.poNo)-1} more project(s)</div>
-                      )}
-                    </td>
-                    <td style={{ ...td, fontSize:12, color:T.textMuted }}>{p.indusId}</td>
-                    <td style={td}><div style={{ fontWeight:500, color:T.text }}>{p.site}</div><div style={{ fontSize:11, color:T.textDim }}>{p.region}</div></td>
-                    <td style={td}><span style={{ fontSize:11, background:T.primaryLight, color:T.primary, padding:'2px 8px', borderRadius:5, fontWeight:500, whiteSpace:'nowrap' }}>{p.type}</span></td>
-                    <td style={{ ...td, fontSize:12 }}>{p.vendor || <span style={{ color:T.danger, fontSize:11 }}>⚠️ Not assigned</span>}</td>
-                    <td style={{ ...td, fontWeight:600, color:T.text, whiteSpace:'nowrap' }}>{fmt(p.poValue)}</td>
-                    <td style={td}><span style={{ color:p.aging>60?T.danger:p.aging>30?T.warning:T.success, fontWeight:700 }}>{p.aging}d</span></td>
-                    <td style={{ ...td, minWidth:120 }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                        <div style={{ flex:1, height:5, background:T.border, borderRadius:3 }}>
-                          <div style={{ height:'100%', width:`${p.progress}%`, background:p.progress===100?T.success:p.status==='delayed'?T.danger:T.primary, borderRadius:3 }} />
-                        </div>
-                        <span style={{ fontSize:11, color:T.textDim, minWidth:28 }}>{p.progress}%</span>
-                      </div>
-                    </td>
-                    <td style={td}><span style={badge(STATUS_DISPLAY[p.status]||p.status)}>{STATUS_DISPLAY[p.status]||p.status}</span></td>
-                    <td style={td} onClick={e=>e.stopPropagation()}>
-                      <div style={{ display:'flex', gap:4 }}>
-                        <Link href={`/projects/${p.id}`} style={{ textDecoration:'none' }}>
-                          <button style={{ background:T.primaryLight, border:'none', borderRadius:5, padding:'4px 8px', color:T.primary, cursor:'pointer', fontSize:12 }}>👁</button>
-                        </Link>
-                        {isAdmin && <button onClick={()=>setProjects(prev=>prev.filter(x=>x.id!==p.id))} style={{ background:'#FEF2F2', border:'none', borderRadius:5, padding:'4px 8px', color:T.danger, cursor:'pointer', fontSize:12 }}>🗑</button>}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={16} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
+                )}
+                {filtered.map((p:any, idx:number) => {
+                  const docs    = PROJ_DOC_STATUS[p.id] || {};
+                  const delDate = PROJ_DELIVERY[p.id];
+                  const delDt   = delDate ? new Date(delDate) : null;
+                  const isPast  = delDt ? delDt < new Date() : false;
+                  const ageDays = getAgeDays(p.id);
+                  const ageColor= ageDays > 90 ? '#DC2626' : ageDays > 60 ? '#D97706' : '#0D9488';
+                  const ageBg   = ageDays > 90 ? '#FEF2F2' : ageDays > 60 ? '#FFFBEB' : '#F0FDFA';
+                  const ws = STATUS_DISPLAY[p.status as keyof typeof STATUS_DISPLAY] || { label: p.status, color: T.textMuted };
+                  return (
+                    <tr key={p.id} style={{ background:idx%2===0?'#fff':T.bg, cursor:'pointer' }}
+                      onClick={()=>router.push(`/projects/${p.id}`)}
+                      onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
+                      onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=idx%2===0?'#fff':T.bg}>
+                      <td style={{ padding:'10px 12px', color:T.textMuted, fontSize:12, borderBottom:`1px solid ${T.border}` }}>{(page-1)*PER_PAGE+idx+1}</td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
+                        <div style={{ fontWeight:700, color:T.primary, fontSize:13 }}>{p.id}</div>
+                        {p.poNo && <div style={{ fontSize:10, color:T.textMuted }}>{p.poNo}</div>}
+                      </td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
+                        <div style={{ fontWeight:600, color:T.text, fontSize:13 }}>{p.site}</div>
+                        <div style={{ fontSize:11, color:T.textMuted }}>{p.pm}</div>
+                      </td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
+                        <span style={{ fontSize:11, fontWeight:700, color:(ws as any).color, background:`${(ws as any).color}15`, padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{(ws as any).label}</span>
+                      </td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, whiteSpace:'nowrap' as const }}>
+                        {delDt ? <span style={{ fontSize:12, color:isPast?'#DC2626':'#374151', fontWeight:isPast?600:400 }}>
+                          {delDt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
+                          {isPast && <span style={{ fontSize:10, display:'block', color:'#DC2626' }}>Overdue</span>}
+                        </span> : <span style={{ color:T.textDim }}>—</span>}
+                      </td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
+                        <span style={{ fontSize:12, fontWeight:600, color:ageColor, background:ageBg, padding:'2px 8px', borderRadius:10 }}>{ageDays}d</span>
+                      </td>
+                      {DOC_COLS_P.map(d=>(
+                        <td key={d.key} style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, textAlign:'center' as const }}>
+                          <span style={{ fontSize:16 }} title={docs[d.key]?'Completed':'Pending'}>{docs[d.key]?'✅':'⏳'}</span>
+                        </td>
+                      ))}
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, textAlign:'center' as const }}>
+                        <span style={{ fontSize:16 }}>{['completed','billing_review'].includes(p.status)?'✅':'⏳'}</span>
+                      </td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.textMuted, whiteSpace:'nowrap' as const }}>
+                        {new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+          </div>
           </div>
           <div style={{ padding:'10px 0', borderTop:`1px solid ${T.border}`, fontSize:11, color:T.textDim, marginTop:4 }}>
             Showing {filtered.length} of {projects.length} projects · PO Number can be shared across multiple projects
