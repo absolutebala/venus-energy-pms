@@ -40,7 +40,25 @@ const VENDOR_LIST = [
 ];
 
 
-const PO_ITEMS_DB = PO_ITEMS;const SRN_DATA_DB: Record<string, Record<number,{utilisedQty:number|null;returned:boolean;approved:boolean}>> = {
+const PO_ITEMS_DB: Record<string,any[]> = {
+  'VE-2025-001':[
+    {id:1,description:'Steel Lattice Tower 30m',hsn:'7308',uom:'Set',quantity:4,rate:450000,gst:18,amount:1800000},
+    {id:2,description:'Foundation Concrete M40',hsn:'3824',uom:'Cum',quantity:80,rate:9500,gst:12,amount:760000},
+    {id:3,description:'Anchor Bolt Set M36',hsn:'7318',uom:'Set',quantity:16,rate:8500,gst:18,amount:136000},
+  ],
+  'VE-2025-003':[
+    {id:1,description:'Offshore Tower 40m GI',hsn:'7308',uom:'Set',quantity:2,rate:850000,gst:18,amount:1700000},
+    {id:2,description:'High Tensile Bolts M48',hsn:'7318',uom:'Nos',quantity:96,rate:1200,gst:18,amount:115200},
+  ],
+  'VE-2025-007':[
+    {id:1,description:'Greenfield Tower 25m',hsn:'7308',uom:'Set',quantity:3,rate:380000,gst:18,amount:1140000},
+    {id:2,description:'Equipment Shelter 3x3m',hsn:'9406',uom:'Nos',quantity:3,rate:95000,gst:18,amount:285000},
+  ],
+  'VE-2025-015':[
+    {id:1,description:'Metro Tower 35m',hsn:'7308',uom:'Set',quantity:6,rate:520000,gst:18,amount:3120000},
+    {id:2,description:'Foundation Piling Work',hsn:'3824',uom:'Nos',quantity:24,rate:35000,gst:12,amount:840000},
+  ],
+};const SRN_DATA_DB: Record<string, Record<number,{utilisedQty:number|null;returned:boolean;approved:boolean}>> = {
   'VE-2025-001': { 1:{utilisedQty:4,returned:true,approved:true}, 2:{utilisedQty:140,returned:false,approved:false}, 3:{utilisedQty:96,returned:true,approved:false} },
   'VE-2025-002': { 1:{utilisedQty:6,returned:false,approved:false}, 2:{utilisedQty:14,returned:true,approved:true} },
   'VE-2025-003': { 1:{utilisedQty:6,returned:true,approved:true}, 2:{utilisedQty:22,returned:true,approved:true} },
