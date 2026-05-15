@@ -518,7 +518,7 @@ function STNSRNSummary() {
                     <td style={{ ...tdS }}><ApprovalBadge status={s.approvalStatus} /></td>
                     <td style={{ ...tdS, minWidth:130 }}><ProgressBar value={appPct} /></td>
                   </tr>
-                  </tr>;
+                  );
               })}
             </tbody>
           </table>
