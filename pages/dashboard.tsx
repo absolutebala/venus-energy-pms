@@ -7,7 +7,7 @@ import { T, card, badge } from '@/lib/theme';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 // ── Shared mock data ──────────────────────────────────────────────
-import { PROJECTS as SEED_DATA } from '@/lib/seedData';
+import { DOC_STATUS, PROJECTS as SEED_DATA } from '@/lib/seedData';
 const ALL_PROJECTS = SEED_DATA as any[];
 
 const INVOICES = [
