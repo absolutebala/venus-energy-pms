@@ -118,7 +118,7 @@ export default function ProjectsPage() {
   const counts = {
     total: projects.length,
     inProgress: projects.filter(p=>p.status==='in_progress').length,
-    aging: filtered.filter(p=>getAgeDays(p.id)>agingThreshold).length,
+    aging: mapped.filter((p:any)=>getAgeDays(p.id)>agingThreshold).length,
     completed: projects.filter(p=>p.status==='completed').length,
   };
 
