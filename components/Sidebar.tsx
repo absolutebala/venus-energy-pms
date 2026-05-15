@@ -13,7 +13,7 @@ const ADMIN_NAV: NavItem[] = [
   { href:'/srn-return',        label:'STN / SRN Status',   icon:'📦' },
   { href:'/site-expenses',     label:'Site Expenses',      icon:'💰' },
   { href:'/teams',             label:'Teams',              icon:'👤' },
-  { href:'/invoices', label:'Invoices', icon:'🧾', roles:['super_admin','accounting_team','region_manager','project_manager'] },
+  { href:'/invoices', label:'Invoices', icon:'🧾' },
       { href:'/reports',           label:'Reports',            icon:'📊' },
 ];
 
@@ -30,7 +30,7 @@ const PM_NAV: NavItem[] = [
 const ACCOUNTING_NAV: NavItem[] = [
   { href:'/dashboard',  label:'Dashboard',         icon:'▦'  },
   { href:'/projects',   label:'Projects',           icon:'📁' },
-  { href:'/invoices', label:'Invoices', icon:'🧾', roles:['super_admin','accounting_team','region_manager','project_manager'] },
+  { href:'/invoices', label:'Invoices', icon:'🧾' },
       { href:'/reports',    label:'Reports',            icon:'📊' },
 ];
 
@@ -38,7 +38,7 @@ const RM_NAV: NavItem[] = [
   { href:'/dashboard',      label:'Dashboard',   icon:'▦'  },
   { href:'/rm/projects',    label:'My Projects', icon:'📁' },
   { href:'/vendors',        label:'Vendors',     icon:'🏢' },
-  { href:'/invoices', label:'Invoices', icon:'🧾', roles:['super_admin','accounting_team','region_manager','project_manager'] },
+  { href:'/invoices', label:'Invoices', icon:'🧾' },
       { href:'/reports',        label:'Reports',     icon:'📊' },
 ];
 
