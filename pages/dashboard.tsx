@@ -502,6 +502,103 @@ function STNSRNSummary() {
 }
 
 // ── 2. REGION MANAGER DASHBOARD ──────────────────────────────────
+
+function SuperAdminDashboard({ projects }: { projects: any[] }) {
+  const statusData = [
+    { name:'In Progress',    value: projects.filter(p=>p.status==='in_progress').length,    color:'#3B82F6', status:'in_progress'    },
+    { name:'Completed',      value: projects.filter(p=>p.status==='completed').length,       color:'#10B981', status:'completed'       },
+    { name:'Delayed',        value: projects.filter(p=>p.status==='delayed').length,         color:'#EF4444', status:'delayed'         },
+    { name:'Billing Review', value: projects.filter(p=>p.status==='billing_review').length,  color:'#8B5CF6', status:'billing_review'  },
+    { name:'PM Approved',    value: projects.filter(p=>p.status==='pm_approved').length,     color:'#0D9488', status:'pm_approved'     },
+    { name:'On Hold',        value: projects.filter(p=>p.status==='on_hold').length,         color:'#6B7280', status:'on_hold'         },
+    { name:'Not Started',    value: projects.filter(p=>p.status==='not_started').length,     color:'#9CA3AF', status:'not_started'     },
+  ].filter(d=>d.value>0);
+
+  const pmGroups = projects.reduce((acc:any,p)=>{ acc[p.pm]=(acc[p.pm]||[]); acc[p.pm].push(p); return acc; },{});
+  const vendorGroups = projects.reduce((acc:any,p)=>{ if(p.vendor){ acc[p.vendor]=(acc[p.vendor]||[]); acc[p.vendor].push(p); } return acc; },{});
+
+  return (
+    <div>
+      {/* ── 3-col summary row ── */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:14, marginBottom:20 }}>
+        {/* Status Distribution */}
+        <div style={card}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Status Distribution</div>
+          <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
+            <ResponsiveContainer width={110} height={110}>
+              <PieChart><Pie data={statusData} cx="50%" cy="50%" innerRadius={28} outerRadius={50} dataKey="value" paddingAngle={3}
+                onClick={(e:any)=>router.push(`/projects?status=${e.status}`)}>
+                {statusData.map((d:any,i:number)=><Cell key={i} fill={d.color} cursor="pointer" />)}
+              </Pie><Tooltip contentStyle={{ fontSize:12 }} /></PieChart>
+            </ResponsiveContainer>
+          </div>
+          {statusData.map((d:any,i:number)=>(
+            <div key={i} onClick={()=>router.push(`/projects?status=${d.status}`)}
+              style={{ display:'flex', alignItems:'center', gap:8, marginBottom:7, cursor:'pointer', padding:'3px 5px', borderRadius:5 }}
+              onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}
+              onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='transparent'}>
+              <div style={{ width:8, height:8, borderRadius:2, background:d.color, flexShrink:0 }} />
+              <span style={{ fontSize:12, color:T.textMuted, flex:1 }}>{d.name}</span>
+              <span style={{ fontSize:12, fontWeight:700, color:T.text }}>{d.value}</span>
+            </div>
+          ))}
+        </div>
+        {/* Projects by PM */}
+        <div style={card}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Projects by PM</div>
+          <div style={{ display:'flex', flexDirection:'column' as const, gap:6 }}>
+            {Object.entries(pmGroups).slice(0,5).map(([pm,ps]:any)=>(
+              <div key={pm} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pm)}`)}
+                style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', transition:'all 0.15s' }}
+                onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
+                onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+                  <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{pm}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10 }}>{(ps as any[]).length} →</span>
+                </div>
+                <div style={{ display:'flex', gap:5, flexWrap:'wrap' as const }}>
+                  {(ps as any[]).filter((p:any)=>p.status==='in_progress').length>0 && <span style={{ fontSize:10, color:T.info, background:`${T.info}15`, padding:'1px 7px', borderRadius:8 }}>{(ps as any[]).filter((p:any)=>p.status==='in_progress').length} active</span>}
+                  {(ps as any[]).filter((p:any)=>p.status==='delayed').length>0 && <span style={{ fontSize:10, color:T.danger, background:`${T.danger}15`, padding:'1px 7px', borderRadius:8 }}>{(ps as any[]).filter((p:any)=>p.status==='delayed').length} delayed</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Projects by Vendor */}
+        <div style={card}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Projects by Vendor</div>
+          <div style={{ display:'flex', flexDirection:'column' as const, gap:6 }}>
+            {Object.entries(vendorGroups).slice(0,5).map(([v,ps]:any)=>(
+              <div key={v} onClick={()=>router.push(`/projects?vendor=${encodeURIComponent(v)}`)}
+                style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', transition:'all 0.15s' }}
+                onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
+                onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+                  <span style={{ fontSize:12, fontWeight:600, color:T.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const, maxWidth:160 }}>{v}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10, flexShrink:0 }}>{(ps as any[]).length} →</span>
+                </div>
+                <div style={{ fontSize:11, color:T.textMuted }}>₹{((ps as any[]).reduce((a:number,p:any)=>a+p.poValue,0)/100000).toFixed(1)}L total PO</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Project Status Table */}
+      <div style={{ ...card, marginBottom:20 }}>
+        <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>📊 Project Status</div>
+        <ProjectStatusTable projects={projects} />
+      </div>
+
+      {/* STN/SRN Summary */}
+      <div style={{ ...card, marginBottom:20, marginTop:8 }}>
+        <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>📦 STN / SRN Summary</div>
+        <STNSRNSummary />
+      </div>
+    </div>
+  );
+}
+
 function RegionManagerDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
   const router = useRouter();
   const [globalView, setGlobalView] = useState(false);
