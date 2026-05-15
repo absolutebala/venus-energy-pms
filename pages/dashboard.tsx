@@ -100,6 +100,192 @@ const TableHead = () => (
 );
 
 // ── 1. SUPER ADMIN DASHBOARD ─────────────────────────────────────
+
+// ── Project Status Table ──────────────────────────────────────────────────────
+const DOC_COLS = [
+  { key:'safety_photos',    label:'Safety Photos'    },
+  { key:'site_photos',      label:'Site Photos'      },
+  { key:'jmr_document',    label:'JMR Document'     },
+  { key:'ac_certificate',  label:'AC Certificate'   },
+  { key:'noc_document',    label:'NOC Document'     },
+  { key:'drawing_document',label:'Drawing Document' },
+  { key:'ptw_document',    label:'PTW Document'     },
+];
+
+const MOCK_DOC_STATUS: Record<string, Record<string, boolean>> = {
+  'VE-2025-001': { safety_photos:true,  site_photos:true,  jmr_document:false, ac_certificate:true,  noc_document:false, drawing_document:true,  ptw_document:true  },
+  'VE-2025-002': { safety_photos:true,  site_photos:true,  jmr_document:true,  ac_certificate:true,  noc_document:true,  drawing_document:true,  ptw_document:false },
+  'VE-2025-003': { safety_photos:true,  site_photos:false, jmr_document:false, ac_certificate:true,  noc_document:false, drawing_document:false, ptw_document:false },
+  'VE-2025-004': { safety_photos:false, site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
+  'VE-2025-005': { safety_photos:true,  site_photos:true,  jmr_document:true,  ac_certificate:true,  noc_document:true,  drawing_document:true,  ptw_document:true  },
+  'VE-2025-006': { safety_photos:false, site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
+  'VE-2025-007': { safety_photos:true,  site_photos:true,  jmr_document:false, ac_certificate:true,  noc_document:true,  drawing_document:false, ptw_document:false },
+  'VE-2025-008': { safety_photos:true,  site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
+  'VE-2025-009': { safety_photos:false, site_photos:false, jmr_document:false, ac_certificate:false, noc_document:false, drawing_document:false, ptw_document:false },
+  'VE-2025-010': { safety_photos:true,  site_photos:true,  jmr_document:true,  ac_certificate:true,  noc_document:true,  drawing_document:true,  ptw_document:true  },
+};
+
+const MOCK_STN_RETURN: Record<string, boolean> = {
+  'VE-2025-001':false,'VE-2025-002':true,'VE-2025-003':false,'VE-2025-004':false,
+  'VE-2025-005':true, 'VE-2025-006':false,'VE-2025-007':false,'VE-2025-008':false,
+  'VE-2025-009':false,'VE-2025-010':true,
+};
+
+const MOCK_UPDATED: Record<string,{date:string;by:string}> = {
+  'VE-2025-001':{date:'15-05-2025',by:'Arun Kumar'},   'VE-2025-002':{date:'14-05-2025',by:'Priya Sharma'},
+  'VE-2025-003':{date:'13-05-2025',by:'Arun Kumar'},   'VE-2025-004':{date:'12-05-2025',by:'Ramesh Kumar'},
+  'VE-2025-005':{date:'11-05-2025',by:'Arun Kumar'},   'VE-2025-006':{date:'10-05-2025',by:'Priya Sharma'},
+  'VE-2025-007':{date:'09-05-2025',by:'Arun Kumar'},   'VE-2025-008':{date:'08-05-2025',by:'Ramesh Kumar'},
+  'VE-2025-009':{date:'07-05-2025',by:'Priya Sharma'}, 'VE-2025-010':{date:'06-05-2025',by:'Arun Kumar'},
+};
+
+const WORK_STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
+  in_progress:    { label:'In Progress',    color:'#D97706', bg:'#FFFBEB' },
+  completed:      { label:'Completed',      color:'#0D9488', bg:'#F0FDFA' },
+  delayed:        { label:'Delayed',        color:'#DC2626', bg:'#FEF2F2' },
+  not_started:    { label:'Not Started',    color:'#6B7280', bg:'#F9FAFB' },
+  billing_review: { label:'Billing Review', color:'#7C3AED', bg:'#F5F3FF' },
+  pm_approved:    { label:'PM Approved',    color:'#0D9488', bg:'#F0FDFA' },
+  submitted:      { label:'Submitted',      color:'#2563EB', bg:'#EFF6FF' },
+  under_review:   { label:'Under Review',   color:'#2563EB', bg:'#EFF6FF' },
+  on_hold:        { label:'On Hold',        color:'#6B7280', bg:'#F9FAFB' },
+};
+
+const PO_STATUS_MAP: Record<string,string> = {
+  in_progress:'Partially Done', completed:'Done', delayed:'Partially Done',
+  not_started:'Not Started', billing_review:'Done', pm_approved:'Done',
+  submitted:'Partially Done', under_review:'Partially Done', on_hold:'Partially Done',
+};
+
+function StatusBadge({ done }: { done: boolean }) {
+  return (
+    <span style={{
+      fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const,
+      color: done ? '#0D9488' : '#D97706',
+      background: done ? '#F0FDFA' : '#FFFBEB',
+      border: `1px solid ${done ? '#99F6E4' : '#FDE68A'}`,
+    }}>
+      {done ? '✓ Done' : '⏳ Pending'}
+    </span>
+  );
+}
+
+function ProjectStatusTable({ projects }: { projects: any[] }) {
+  const [page, setPage] = React.useState(1);
+  const [search, setSearch] = React.useState('');
+  const PER_PAGE = 8;
+
+  const filtered = projects.filter(p =>
+    p.id.toLowerCase().includes(search.toLowerCase()) ||
+    p.site.toLowerCase().includes(search.toLowerCase()) ||
+    p.pm.toLowerCase().includes(search.toLowerCase())
+  );
+  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  const paged = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
+
+  const thStyle: React.CSSProperties = {
+    padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase',
+    color:'#0D9488', textAlign:'left' as const, borderBottom:'2px solid #99F6E4',
+    whiteSpace:'nowrap' as const, background:'#F0FDFA',
+  };
+  const tdStyle: React.CSSProperties = {
+    padding:'10px 12px', fontSize:12, borderBottom:'1px solid #E5E7EB', verticalAlign:'middle' as const,
+  };
+
+  return (
+    <div>
+      {/* Search */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+        <div style={{ fontSize:13, color:'#6B7280' }}>
+          Showing <strong>{Math.min((page-1)*PER_PAGE+1, filtered.length)}–{Math.min(page*PER_PAGE, filtered.length)}</strong> of <strong>{filtered.length}</strong> projects
+        </div>
+        <input
+          value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }}
+          placeholder="Search project, site, PM…"
+          style={{ border:'1px solid #E5E7EB', borderRadius:8, padding:'6px 14px', fontSize:13, outline:'none', width:220, color:'#111827' }}
+        />
+      </div>
+
+      {/* Table */}
+      <div style={{ overflowX:'auto' as const, borderRadius:10, border:'1px solid #E5E7EB' }}>
+        <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:1200 }}>
+          <thead>
+            <tr>
+              <th style={{ ...thStyle, width:36 }}>#</th>
+              <th style={thStyle}>Project No</th>
+              <th style={thStyle}>Site / Project</th>
+              <th style={thStyle}>Work Status</th>
+              <th style={thStyle}>PO Status</th>
+              {DOC_COLS.map(d => <th key={d.key} style={thStyle}>{d.label}</th>)}
+              <th style={thStyle}>STN Return</th>
+              <th style={thStyle}>Last Updated</th>
+              <th style={thStyle}>Updated By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paged.map((p, idx) => {
+              const wsCfg = WORK_STATUS_CFG[p.status] || WORK_STATUS_CFG.not_started;
+              const docs  = MOCK_DOC_STATUS[p.id] || {};
+              const upd   = MOCK_UPDATED[p.id] || { date:'—', by:'—' };
+              return (
+                <tr key={p.id} style={{ background: idx%2===0 ? '#fff' : '#FAFAFA' }}
+                  onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background='#F0FDFA'}
+                  onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=idx%2===0?'#fff':'#FAFAFA'}>
+                  <td style={{ ...tdStyle, color:'#9CA3AF', fontWeight:600 }}>{(page-1)*PER_PAGE+idx+1}</td>
+                  <td style={{ ...tdStyle }}>
+                    <a href={`/projects/${p.id}`} style={{ color:'#0D9488', fontWeight:700, textDecoration:'none', fontSize:13 }}>{p.id}</a>
+                  </td>
+                  <td style={{ ...tdStyle }}>
+                    <div style={{ fontWeight:600, color:'#111827', fontSize:13 }}>{p.site}</div>
+                    <div style={{ fontSize:11, color:'#9CA3AF' }}>{p.pm}</div>
+                  </td>
+                  <td style={{ ...tdStyle }}>
+                    <span style={{ fontSize:11, fontWeight:700, color:wsCfg.color, background:wsCfg.bg, padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const, border:`1px solid ${wsCfg.color}30` }}>
+                      {wsCfg.label}
+                    </span>
+                  </td>
+                  <td style={{ ...tdStyle, color:'#6B7280', fontSize:12 }}>{PO_STATUS_MAP[p.status]||'—'}</td>
+                  {DOC_COLS.map(d => (
+                    <td key={d.key} style={{ ...tdStyle }}>
+                      <StatusBadge done={!!docs[d.key]} />
+                    </td>
+                  ))}
+                  <td style={{ ...tdStyle }}>
+                    <StatusBadge done={!!MOCK_STN_RETURN[p.id]} />
+                  </td>
+                  <td style={{ ...tdStyle, color:'#6B7280', whiteSpace:'nowrap' as const }}>{upd.date}</td>
+                  <td style={{ ...tdStyle, color:'#374151', fontWeight:500 }}>{upd.by}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display:'flex', justifyContent:'flex-end', alignItems:'center', gap:6, marginTop:14 }}>
+          <button onClick={()=>setPage(1)} disabled={page===1} style={{ ...pgBtn, opacity:page===1?0.4:1 }}>⟪</button>
+          <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{ ...pgBtn, opacity:page===1?0.4:1 }}>‹</button>
+          {Array.from({length:totalPages},(_,i)=>i+1).filter(n=>Math.abs(n-page)<=2).map(n=>(
+            <button key={n} onClick={()=>setPage(n)}
+              style={{ ...pgBtn, background:n===page?'#0D9488':'#fff', color:n===page?'#fff':'#374151', border:`1px solid ${n===page?'#0D9488':'#E5E7EB'}`, fontWeight:n===page?700:400 }}>
+              {n}
+            </button>
+          ))}
+          <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} style={{ ...pgBtn, opacity:page===totalPages?0.4:1 }}>›</button>
+          <button onClick={()=>setPage(totalPages)} disabled={page===totalPages} style={{ ...pgBtn, opacity:page===totalPages?0.4:1 }}>⟫</button>
+        </div>
+      )}
+    </div>
+  );
+}
+const pgBtn: React.CSSProperties = {
+  width:32, height:32, borderRadius:6, border:'1px solid #E5E7EB', background:'#fff',
+  cursor:'pointer', fontSize:13, color:'#374151', display:'flex', alignItems:'center',
+  justifyContent:'center', fontWeight:500,
+};
+
 function SuperAdminDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
   const router = useRouter();
   const pmGroups     = projects.filter(p=>p.pm).reduce((acc:any,p)=>{ if(!acc[p.pm!])acc[p.pm!]=[]; acc[p.pm!].push(p); return acc; },{});
@@ -206,6 +392,15 @@ function SuperAdminDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
           </div>
         </div>
       )}
+
+
+      {/* Project Status Table */}
+      <div style={card}>
+        <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14, display:'flex', alignItems:'center', gap:8 }}>
+          📊 Project Status
+        </div>
+        <ProjectStatusTable projects={projects} />
+      </div>
 
       <div style={{ ...card, marginBottom:20 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
