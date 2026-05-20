@@ -43,6 +43,7 @@ export interface MaterialItem {
   returnQty: number;
   srnQty: number;
   stnQty?: number;
+  pmRemarks?: string;
 }
 
 export const STATUS_BADGE_COLOR: Record<string,{color:string;bg:string;label:string}> = {
