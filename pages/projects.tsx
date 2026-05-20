@@ -32,12 +32,7 @@ const DOC_COLS_P = [
   { key:'drawing_document',label:'Drawing'     },
   { key:'ptw_document',    label:'PTW'         },
 ];
-const PROJ_DOC_STATUS = PROJ_DOC_STATUS_DATA;const PROJ_DELIVERY: Record<string,string> = {
-  'VE-2025-001':'2025-07-30','VE-2025-002':'2025-08-31','VE-2025-003':'2025-09-15',
-  'VE-2025-004':'2025-10-31','VE-2025-005':'2025-03-31','VE-2025-006':'2025-09-30',
-  'VE-2025-007':'2025-08-15','VE-2025-008':'2025-11-30','VE-2025-009':'2025-12-31',
-  'VE-2025-010':'2025-04-30',
-};
+const PROJ_DOC_STATUS = PROJ_DOC_STATUS_DATA;const PROJ_DELIVERY = Object.fromEntries((SEED_PROJECTS as any[]).map(p=>[p.id, p.endDate]));
 // PROJ_START now derived from seedData
 const PROJ_START_OLD: Record<string,string> = {
   'VE-2025-001':'2025-01-15','VE-2025-002':'2025-02-01','VE-2025-003':'2025-02-10',
