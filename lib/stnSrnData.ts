@@ -44,6 +44,8 @@ export interface MaterialItem {
   srnQty: number;
   stnQty?: number;
   pmRemarks?: string;
+  utilisedRemarks?: string;
+  [key: string]: any;
 }
 
 export const STATUS_BADGE_COLOR: Record<string,{color:string;bg:string;label:string}> = {
