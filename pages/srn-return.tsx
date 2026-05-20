@@ -46,7 +46,7 @@ export default function STNSRNPage() {
   const ongoingProjects   = filtered.filter(p => !['completed','billing_review'].includes(p.status));
   const completedProjects = filtered.filter(p => ['completed','billing_review'].includes(p.status));
   const overdueCount      = filtered.filter(p => p.isOverdue).length;
-  const pendingReturnCount= filtered.reduce((a,p) => a + p.materials.filter((m:any)=>m.returnQty>0).length, 0);
+  const pendingReturnCount= filtered.reduce((a,p) => a + p.materials.filter((m:any)=>(m.returnQty??0)>0).length, 0);
 
   const totalSTN = filtered.reduce((a,p) => a + p.materials.reduce((b:number,m:any)=>b+(m.stnQty??m.srnQty??0),0), 0);
   const totalSRN = filtered.reduce((a,p) => a + p.materials.reduce((b:number,m:any)=>b+(m.srnQty??0),0), 0);
@@ -73,10 +73,10 @@ export default function STNSRNPage() {
               <td style={{ padding:'9px 10px', color:T.primary, fontWeight:600 }}>{m.code}</td>
               <td style={{ padding:'9px 10px', color:T.text }}>{m.description}</td>
               <td style={{ padding:'9px 10px', color:T.textMuted }}>{m.uom}</td>
-              <td style={{ padding:'9px 10px', fontWeight:600, color:T.text, textAlign:'right' }}>{m.stnQty.toLocaleString()}</td>
-              <td style={{ padding:'9px 10px', fontWeight:600, color:T.success, textAlign:'right' }}>{m.srnQty.toLocaleString()}</td>
-              <td style={{ padding:'9px 10px', fontWeight:700, color:m.returnQty>0?T.danger:T.success, textAlign:'right' }}>
-                {m.returnQty.toLocaleString()}
+              <td style={{ padding:'9px 10px', fontWeight:600, color:T.text, textAlign:'right' }}>{(m.stnQty??m.srnQty??0).toLocaleString()}</td>
+              <td style={{ padding:'9px 10px', fontWeight:600, color:T.success, textAlign:'right' }}>{(m.srnQty??0).toLocaleString()}</td>
+              <td style={{ padding:'9px 10px', fontWeight:700, color:(m.returnQty??0)>0?T.danger:T.success, textAlign:'right' }}>
+                {(m.returnQty??0).toLocaleString()}
                 {m.returnQty > 0 && <span style={{ fontSize:10, marginLeft:4 }}>⚠️</span>}
               </td>
               <td style={{ padding:'9px 10px' }}>
@@ -104,7 +104,7 @@ export default function STNSRNPage() {
 
   const ProjectRow = ({ project, showVendor = true }: { project: ProjectSTNSRN; showVendor?: boolean }) => {
     const isExpanded = expandedId === project.projectId;
-    const pendingItems = project.materials.filter(m=>m.returnQty>0).length;
+    const pendingItems = project.materials.filter(m=>(m.returnQty??0)>0).length;
     const allReturned  = project.materials.every(m=>m.returnQty===0);
 
     return (
