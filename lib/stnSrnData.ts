@@ -61,6 +61,14 @@ export interface ProjectSTNSRN {
   materials: MaterialItem[];
   isOverdue?: boolean;
   status?: string;
+  stnDate?: string;
+  srnDate?: string;
+  stnNo?: string;
+  srnNo?: string;
+  totalQty?: number;
+  returnedQty?: number;
+  pendingQty?: number;
+  [key: string]: any;
 }
 
 export const getVendorMaterials = (vendor: string) =>
