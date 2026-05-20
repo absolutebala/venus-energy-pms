@@ -12,7 +12,7 @@ export interface PaymentTransaction {
   vendor: string;
   amount: number;
   date: string;
-  bankTxnNo: string;
+  bankTxnNo?: string;
   notes?: string;
   txnNumber?: string;
   description?: string;
