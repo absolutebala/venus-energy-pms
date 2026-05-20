@@ -51,3 +51,27 @@ export const STATUS_BADGE_COLOR: Record<string,{color:string;bg:string}> = {
   pm_approved: { color:"#0D9488", bg:"#F0FDFA" },
   pm_rejected: { color:"#DC2626", bg:"#FEF2F2" },
 };
+
+export interface ProjectSTNSRN {
+  projectId: string;
+  poNo: string;
+  vendor: string;
+  pm: string;
+  materials: MaterialItem[];
+}
+
+export const getVendorMaterials = (vendor: string) =>
+  STN_SRN_DATA.filter(d => d.vendor === vendor);
+
+export const getPMMaterials = (pm: string) =>
+  STN_SRN_DATA.filter(d => d.pm === pm);
+
+export const getOverdueProjects = () =>
+  STN_SRN_DATA.filter(d =>
+    d.materials.some((m:any) => m.utilisedStatus === 'pending' || m.utilisedStatus === 'submitted')
+  );
+
+export const getPendingReturns = () =>
+  STN_SRN_DATA.filter(d =>
+    d.materials.some((m:any) => m.utilisedStatus === 'pm_approved' && m.returnQty === 0)
+  );
