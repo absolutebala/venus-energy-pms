@@ -45,11 +45,11 @@ export interface MaterialItem {
   stnQty?: number;
 }
 
-export const STATUS_BADGE_COLOR: Record<string,{color:string;bg:string}> = {
-  pending:     { color:"#6B7280", bg:"#F9FAFB" },
-  submitted:   { color:"#2563EB", bg:"#EFF6FF" },
-  pm_approved: { color:"#0D9488", bg:"#F0FDFA" },
-  pm_rejected: { color:"#DC2626", bg:"#FEF2F2" },
+export const STATUS_BADGE_COLOR: Record<string,{color:string;bg:string;label:string}> = {
+  pending:     { color:"#6B7280", bg:"#F9FAFB", label:'Pending'     },
+  submitted:   { color:"#2563EB", bg:"#EFF6FF", label:'Submitted'   },
+  pm_approved: { color:"#0D9488", bg:"#F0FDFA", label:'Approved'    },
+  pm_rejected: { color:"#DC2626", bg:"#FEF2F2", label:'Rejected'    },
 };
 
 export interface ProjectSTNSRN {
