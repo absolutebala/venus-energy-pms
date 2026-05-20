@@ -1,273 +1,198 @@
 import React, { useState } from 'react';
-import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { T as Th, card, badge, inputStyle } from '@/lib/theme';
-import { STN_SRN_DATA, getVendorMaterials, getPMMaterials, getOverdueProjects, getPendingReturns, ProjectSTNSRN } from '@/lib/stnSrnData';
+import { STN_SRN_DATA, ProjectSTNSRN } from '@/lib/stnSrnData';
 
-const STATUS_LABEL: Record<string,string> = {
-  in_progress:'In Progress', delayed:'Delayed', completed:'Completed',
-  billing_review:'Billing Review', pending:'Pending', submitted:'Submitted',
+// Inline theme to avoid import conflict
+import { T as Theme, card } from '@/lib/theme';
+
+const fmt = (n: number) => Number(n).toLocaleString('en-IN');
+const getBalance = (m: any) => Math.max(0, (m.issuedQty??0) - (m.pmApprovedQty??m.utilisedQty??0));
+const getReturnStatus = (m: any) => {
+  const bal = getBalance(m);
+  if (bal === 0) return { label:'Not Applicable', color:'#9CA3AF', bg:'#F9FAFB' };
+  const ret = m.returnQty??0;
+  if (ret >= bal)   return { label:'Fully Returned',    color:'#0D9488', bg:'#F0FDFA' };
+  if (ret > 0)      return { label:'Partially Returned', color:'#D97706', bg:'#FFFBEB' };
+  return               { label:'Pending Return',      color:'#DC2626', bg:'#FEF2F2' };
 };
 
-const RETURN_COLOR: Record<string,string> = {
-  balance===0 ? 'Not Applicable' : 'Fully Returned':     Th.success,
-  'Partially Returned': '#D97706',
-  'Pending Return':     '#DC2626',
-  'Not Required':       Th.textDim,
-};
-
-export default function STNSRNPage() {
+export default function SRNReturnPage() {
   const { profile, can, loading } = useAuth();
-  const router = useRouter();
   const role = profile?.role || 'viewer';
+  const [tab,        setTab]        = useState<'ongoing'|'completed'>('ongoing');
+  const [search,     setSearch]     = useState('');
+  const [expandedId, setExpandedId] = useState<string|null>(null);
 
-  const [search,      setSearch]      = useState('');
-  const [focused,     setFocused]     = useState(false);
-  const [expandedId,  setExpandedId]  = useState<string|null>(null);
-  const [activeTab,   setActiveTab]   = useState<'ongoing'|'completed'>('ongoing');
+  const showVendor = ['super_admin','region_manager','project_manager'].includes(role);
 
-  // Role-scoped data
-  const scopedData = (() => {
-    if (role === 'vendor') return getVendorMaterials('ABC Telecom Services'); // mock vendor
-    if (role === 'project_manager') return getPMMaterials(profile?.full_name || 'Arun Kumar');
-    if (role === 'site_engineer') return STN_SRN_DATA.filter(p => p.region === 'Tamil Nadu');
-    return STN_SRN_DATA; // SA, RM, Accounting, Viewer see all
-  })();
-
-  const filtered = scopedData.filter(p =>
-    !search ||
-    p.projectId.toLowerCase().includes(search.toLowerCase()) ||
-    p.projectName.toLowerCase().includes(search.toLowerCase()) ||
-    p.poNo.toLowerCase().includes(search.toLowerCase()) ||
-    p.vendor.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const ongoingProjects   = filtered.filter(p => !['completed','billing_review'].includes(p.status));
-  const completedProjects = filtered.filter(p => ['completed','billing_review'].includes(p.status));
-  const overdueCount      = filtered.filter(p => p.isOverdue).length;
-  const pendingReturnCount= filtered.reduce((a,p) => a + p.materials.filter((m:any)=>(m.returnQty??0)>0).length, 0);
-
-  const totalSTN = filtered.reduce((a,p) => a + p.materials.reduce((b:number,m:any)=>b+(m.stnQty??m.srnQty??0),0), 0);
-  const totalSRN = filtered.reduce((a,p) => a + p.materials.reduce((b:number,m:any)=>b+(m.srnQty??0),0), 0);
-
-  const SectionTitle = ({ label }: { label:string }) => (
-    <div style={{ fontSize:14, fontWeight:700, color:Th.primary, marginBottom:16, paddingBottom:8, borderBottom:`2px solid ${Th.primaryMid}`, display:'flex', alignItems:'center', gap:8 }}>
-      {label}
-    </div>
-  );
-
-  const MaterialTable = ({ project }: { project: ProjectSTNSRN }) => (
-    <div style={{ marginTop:12, overflowX:'auto' }}>
-      <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
-        <thead>
-          <tr style={{ background:Th.bg }}>
-            {['Item Code','Description','UOM','STN Qty (Issued)','SRN Qty (Returned)','Balance (Pending)','Return Status'].map(h=>(
-              <th key={h} style={{ padding:'8px 10px', fontWeight:700, textTransform:'uppercase', fontSize:10, color:Th.textMuted, textAlign:'left', borderBottom:`2px solid ${Th.border}`, whiteSpace:'nowrap' }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {project.materials.map((m,i) => (
-            <tr key={i} style={{ borderBottom:`1px solid ${Th.border}` }}>
-              <td style={{ padding:'9px 10px', color:Th.primary, fontWeight:600 }}>{m.code}</td>
-              <td style={{ padding:'9px 10px', color:Th.text }}>{m.description}</td>
-              <td style={{ padding:'9px 10px', color:Th.textMuted }}>{m.uom}</td>
-              <td style={{ padding:'9px 10px', fontWeight:600, color:Th.text, textAlign:'right' }}>{(m.issuedQty??0).toLocaleString()}</td>
-              <td style={{ padding:'9px 10px', fontWeight:600, color:Th.success, textAlign:'right' }}>{Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0)).toLocaleString()}</td>
-              <td style={{ padding:'9px 10px', fontWeight:700, color:(m.returnQty??0)>0?Th.danger:Th.success, textAlign:'right' }}>
-                {Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0)).toLocaleString()}
-                {m.returnQty > 0 && <span style={{ fontSize:10, marginLeft:4 }}>⚠️</span>}
-              </td>
-              <td style={{ padding:'9px 10px' }}>
-                <span style={{ fontSize:11, fontWeight:600,
-                  color:m.returnQty===0?'#16A34A':m.utilisedStatus==='pm_approved'?'#D97706':'#DC2626',
-                  background:m.returnQty===0?'#F0FDF4':m.utilisedStatus==='pm_approved'?'#FFFBEB':'#FEF2F2',
-                  padding:'3px 10px', borderRadius:20 }}>
-                  {m.returnQty===0?balance===0 ? 'Not Applicable' : 'Fully Returned':m.utilisedStatus==='pm_approved'?'Partially Returned':'Pending Return'}
-                </span>
-              </td>
-            </tr>
-          ))}
-          {/* Totals row */}
-          <tr style={{ background:Th.bg, borderTop:`2px solid ${Th.border}` }}>
-            <td colSpan={3} style={{ padding:'9px 10px', fontWeight:700, color:Th.text }}>Total</td>
-            <td style={{ padding:'9px 10px', fontWeight:700, color:Th.text, textAlign:'right' }}>{project.materials.reduce((a:number,m:any)=>a+(m.issuedQty??0),0).toLocaleString()}</td>
-            <td style={{ padding:'9px 10px', fontWeight:700, color:Th.success, textAlign:'right' }}>{project.materials.reduce((a:number,m:any)=>a+Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0)),0).toLocaleString()}</td>
-            <td style={{ padding:'9px 10px', fontWeight:700, color:Th.danger, textAlign:'right' }}>{project.materials.reduce((a:number,m:any)=>a+Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0)),0).toLocaleString()}</td>
-            <td></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  );
-
-  const ProjectRow = ({ project, showVendor = true }: { project: ProjectSTNSRN; showVendor?: boolean }) => {
-    const isExpanded = expandedId === project.projectId;
-    const pendingItems = project.materials.filter(m=>(m.returnQty??0)>0).length;
-    const allReturned  = project.materials.every(m=>m.returnQty===0);
-
-    return (
-      <div style={{ border:`1.5px solid ${project.isOverdue?Th.danger:allReturned?Th.success:Th.border}`, borderRadius:12, marginBottom:12, overflow:'hidden', transition:'all 0.15s' }}>
-        <div onClick={()=>setExpandedId(isExpanded?null:project.projectId)}
-          style={{ padding:'14px 18px', cursor:'pointer', background:isExpanded?Th.primaryLight:Th.surface, display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:10 }}>
-          <div>
-            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:4 }}>
-              <span style={{ fontSize:13, fontWeight:700, color:Th.primary }}>{project.projectId}</span>
-              <span style={{ fontSize:11, background:Th.primaryLight, color:Th.primary, padding:'1px 8px', borderRadius:10 }}>{project.poNo}</span>
-              {project.isOverdue && <span style={{ fontSize:11, fontWeight:700, color:'#fff', background:Th.danger, padding:'2px 8px', borderRadius:10 }}>⚠️ OVERDUE</span>}
-            </div>
-            <div style={{ fontSize:13, fontWeight:600, color:Th.text }}>{project.projectName}</div>
-            {showVendor && <div style={{ fontSize:12, color:Th.textMuted, marginTop:2 }}>Vendor: {project.vendor} · PM: {project.pm}</div>}
-          </div>
-          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-            <div style={{ textAlign:'center' }}>
-              <div style={{ fontSize:10, color:Th.textDim, marginBottom:2 }}>STN Date</div>
-              <div style={{ fontSize:12, fontWeight:600, color:Th.text }}>{project.stnDate}</div>
-            </div>
-            <div style={{ textAlign:'center' }}>
-              <div style={{ fontSize:10, color:Th.textDim, marginBottom:2 }}>SRN Date</div>
-              <div style={{ fontSize:12, fontWeight:600, color:project.srnDate?Th.success:Th.danger }}>{project.srnDate || 'Pending'}</div>
-            </div>
-            <div style={{ textAlign:'center' }}>
-              <div style={{ fontSize:10, color:Th.textDim, marginBottom:2 }}>Pending Items</div>
-              <div style={{ fontSize:16, fontWeight:700, color:pendingItems>0?Th.danger:Th.success }}>{pendingItems}</div>
-            </div>
-            <div style={{ textAlign:'center' }}>
-              <div style={{ fontSize:10, color:Th.textDim, marginBottom:2 }}>Status</div>
-              <span style={{ fontSize:11, fontWeight:700, color:allReturned?Th.success:pendingItems>0?Th.danger:'#D97706', background:allReturned?Th.successBg:pendingItems>0?'#FEF2F2':'#FFFBEB', padding:'3px 10px', borderRadius:20 }}>
-                {allReturned ? '✅ All Returned' : pendingItems > 0 ? `${pendingItems} Pending` : 'Partial'}
-              </span>
-            </div>
-            <div style={{ fontSize:18, color:Th.textDim }}>{isExpanded?'▲':'▼'}</div>
-          </div>
-        </div>
-
-        {isExpanded && (
-          <div style={{ padding:'0 18px 18px', background:Th.surface }}>
-            <MaterialTable project={project} />
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const tabStyle = (t: string) => ({
-    padding:'8px 20px', borderRadius:8, border:'none', cursor:'pointer', fontSize:13,
-    fontWeight:activeTab===t?700:400,
-    background:activeTab===t?Th.primary:'transparent',
-    color:activeTab===t?'#fff':Th.textMuted,
+  const filtered = STN_SRN_DATA.filter((p: any) => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return p.projectId?.toLowerCase().includes(s) ||
+           p.projectName?.toLowerCase().includes(s) ||
+           p.poNo?.toLowerCase().includes(s) ||
+           p.vendor?.toLowerCase().includes(s);
   });
+
+  const thStyle: React.CSSProperties = {
+    padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase',
+    color:Theme.primary, background:Theme.primaryLight, textAlign:'left' as const,
+    borderBottom:`2px solid ${Theme.primaryMid}`, whiteSpace:'nowrap' as const,
+  };
+  const tdStyle: React.CSSProperties = {
+    padding:'10px 12px', fontSize:13, borderBottom:`1px solid ${Theme.border}`, verticalAlign:'middle' as const,
+  };
 
   return (
     <Layout>
       <div className="fade-in">
-        {/* Summary cards */}
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+          <div>
+            <div style={{ fontSize:22, fontWeight:800, color:Theme.text }}>STN / SRN Status</div>
+            <div style={{ fontSize:13, color:Theme.textMuted, marginTop:2 }}>Material utilisation and return tracking</div>
+          </div>
+          <input value={search} onChange={e=>setSearch(e.target.value)}
+            placeholder="Search project, vendor, PO…"
+            style={{ border:`1px solid ${Theme.border}`, borderRadius:8, padding:'8px 14px', fontSize:13, outline:'none', width:260 }} />
+        </div>
+
+        {/* Summary */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
           {[
-            { label:'Total Projects Tracked', value:scopedData.length,     color:Th.primary, icon:'📦' },
-            { label:'Overdue Returns',         value:overdueCount,          color:Th.danger,  icon:'⚠️' },
-            { label:'Items Pending Return',    value:pendingReturnCount,    color:Th.warning, icon:'⏳' },
-            { label:'Total STN vs SRN',        value:`${totalSTN} / ${totalSRN}`, color:Th.info, icon:'🔄' },
-          ].map((s,i)=>(
-            <div key={i} style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px' }}>
-              <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:s.color }} />
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <div>
-                  <div style={{ fontSize:10, color:Th.textMuted, textTransform:'uppercase', letterSpacing:0.4, marginBottom:4 }}>{s.label}</div>
-                  <div style={{ fontSize:22, fontWeight:700, color:s.color }}>{s.value}</div>
-                </div>
-                <div style={{ fontSize:22 }}>{s.icon}</div>
-              </div>
+            { label:'Total Projects', value:STN_SRN_DATA.length,  color:Theme.primary },
+            { label:'Total Items',    value:STN_SRN_DATA.reduce((a:number,p:any)=>a+p.materials.length,0), color:Theme.info },
+            { label:'Items Approved', value:STN_SRN_DATA.reduce((a:number,p:any)=>a+p.materials.filter((m:any)=>m.utilisedStatus==='pm_approved').length,0), color:Theme.success },
+            { label:'Pending Return', value:STN_SRN_DATA.reduce((a:number,p:any)=>a+p.materials.filter((m:any)=>getBalance(m)>0&&(m.returnQty??0)<getBalance(m)).length,0), color:Theme.danger },
+          ].map(s=>(
+            <div key={s.label} style={{ ...card, padding:'14px 16px' }}>
+              <div style={{ fontSize:11, color:Theme.textMuted, fontWeight:600, textTransform:'uppercase', marginBottom:4 }}>{s.label}</div>
+              <div style={{ fontSize:22, fontWeight:800, color:s.color }}>{s.value}</div>
             </div>
           ))}
         </div>
 
-        {/* Overdue alert banner */}
-        {overdueCount > 0 && (
-          <div style={{ background:'#FEF2F2', border:'1px solid #FECACA', borderLeft:`4px solid ${Th.danger}`, borderRadius:8, padding:'12px 16px', marginBottom:20, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <div>
-              <div style={{ fontSize:13, fontWeight:700, color:Th.danger, marginBottom:2 }}>⚠️ {overdueCount} Project(s) with Overdue Material Returns</div>
-              <div style={{ fontSize:12, color:Th.textMuted }}>Materials from Indus have not been returned. This may affect vendor payment clearance.</div>
-            </div>
-            <span style={{ background:Th.danger, color:'#fff', borderRadius:20, padding:'4px 14px', fontSize:13, fontWeight:700, flexShrink:0, marginLeft:12 }}>{overdueCount} Overdue</span>
-          </div>
-        )}
-
-        {/* Search + Tabs */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16, flexWrap:'wrap', gap:10 }}>
-          <div style={{ display:'flex', gap:4, background:Th.bg, padding:4, borderRadius:10 }}>
-            <button onClick={()=>setActiveTab('ongoing')}   style={tabStyle('ongoing')}>Ongoing Projects ({ongoingProjects.length})</button>
-            <button onClick={()=>setActiveTab('completed')} style={tabStyle('completed')}>Completed Projects ({completedProjects.length})</button>
-          </div>
-          <input value={search} onChange={e=>setSearch(e.target.value)} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
-            placeholder="Search project, PO number, vendor…" style={{ ...inputStyle(focused), width:280 }} />
+        {/* Info banner */}
+        <div style={{ background:'#F0FDFA', border:`1px solid #99F6E4`, borderRadius:10, padding:'10px 16px', marginBottom:16, fontSize:12, color:Theme.primary }}>
+          📦 Materials issued from Indus via STN — vendor submits utilisation → PM approves → excess returned via SRN
         </div>
 
-        {activeTab === 'ongoing' && (
-          <div>
-            <div style={{ fontSize:13, color:Th.textMuted, marginBottom:14 }}>
-              📦 Materials currently held by vendors — issued from Indus via STN, pending SRN return.
-            </div>
-            {ongoingProjects.length === 0
-              ? <div style={{ ...card, textAlign:'center', padding:60, color:Th.textDim }}>No ongoing projects with material tracking.</div>
-              : ongoingProjects.map(p => <ProjectRow key={p.projectId} project={p} showVendor={role !== 'vendor'} />)
-            }
-          </div>
+        {/* Project cards */}
+        {filtered.length === 0 && (
+          <div style={{ ...card, textAlign:'center', padding:40, color:Theme.textDim }}>No STN/SRN records found</div>
         )}
+        {filtered.map((project: any) => {
+          const isExpanded   = expandedId === project.projectId;
+          const materials    = project.materials || [];
+          const totalIssued  = materials.reduce((a:number,m:any)=>a+(m.issuedQty??0),0);
+          const totalReturn  = materials.reduce((a:number,m:any)=>a+(m.returnQty??0),0);
+          const totalBalance = materials.reduce((a:number,m:any)=>a+getBalance(m),0);
+          const allDone      = materials.every((m:any)=>getBalance(m)===0||(m.returnQty??0)>=getBalance(m));
 
-        {activeTab === 'completed' && (
-          <div>
-            <div style={{ fontSize:13, color:Th.textMuted, marginBottom:14 }}>
-              ✅ Completed projects — full STN/SRN reconciliation. Verify all materials returned to Indus before releasing vendor payment.
-            </div>
-            {completedProjects.length === 0
-              ? <div style={{ ...card, textAlign:'center', padding:60, color:Th.textDim }}>No completed projects to show.</div>
-              : completedProjects.map(p => <ProjectRow key={p.projectId} project={p} showVendor={role !== 'vendor'} />)
-            }
-
-            {/* Reconciliation summary for accounting */}
-            {!loading && can('site_expenses', 'edit') && completedProjects.length > 0 && (
-              <div style={{ ...card, border:`1.5px solid #7C3AED`, marginTop:20 }}>
-                <div style={{ fontSize:14, fontWeight:700, color:'#7C3AED', marginBottom:14 }}>💳 Payment Clearance Summary</div>
-                <table style={{ width:'100%' }}>
-                  <thead>
-                    <tr>{['Project','Vendor','STN Total','SRN Returned','Balance','Materials Cleared','Payment Status'].map(h=>(
-                      <th key={h} style={{ padding:'8px 10px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:Th.textMuted, textAlign:'left', borderBottom:`2px solid ${Th.border}` }}>{h}</th>
-                    ))}</tr>
-                  </thead>
-                  <tbody>
-                    {completedProjects.map((p,i)=>{
-                      const stn = p.materials.reduce((a:number,m:any)=>a+(m.issuedQty??0),0);
-                      const srn = p.materials.reduce((a:number,m:any)=>a+Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0)),0);
-                      const bal = p.materials.reduce((a:number,m:any)=>a+Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0)),0);
-                      const cleared = bal === 0;
-                      return (
-                        <tr key={i} style={{ borderBottom:`1px solid ${Th.border}` }}>
-                          <td style={{ padding:'9px 10px', color:Th.primary, fontWeight:700, fontSize:12 }}>{p.projectId}</td>
-                          <td style={{ padding:'9px 10px', fontSize:12 }}>{p.vendor}</td>
-                          <td style={{ padding:'9px 10px', textAlign:'right', fontWeight:600 }}>{stn}</td>
-                          <td style={{ padding:'9px 10px', textAlign:'right', fontWeight:600, color:Th.success }}>{srn}</td>
-                          <td style={{ padding:'9px 10px', textAlign:'right', fontWeight:700, color:bal>0?Th.danger:Th.success }}>{bal}</td>
-                          <td style={{ padding:'9px 10px' }}>
-                            <span style={{ fontSize:11, fontWeight:700, color:cleared?Th.success:Th.danger, background:cleared?Th.successBg:'#FEF2F2', padding:'3px 10px', borderRadius:20 }}>
-                              {cleared ? '✅ Cleared' : '⚠️ Pending'}
-                            </span>
-                          </td>
-                          <td style={{ padding:'9px 10px' }}>
-                            <span style={{ fontSize:11, fontWeight:700, color:cleared?Th.success:Th.danger, background:cleared?Th.successBg:'#FEF2F2', padding:'3px 10px', borderRadius:20 }}>
-                              {cleared ? '✅ Release OK' : '🚫 Hold Payment'}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+          return (
+            <div key={project.projectId} style={{ ...card, marginBottom:12, padding:0, overflow:'hidden' }}>
+              {/* Header */}
+              <div onClick={()=>setExpandedId(isExpanded?null:project.projectId)}
+                style={{ padding:'14px 18px', cursor:'pointer', background:isExpanded?Theme.primaryLight:Theme.surface, borderBottom:isExpanded?`1px solid ${Theme.border}`:'none' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <div>
+                    <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:4 }}>
+                      <Link href={`/projects/${project.projectId}`} onClick={e=>e.stopPropagation()}
+                        style={{ fontWeight:700, color:Theme.primary, fontSize:14, textDecoration:'none' }}>
+                        {project.projectId}
+                      </Link>
+                      <span style={{ fontSize:12, color:Theme.textMuted }}>{project.poNo}</span>
+                    </div>
+                    <div style={{ fontSize:14, fontWeight:600, color:Theme.text }}>{project.projectName||project.projectId}</div>
+                    {showVendor && <div style={{ fontSize:12, color:Theme.textMuted, marginTop:2 }}>Vendor: {project.vendor} · PM: {project.pm}</div>}
+                  </div>
+                  <div style={{ display:'flex', gap:16, alignItems:'center' }}>
+                    <div style={{ textAlign:'center' }}>
+                      <div style={{ fontSize:10, color:Theme.textMuted, marginBottom:2 }}>ISSUED</div>
+                      <div style={{ fontSize:16, fontWeight:700, color:Theme.text }}>{totalIssued}</div>
+                    </div>
+                    <div style={{ textAlign:'center' }}>
+                      <div style={{ fontSize:10, color:Theme.textMuted, marginBottom:2 }}>RETURNED</div>
+                      <div style={{ fontSize:16, fontWeight:700, color:Theme.success }}>{totalReturn}</div>
+                    </div>
+                    <div style={{ textAlign:'center' }}>
+                      <div style={{ fontSize:10, color:Theme.textMuted, marginBottom:2 }}>BALANCE</div>
+                      <div style={{ fontSize:16, fontWeight:700, color:totalBalance>0?Theme.danger:Theme.success }}>{totalBalance}</div>
+                    </div>
+                    <span style={{ fontSize:11, fontWeight:700, color:allDone?Theme.success:Theme.warning,
+                      background:allDone?Theme.successBg:Theme.warningBg, padding:'4px 12px', borderRadius:20 }}>
+                      {allDone ? '✅ All Done' : '⏳ Pending'}
+                    </span>
+                    <span style={{ color:Theme.textMuted, fontSize:16 }}>{isExpanded?'▲':'▼'}</span>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        )}
+
+              {/* Material table */}
+              {isExpanded && (
+                <div style={{ padding:'0 0 14px 0' }}>
+                  <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+                    <thead>
+                      <tr>
+                        <th style={thStyle}>Item Code</th>
+                        <th style={thStyle}>Description</th>
+                        <th style={thStyle}>UOM</th>
+                        <th style={{ ...thStyle, textAlign:'right' as const }}>STN Qty (Issued)</th>
+                        <th style={{ ...thStyle, textAlign:'right' as const }}>Utilised</th>
+                        <th style={{ ...thStyle, textAlign:'right' as const }}>Balance</th>
+                        <th style={{ ...thStyle, textAlign:'right' as const }}>Returned</th>
+                        <th style={thStyle}>Return Status</th>
+                        <th style={thStyle}>Approval</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {materials.map((m: any, idx: number) => {
+                        const bal   = getBalance(m);
+                        const rs    = getReturnStatus(m);
+                        const approved = m.utilisedStatus === 'pm_approved';
+                        return (
+                          <tr key={m.id} style={{ background:idx%2===0?'#fff':Theme.bg }}>
+                            <td style={{ ...tdStyle, fontWeight:700, color:Theme.primary }}>{m.code}</td>
+                            <td style={tdStyle}>{m.description}</td>
+                            <td style={{ ...tdStyle, color:Theme.textMuted }}>{m.uom}</td>
+                            <td style={{ ...tdStyle, textAlign:'right' as const, fontWeight:600 }}>{fmt(m.issuedQty??0)}</td>
+                            <td style={{ ...tdStyle, textAlign:'right' as const, color:Theme.info }}>{m.utilisedQty!==null&&m.utilisedQty!==undefined ? fmt(m.utilisedQty) : '—'}</td>
+                            <td style={{ ...tdStyle, textAlign:'right' as const, fontWeight:600, color:bal>0?Theme.danger:Theme.success }}>{fmt(bal)}</td>
+                            <td style={{ ...tdStyle, textAlign:'right' as const, color:Theme.textMuted }}>{fmt(m.returnQty??0)}</td>
+                            <td style={tdStyle}>
+                              <span style={{ fontSize:11, fontWeight:600, color:rs.color, background:rs.bg, padding:'2px 10px', borderRadius:20 }}>{rs.label}</span>
+                            </td>
+                            <td style={tdStyle}>
+                              <span style={{ fontSize:11, fontWeight:600,
+                                color: approved ? Theme.success : m.utilisedStatus==='pm_rejected' ? Theme.danger : Theme.warning,
+                                background: approved ? Theme.successBg : m.utilisedStatus==='pm_rejected' ? '#FEF2F2' : Theme.warningBg,
+                                padding:'2px 10px', borderRadius:20 }}>
+                                {approved ? '✅ Approved' : m.utilisedStatus==='pm_rejected' ? '❌ Rejected' : m.utilisedStatus==='submitted' ? '🔄 Submitted' : '⏳ Pending'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ background:Theme.primaryLight, fontWeight:700 }}>
+                        <td colSpan={3} style={{ ...tdStyle, color:Theme.primary }}>Total</td>
+                        <td style={{ ...tdStyle, textAlign:'right' as const, color:Theme.primary }}>{fmt(totalIssued)}</td>
+                        <td style={{ ...tdStyle, textAlign:'right' as const, color:Theme.info }}>
+                          {fmt(materials.reduce((a:number,m:any)=>a+(m.utilisedQty??0),0))}
+                        </td>
+                        <td style={{ ...tdStyle, textAlign:'right' as const, color:totalBalance>0?Theme.danger:Theme.success }}>{fmt(totalBalance)}</td>
+                        <td style={{ ...tdStyle, textAlign:'right' as const, color:Theme.textMuted }}>{fmt(totalReturn)}</td>
+                        <td colSpan={2} style={tdStyle}></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </Layout>
   );
