@@ -11,7 +11,7 @@ const STATUS_LABEL: Record<string,string> = {
 };
 
 const RETURN_COLOR: Record<string,string> = {
-  'Fully Returned':     T.success,
+  balance===0 ? 'Not Applicable' : 'Fully Returned':     T.success,
   'Partially Returned': '#D97706',
   'Pending Return':     '#DC2626',
   'Not Required':       T.textDim,
@@ -73,10 +73,10 @@ export default function STNSRNPage() {
               <td style={{ padding:'9px 10px', color:T.primary, fontWeight:600 }}>{m.code}</td>
               <td style={{ padding:'9px 10px', color:T.text }}>{m.description}</td>
               <td style={{ padding:'9px 10px', color:T.textMuted }}>{m.uom}</td>
-              <td style={{ padding:'9px 10px', fontWeight:600, color:T.text, textAlign:'right' }}>{(m.stnQty??m.srnQty??0).toLocaleString()}</td>
-              <td style={{ padding:'9px 10px', fontWeight:600, color:T.success, textAlign:'right' }}>{(m.srnQty??0).toLocaleString()}</td>
+              <td style={{ padding:'9px 10px', fontWeight:600, color:T.text, textAlign:'right' }}>{(m.issuedQty??0).toLocaleString()}</td>
+              <td style={{ padding:'9px 10px', fontWeight:600, color:T.success, textAlign:'right' }}>{Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0)).toLocaleString()}</td>
               <td style={{ padding:'9px 10px', fontWeight:700, color:(m.returnQty??0)>0?T.danger:T.success, textAlign:'right' }}>
-                {(m.returnQty??0).toLocaleString()}
+                {Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0)).toLocaleString()}
                 {m.returnQty > 0 && <span style={{ fontSize:10, marginLeft:4 }}>⚠️</span>}
               </td>
               <td style={{ padding:'9px 10px' }}>
@@ -84,7 +84,7 @@ export default function STNSRNPage() {
                   color:m.returnQty===0?'#16A34A':m.utilisedStatus==='pm_approved'?'#D97706':'#DC2626',
                   background:m.returnQty===0?'#F0FDF4':m.utilisedStatus==='pm_approved'?'#FFFBEB':'#FEF2F2',
                   padding:'3px 10px', borderRadius:20 }}>
-                  {m.returnQty===0?'Fully Returned':m.utilisedStatus==='pm_approved'?'Partially Returned':'Pending Return'}
+                  {m.returnQty===0?balance===0 ? 'Not Applicable' : 'Fully Returned':m.utilisedStatus==='pm_approved'?'Partially Returned':'Pending Return'}
                 </span>
               </td>
             </tr>
@@ -92,9 +92,9 @@ export default function STNSRNPage() {
           {/* Totals row */}
           <tr style={{ background:T.bg, borderTop:`2px solid ${T.border}` }}>
             <td colSpan={3} style={{ padding:'9px 10px', fontWeight:700, color:T.text }}>Total</td>
-            <td style={{ padding:'9px 10px', fontWeight:700, color:T.text, textAlign:'right' }}>{project.materials.reduce((a:number,m:any)=>a+(m.stnQty??m.srnQty??0),0).toLocaleString()}</td>
-            <td style={{ padding:'9px 10px', fontWeight:700, color:T.success, textAlign:'right' }}>{project.materials.reduce((a:number,m:any)=>a+(m.srnQty??0),0).toLocaleString()}</td>
-            <td style={{ padding:'9px 10px', fontWeight:700, color:T.danger, textAlign:'right' }}>{project.materials.reduce((a:number,m:any)=>a+(m.returnQty??0),0).toLocaleString()}</td>
+            <td style={{ padding:'9px 10px', fontWeight:700, color:T.text, textAlign:'right' }}>{project.materials.reduce((a:number,m:any)=>a+(m.issuedQty??0),0).toLocaleString()}</td>
+            <td style={{ padding:'9px 10px', fontWeight:700, color:T.success, textAlign:'right' }}>{project.materials.reduce((a:number,m:any)=>a+Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0)),0).toLocaleString()}</td>
+            <td style={{ padding:'9px 10px', fontWeight:700, color:T.danger, textAlign:'right' }}>{project.materials.reduce((a:number,m:any)=>a+Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0)),0).toLocaleString()}</td>
             <td></td>
           </tr>
         </tbody>
@@ -238,9 +238,9 @@ export default function STNSRNPage() {
                   </thead>
                   <tbody>
                     {completedProjects.map((p,i)=>{
-                      const stn = p.materials.reduce((a:number,m:any)=>a+(m.stnQty??m.srnQty??0),0);
-                      const srn = p.materials.reduce((a:number,m:any)=>a+(m.srnQty??0),0);
-                      const bal = p.materials.reduce((a:number,m:any)=>a+(m.returnQty??0),0);
+                      const stn = p.materials.reduce((a:number,m:any)=>a+(m.issuedQty??0),0);
+                      const srn = p.materials.reduce((a:number,m:any)=>a+Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0)),0);
+                      const bal = p.materials.reduce((a:number,m:any)=>a+Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0)),0);
                       const cleared = bal === 0;
                       return (
                         <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}>
