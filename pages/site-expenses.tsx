@@ -28,7 +28,7 @@ export default function SiteExpensesPage() {
   const vendorProjects = selectedVendor ? VENDOR_PROJECTS[selectedVendor] || [] : [];
   const projectTxns    = selectedProject ? getProjectTransactions(selectedProject) : [];
   const totalPaid      = selectedProject ? getPaidAmount(selectedProject) : 0;
-  const selectedProjectData = vendorProjects.find((p:any) => (typeof p==='string'?p:p.id) === selectedProject);
+  const selectedProjectData = (vendorProjects as any[]).find((p:any) => p?.id === selectedProject || p === selectedProject);
 
   const handleAddPayment = () => {
     if (!selectedProject || !form.amount || !form.date || !form.txnNumber) {
