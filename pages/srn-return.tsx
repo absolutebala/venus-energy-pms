@@ -92,9 +92,9 @@ export default function STNSRNPage() {
           {/* Totals row */}
           <tr style={{ background:T.bg, borderTop:`2px solid ${T.border}` }}>
             <td colSpan={3} style={{ padding:'9px 10px', fontWeight:700, color:T.text }}>Total</td>
-            <td style={{ padding:'9px 10px', fontWeight:700, color:T.text, textAlign:'right' }}>{project.materials.reduce((a,m)=>a+m.stnQty,0).toLocaleString()}</td>
-            <td style={{ padding:'9px 10px', fontWeight:700, color:T.success, textAlign:'right' }}>{project.materials.reduce((a,m)=>a+m.srnQty,0).toLocaleString()}</td>
-            <td style={{ padding:'9px 10px', fontWeight:700, color:T.danger, textAlign:'right' }}>{project.materials.reduce((a,m)=>a+m.returnQty,0).toLocaleString()}</td>
+            <td style={{ padding:'9px 10px', fontWeight:700, color:T.text, textAlign:'right' }}>{project.materials.reduce((a:number,m:any)=>a+(m.stnQty??m.srnQty??0),0).toLocaleString()}</td>
+            <td style={{ padding:'9px 10px', fontWeight:700, color:T.success, textAlign:'right' }}>{project.materials.reduce((a:number,m:any)=>a+(m.srnQty??0),0).toLocaleString()}</td>
+            <td style={{ padding:'9px 10px', fontWeight:700, color:T.danger, textAlign:'right' }}>{project.materials.reduce((a:number,m:any)=>a+(m.returnQty??0),0).toLocaleString()}</td>
             <td></td>
           </tr>
         </tbody>
@@ -238,9 +238,9 @@ export default function STNSRNPage() {
                   </thead>
                   <tbody>
                     {completedProjects.map((p,i)=>{
-                      const stn = p.materials.reduce((a,m)=>a+m.stnQty,0);
-                      const srn = p.materials.reduce((a,m)=>a+m.srnQty,0);
-                      const bal = p.materials.reduce((a,m)=>a+m.returnQty,0);
+                      const stn = p.materials.reduce((a:number,m:any)=>a+(m.stnQty??m.srnQty??0),0);
+                      const srn = p.materials.reduce((a:number,m:any)=>a+(m.srnQty??0),0);
+                      const bal = p.materials.reduce((a:number,m:any)=>a+(m.returnQty??0),0);
                       const cleared = bal === 0;
                       return (
                         <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}>
