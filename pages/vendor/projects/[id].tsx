@@ -52,7 +52,7 @@ export default function VendorProjectUpdatePage() {
   const submitItem = (code: string) => {
     const item = materials.find(m => m.code === code);
     if (!item || item.utilisedQty === null) { setToast({ msg:'Enter utilised quantity first.', type:'error' }); return; }
-    if (item.utilisedQty > item.stnQty) { setToast({ msg:`Cannot exceed STN qty (${item.stnQty}).`, type:'error' }); return; }
+    if (item.utilisedQty > (item.stnQty??item.issuedQty??0)) { setToast({ msg:`Cannot exceed STN qty (${(item.stnQty??item.issuedQty??0)}).`, type:'error' }); return; }
     setSubmittingItem(code);
     setTimeout(() => {
       setMaterials(prev => prev.map(m => m.code === code ? { ...m, utilisedStatus:'submitted' as const } : m));
@@ -157,7 +157,7 @@ export default function VendorProjectUpdatePage() {
                     const isApproved = item.utilisedStatus === 'pm_approved';
                     const isRejected = item.utilisedStatus === 'pm_rejected';
                     const canEdit    = item.utilisedStatus === 'pending' || isRejected;
-                    const returnQty  = isApproved && item.pmApprovedQty !== null ? item.stnQty - item.pmApprovedQty : null;
+                    const returnQty  = isApproved && item.pmApprovedQty !== null ? (item.stnQty??item.issuedQty??0) - item.pmApprovedQty : null;
 
                     return (
                       <div key={item.code} style={{ border:`1.5px solid ${isApproved?T.success:isRejected?T.danger:item.utilisedStatus==='submitted'?T.info:T.border}`, borderRadius:10, padding:14, background:isApproved?T.successBg:isRejected?'#FEF2F2':'#fff' }}>
@@ -165,7 +165,7 @@ export default function VendorProjectUpdatePage() {
                           <div>
                             <div style={{ fontSize:11, fontWeight:700, color:T.primary }}>{item.code}</div>
                             <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{item.description}</div>
-                            <div style={{ fontSize:11, color:T.textMuted }}>Issued: {item.stnQty} {item.uom}</div>
+                            <div style={{ fontSize:11, color:T.textMuted }}>Issued: {(item.stnQty??item.issuedQty??0)} {item.uom}</div>
                           </div>
                           <SB status={item.utilisedStatus} />
                         </div>
@@ -178,7 +178,7 @@ export default function VendorProjectUpdatePage() {
 
                         {isApproved && (
                           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:8 }}>
-                            {[['Issued',`${item.stnQty} ${item.uom}`,T.text],['Approved Used',`${item.pmApprovedQty} ${item.uom}`,T.success],['To Return',`${returnQty} ${item.uom}`,returnQty&&returnQty>0?T.danger:T.success]].map(([l,v,c]:any,i)=>(
+                            {[['Issued',`${(item.stnQty??item.issuedQty??0)} ${item.uom}`,T.text],['Approved Used',`${item.pmApprovedQty} ${item.uom}`,T.success],['To Return',`${returnQty} ${item.uom}`,returnQty&&returnQty>0?T.danger:T.success]].map(([l,v,c]:any,i)=>(
                               <div key={i} style={{ background:'rgba(255,255,255,0.7)', borderRadius:7, padding:'8px 10px' }}>
                                 <div style={{ fontSize:10, color:T.textDim }}>{l}</div>
                                 <div style={{ fontSize:13, fontWeight:700, color:c }}>{v}</div>
@@ -205,9 +205,9 @@ export default function VendorProjectUpdatePage() {
                             <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:'0 12px', marginBottom:10 }}>
                               <div>
                                 <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.text, marginBottom:4 }}>Utilised Qty ({item.uom}) *</label>
-                                <input type="number" min="0" max={item.stnQty} value={item.utilisedQty??''}
+                                <input type="number" min="0" max={(item.stnQty??item.issuedQty??0)} value={item.utilisedQty??''}
                                   onChange={e=>updateItem(item.code,'utilisedQty',e.target.value===''?null:Number(e.target.value))}
-                                  placeholder={`Max ${item.stnQty}`}
+                                  placeholder={`Max ${(item.stnQty??item.issuedQty??0)}`}
                                   style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
                               </div>
                               <div>
