@@ -46,10 +46,10 @@ export default function STNSRNPage() {
   const ongoingProjects   = filtered.filter(p => !['completed','billing_review'].includes(p.status));
   const completedProjects = filtered.filter(p => ['completed','billing_review'].includes(p.status));
   const overdueCount      = filtered.filter(p => p.isOverdue).length;
-  const pendingReturnCount= filtered.reduce((a,p) => a + p.materials.filter(m=>m.returnQty>0).length, 0);
+  const pendingReturnCount= filtered.reduce((a,p) => a + p.materials.filter((m:any)=>m.returnQty>0).length, 0);
 
-  const totalSTN = filtered.reduce((a,p) => a + p.materials.reduce((b,m)=>b+m.stnQty,0), 0);
-  const totalSRN = filtered.reduce((a,p) => a + p.materials.reduce((b,m)=>b+m.srnQty,0), 0);
+  const totalSTN = filtered.reduce((a,p) => a + p.materials.reduce((b:number,m:any)=>b+(m.stnQty??m.srnQty??0),0), 0);
+  const totalSRN = filtered.reduce((a,p) => a + p.materials.reduce((b:number,m:any)=>b+(m.srnQty??0),0), 0);
 
   const SectionTitle = ({ label }: { label:string }) => (
     <div style={{ fontSize:14, fontWeight:700, color:T.primary, marginBottom:16, paddingBottom:8, borderBottom:`2px solid ${T.primaryMid}`, display:'flex', alignItems:'center', gap:8 }}>
