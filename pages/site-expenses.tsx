@@ -1,13 +1,21 @@
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
-import Toast from '@/components/Toast';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
-import { PAYMENT_TRANSACTIONS, VENDOR_PROJECTS, getPaidAmount, getProjectTransactions, PaymentTransaction } from '@/lib/expensesData';
+import Toast from '@/components/Toast';
+import { PROJECTS, SHARED_EXPENSES } from '@/lib/seedData';
 
-const fmt = (v: number) => `₹${v.toLocaleString('en-IN')}`;
+const fmt = (v: number) => `₹${Number(v).toLocaleString('en-IN')}`;
+const fmtD = (d: string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
 
-const VENDORS = Object.keys(VENDOR_PROJECTS);
+// Group projects by vendor
+const VENDOR_MAP: Record<string, any[]> = (PROJECTS as any[]).reduce((acc: any, p: any) => {
+  if (p.vendor) { acc[p.vendor] = acc[p.vendor] || []; acc[p.vendor].push(p); }
+  return acc;
+}, {});
+
+const EXPENSE_TYPES = ['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'];
+const PAYMENT_MODES = ['Cash','Bank Transfer','Cheque','UPI','DD'];
 
 export default function SiteExpensesPage() {
   const { profile, can, loading } = useAuth();
@@ -15,255 +23,179 @@ export default function SiteExpensesPage() {
   const isAccounting  = !loading && can('site_expenses', 'read');
   const canAdd        = !loading && can('site_expenses', 'create');
 
-  const [transactions, setTransactions] = useState<PaymentTransaction[]>(PAYMENT_TRANSACTIONS);
-  const [selectedVendor,  setSelectedVendor]  = useState('');
-  const [selectedProject, setSelectedProject] = useState('');
-  const [toast, setToast] = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
-  const [saving, setSaving] = useState(false);
+  const [expenses,       setExpenses]       = useState<any[]>([...(SHARED_EXPENSES as any[])]);
+  const [selectedVendor, setSelectedVendor] = useState('');
+  const [selectedProject,setSelectedProject]= useState('');
+  const [toast,          setToast]          = useState<any>(null);
+  const [saving,         setSaving]         = useState(false);
+  const [form,           setForm]           = useState({
+    txnRef:'', amount:'', date:'', site:'', expenseType:'Advance', paymentMode:'Bank Transfer'
+  });
 
-  // Payment form
-  const [form, setForm] = useState({ amount:'', date:'', txnNumber:'', description:'' });
-  const [focused, setFocused] = useState<string|null>(null);
+  const vendors        = Object.keys(VENDOR_MAP).sort();
+  const vendorProjects = selectedVendor ? VENDOR_MAP[selectedVendor] || [] : [];
+  const selProj        = vendorProjects.find((p:any) => p.id === selectedProject);
+  const projectExpenses= selectedProject ? expenses.filter((e:any) => e.projectId === selectedProject) : [];
+  const totalExpenses  = projectExpenses.reduce((a:number,e:any) => a + Number(e.amount), 0);
 
-  const vendorProjects = selectedVendor ? VENDOR_PROJECTS[selectedVendor] || [] : [];
-  const projectTxns    = selectedProject ? getProjectTransactions(selectedProject) : [];
-  const totalPaid      = selectedProject ? getPaidAmount(selectedProject) : 0;
-  const selectedProjectData = (vendorProjects as any[]).find((p:any) => p?.id === selectedProject || p === selectedProject);
-
-  const handleAddPayment = () => {
-    if (!selectedProject || !form.amount || !form.date || !form.txnNumber) {
-      setToast({ msg:'Please fill all required fields.', type:'error' });
-      return;
-    }
-    if (Number(form.amount) <= 0) {
-      setToast({ msg:'Amount must be greater than 0.', type:'error' });
-      return;
+  const handleAdd = () => {
+    if (!selectedProject || !form.txnRef || !form.amount || !form.date) {
+      setToast({ msg:'Please fill all required fields', type:'error' }); return;
     }
     setSaving(true);
     setTimeout(() => {
-      const newTxn: PaymentTransaction = {
-        id:          `TXN-${Date.now()}`,
-        projectId:   selectedProject,
-        vendor:      selectedVendor,
-        amount:      Number(form.amount),
-        date:        form.date,
-        txnNumber:   form.txnNumber,
-        description: form.description,
-        addedBy:     profile?.full_name || 'Accounting Team',
-        addedAt:     new Date().toLocaleString('en-IN'),
+      const newExp = {
+        id: Date.now(), txnRef: form.txnRef, date: form.date,
+        site: form.site || selProj?.site || '', expenseType: form.expenseType,
+        amount: Number(form.amount), paymentMode: form.paymentMode, projectId: selectedProject,
       };
-      setTransactions(prev => [newTxn, ...prev]);
-      setForm({ amount:'', date:'', txnNumber:'', description:'' });
-      setToast({ msg:`Payment of ${fmt(Number(form.amount))} recorded successfully!`, type:'success' });
+      setExpenses(prev => [...prev, newExp]);
+      (SHARED_EXPENSES as any[]).push(newExp);
+      setForm({ txnRef:'', amount:'', date:'', site:'', expenseType:'Advance', paymentMode:'Bank Transfer' });
       setSaving(false);
-    }, 600);
+      setToast({ msg:'✅ Expense added', type:'success' });
+    }, 500);
   };
 
-  const inp = (label: string, field: string, type='text', placeholder='', required=false) => (
-    <div style={{ marginBottom:14 }}>
-      <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>
-        {label} {required && <span style={{ color:T.danger }}>*</span>}
-      </label>
-      <input type={type} value={(form as any)[field]}
-        onChange={e => setForm(p => ({ ...p, [field]: e.target.value }))}
-        onFocus={() => setFocused(field)} onBlur={() => setFocused(null)}
-        placeholder={placeholder}
-        style={{ ...inputStyle(focused===field), width:'100%', boxSizing:'border-box' as const }} />
-    </div>
+  const thS: React.CSSProperties = { padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:T.primary, background:T.primaryLight, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const };
+  const tdS: React.CSSProperties = { padding:'10px 12px', fontSize:13, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
+
+  if (!isAccounting) return (
+    <Layout><div style={{ padding:40, textAlign:'center', color:T.textMuted }}>Access restricted</div></Layout>
   );
 
   return (
     <Layout>
       <div className="fade-in">
-        {/* Summary KPIs */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-          {[
-            { label:'Total Transactions',  value:transactions.length,                                           color:T.primary, icon:'📄' },
-            { label:'Total Paid (All)',     value:fmt(transactions.reduce((a,t)=>a+t.amount,0)),                 color:T.success, icon:'💰' },
-            { label:'Vendors Paid',         value:new Set(transactions.map(t=>t.vendor)).size,                   color:T.info,    icon:'🏢' },
-            { label:'Projects with Payment',value:new Set(transactions.map(t=>t.projectId)).size,               color:'#7C3AED', icon:'📁' },
-          ].map((s,i)=>(
-            <div key={i} style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px' }}>
-              <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:s.color }} />
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <div>
-                  <div style={{ fontSize:10, color:T.textMuted, textTransform:'uppercase', letterSpacing:0.4, marginBottom:4 }}>{s.label}</div>
-                  <div style={{ fontSize:20, fontWeight:700, color:s.color }}>{s.value}</div>
-                </div>
-                <div style={{ fontSize:22 }}>{s.icon}</div>
-              </div>
+        <div style={{ fontSize:22, fontWeight:800, color:T.text, marginBottom:4 }}>Site Expenses</div>
+        <div style={{ fontSize:13, color:T.textMuted, marginBottom:20 }}>Track project expenses by vendor and project</div>
+
+        {/* Vendor + Project selectors */}
+        <div style={{ ...card, marginBottom:16 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+            <div>
+              <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:'uppercase' }}>Select Vendor</label>
+              <select value={selectedVendor} onChange={e=>{ setSelectedVendor(e.target.value); setSelectedProject(''); }}
+                style={{ ...inputStyle(), width:'100%' }}>
+                <option value="">— Choose Vendor —</option>
+                {vendors.map(v=><option key={v}>{v}</option>)}
+              </select>
             </div>
-          ))}
+            <div>
+              <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:'uppercase' }}>Select Project</label>
+              <select value={selectedProject} onChange={e=>setSelectedProject(e.target.value)}
+                disabled={!selectedVendor}
+                style={{ ...inputStyle(), width:'100%', opacity:!selectedVendor?0.5:1 }}>
+                <option value="">— Choose Project —</option>
+                {vendorProjects.map((p:any)=>(
+                  <option key={p.id} value={p.id}>{p.id} — {p.site}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'280px 1fr', gap:16 }}>
-          {/* Left: Vendor + Project selector */}
-          <div>
-            <div style={card}>
-              <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:14 }}>Select Vendor & Project</div>
+        {/* Project summary */}
+        {selProj && (
+          <div style={{ ...card, marginBottom:16 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
+              {[
+                { label:'Project',      value: `${selProj.id}`,         color:T.primary  },
+                { label:'Site',         value: selProj.site,             color:T.text     },
+                { label:'PO Number',    value: selProj.poNo,             color:T.info     },
+                { label:'Total Expenses',value: fmt(totalExpenses),      color:T.danger   },
+              ].map(s=>(
+                <div key={s.label}>
+                  <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:'uppercase', marginBottom:4 }}>{s.label}</div>
+                  <div style={{ fontSize:15, fontWeight:700, color:s.color }}>{s.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-              <div style={{ marginBottom:14 }}>
-                <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>Vendor</label>
-                <select value={selectedVendor} onChange={e=>{ setSelectedVendor(e.target.value); setSelectedProject(''); }}
-                  style={{ ...inputStyle(), width:'100%' }}>
-                  <option value="">— Select Vendor —</option>
-                  {VENDORS.map(v=><option key={v} value={v}>{v}</option>)}
+        {/* Add Expense Form */}
+        {canAdd && selectedProject && (
+          <div style={{ ...card, marginBottom:16, border:`1.5px solid ${T.primaryMid}`, background:T.primaryLight }}>
+            <div style={{ fontSize:14, fontWeight:700, color:T.primary, marginBottom:14 }}>+ Add Expense</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
+              {[
+                ['Transaction Ref *','txnRef','text','EXP-XXX-001'],
+                ['Date *','date','date',''],
+                ['Site Name','site','text', selProj?.site||''],
+                ['Amount (₹) *','amount','number','0'],
+              ].map(([label,field,type,ph])=>(
+                <div key={field}>
+                  <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</label>
+                  <input type={type} value={(form as any)[field]} placeholder={ph}
+                    onChange={e=>setForm(p=>({...p,[field]:e.target.value}))}
+                    style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
+                </div>
+              ))}
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Expense Type</label>
+                <select value={form.expenseType} onChange={e=>setForm(p=>({...p,expenseType:e.target.value}))} style={{ ...inputStyle(), width:'100%' }}>
+                  {EXPENSE_TYPES.map(t=><option key={t}>{t}</option>)}
                 </select>
               </div>
-
-              {selectedVendor && vendorProjects.length > 0 && (
-                <div>
-                  <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:8 }}>Projects</label>
-                  {vendorProjects.map(p => {
-                    const paid   = getPaidAmount(p.id, transactions);
-                    const pending = p.billedAmount - paid;
-                    return (
-                      <div key={p.id} onClick={()=>setSelectedProject(p.id)}
-                        style={{ padding:'12px', borderRadius:9, marginBottom:8, cursor:'pointer', border:`1.5px solid ${selectedProject===p.id?T.primary:T.border}`, background:selectedProject===p.id?T.primaryLight:T.surface, transition:'all 0.15s' }}>
-                        <div style={{ fontSize:12, fontWeight:700, color:T.primary }}>{p.id}</div>
-                        <div style={{ fontSize:12, color:T.text, marginBottom:6 }}>{p.name}</div>
-                        <div style={{ fontSize:11, color:T.textMuted }}>Billed: <strong>{fmt(p.billedAmount)}</strong></div>
-                        <div style={{ fontSize:11, color:T.success }}>Paid: <strong>{fmt(paid)}</strong></div>
-                        {pending > 0 && <div style={{ fontSize:11, color:T.danger }}>Pending: <strong>{fmt(pending)}</strong></div>}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {selectedVendor && vendorProjects.length === 0 && (
-                <div style={{ fontSize:12, color:T.textMuted, textAlign:'center', padding:20 }}>No projects for this vendor.</div>
-              )}
-            </div>
-          </div>
-
-          {/* Right: Transactions + Add payment */}
-          <div>
-            {!selectedProject ? (
-              <div style={{ ...card, textAlign:'center', padding:60, color:T.textDim }}>
-                <div style={{ fontSize:40, marginBottom:12 }}>💳</div>
-                <div style={{ fontSize:14 }}>Select a vendor and project to view and add payments.</div>
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Payment Mode</label>
+                <select value={form.paymentMode} onChange={e=>setForm(p=>({...p,paymentMode:e.target.value}))} style={{ ...inputStyle(), width:'100%' }}>
+                  {PAYMENT_MODES.map(m=><option key={m}>{m}</option>)}
+                </select>
               </div>
-            ) : (
-              <>
-                {/* Project financial summary */}
-                {selectedProjectData && (
-                  <div style={{ ...card, marginBottom:16, background:`linear-gradient(135deg, ${T.primaryLight}, #E0FDF4)`, border:`1px solid ${T.primaryMid}` }}>
-                    <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:12 }}>{selectedProject} — {selectedProjectData.name}</div>
-                    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12 }}>
-                      {[
-                        { label:'PO Value',      value:fmt(selectedProjectData.poValue),  color:T.text    },
-                        { label:'Billed Amount',  value:fmt(selectedProjectData.billedAmount), color:T.info },
-                        { label:'Total Paid',     value:fmt(totalPaid),                   color:T.success },
-                        { label:'Pending',        value:fmt(selectedProjectData.billedAmount - totalPaid), color:selectedProjectData.billedAmount-totalPaid>0?T.danger:T.success },
-                      ].map((s,i)=>(
-                        <div key={i} style={{ background:'rgba(255,255,255,0.7)', borderRadius:8, padding:'10px 14px' }}>
-                          <div style={{ fontSize:10, color:T.textDim, marginBottom:3 }}>{s.label}</div>
-                          <div style={{ fontSize:15, fontWeight:700, color:s.color }}>{s.value}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Add payment form - accounting only */}
-                {canAdd && (
-                  <div style={{ ...card, marginBottom:16 }}>
-                    <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14, paddingBottom:10, borderBottom:`1px solid ${T.border}` }}>
-                      + Add Payment Record
-                    </div>
-                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
-                      {inp('Amount (₹)', 'amount', 'number', 'e.g. 500000', true)}
-                      {inp('Payment Date', 'date', 'date', '', true)}
-                    </div>
-                    {inp('Bank Transaction Number', 'txnNumber', 'text', 'e.g. HDFC20250510001', true)}
-                    {inp('Description (optional)', 'description', 'text', 'e.g. Progress payment - 65% completion')}
-                    <div style={{ display:'flex', gap:10 }}>
-                      <button onClick={handleAddPayment} disabled={saving || !form.amount || !form.date || !form.txnNumber}
-                        style={{ ...btnPrimary, opacity:saving||!form.amount||!form.date||!form.txnNumber?0.6:1 }}>
-                        {saving ? 'Recording…' : '💰 Record Payment'}
-                      </button>
-                      <button onClick={()=>setForm({ amount:'', date:'', txnNumber:'', description:'' })} style={btnSecondary}>Clear</button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Transaction history */}
-                <div style={card}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-                    <div style={{ fontSize:14, fontWeight:700, color:T.text }}>Payment History</div>
-                    <div style={{ fontSize:13, fontWeight:700, color:T.success }}>Total Paid: {fmt(totalPaid)}</div>
-                  </div>
-
-                  {projectTxns.length === 0 ? (
-                    <div style={{ textAlign:'center', padding:30, color:T.textDim, fontSize:13 }}>No payments recorded for this project yet.</div>
-                  ) : (
-                    <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
-                      <thead>
-                        <tr style={{ background:T.bg }}>
-                          {['Txn No','Amount','Date','Bank Txn Number','Description','Added By','Time'].map(h=>(
-                            <th key={h} style={{ padding:'8px 10px', fontSize:11, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:'left', borderBottom:`2px solid ${T.border}` }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {projectTxns.map((txn,i)=>(
-                          <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}
-                            onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.bg}
-                            onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
-                            <td style={{ padding:'10px', color:T.primary, fontWeight:700, fontSize:12 }}>{txn.id}</td>
-                            <td style={{ padding:'10px', fontWeight:700, color:T.success, fontSize:13 }}>{fmt(txn.amount)}</td>
-                            <td style={{ padding:'10px', fontSize:12 }}>{new Date(txn.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</td>
-                            <td style={{ padding:'10px', fontSize:12, fontFamily:'monospace', color:T.text }}>{txn.txnNumber}</td>
-                            <td style={{ padding:'10px', fontSize:12, color:T.textMuted }}>{txn.description||'—'}</td>
-                            <td style={{ padding:'10px', fontSize:11, color:T.textMuted }}>{txn.addedBy}</td>
-                            <td style={{ padding:'10px', fontSize:11, color:T.textDim }}>{txn.addedAt}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr style={{ background:T.primaryLight, borderTop:`2px solid ${T.primaryMid}` }}>
-                          <td style={{ padding:'10px', fontWeight:700, color:T.primary }} colSpan={1}>TOTAL</td>
-                          <td style={{ padding:'10px', fontWeight:700, color:T.success, fontSize:14 }}>{fmt(totalPaid)}</td>
-                          <td colSpan={5} />
-                        </tr>
-                      </tfoot>
-                    </table>
-                  )}
-                </div>
-              </>
-            )}
+            </div>
+            <button onClick={handleAdd} disabled={saving||!form.txnRef||!form.amount||!form.date}
+              style={{ ...btnPrimary, opacity:saving||!form.txnRef||!form.amount||!form.date?0.5:1 }}>
+              {saving?'Saving…':'💾 Save Expense'}
+            </button>
           </div>
-        </div>
+        )}
 
-        {/* All transactions table for SA/PM/RM */}
-        {!selectedProject && (
-          <div style={{ ...card, marginTop:16 }}>
-            <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>All Payment Transactions</div>
-            <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
-              <thead>
-                <tr style={{ background:T.bg }}>
-                  {['Txn No','Project','Vendor','Amount','Date','Bank Txn Number','Added By'].map(h=>(
-                    <th key={h} style={{ padding:'8px 10px', fontSize:11, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:'left', borderBottom:`2px solid ${T.border}` }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map((txn,i)=>(
-                  <tr key={i} style={{ borderBottom:`1px solid ${T.border}` }}
-                    onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.bg}
-                    onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background='transparent'}>
-                    <td style={{ padding:'9px 10px', color:T.primary, fontWeight:700, fontSize:12 }}>{txn.id}</td>
-                    <td style={{ padding:'9px 10px', color:T.primary, fontWeight:600, fontSize:12 }}>{txn.projectId}</td>
-                    <td style={{ padding:'9px 10px', fontSize:12 }}>{txn.vendor}</td>
-                    <td style={{ padding:'9px 10px', fontWeight:700, color:T.success }}>{fmt(txn.amount)}</td>
-                    <td style={{ padding:'9px 10px', fontSize:12 }}>{new Date(txn.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</td>
-                    <td style={{ padding:'9px 10px', fontSize:12, fontFamily:'monospace' }}>{txn.txnNumber}</td>
-                    <td style={{ padding:'9px 10px', fontSize:11, color:T.textMuted }}>{txn.addedBy}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Expenses Table */}
+        {selectedProject && (
+          <div style={card}>
+            <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>
+              Expenses for {selectedProject}
+              <span style={{ fontSize:12, fontWeight:400, color:T.textMuted, marginLeft:10 }}>{projectExpenses.length} records</span>
+            </div>
+            {projectExpenses.length === 0 ? (
+              <div style={{ textAlign:'center', padding:30, color:T.textDim }}>No expenses recorded yet</div>
+            ) : (
+              <div style={{ overflowX:'auto' as const }}>
+                <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+                  <thead>
+                    <tr>
+                      {['Sr.','Transaction Ref','Date','Site','Expense Type','Amount (₹)','Payment Mode'].map((h,i)=>(
+                        <th key={i} style={{ ...thS, textAlign:i===5?'right' as const:'left' as const }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projectExpenses.map((e:any,idx:number)=>(
+                      <tr key={e.id} style={{ background:idx%2===0?'#fff':T.bg }}>
+                        <td style={{ ...tdS, color:T.textMuted }}>{idx+1}</td>
+                        <td style={{ ...tdS, fontWeight:600, color:T.primary }}>{e.txnRef}</td>
+                        <td style={{ ...tdS, color:T.textMuted }}>{fmtD(e.date)}</td>
+                        <td style={tdS}>{e.site||'—'}</td>
+                        <td style={tdS}>
+                          <span style={{ fontSize:11, fontWeight:600, background:T.primaryLight, color:T.primary, padding:'2px 10px', borderRadius:20 }}>{e.expenseType}</span>
+                        </td>
+                        <td style={{ ...tdS, textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(e.amount)}</td>
+                        <td style={tdS}>{e.paymentMode}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ background:T.primaryLight, fontWeight:700 }}>
+                      <td colSpan={5} style={{ ...tdS, color:T.primary }}>Total</td>
+                      <td style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>{fmt(totalExpenses)}</td>
+                      <td style={tdS}></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>
