@@ -631,7 +631,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
     const newItem = { id:Date.now(), ...newRow, invoiceAmount:amt, gst, totalAmount:amt+gst, projectId };
     SHARED_INVOICES.push(newItem as any);
     setItems(prev=>[...prev, newItem]);
-    setNewRow({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:'' });
+    setNewRow({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo });
     setAdding(false);
   };
 
@@ -667,7 +667,10 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
               {items.map((item:any,idx:number)=>(
                 <tr key={item.id} style={{ borderBottom:`1px solid ${T.border}`, background:idx%2===0?'#fff':T.bg }}>
                   <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
-                  <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{item.invoiceNo}</td>
+                  <td style={{ ...tdS }}>
+                    <div style={{ fontWeight:700, color:T.primary, fontSize:13 }}>{item.invoiceNo}</div>
+                    {item.poNo && <div style={{ fontSize:10, color:T.textMuted }}>{item.poNo}</div>}
+                  </td>
                   <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD(item.invoiceDate)}</td>
                   <td style={tdS}>{item.workBoqRef||'—'}</td>
                   <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600 }}>{fmt(item.invoiceAmount)}</td>
