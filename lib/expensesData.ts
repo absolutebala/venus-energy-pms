@@ -1,30 +1,29 @@
-export { SHARED_EXPENSES } from './seedData';
+import { PROJECTS, SHARED_EXPENSES } from './seedData';
+
+export { SHARED_EXPENSES };
 export type { Expense } from './seedData';
 
-// Legacy helpers
-export const PAYMENT_TRANSACTIONS = [] as any[];
-export const getPaidAmount = (projectId: string) => 0;
-export const getProjectTransactions = (projectId: string) => [] as any[];
+export const VENDOR_PROJECTS: Record<string, any[]> = (PROJECTS as any[]).reduce((acc:any, p:any) => {
+  if (!acc[p.vendor]) acc[p.vendor] = [];
+  acc[p.vendor].push(p);
+  return acc;
+}, {});
+
+export const PAYMENT_TRANSACTIONS: any[] = [];
+
+export const getPaidAmount = (projectId: string) =>
+  (SHARED_EXPENSES as any[]).filter(e => e.projectId === projectId).reduce((a,e) => a + Number(e.amount), 0);
+
+export const getProjectTransactions = (projectId: string) =>
+  (SHARED_EXPENSES as any[]).filter(e => e.projectId === projectId);
 
 export interface PaymentTransaction {
-  id: string;
-  projectId: string;
-  vendor: string;
-  amount: number;
-  date: string;
-  bankTxnNo?: string;
-  notes?: string;
-  txnNumber?: string;
-  description?: string;
-  addedBy?: string;
-  addedAt?: string;
+  id: string; projectId: string; vendor: string; amount: number; date: string;
+  bankTxnNo?: string; notes?: string; txnNumber?: string;
+  description?: string; addedBy?: string; addedAt?: string;
 }
 
-export const VENDOR_PROJECTS: Record<string, string[]> = {
-  'ABC Telecom Services':     ['VE-2025-001','VE-2025-007','VE-2025-013'],
-  'XYZ Infra Solutions':      ['VE-2025-002','VE-2025-008','VE-2025-014'],
-  'TowerTech Pvt Ltd':        ['VE-2025-003','VE-2025-009','VE-2025-015'],
-  'NetConnect Services':      ['VE-2025-004','VE-2025-010'],
-  'PowerSys India':           ['VE-2025-005','VE-2025-011'],
-  'BuildRight Constructions': ['VE-2025-006','VE-2025-012'],
-};
+export interface Expense {
+  id: number; txnRef: string; date: string; site: string;
+  expenseType: string; amount: number; paymentMode: string; projectId: string;
+}
