@@ -79,8 +79,8 @@ export default function SiteExpensesPage() {
   return (
     <Layout>
       <div className="fade-in">
-        <div style={{fontSize:22,fontWeight:800,color:T.text,marginBottom:4}}>Site Expenses</div>
-        <div style={{fontSize:13,color:T.textMuted,marginBottom:20}}>Track and manage all project site expenses</div>
+        <div style={{fontSize:22,fontWeight:800,color:T.text,marginBottom:4}}>Expenses</div>
+        <div style={{fontSize:13,color:T.textMuted,marginBottom:20}}>Track and manage all project expenses by vendor and project</div>
 
         {/* Summary cards */}
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:14,marginBottom:20}}>

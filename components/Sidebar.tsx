@@ -11,7 +11,7 @@ const ADMIN_NAV: NavItem[] = [
   { href:'/projects',          label:'Projects',           icon:'📁' },
   { href:'/vendors',           label:'Vendors',            icon:'🏢' },
   { href:'/srn-return',        label:'STN / SRN Status',   icon:'📦' },
-  { href:'/site-expenses',     label:'Site Expenses',      icon:'💰' },
+  { href:'/site-expenses',     label:'Expenses',      icon:'💰' },
   { href:'/teams',             label:'Teams',              icon:'👤' },
   { href:'/invoices', label:'Invoices', icon:'🧾' },
       { href:'/reports',           label:'Reports',            icon:'📊' },

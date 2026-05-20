@@ -58,6 +58,7 @@ export default function InvoicesPage() {
   const canCreate = !loading && (can('invoices','create'));
 
   const [poSearch,   setPoSearch]   = useState('');
+  const [cardFilter,  setCardFilter]  = useState<string|null>(null);
   const [poInput,    setPoInput]    = useState('');
   const [sortKey,    setSortKey]    = useState<SortKey>('invoiceDate');
   const [sortDir,    setSortDir]    = useState<'asc'|'desc'>('desc');
@@ -74,15 +75,19 @@ export default function InvoicesPage() {
       ) || null
     : null;
 
+  const today2 = new Date();
   const displayInvoices = useMemo(() => {
     let list = poSearch && matchedProject ? invoices.filter(i => i.projectId === matchedProject.id) : [...invoices];
+    if (cardFilter === 'pendingApproval') list = list.filter(i=>['Submitted','Under Review'].includes(i.invoiceStatus));
+    if (cardFilter === 'pendingPayment')  list = list.filter(i=>i.paymentStatus==='Pending');
+    if (cardFilter === 'overdue')         list = list.filter(i=>i.paymentStatus!=='Paid'&&i.dueDate&&new Date(i.dueDate)<today2);
     list.sort((a,b) => {
       let va = a[sortKey], vb = b[sortKey];
       if (typeof va === 'number') return sortDir==='asc' ? (va as number)-(vb as number) : (vb as number)-(va as number);
       return sortDir==='asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
     });
     return list;
-  }, [invoices, poSearch, matchedProject, sortKey, sortDir]);
+  }, [invoices, poSearch, matchedProject, sortKey, sortDir, cardFilter]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(d => d==='asc'?'desc':'asc');
@@ -210,20 +215,35 @@ export default function InvoicesPage() {
           </div>
         )}
 
-        {/* Summary strip */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:16 }}>
-          {[
-            { label:'Total Invoices',  value:displayInvoices.length,  color:T.primary  },
-            { label:'Total Invoiced',  value:fmt(totalInvoiced),       color:T.info     },
-            { label:'Total GST',       value:fmt(totalGST),            color:T.textMuted},
-            { label:'Grand Total',     value:fmt(totalAmount),         color:T.primary  },
-          ].map(s=>(
-            <div key={s.label} style={{ ...card, padding:'14px 16px' }}>
-              <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:'uppercase', marginBottom:4 }}>{s.label}</div>
-              <div style={{ fontSize:18, fontWeight:800, color:s.color }}>{s.value}</div>
+        {/* Clickable summary cards */}
+        {(() => {
+          const today = new Date();
+          const pendingApproval = invoices.filter(i=>['Submitted','Under Review'].includes(i.invoiceStatus));
+          const pendingPayment  = invoices.filter(i=>i.paymentStatus==='Pending');
+          const overdue         = invoices.filter(i=>i.paymentStatus!=='Paid'&&i.dueDate&&new Date(i.dueDate)<today);
+          const cards = [
+            { label:'Total Invoices',    value:invoices.length,            sub:fmt(invoices.reduce((a,i)=>a+i.totalAmount,0)),    color:T.primary,  filter:null,              icon:'📄' },
+            { label:'Pending Approval',  value:pendingApproval.length,     sub:`${pendingApproval.length} need review`,            color:'#2563EB',  filter:'pendingApproval', icon:'⏳' },
+            { label:'Pending Payment',   value:pendingPayment.length,      sub:fmt(pendingPayment.reduce((a,i)=>a+i.totalAmount,0)),color:'#D97706', filter:'pendingPayment',  icon:'💳' },
+            { label:'Overdue',           value:overdue.length,             sub:fmt(overdue.reduce((a,i)=>a+i.totalAmount,0)),      color:T.danger,   filter:'overdue',         icon:'⚠️' },
+          ];
+          return (
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
+              {cards.map(s=>(
+                <div key={s.label} onClick={()=>setCardFilter(cardFilter===s.filter?null:s.filter)}
+                  style={{ ...card, padding:'16px 18px', cursor:'pointer', border:`1.5px solid ${cardFilter===s.filter?s.color:T.border}`, background:cardFilter===s.filter?`${s.color}08`:'#fff', transition:'all 0.15s', position:'relative' as const }}>
+                  <div style={{ fontSize:22, marginBottom:6 }}>{s.icon}</div>
+                  <div style={{ fontSize:24, fontWeight:800, color:s.color, marginBottom:2 }}>{s.value}</div>
+                  <div style={{ fontSize:11, fontWeight:700, color:T.textMuted, textTransform:'uppercase', marginBottom:4 }}>{s.label}</div>
+                  <div style={{ fontSize:11, color:T.textDim }}>{s.sub}</div>
+                  {cardFilter===s.filter&&s.filter&&(
+                    <div style={{ position:'absolute' as const, top:8, right:8, fontSize:10, color:s.color, background:`${s.color}15`, padding:'2px 6px', borderRadius:4, fontWeight:600 }}>FILTERED</div>
+                  )}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          );
+        })()}
 
         {/* Invoice Table */}
         <div style={{ ...card }}>
