@@ -784,7 +784,8 @@ export default function ProjectDetailPage() {
 
   const showPTW           = !loading && can('sec_ptw',              'read');
 
-  const [projects, setProjects] = useState(PROJECT_DB);
+  const seedMap = Object.fromEntries((SEED_PROJECTS as any[]).map((p:any) => [p.id, { ...PROJECT_DB[p.id], ...p }]));
+  const [projects, setProjects] = useState({...PROJECT_DB, ...seedMap});
   const [allTransactions, setAllTransactions] = React.useState(PAYMENT_TRANSACTIONS);
   const [srnAllApproved, setSrnAllApproved] = React.useState(false);
   const [editingSection, setEditingSection] = useState<string|null>(null);
