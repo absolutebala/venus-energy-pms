@@ -1,7 +1,7 @@
 import { PROJECTS, SHARED_EXPENSES } from './seedData';
 
 export { SHARED_EXPENSES };
-export type { Expense } from './seedData';
+
 
 export const VENDOR_PROJECTS: Record<string, any[]> = (PROJECTS as any[]).reduce((acc:any, p:any) => {
   if (!acc[p.vendor]) acc[p.vendor] = [];
@@ -23,7 +23,4 @@ export interface PaymentTransaction {
   description?: string; addedBy?: string; addedAt?: string;
 }
 
-export interface Expense {
-  id: number; txnRef: string; date: string; site: string;
-  expenseType: string; amount: number; paymentMode: string; projectId: string;
-}
+
