@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
-import { DOC_STATUS as PROJ_DOC_STATUS_DATA } from '@/lib/seedData';
+import { DOC_STATUS as PROJ_DOC_STATUS_DATA, PROJECTS as SEED_PROJECTS } from '@/lib/seedData';
 import { MOCK_PROJECTS } from '@/lib/projectData';
 
 const fmt = (v: number) => `₹${(v / 100000).toFixed(2)}L`;
@@ -32,7 +32,7 @@ const DOC_COLS_P = [
   { key:'drawing_document',label:'Drawing'     },
   { key:'ptw_document',    label:'PTW'         },
 ];
-const PROJ_DOC_STATUS = Object.fromEntries((SEED_PROJECTS as any[]).map((p:any)=>[p.id,(DOC_STATUS as any)[p.id]||{}]));
+const PROJ_DOC_STATUS = Object.fromEntries((SEED_PROJECTS as any[]).map((p:any)=>[p.id,(PROJ_DOC_STATUS_DATA as any)[p.id]||{}]));
 const PROJ_DELIVERY = Object.fromEntries((SEED_PROJECTS as any[]).map(p=>[p.id, p.endDate]));
 // PROJ_START now derived from seedData
 
