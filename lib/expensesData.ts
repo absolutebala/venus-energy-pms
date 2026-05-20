@@ -14,6 +14,10 @@ export interface PaymentTransaction {
   date: string;
   bankTxnNo: string;
   notes?: string;
+  txnNumber?: string;
+  description?: string;
+  addedBy?: string;
+  addedAt?: string;
 }
 
 export const VENDOR_PROJECTS: Record<string, string[]> = {
