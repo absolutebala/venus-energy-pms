@@ -867,7 +867,7 @@ export default function ProjectDetailPage() {
   const handleSave = () => {
     setSaving(true);
     setTimeout(() => {
-      setProjects(prev => ({ ...prev, [p.id]: { ...prev[p.id], ...form } }));
+      setProjects((prev:any) => ({ ...prev, [p.id]: { ...prev[p.id], ...form } }));
       setSaving(false);
       setEditingSection(null);
       setToast({ msg:'Project updated successfully!', type:'success' });
@@ -875,7 +875,7 @@ export default function ProjectDetailPage() {
   };
 
   const updateStatus = (newStatus: string, msg: string) => {
-    setProjects(prev => ({ ...prev, [p.id]: { ...prev[p.id], status:newStatus } }));
+    setProjects((prev:any) => ({ ...prev, [p.id]: { ...prev[p.id], status:newStatus } }));
     setToast({ msg, type:'success' });
   };
 
