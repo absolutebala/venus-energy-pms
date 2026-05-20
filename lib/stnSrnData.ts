@@ -58,6 +58,7 @@ export interface ProjectSTNSRN {
   vendor: string;
   pm: string;
   materials: MaterialItem[];
+  isOverdue?: boolean;
 }
 
 export const getVendorMaterials = (vendor: string) =>
