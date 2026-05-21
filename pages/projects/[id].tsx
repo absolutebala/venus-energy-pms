@@ -885,7 +885,7 @@ export default function ProjectDetailPage() {
         )
       ) : (
         <div style={{ fontSize:14, fontWeight:600, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>
-          {(p as any)[key] || '—'}
+          {(form as any)[key] || '—'}
         </div>
       )}
     </div>
@@ -1086,7 +1086,7 @@ export default function ProjectDetailPage() {
                 <div key={key} style={{ marginBottom:14 }}>
                   <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>{label}</label>
                   <div style={{ fontSize:14, fontWeight:600, color:p[key]?T.text:T.textDim, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>
-                    {(p as any)[key]||'—'}
+                    {(form as any)[key]||'—'}
                   </div>
                 </div>
               ))}
