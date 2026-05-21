@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { createClient } from '@/lib/createClient()';
+import { createClient } from '@/lib/supabase';
+
+// Create client once at module level
+const supabase = createClient();
 
 export interface Project {
   id: string; po_no: string; indus_id: string; site: string;
@@ -36,32 +39,50 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { data, error: err } = await createClient()
-      .from('projects')
-      .select('*')
-      .order('id');
-    if (err) { setError(err.message); setLoading(false); return; }
-    setProjects(data || []);
-    setLoading(false);
+    try {
+      const { data, error: err } = await supabase
+        .from('projects')
+        .select('*')
+        .order('id');
+      if (err) { setError(err.message); return; }
+      setProjects(data || []);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
-  const getProject = useCallback((id: string) =>
-    projects.find(p => p.id === id), [projects]);
+  const getProject = useCallback(
+    (id: string) => projects.find(p => p.id === id),
+    [projects]
+  );
 
   const updateProject = useCallback(async (
     id: string, updates: Partial<Project>, updatedBy?: string
   ) => {
-    const payload = { ...updates, updated_at: new Date().toISOString(), updated_by: updatedBy || '' };
-    const { error: err } = await createClient().from('projects').update(payload).eq('id', id);
+    const payload = {
+      ...updates,
+      updated_at: new Date().toISOString(),
+      updated_by: updatedBy || '',
+    };
+    const { error: err } = await supabase
+      .from('projects')
+      .update(payload)
+      .eq('id', id);
     if (err) throw new Error(err.message);
-    // Update local state immediately (optimistic)
+    // Optimistic local update
     setProjects(prev => prev.map(p => p.id === id ? { ...p, ...payload } : p));
   }, []);
 
   return (
-    <ProjectContext.Provider value={{ projects, loading, error, getProject, updateProject, refreshProjects: fetchProjects }}>
+    <ProjectContext.Provider value={{
+      projects, loading, error,
+      getProject, updateProject,
+      refreshProjects: fetchProjects,
+    }}>
       {children}
     </ProjectContext.Provider>
   );
