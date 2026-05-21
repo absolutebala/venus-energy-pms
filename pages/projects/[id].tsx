@@ -791,31 +791,17 @@ export default function ProjectDetailPage() {
 
   const showPTW           = !loading && can('sec_ptw',              'read');
 
-  const seedMap = Object.fromEntries((Array.isArray(SEED_PROJECTS)?SEED_PROJECTS:[]).map((p:any) => [p.id, {
-    billedAmount:0, paidAmount:0, progress:0,
-    ptwTicketId:'', ptwSupervisor:'', ptwDateFrom:'', ptwDateTo:'',
-    projectName:p.site, siteLocation:p.region,
-    ...PROJECT_DB[p.id],
-    ...p,
-  }]));
-
-  // Load any persisted edits from localStorage
-  const loadPersistedProjects = () => {
-    const base = {...PROJECT_DB, ...seedMap};
-    if (typeof window === 'undefined') return base;
-    try {
-      const stored = localStorage.getItem('ve_projects_edits');
-      if (stored) {
-        const edits = JSON.parse(stored);
-        Object.keys(edits).forEach(pid => {
-          if (base[pid]) base[pid] = { ...base[pid], ...edits[pid] };
-        });
-      }
-    } catch(e) {}
-    return base;
-  };
-
-  const [projects, setProjects] = useState(loadPersistedProjects);
+  // ── Project data from Supabase via ProjectContext ─────────────────────────
+  const dbProject = id ? getProject(id as string) : undefined;
+  const seedFallback = (Array.isArray(SEED_PROJECTS)?SEED_PROJECTS:[]).find((p:any)=>p.id===id) || null;
+  const [projects, setProjects] = useState<Record<string,any>>({});
+  React.useEffect(() => {
+    if (dbProject) {
+      setProjects(prev => ({ ...prev, [dbProject.id]: { ...seedFallback, ...prev[dbProject.id], ...dbProject } }));
+    } else if (seedFallback && id) {
+      setProjects(prev => ({ ...prev, [id as string]: { ...seedFallback, ...prev[id as string] } }));
+    }
+  }, [dbProject, id]);
   const [allTransactions, setAllTransactions] = React.useState(PAYMENT_TRANSACTIONS);
   const [srnAllApproved, setSrnAllApproved] = React.useState(false);
   const [editingSection, setEditingSection] = useState<string|null>(null);
