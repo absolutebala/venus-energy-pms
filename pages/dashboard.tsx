@@ -8,6 +8,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 
 // ── Shared mock data ──────────────────────────────────────────────
 import { DOC_STATUS, PROJECTS as SEED_DATA } from '@/lib/seedData';
+import { useProjects } from '@/context/ProjectContext';
 const ALL_PROJECTS = SEED_DATA as any[];
 
 const INVOICES = [
