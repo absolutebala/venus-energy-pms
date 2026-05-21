@@ -48,10 +48,19 @@ function mapRow(row: any): Project {
   };
 }
 
-// Map camelCase form updates → Supabase snake_case column names
+// Valid Supabase column names for the projects table
+const DB_COLUMNS = new Set([
+  'id','po_no','indus_id','site','region','type','pm','rm',
+  'vendor','vendor_contact','vendor_phone','vendor_email',
+  'status','po_value','billed_amount','paid_amount','progress',
+  'start_date','end_date','ptw_ticket_id','ptw_supervisor',
+  'ptw_date_from','ptw_date_to','work_scope','remarks',
+  'updated_at','updated_by',
+]);
+
+// Map camelCase form updates → Supabase snake_case, filtering unknown columns
 function mapToDb(updates: Partial<Project>): Record<string, any> {
-  const db: Record<string, any> = {};
-  const map: Record<string, string> = {
+  const camelToSnake: Record<string, string> = {
     poNo:'po_no', indusId:'indus_id', vendorContact:'vendor_contact',
     vendorPhone:'vendor_phone', vendorEmail:'vendor_email',
     poValue:'po_value', billedAmount:'billed_amount', paidAmount:'paid_amount',
@@ -60,9 +69,13 @@ function mapToDb(updates: Partial<Project>): Record<string, any> {
     ptwDateFrom:'ptw_date_from', ptwDateTo:'ptw_date_to',
     workScope:'work_scope', updatedBy:'updated_by',
   };
+  const db: Record<string, any> = {};
   for (const [key, val] of Object.entries(updates)) {
-    const dbKey = map[key] || key;
-    db[dbKey] = val;
+    const dbKey = camelToSnake[key] || key;
+    // Only include columns that exist in the Supabase table
+    if (DB_COLUMNS.has(dbKey)) {
+      db[dbKey] = val;
+    }
   }
   return db;
 }
