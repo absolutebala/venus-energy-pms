@@ -461,123 +461,131 @@ const EXPENSE_TYPES   = ['Advance','Material Purchase','Labour Charge','Transpor
 const PAYMENT_MODES   = ['Cash','Bank Transfer','Cheque','UPI','DD'];
 
 function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boolean }) {
-  const [items, setItems] = React.useState<any[]>(() => (SHARED_EXPENSES || []).filter((e:any)=>e.projectId===projectId));
-  const [adding, setAdding] = React.useState(false);
-  const [newRow, setNewRow] = React.useState({ txnRef:'', date:'', site:'', expenseType:'Advance', amount:'', paymentMode:'Bank Transfer' });
+  const { getByProject, addExpense, deleteExpense, loading } = useExpenses();
+  const { profile } = useAuth();
+  const items = getByProject(projectId);
+  const [adding,  setAdding]  = React.useState(false);
+  const [saving,  setSaving]  = React.useState(false);
+  const [toast,   setToast]   = React.useState<any>(null);
+  const [newRow,  setNewRow]  = React.useState({
+    txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'Bank Transfer', remarks:''
+  });
 
-  const nextId = () => Math.max(0, ...items.map((i:any)=>i.id)) + 1;
-
-  const saveNew = () => {
-    if (!newRow.txnRef || !newRow.date || !newRow.amount) return;
-    setItems(prev => [...prev, { id:nextId(), ...newRow, amount:Number(newRow.amount) }]);
-    setNewRow({ txnRef:'', date:'', site:'', expenseType:'Advance', amount:'', paymentMode:'Bank Transfer' });
-    setAdding(false);
-  };
-
-  const removeItem = (id:number) => setItems(prev => prev.filter((i:any)=>i.id!==id));
-
-  const totalAmount = items.reduce((a:number,i:any)=>a+Number(i.amount),0);
-
-  const cellStyle: React.CSSProperties = { padding:'10px 12px', fontSize:13, borderBottom:`1px solid ${T.border}`, color:T.text };
-  const inpStyle:  React.CSSProperties = { border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text };
-  const selStyle:  React.CSSProperties = { ...inpStyle, cursor:'pointer' };
+  const fmt  = (n: number) => '₹' + Number(n).toLocaleString('en-IN');
+  const fmtD = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } };
 
   const TYPE_COLORS: Record<string,string> = {
     'Advance':'#2563EB','Material Purchase':'#7C3AED','Labour Charge':'#D97706',
     'Transport':'#0D9488','Equipment Rental':'#DC2626','Miscellaneous':'#6B7280',
   };
 
+  const inpS: React.CSSProperties = { border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px',
+    fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text };
+  const thS: React.CSSProperties  = { padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase',
+    color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, background:T.primaryLight };
+  const tdS: React.CSSProperties  = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
+
+  const totalAmount = items.reduce((a, e) => a + e.amount, 0);
+
+  const saveNew = async () => {
+    if (!newRow.txnRef || !newRow.expenseDate || !newRow.amount) return;
+    setSaving(true);
+    try {
+      await addExpense({
+        txnRef: newRow.txnRef, expenseDate: newRow.expenseDate, site: newRow.site,
+        expenseType: newRow.expenseType, amount: Number(newRow.amount),
+        paymentMode: newRow.paymentMode, remarks: newRow.remarks,
+        projectId, poNo: '', createdBy: profile?.full_name || '',
+      });
+      setNewRow({ txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'Bank Transfer', remarks:'' });
+      setAdding(false);
+      setToast({ msg:'✅ Expense saved', type:'success' });
+    } catch (err:any) {
+      setToast({ msg:'❌ ' + err.message, type:'error' });
+    } finally { setSaving(false); }
+  };
+
   return (
     <div>
-      {items.length === 0 && !adding && (
-        <div style={{ textAlign:'center', padding:30, color:T.textDim, fontSize:13 }}>
-          No expenses recorded yet.{canAdd && ' Click "+ Add Expense" to begin.'}
-        </div>
-      )}
-
+      {loading && <div style={{ color:T.textMuted, fontSize:13 }}>Loading expenses...</div>}
       {items.length > 0 && (
         <div style={{ overflowX:'auto' as const }}>
-          <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:800 }}>
+          <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
             <thead>
-              <tr style={{ background:T.bg }}>
-                {['Sr.','Transaction Ref','Date','Site Name','Expense Type','Amount (₹)','Payment Mode',''].map((h,i)=>(
-                  <th key={i} style={{ padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:i===5?'right' as const:'left' as const, borderBottom:`2px solid ${T.border}`, whiteSpace:'nowrap' as const }}>{h}</th>
+              <tr>
+                {['#','Txn Ref','Date','Site','Expense Type','Amount (₹)','Payment Mode',''].map((h,i)=>(
+                  <th key={i} style={{ ...thS, textAlign:i===5?'right' as const:'left' as const }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {items.map((item:any, idx:number) => (
-                <tr key={item.id} style={{ borderBottom:`1px solid ${T.border}` }}>
-                  <td style={{ ...cellStyle, color:T.textMuted, width:40 }}>{idx+1}</td>
-                  <td style={{ ...cellStyle, fontWeight:600 }}>{item.txnRef}</td>
-                  <td style={{ ...cellStyle, whiteSpace:'nowrap' as const, color:T.textMuted }}>
-                    {new Date(item.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
-                  </td>
-                  <td style={{ ...cellStyle }}>{item.site||'—'}</td>
-                  <td style={{ ...cellStyle }}>
-                    <span style={{ fontSize:11, fontWeight:600, color:TYPE_COLORS[item.expenseType]||T.textMuted, background:`${TYPE_COLORS[item.expenseType]||T.textMuted}15`, padding:'2px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>
+              {items.map((item, idx) => (
+                <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
+                  <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
+                  <td style={{ ...tdS, fontWeight:600, color:T.primary }}>{item.txnRef}</td>
+                  <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD(item.expenseDate)}</td>
+                  <td style={tdS}>{item.site||'—'}</td>
+                  <td style={tdS}>
+                    <span style={{ fontSize:11, fontWeight:600, color:TYPE_COLORS[item.expenseType]||T.textMuted,
+                      background:`${TYPE_COLORS[item.expenseType]||T.textMuted}18`, padding:'2px 8px', borderRadius:20, whiteSpace:'nowrap' as const }}>
                       {item.expenseType}
                     </span>
                   </td>
-                  <td style={{ ...cellStyle, fontWeight:700, color:T.primary, textAlign:'right' as const, whiteSpace:'nowrap' as const }}>
-                    ₹{Number(item.amount).toLocaleString('en-IN')}
-                  </td>
-                  <td style={{ ...cellStyle }}>
-                    <span style={{ fontSize:11, color:T.textMuted, background:T.bg, border:`1px solid ${T.border}`, padding:'2px 8px', borderRadius:6 }}>
-                      {item.paymentMode}
-                    </span>
-                  </td>
-                  <td style={{ ...cellStyle, width:36 }}>
+                  <td style={{ ...tdS, textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
+                  <td style={tdS}>{item.paymentMode}</td>
+                  <td style={{ ...tdS, width:36 }}>
                     {canAdd && (
-                      <button onClick={()=>removeItem(item.id)} style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:15 }}>🗑</button>
+                      <button onClick={()=>deleteExpense(item.id)}
+                        style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:15 }}>🗑</button>
                     )}
                   </td>
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr style={{ background:T.primaryLight, fontWeight:700 }}>
+                <td colSpan={5} style={{ ...tdS, color:T.primary }}>Total</td>
+                <td style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>{fmt(totalAmount)}</td>
+                <td colSpan={2} style={tdS}></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}
-
-      {/* Add new row inline */}
+      {!loading && items.length === 0 && (
+        <div style={{ textAlign:'center' as const, padding:'24px 0', color:T.textDim, fontSize:13 }}>No expenses for this project yet</div>
+      )}
       {adding && (
         <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:14, marginTop:12 }}>
           <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New Expense Entry</div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
+            {([['Txn Ref *','txnRef','text','EXP-XXX'],['Date *','expenseDate','date',''],
+               ['Amount (₹) *','amount','number',''],['Site','site','text',''],
+               ['Remarks','remarks','text','']] as [string,string,string,string][]).map(([l,f,t,ph])=>(
+              <div key={f}>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{l}</label>
+                <input type={t} value={(newRow as any)[f]} placeholder={ph}
+                  onChange={e=>setNewRow(p=>({...p,[f]:e.target.value}))} style={inpS} />
+              </div>
+            ))}
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Transaction Ref *</label>
-              <input value={newRow.txnRef} onChange={e=>setNewRow(p=>({...p,txnRef:e.target.value}))} placeholder="TXN-2025-XXX" style={inpStyle} />
-            </div>
-            <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Date *</label>
-              <input type="date" value={newRow.date} onChange={e=>setNewRow(p=>({...p,date:e.target.value}))} style={inpStyle} />
-            </div>
-            <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Site Name</label>
-              <input value={newRow.site} onChange={e=>setNewRow(p=>({...p,site:e.target.value}))} placeholder="Site name" style={inpStyle} />
-            </div>
-            <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Expense Type *</label>
-              <select value={newRow.expenseType} onChange={e=>setNewRow(p=>({...p,expenseType:e.target.value}))} style={selStyle}>
-                {EXPENSE_TYPES.map(t=><option key={t}>{t}</option>)}
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Expense Type</label>
+              <select value={newRow.expenseType} onChange={e=>setNewRow(p=>({...p,expenseType:e.target.value}))} style={{ ...inpS, cursor:'pointer' }}>
+                {['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'].map(t=><option key={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Amount (₹) *</label>
-              <input type="number" value={newRow.amount} onChange={e=>setNewRow(p=>({...p,amount:e.target.value}))} placeholder="0.00" style={{ ...inpStyle, textAlign:'right' as const }} />
-            </div>
-            <div>
               <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Payment Mode</label>
-              <select value={newRow.paymentMode} onChange={e=>setNewRow(p=>({...p,paymentMode:e.target.value}))} style={selStyle}>
-                {PAYMENT_MODES.map(m=><option key={m}>{m}</option>)}
+              <select value={newRow.paymentMode} onChange={e=>setNewRow(p=>({...p,paymentMode:e.target.value}))} style={{ ...inpS, cursor:'pointer' }}>
+                {['Cash','Bank Transfer','Cheque','UPI','DD'].map(m=><option key={m}>{m}</option>)}
               </select>
             </div>
           </div>
           <div style={{ display:'flex', gap:10 }}>
-            <button onClick={saveNew}
-              disabled={!newRow.txnRef||!newRow.date||!newRow.amount}
-              style={{ ...btnPrimary, opacity:!newRow.txnRef||!newRow.date||!newRow.amount?0.5:1 }}>
-              ✅ Save Entry
+            <button onClick={saveNew} disabled={saving||!newRow.txnRef||!newRow.expenseDate||!newRow.amount}
+              style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px',
+                cursor:'pointer', fontSize:13, fontWeight:600, opacity:saving||!newRow.txnRef||!newRow.expenseDate||!newRow.amount?0.5:1 }}>
+              {saving?'Saving…':'💾 Save Expense'}
             </button>
             <button onClick={()=>setAdding(false)}
               style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', color:T.text, cursor:'pointer', fontSize:13 }}>
@@ -586,40 +594,25 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
           </div>
         </div>
       )}
-
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:14 }}>
         {canAdd && !adding && (
           <button onClick={()=>setAdding(true)}
-            style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8, padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
+            style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8,
+              padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
             + Add Expense
           </button>
         )}
         {items.length > 0 && (
-          <div style={{ marginLeft:'auto', fontSize:13, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'8px 18px', borderRadius:8 }}>
-            Total Expenses: ₹{totalAmount.toLocaleString('en-IN')}
+          <div style={{ marginLeft:'auto', fontSize:13, fontWeight:700, color:T.primary,
+            background:T.primaryLight, padding:'8px 18px', borderRadius:8 }}>
+            Total: {fmt(totalAmount)}
           </div>
         )}
       </div>
+      {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
     </div>
   );
 }
-
-
-// ── Invoice Section Component ─────────────────────────────────────────────────
-const INV_STATUS_OPTS = ['Draft','Submitted','Under Review','Approved','Rejected'];
-const PAY_STATUS_OPTS = ['Pending','Partial','Paid'];
-const INV_STATUS_COLORS: any = {
-  Approved:{'color':'#0D9488','bg':'#F0FDFA','border':'#99F6E4'},
-  Submitted:{'color':'#2563EB','bg':'#EFF6FF','border':'#BFDBFE'},
-  'Under Review':{'color':'#7C3AED','bg':'#F5F3FF','border':'#DDD6FE'},
-  Rejected:{'color':'#DC2626','bg':'#FEF2F2','border':'#FECACA'},
-  Draft:{'color':'#6B7280','bg':'#F9FAFB','border':'#E5E7EB'},
-};
-const PAY_STATUS_COLORS: any = {
-  Paid:{'color':'#0D9488','bg':'#F0FDFA','border':'#99F6E4'},
-  Pending:{'color':'#D97706','bg':'#FFFBEB','border':'#FDE68A'},
-  Partial:{'color':'#2563EB','bg':'#EFF6FF','border':'#BFDBFE'},
-};
 
 function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:string; canAdd:boolean; projectPoNo?:string }) {
   const { getByProject, addInvoice, deleteInvoice, loading } = useInvoices();
