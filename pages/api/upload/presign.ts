@@ -23,6 +23,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { data: { user }, error } = await admin.auth.getUser(token);
   if (error || !user) return res.status(401).json({ error: 'Unauthorized' });
 
+  // Check required env vars
+  if (!process.env.R2_ACCOUNT_ID || !process.env.R2_ACCESS_KEY_ID || !process.env.R2_SECRET_ACCESS_KEY || !process.env.R2_BUCKET_NAME) {
+    return res.status(500).json({ error: 'R2 environment variables not configured' });
+  }
+
   const { fileName, contentType, folder = 'uploads' } = req.body;
   if (!fileName || !contentType) return res.status(400).json({ error: 'fileName and contentType required' });
 
@@ -37,8 +42,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ContentType: contentType,
   });
 
-  const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 300 }); // 5 min
-  const publicUrl    = `${process.env.R2_PUBLIC_URL}/${key}`;
-
-  return res.status(200).json({ presignedUrl, publicUrl, key });
+  try {
+    const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
+    const publicUrl    = `${process.env.R2_PUBLIC_URL}/${key}`;
+    return res.status(200).json({ presignedUrl, publicUrl, key });
+  } catch (err: any) {
+    console.error('R2 presign error:', err);
+    return res.status(500).json({ error: err.message || 'R2 presign failed' });
+  }
 }
