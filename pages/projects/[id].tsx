@@ -1234,12 +1234,16 @@ export default function ProjectDetailPage() {
                           onChange={async e => {
                             const file = e.target.files?.[0]; if (!file) return;
                             try {
-                              const result = await upload(file, `projects/${id}/${doc.key}`);
+                              setToast({ msg:'⏳ Uploading...', type:'info' });
+                              const result = await upload(file, 'projects/' + id + '/' + doc.key);
                               await addDoc({ projectId: id as string, docType: doc.key,
                                 fileName: result.fileName, fileUrl: result.publicUrl,
                                 fileSize: result.fileSize, uploadedByName: profile?.full_name || '' });
-                              setToast({ msg:'✅ File uploaded', type:'success' });
-                            } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+                              setToast({ msg:'✅ File uploaded successfully', type:'success' });
+                            } catch(err:any) {
+                              console.error('Upload error:', err);
+                              setToast({ msg:'❌ ' + (err?.message || JSON.stringify(err)), type:'error' });
+                            }
                             e.target.value = '';
                           }} />
                       </label>
