@@ -69,12 +69,13 @@ function mapToDb(updates: Partial<Project>): Record<string, any> {
     ptwDateFrom:'ptw_date_from', ptwDateTo:'ptw_date_to',
     workScope:'work_scope', updatedBy:'updated_by',
   };
+  const DATE_COLS = new Set(['start_date','end_date','ptw_date_from','ptw_date_to']);
   const db: Record<string, any> = {};
   for (const [key, val] of Object.entries(updates)) {
     const dbKey = camelToSnake[key] || key;
-    // Only include columns that exist in the Supabase table
     if (DB_COLUMNS.has(dbKey)) {
-      db[dbKey] = val;
+      // Convert empty strings to null for date columns
+      db[dbKey] = DATE_COLS.has(dbKey) && val === '' ? null : val;
     }
   }
   return db;
