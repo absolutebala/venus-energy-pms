@@ -5,6 +5,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
 import { DOC_STATUS as PROJ_DOC_STATUS_DATA, PROJECTS as SEED_PROJECTS } from '@/lib/seedData';
+import { STN_SRN_DATA } from '@/lib/stnSrnData';
 import { MOCK_PROJECTS } from '@/lib/projectData';
 
 const fmt = (v: number) => `₹${(v / 100000).toFixed(2)}L`;
@@ -34,6 +35,15 @@ const DOC_COLS_P = [
 ];
 const PROJ_DOC_STATUS = Object.fromEntries((SEED_PROJECTS as any[]).map((p:any)=>[p.id,(PROJ_DOC_STATUS_DATA as any)[p.id]||{}]));
 const PROJ_DELIVERY = Object.fromEntries((SEED_PROJECTS as any[]).map(p=>[p.id, p.endDate]));
+const STN_RETURN_MAP: Record<string,boolean> = Object.fromEntries(
+  (STN_SRN_DATA as any[]).map(proj => {
+    const allReturned = proj.materials.every((m:any) =>
+      Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0)) === 0 ||
+      (m.returnQty??0) >= Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0))
+    );
+    return [proj.projectId, allReturned];
+  })
+);
 // PROJ_START now derived from seedData
 
 export default function ProjectsPage() {
@@ -84,7 +94,17 @@ export default function ProjectsPage() {
   };
 
   const agingThreshold = 60; // days
-  const getAgeDays = (id: string) => { const p = (projects as any[]).find((x:any)=>x.id===id); return p?.startDate ? Math.floor((new Date().getTime() - new Date(p.startDate).getTime()) / 86400000) : (p?.aging||0); };
+  const getAgeDays = (id: string) => {
+    const p = (projects as any[]).find((x:any)=>x.id===id);
+    if (!p) return 0;
+    if (p.status === 'not_started') return 0;
+    if (p.status === 'completed') {
+      // Show project duration (start to end) not days till today
+      if (p.startDate && p.endDate) return Math.floor((new Date(p.endDate).getTime() - new Date(p.startDate).getTime()) / 86400000);
+      return 0;
+    }
+    return p.startDate ? Math.floor((new Date().getTime() - new Date(p.startDate).getTime()) / 86400000) : (p.aging||0);
+  };
   const filtered = projects.filter(p => {
     const displayStatus = STATUS_DISPLAY[p.status] || p.status;
     if (statusFilter === 'Aging') return getAgeDays(p.id) > agingThreshold;
@@ -100,7 +120,7 @@ export default function ProjectsPage() {
   const counts = {
     total: projects.length,
     inProgress: projects.filter(p=>p.status==='in_progress').length,
-    aging: projects.filter((p:any)=>getAgeDays(p.id)>agingThreshold).length,
+    aging: projects.filter((p:any)=>!['completed','not_started'].includes(p.status)&&getAgeDays(p.id)>agingThreshold).length,
     completed: projects.filter(p=>p.status==='completed').length,
   };
 
@@ -259,7 +279,7 @@ export default function ProjectsPage() {
                   const docs    = PROJ_DOC_STATUS[p.id] || {};
                   const delDate = PROJ_DELIVERY[p.id];
                   const delDt   = delDate ? new Date(delDate) : null;
-                  const isPast  = delDt ? delDt < new Date() : false;
+                  const isPast  = delDt && !['completed','not_started'].includes(p.status) ? delDt < new Date() : false;
                   const ageDays = getAgeDays(p.id);
                   const ageColor= ageDays > 90 ? '#DC2626' : ageDays > 60 ? '#D97706' : '#0D9488';
                   const ageBg   = ageDays > 90 ? '#FEF2F2' : ageDays > 60 ? '#FFFBEB' : '#F0FDFA';
