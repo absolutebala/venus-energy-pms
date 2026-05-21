@@ -108,7 +108,9 @@ export default function InvoicesPage() {
   };
 
   const saveInvoice = async () => {
-    if (!newInv.invoiceNo || !newInv.invoiceDate || !newInv.invoiceAmount) return;
+    if (!newInv.invoiceNo || !newInv.invoiceDate || !newInv.invoiceAmount) {
+      setToast({ msg:'Please fill Invoice No, Date and Amount', type:'error' }); return;
+    }
     const amt = Number(newInv.invoiceAmount), gst = Number(newInv.gst);
     const linkedProj = matchedProject || projects.find((p:any) => matchesPO(p.poNo, newInv.poNo));
     setSaving(true);

@@ -86,6 +86,9 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addInvoice = useCallback(async (inv: Omit<Invoice, 'id'|'createdAt'|'updatedAt'>) => {
+    // Check for duplicate invoice number
+    const duplicate = invoices.find(i => i.invoiceNo.trim().toLowerCase() === inv.invoiceNo.trim().toLowerCase());
+    if (duplicate) throw new Error(`Invoice number "${inv.invoiceNo}" already exists for project ${duplicate.projectId}`);
     const payload = mapToDb(inv);
     const { data, error } = await supabase.from('invoices').insert(payload).select().single();
     if (error) throw new Error(error.message);
