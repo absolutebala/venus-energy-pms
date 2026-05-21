@@ -823,6 +823,7 @@ export default function ProjectDetailPage() {
   const showFinancial     = !loading && can('sec_financial',        'read');
   const showVendor        = !loading && can('sec_vendor_assignment', 'read');
   const showDocs          = !loading && can('sec_work_documents',   'read');
+  const canUploadDocs     = !loading && can('sec_work_documents',   'create');
   const showSTNSRN        = !loading && can('sec_stn_srn',          'read');
   const showBillingReview = !loading && can('sec_billing_review',   'read');
   const showActivityLog   = !loading && can('sec_activity_log',     'read');
@@ -1220,6 +1221,37 @@ export default function ProjectDetailPage() {
 
                   {docs.length === 0 && (
                     <div style={{ textAlign:'center', padding:'12px 0', color:T.textDim, fontSize:12 }}>No files uploaded</div>
+                  )}
+
+                  {/* Upload + Delete buttons */}
+                  {canUploadDocs && (
+                    <div style={{ marginTop:8, display:'flex', gap:6, flexWrap:'wrap' as const }}>
+                      <label style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600,
+                        color:T.primary, background:T.primaryLight, border:`1px solid ${T.primaryMid}`,
+                        borderRadius:6, padding:'5px 10px', cursor:'pointer' }}>
+                        ⬆ Upload
+                        <input type="file" accept={doc.accept} style={{ display:'none' }}
+                          onChange={async e => {
+                            const file = e.target.files?.[0]; if (!file) return;
+                            try {
+                              const result = await upload(file, `projects/${id}/${doc.key}`);
+                              await addDoc({ projectId: id as string, docType: doc.key,
+                                fileName: result.fileName, fileUrl: result.publicUrl,
+                                fileSize: result.fileSize, uploadedByName: profile?.full_name || '' });
+                              setToast({ msg:'✅ File uploaded', type:'success' });
+                            } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+                            e.target.value = '';
+                          }} />
+                      </label>
+                      {docs.map((d:any, i:number) => (
+                        <button key={i} onClick={() => { if(d.id) deleteWorkDoc(d.id); }}
+                          title={`Delete ${d.name}`}
+                          style={{ fontSize:11, color:T.danger, background:'#FEF2F2', border:`1px solid #FECACA`,
+                            borderRadius:6, padding:'5px 8px', cursor:'pointer' }}>
+                          🗑 {d.name?.substring(0,15)}{d.name?.length>15?'…':''}
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
               );
