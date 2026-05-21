@@ -787,7 +787,7 @@ export default function ProjectDetailPage() {
 
   const showPTW           = !loading && can('sec_ptw',              'read');
 
-  const seedMap = Object.fromEntries((SEED_PROJECTS as any[]).map((p:any) => [p.id, {
+  const seedMap = Object.fromEntries((Array.isArray(SEED_PROJECTS)?SEED_PROJECTS:[]).map((p:any) => [p.id, {
     billedAmount:0, paidAmount:0, progress:0,
     ptwTicketId:'', ptwSupervisor:'', ptwDateFrom:'', ptwDateTo:'',
     projectName:p.site, siteLocation:p.region,

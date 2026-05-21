@@ -199,7 +199,7 @@ function ProjectStatusTable({ projects }: { projects: any[] }) {
                   onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=idx%2===0?'#fff':'#FAFAFA'}>
                   <td style={{ ...tdStyle, color:'#9CA3AF', fontWeight:600 }}>{(page-1)*PER_PAGE+idx+1}</td>
                   <td style={{ ...tdStyle }}>
-                    <a href={`/projects/${p.id}`} style={{ color:'#0D9488', fontWeight:700, textDecoration:'none', fontSize:13 }}>{p.id}</a>
+                    <span onClick={()=>router.push(`/projects/${p.id}`)} style={{ color:'#0D9488', fontWeight:700, cursor:'pointer', fontSize:13, textDecoration:'underline' }}>{p.id}</span>
                     {p.poNo && <div style={{ fontSize:10, color:'#9CA3AF', marginTop:2 }}>{p.poNo}</div>}
                   </td>
                   <td style={{ ...tdStyle }}>
