@@ -906,6 +906,15 @@ export default function ProjectDetailPage() {
 
   const p = project;
 
+  const workDocsList = getProjectDocs((id as string) || '');
+  const workDocs: Record<string, any[]> = DOC_TYPES.reduce((acc:any, dt:any) => {
+    acc[dt.key] = workDocsList.filter((d:any) => d.docType === dt.key).map((d:any) => ({
+      name: d.fileName, size: d.fileSize, url: d.fileUrl,
+      isImage: dt.key.includes('photo'), id: d.id,
+    }));
+    return acc;
+  }, {});
+
   if (!p) return (
     <Layout>
       <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:300, flexDirection:'column', gap:16 }}>
