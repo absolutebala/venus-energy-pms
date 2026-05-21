@@ -9,6 +9,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 // ── Shared mock data ──────────────────────────────────────────────
 import { DOC_STATUS, PROJECTS as SEED_DATA } from '@/lib/seedData';
 import { useProjects } from '@/context/ProjectContext';
+import { useWorkDocs } from '@/context/WorkDocContext';
 const ALL_PROJECTS = SEED_DATA as any[];
 
 const INVOICES = [
@@ -103,7 +104,7 @@ const DOC_COLS = [
   { key:'ptw_document',    label:'PTW'        },
 ];
 
-const MOCK_DOC_STATUS = DOC_STATUS;
+// MOCK_DOC_STATUS replaced by useWorkDocs
 const MOCK_STN_RETURN: Record<string, boolean> = {
   'VE-2025-001':false,'VE-2025-002':true,'VE-2025-003':false,'VE-2025-004':false,
   'VE-2025-005':true, 'VE-2025-006':false,'VE-2025-007':false,'VE-2025-008':false,
@@ -192,7 +193,7 @@ function ProjectStatusTable({ projects }: { projects: any[] }) {
           <tbody>
             {paged.map((p, idx) => {
               const wsCfg = WORK_STATUS_CFG[p.status] || WORK_STATUS_CFG.not_started;
-              const docs  = MOCK_DOC_STATUS[p.id] || {};
+              const docs  = getDocStatus(p.id) || {};
               const upd   = MOCK_UPDATED[p.id] || { date:'—', by:'—' };
               return (
                 <tr key={p.id} style={{ background: idx%2===0 ? '#fff' : '#FAFAFA' }}
@@ -997,6 +998,7 @@ function AccountingDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
 // ── MAIN DASHBOARD (role router) ─────────────────────────────────
 export default function Dashboard() {
   const { projects: dbProjects } = useProjects();
+  const { getDocStatus } = useWorkDocs();
   const { profile } = useAuth();
   const role = profile?.role || 'viewer';
   const name = profile?.full_name?.split(' ')[0] || 'User';
