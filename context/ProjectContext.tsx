@@ -11,6 +11,8 @@ export interface Project {
   progress: number; startDate: string; endDate: string;
   ptwTicketId: string; ptwSupervisor: string; ptwDateFrom: string; ptwDateTo: string;
   workScope: string; remarks: string;
+  safetyPhotos: boolean; sitePhotos: boolean; jmrDocument: boolean;
+  acCertificate: boolean; nocDocument: boolean; drawingDocument: boolean; ptwDocument: boolean;
   createdAt?: string; updatedAt?: string; updatedBy?: string;
 }
 
@@ -42,6 +44,13 @@ function mapRow(row: any): Project {
     ptwDateTo:     row.ptw_date_to    ?? row.ptwDateTo    ?? '',
     workScope:     row.work_scope    ?? row.workScope    ?? '',
     remarks:       row.remarks       ?? '',
+    safetyPhotos:    Boolean(row.safety_photos),
+    sitePhotos:      Boolean(row.site_photos),
+    jmrDocument:     Boolean(row.jmr_document),
+    acCertificate:   Boolean(row.ac_certificate),
+    nocDocument:     Boolean(row.noc_document),
+    drawingDocument: Boolean(row.drawing_document),
+    ptwDocument:     Boolean(row.ptw_document),
     createdAt:     row.created_at    ?? '',
     updatedAt:     row.updated_at    ?? '',
     updatedBy:     row.updated_by    ?? '',
@@ -54,7 +63,7 @@ const DB_COLUMNS = new Set([
   'vendor','vendor_contact','vendor_phone','vendor_email',
   'status','po_value','billed_amount','paid_amount','progress',
   'start_date','end_date','ptw_ticket_id','ptw_supervisor',
-  'ptw_date_from','ptw_date_to','work_scope','remarks',
+  'ptw_date_from','ptw_date_to','work_scope','remarks','safety_photos','site_photos','jmr_document','ac_certificate','noc_document','drawing_document','ptw_document',
   'updated_at','updated_by',
 ]);
 
@@ -68,6 +77,9 @@ function mapToDb(updates: Partial<Project>): Record<string, any> {
     ptwTicketId:'ptw_ticket_id', ptwSupervisor:'ptw_supervisor',
     ptwDateFrom:'ptw_date_from', ptwDateTo:'ptw_date_to',
     workScope:'work_scope', updatedBy:'updated_by',
+    safetyPhotos:'safety_photos', sitePhotos:'site_photos',
+    jmrDocument:'jmr_document', acCertificate:'ac_certificate',
+    nocDocument:'noc_document', drawingDocument:'drawing_document', ptwDocument:'ptw_document',
   };
   const DATE_COLS = new Set(['start_date','end_date','ptw_date_from','ptw_date_to']);
   const db: Record<string, any> = {};

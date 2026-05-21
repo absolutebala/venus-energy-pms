@@ -34,7 +34,8 @@ const DOC_COLS_P = [
   { key:'drawing_document',label:'Drawing'     },
   { key:'ptw_document',    label:'PTW'         },
 ];
-const PROJ_DOC_STATUS = Object.fromEntries((SEED_PROJECTS as any[]).map((p:any)=>[p.id,(PROJ_DOC_STATUS_DATA as any)[p.id]||{}]));
+// Doc status now comes directly from project data (Supabase)
+const PROJ_DOC_STATUS = Object.fromEntries((projects as any[]).map((p:any)=>[p.id,{ safety_photos:p.safetyPhotos, site_photos:p.sitePhotos, jmr_document:p.jmrDocument, ac_certificate:p.acCertificate, noc_document:p.nocDocument, drawing_document:p.drawingDocument, ptw_document:p.ptwDocument }]));
 const PROJ_DELIVERY = Object.fromEntries((SEED_PROJECTS as any[]).map(p=>[p.id, p.endDate]));
 const STN_RETURN_MAP: Record<string,boolean> = Object.fromEntries(
   (STN_SRN_DATA as any[]).map(proj => {
