@@ -797,7 +797,24 @@ export default function ProjectDetailPage() {
     ...PROJECT_DB[p.id],
     ...p,
   }]));
-  const [projects, setProjects] = useState({...PROJECT_DB, ...seedMap});
+
+  // Load any persisted edits from localStorage
+  const loadPersistedProjects = () => {
+    const base = {...PROJECT_DB, ...seedMap};
+    if (typeof window === 'undefined') return base;
+    try {
+      const stored = localStorage.getItem('ve_projects_edits');
+      if (stored) {
+        const edits = JSON.parse(stored);
+        Object.keys(edits).forEach(pid => {
+          if (base[pid]) base[pid] = { ...base[pid], ...edits[pid] };
+        });
+      }
+    } catch(e) {}
+    return base;
+  };
+
+  const [projects, setProjects] = useState(loadPersistedProjects);
   const [allTransactions, setAllTransactions] = React.useState(PAYMENT_TRANSACTIONS);
   const [srnAllApproved, setSrnAllApproved] = React.useState(false);
   const [editingSection, setEditingSection] = useState<string|null>(null);
@@ -810,7 +827,17 @@ export default function ProjectDetailPage() {
   const saveSection = () => {
     setSaving(true);
     setTimeout(() => {
-      setProjects((prev:any) => ({ ...prev, [id as string]: { ...prev[id as string], ...form } }));
+      setProjects((prev:any) => {
+        const updated = { ...prev, [id as string]: { ...prev[id as string], ...form } };
+        // Persist edits to localStorage
+        try {
+          const stored = localStorage.getItem('ve_projects_edits');
+          const edits = stored ? JSON.parse(stored) : {};
+          edits[id as string] = { ...(edits[id as string]||{}), ...form };
+          localStorage.setItem('ve_projects_edits', JSON.stringify(edits));
+        } catch(e) {}
+        return updated;
+      });
       setSaving(false); setEditingSection(null);
       setToast({ msg:'Section saved!', type:'success' });
     }, 500);
@@ -879,7 +906,17 @@ export default function ProjectDetailPage() {
   const handleSave = () => {
     setSaving(true);
     setTimeout(() => {
-      setProjects((prev:any) => ({ ...prev, [id as string]: { ...prev[id as string], ...form } }));
+      setProjects((prev:any) => {
+        const updated = { ...prev, [id as string]: { ...prev[id as string], ...form } };
+        // Persist edits to localStorage
+        try {
+          const stored = localStorage.getItem('ve_projects_edits');
+          const edits = stored ? JSON.parse(stored) : {};
+          edits[id as string] = { ...(edits[id as string]||{}), ...form };
+          localStorage.setItem('ve_projects_edits', JSON.stringify(edits));
+        } catch(e) {}
+        return updated;
+      });
       setSaving(false);
       setEditingSection(null);
       setToast({ msg:'Project updated successfully!', type:'success' });
