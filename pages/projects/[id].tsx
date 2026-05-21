@@ -810,13 +810,19 @@ export default function ProjectDetailPage() {
   const cancelEdit = () => { setForm({...(id ? projects[id as string] : {})}); setEditingSection(null); };
   const saveSection = () => {
     setSaving(true);
-    setTimeout(() => {
-      setProjects((prev:any) => ({ ...prev, [id as string]: { ...prev[id as string], ...form } }));
-        // Persist to Supabase
-        ctxUpdateProject(id as string, form, profile?.full_name ?? undefined).catch(console.error);
-      setSaving(false); setEditingSection(null);
-      setToast({ msg:'Section saved!', type:'success' });
-    }, 500);
+    // Optimistic local update
+    setProjects((prev:any) => ({ ...prev, [id as string]: { ...prev[id as string], ...form } }));
+    // Persist to Supabase with explicit feedback
+    ctxUpdateProject(id as string, form, profile?.full_name ?? undefined)
+      .then(() => {
+        setToast({ msg:'✅ Saved successfully!', type:'success' });
+        setEditingSection(null);
+      })
+      .catch((err:any) => {
+        console.error('Save error:', err);
+        setToast({ msg:'❌ Save failed: ' + (err?.message || 'Unknown error'), type:'error' });
+      })
+      .finally(() => setSaving(false));
   };
   const [toast,    setToast]    = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
 
