@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/createClient()';
 
 export interface Project {
   id: string; po_no: string; indus_id: string; site: string;
@@ -36,7 +36,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { data, error: err } = await supabase
+    const { data, error: err } = await createClient()
       .from('projects')
       .select('*')
       .order('id');
@@ -54,7 +54,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     id: string, updates: Partial<Project>, updatedBy?: string
   ) => {
     const payload = { ...updates, updated_at: new Date().toISOString(), updated_by: updatedBy || '' };
-    const { error: err } = await supabase.from('projects').update(payload).eq('id', id);
+    const { error: err } = await createClient().from('projects').update(payload).eq('id', id);
     if (err) throw new Error(err.message);
     // Update local state immediately (optimistic)
     setProjects(prev => prev.map(p => p.id === id ? { ...p, ...payload } : p));
