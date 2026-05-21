@@ -14,33 +14,28 @@ export function useUpload() {
     const token = await getAccessToken();
     if (!token) throw new Error('Not authenticated');
 
-    // 1. Get presigned URL
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', folder);
+
     const res = await fetch('/api/upload/presign', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ fileName: file.name, contentType: file.type, folder }),
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to get upload URL');
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || 'Upload failed');
     }
 
-    const { presignedUrl, publicUrl, key } = await res.json();
-
-    // 2. Upload directly to R2
-    const uploadRes = await fetch(presignedUrl, {
-      method: 'PUT',
-      body: file,
-      headers: { 'Content-Type': file.type },
-    });
-
-    if (!uploadRes.ok) throw new Error('Upload to storage failed');
-
-    const kb = file.size / 1024;
-    const fileSize = kb > 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
-
-    return { publicUrl, key, fileName: file.name, fileSize };
+    const data = await res.json();
+    return {
+      publicUrl: data.publicUrl,
+      key:       data.key,
+      fileName:  data.fileName || file.name,
+      fileSize:  data.fileSize || `${Math.round(file.size/1024)} KB`,
+    };
   };
 
   return { upload };
