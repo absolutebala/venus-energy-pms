@@ -791,6 +791,7 @@ export default function ProjectDetailPage() {
 
   const showPTW           = !loading && can('sec_ptw',              'read');
 
+  const { getProject, updateProject: ctxUpdateProject } = useProjects();
   // ── Project data from Supabase via ProjectContext ─────────────────────────
   const dbProject = id ? getProject(id as string) : undefined;
   const seedFallback = (Array.isArray(SEED_PROJECTS)?SEED_PROJECTS:[]).find((p:any)=>p.id===id) || null;
