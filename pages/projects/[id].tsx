@@ -112,6 +112,7 @@ const BASE_ACTIVITY_LOG = [
 
 ];
 
+const fmtDate = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } };
 const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
 
 
@@ -247,7 +248,8 @@ function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { pr
     return          { label:'✅ Active',            color:T.success, bg:T.successBg, border:'#BBF7D0' };
   };
 
-  const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  const fmtDate = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } };
+const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
   const inp = (val:string, field:string, id:number, type='text', ph='') => (
     <input type={type} value={val} placeholder={ph}
       onChange={e=>update(id,field,e.target.value)}
@@ -636,7 +638,8 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
   };
 
   const removeItem = (id:number) => setItems(prev=>prev.filter((i:any)=>i.id!==id));
-  const fmt = (n:number) => '₹'+n.toLocaleString('en-IN',{minimumFractionDigits:2});
+  const fmtDate = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } };
+const fmt = (n:number) => '₹'+n.toLocaleString('en-IN',{minimumFractionDigits:2});
   const fmtD = (d:string) => d?new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—';
   const inpS: React.CSSProperties = { border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text };
   const selS: React.CSSProperties = { ...inpS, cursor:'pointer' };
@@ -802,12 +805,12 @@ export default function ProjectDetailPage() {
 
   const editing    = (s: string) => editingSection === s;
   const notEditing = editingSection === null;
-  const startEdit  = (s: string) => { setForm({...p}); setEditingSection(s); };
-  const cancelEdit = () => { setForm({...p}); setEditingSection(null); };
+  const startEdit  = (s: string) => { setForm({...(id ? projects[id as string] : {})}); setEditingSection(s); };
+  const cancelEdit = () => { setForm({...(id ? projects[id as string] : {})}); setEditingSection(null); };
   const saveSection = () => {
     setSaving(true);
     setTimeout(() => {
-      setProjects((prev:any) => ({ ...prev, [p.id]: { ...prev[p.id], ...form } }));
+      setProjects((prev:any) => ({ ...prev, [id as string]: { ...prev[id as string], ...form } }));
       setSaving(false); setEditingSection(null);
       setToast({ msg:'Section saved!', type:'success' });
     }, 500);
@@ -876,7 +879,7 @@ export default function ProjectDetailPage() {
   const handleSave = () => {
     setSaving(true);
     setTimeout(() => {
-      setProjects((prev:any) => ({ ...prev, [p.id]: { ...prev[p.id], ...form } }));
+      setProjects((prev:any) => ({ ...prev, [id as string]: { ...prev[id as string], ...form } }));
       setSaving(false);
       setEditingSection(null);
       setToast({ msg:'Project updated successfully!', type:'success' });

@@ -109,7 +109,7 @@ const MOCK_STN_RETURN: Record<string, boolean> = {
   'VE-2025-009':false,'VE-2025-010':true,
 };
 
-const MOCK_UPDATED  = Object.fromEntries(SEED_DATA.map((p:any)=>[p.id,{date:new Date(p.startDate).toLocaleDateString('en-IN',{day:'2-digit',month:'2-digit',year:'numeric'}),by:p.pm}]));
+const MOCK_UPDATED  = Object.fromEntries(SEED_DATA.map((p:any)=>[p.id,{date:new Date(p.startDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),by:p.pm}]));
 const MOCK_DELIVERY = Object.fromEntries(SEED_DATA.map((p:any)=>[p.id, p.endDate]));
 const MOCK_START    = Object.fromEntries(SEED_DATA.map((p:any)=>[p.id, p.startDate]));
 const WORK_STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
