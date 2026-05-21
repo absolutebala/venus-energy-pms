@@ -1178,7 +1178,7 @@ export default function ProjectDetailPage() {
           {sectionTitle('📂','Work Documents', 'docs', false)}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
             {DOC_TYPES.map(doc => {
-              const docs = MOCK_DOCS[doc.key] || [
+              const docs = workDocs[doc.key] || [
 ];
               const uploaded = docs.length > 0;
               return (
