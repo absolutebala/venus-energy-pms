@@ -138,6 +138,7 @@ function StatusBadge({ done }: { done: boolean }) {
 
 function ProjectStatusTable({ projects }: { projects: any[] }) {
   const router = useRouter();
+  const { getDocStatus } = useWorkDocs();
   const [page, setPage] = React.useState(1);
   const [search, setSearch] = React.useState('');
   const PER_PAGE = 8;
