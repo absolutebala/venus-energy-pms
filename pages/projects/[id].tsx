@@ -817,7 +817,7 @@ export default function ProjectDetailPage() {
     setTimeout(() => {
       setProjects((prev:any) => ({ ...prev, [id as string]: { ...prev[id as string], ...form } }));
         // Persist to Supabase
-        ctxUpdateProject(id as string, form, profile?.full_name).catch(console.error);
+        ctxUpdateProject(id as string, form, profile?.full_name ?? undefined).catch(console.error);
       setSaving(false); setEditingSection(null);
       setToast({ msg:'Section saved!', type:'success' });
     }, 500);
@@ -889,7 +889,7 @@ export default function ProjectDetailPage() {
     setTimeout(() => {
       setProjects((prev:any) => ({ ...prev, [id as string]: { ...prev[id as string], ...form } }));
         // Persist to Supabase
-        ctxUpdateProject(id as string, form, profile?.full_name).catch(console.error);
+        ctxUpdateProject(id as string, form, profile?.full_name ?? undefined).catch(console.error);
       setSaving(false);
       setEditingSection(null);
       setToast({ msg:'Project updated successfully!', type:'success' });
