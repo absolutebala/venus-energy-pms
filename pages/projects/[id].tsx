@@ -859,7 +859,6 @@ export default function ProjectDetailPage() {
 
   const p = project;
 
-  // Show loading while project data arrives from Supabase
   if (!p) return (
     <Layout>
       <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:300, flexDirection:'column', gap:16 }}>
@@ -874,7 +873,8 @@ export default function ProjectDetailPage() {
   const st = STATUS_COLOR[p.status] || '#64748B';
 
   // Edit form state
-  const [form, setForm] = useState({ ...p });
+  const [form, setForm] = useState<any>({});
+  React.useEffect(() => { if (p) setForm({...p}); }, [p?.id]);
   const F = (label:string, key:string, type='text', options?:string[], readOnly=false, sectionCanEdit=editing('details') && canEditDetails) => (
     <div style={{ marginBottom:14 }}>
       <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>{label}</label>
