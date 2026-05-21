@@ -58,6 +58,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ publicUrl, key, fileName: file.originalFilename, fileSize });
   } catch (err: any) {
     console.error('Upload error:', err);
-    return res.status(500).json({ error: err.message || 'Upload failed' });
+    return res.status(500).json({ error: err.message || 'Upload failed', endpoint: process.env.R2_ACCOUNT_ID ? process.env.R2_ACCOUNT_ID.substring(0,8)+'...' : 'NOT SET', bucket: process.env.R2_BUCKET_NAME || 'NOT SET' });
   }
 }
