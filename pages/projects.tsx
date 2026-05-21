@@ -53,7 +53,7 @@ export default function ProjectsPage() {
   const { profile, can, loading } = useAuth();
   const isAdmin = !loading && (can('projects', 'create') || can('projects', 'delete'));
 
-  const [projects, setProjects] = useState(MOCK_PROJECTS);
+  const projects = dbProjects.length > 0 ? dbProjects as any[] : MOCK_PROJECTS as any[];
   const [drafts, setDrafts]     = useState(MOCK_DRAFTS);
   const [statusFilter, setStatusFilter] = useState('All');
   const [typeFilter,   setTypeFilter]   = useState('All');
