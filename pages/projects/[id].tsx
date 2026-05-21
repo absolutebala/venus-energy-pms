@@ -622,41 +622,75 @@ const PAY_STATUS_COLORS: any = {
 };
 
 function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:string; canAdd:boolean; projectPoNo?:string }) {
-  const [items, setItems] = React.useState<any[]>(() =>
-    SHARED_INVOICES.filter(i => i.projectId === projectId)
-  );
-  const [adding, setAdding]  = React.useState(false);
-  const [newRow, setNewRow]  = React.useState({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo });
+  const { getByProject, addInvoice, deleteInvoice, loading } = useInvoices();
+  const { profile } = useAuth();
+  const items = getByProject(projectId);
+  const [adding,  setAdding]  = React.useState(false);
+  const [saving,  setSaving]  = React.useState(false);
+  const [toast,   setToast]   = React.useState<any>(null);
+  const [newRow,  setNewRow]  = React.useState({
+    invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'',
+    gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo
+  });
 
-  const saveNew = () => {
-    if (!newRow.invoiceNo||!newRow.invoiceDate||!newRow.invoiceAmount) return;
-    const amt=Number(newRow.invoiceAmount), gst=Number(newRow.gst);
-    const newItem = { id:Date.now(), ...newRow, invoiceAmount:amt, gst, totalAmount:amt+gst, projectId };
-    SHARED_INVOICES.push(newItem as any);
-    setItems(prev=>[...prev, newItem]);
-    setNewRow({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'', gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo });
-    setAdding(false);
+  const fmt  = (n: number) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits:2 });
+  const fmtD = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } };
+
+  const INV_COLORS: any = {
+    Approved:{'color':'#0D9488','bg':'#F0FDFA'},Submitted:{'color':'#2563EB','bg':'#EFF6FF'},
+    'Under Review':{'color':'#7C3AED','bg':'#F5F3FF'},Rejected:{'color':'#DC2626','bg':'#FEF2F2'},
+    Draft:{'color':'#6B7280','bg':'#F9FAFB'},
+  };
+  const PAY_COLORS: any = {
+    Paid:{'color':'#0D9488','bg':'#F0FDFA'},Pending:{'color':'#D97706','bg':'#FFFBEB'},
+    Partial:{'color':'#2563EB','bg':'#EFF6FF'},
+  };
+  const Pill = ({label,cfg}:{label:string;cfg:any}) => (
+    <span style={{ fontSize:11, fontWeight:700, color:cfg?.color||'#6B7280',
+      background:cfg?.bg||'#F9FAFB', padding:'2px 8px', borderRadius:20, whiteSpace:'nowrap' as const }}>{label}</span>
+  );
+
+  const inpS: React.CSSProperties = {
+    border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12,
+    width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text,
+  };
+  const thS: React.CSSProperties = {
+    padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase',
+    color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`,
+    background:T.primaryLight, whiteSpace:'nowrap' as const,
+  };
+  const tdS: React.CSSProperties = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
+
+  const saveNew = async () => {
+    if (!newRow.invoiceNo || !newRow.invoiceDate || !newRow.invoiceAmount) return;
+    const amt = Number(newRow.invoiceAmount), gst = Number(newRow.gst);
+    setSaving(true);
+    try {
+      await addInvoice({
+        invoiceNo: newRow.invoiceNo, invoiceDate: newRow.invoiceDate,
+        workBoqRef: newRow.workBoqRef, invoiceAmount: amt, gst, totalAmount: amt + gst,
+        invoiceStatus: newRow.invoiceStatus, paymentStatus: newRow.paymentStatus,
+        dueDate: newRow.dueDate, poNo: newRow.poNo || projectPoNo,
+        projectId, createdBy: profile?.full_name || '',
+      });
+      setNewRow({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'',
+        gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo });
+      setAdding(false);
+      setToast({ msg:'✅ Invoice saved', type:'success' });
+    } catch (err: any) {
+      setToast({ msg:'❌ ' + err.message, type:'error' });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const removeItem = (id:number) => setItems(prev=>prev.filter((i:any)=>i.id!==id));
-  const fmtDate = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } };
-const fmt = (n:number) => '₹'+n.toLocaleString('en-IN',{minimumFractionDigits:2});
-  const fmtD = (d:string) => d?new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—';
-  const inpS: React.CSSProperties = { border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text };
-  const selS: React.CSSProperties = { ...inpS, cursor:'pointer' };
-  const thS:  React.CSSProperties = { padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, background:T.primaryLight, whiteSpace:'nowrap' as const };
-  const tdS:  React.CSSProperties = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
-
-  const totalAmt  = items.reduce((a:number,i:any)=>a+Number(i.invoiceAmount),0);
-  const totalGst  = items.reduce((a:number,i:any)=>a+Number(i.gst),0);
-  const totalTot  = items.reduce((a:number,i:any)=>a+Number(i.totalAmount),0);
-
-  const Pill = ({label,cfg}:{label:string;cfg:any}) => (
-    <span style={{ fontSize:11, fontWeight:700, color:cfg.color, background:cfg.bg, border:`1px solid ${cfg.border}`, padding:'2px 8px', borderRadius:20, whiteSpace:'nowrap' as const }}>{label}</span>
-  );
+  const totalAmt = items.reduce((a,i) => a + i.invoiceAmount, 0);
+  const totalGst = items.reduce((a,i) => a + i.gst, 0);
+  const totalTot = items.reduce((a,i) => a + i.totalAmount, 0);
 
   return (
     <div>
+      {loading && <div style={{ color:T.textMuted, fontSize:13 }}>Loading invoices...</div>}
       {items.length > 0 && (
         <div style={{ overflowX:'auto' as const }}>
           <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:900 }}>
@@ -668,23 +702,26 @@ const fmt = (n:number) => '₹'+n.toLocaleString('en-IN',{minimumFractionDigits:
               </tr>
             </thead>
             <tbody>
-              {items.map((item:any,idx:number)=>(
-                <tr key={item.id} style={{ borderBottom:`1px solid ${T.border}`, background:idx%2===0?'#fff':T.bg }}>
+              {items.map((item, idx) => (
+                <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
                   <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
-                  <td style={{ ...tdS }}>
-                    <div style={{ fontWeight:700, color:T.primary, fontSize:13 }}>{item.invoiceNo}</div>
+                  <td style={tdS}>
+                    <div style={{ fontWeight:700, color:T.primary }}>{item.invoiceNo}</div>
                     {item.poNo && <div style={{ fontSize:10, color:T.textMuted }}>{item.poNo}</div>}
                   </td>
                   <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD(item.invoiceDate)}</td>
-                  <td style={tdS}>{item.workBoqRef||'—'}</td>
+                  <td style={tdS}>{item.workBoqRef || '—'}</td>
                   <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600 }}>{fmt(item.invoiceAmount)}</td>
                   <td style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>{fmt(item.gst)}</td>
                   <td style={{ ...tdS, textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(item.totalAmount)}</td>
-                  <td style={tdS}><Pill label={item.invoiceStatus} cfg={INV_STATUS_COLORS[item.invoiceStatus]||INV_STATUS_COLORS.Draft} /></td>
-                  <td style={tdS}><Pill label={item.paymentStatus} cfg={PAY_STATUS_COLORS[item.paymentStatus]||PAY_STATUS_COLORS.Pending} /></td>
-                  <td style={{ ...tdS, whiteSpace:'nowrap' as const, color:T.textMuted }}>{fmtD(item.dueDate)}</td>
+                  <td style={tdS}><Pill label={item.invoiceStatus} cfg={INV_COLORS[item.invoiceStatus]||INV_COLORS.Draft} /></td>
+                  <td style={tdS}><Pill label={item.paymentStatus} cfg={PAY_COLORS[item.paymentStatus]||PAY_COLORS.Pending} /></td>
+                  <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD(item.dueDate)}</td>
                   <td style={{ ...tdS, width:36 }}>
-                    {canAdd && <button onClick={()=>removeItem(item.id)} style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:15 }}>🗑</button>}
+                    {canAdd && (
+                      <button onClick={() => deleteInvoice(item.id)}
+                        style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:15 }}>🗑</button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -701,36 +738,45 @@ const fmt = (n:number) => '₹'+n.toLocaleString('en-IN',{minimumFractionDigits:
           </table>
         </div>
       )}
+      {!loading && items.length === 0 && (
+        <div style={{ textAlign:'center' as const, padding:'24px 0', color:T.textDim, fontSize:13 }}>No invoices yet for this project</div>
+      )}
 
+      {/* Add form */}
       {adding && (
         <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:14, marginTop:12 }}>
           <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New Invoice Entry</div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
-            {[['PO Number','poNo','text','PO-IND-2025-XXX'],['Invoice No *','invoiceNo','text','INV-2025-XXXX'],['Work/BOQ Ref','workBoqRef','text','BOQ-XXX-001'],['Invoice Date *','invoiceDate','date',''],['Due Date','dueDate','date',''],['Amount (₹) *','invoiceAmount','number',''],['GST (₹)','gst','number','']].map(([label,field,type,ph])=>(
+            {([['PO Number','poNo','text','PO-2025-XXX'],['Invoice No *','invoiceNo','text','INV-2025-XXX'],
+               ['Work/BOQ Ref','workBoqRef','text','BOQ-XXX-001'],['Invoice Date *','invoiceDate','date',''],
+               ['Due Date','dueDate','date',''],['Amount (₹) *','invoiceAmount','number',''],
+               ['GST (₹)','gst','number','']] as [string,string,string,string][]).map(([label,field,type,ph])=>(
               <div key={field}>
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</label>
                 <input type={type} value={(newRow as any)[field]} placeholder={ph}
-                  onChange={e=>setNewRow(p=>({...p,[field]:e.target.value}))}
-                  style={inpS} />
+                  onChange={e=>setNewRow(p=>({...p,[field]:e.target.value}))} style={inpS} />
               </div>
             ))}
             <div>
               <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Invoice Status</label>
-              <select value={newRow.invoiceStatus} onChange={e=>setNewRow(p=>({...p,invoiceStatus:e.target.value}))} style={selS}>
-                {INV_STATUS_OPTS.map(s=><option key={s}>{s}</option>)}
+              <select value={newRow.invoiceStatus} onChange={e=>setNewRow(p=>({...p,invoiceStatus:e.target.value}))}
+                style={{ ...inpS, cursor:'pointer' }}>
+                {['Draft','Submitted','Under Review','Approved','Rejected'].map(s=><option key={s}>{s}</option>)}
               </select>
             </div>
             <div>
               <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Payment Status</label>
-              <select value={newRow.paymentStatus} onChange={e=>setNewRow(p=>({...p,paymentStatus:e.target.value}))} style={selS}>
-                {PAY_STATUS_OPTS.map(s=><option key={s}>{s}</option>)}
+              <select value={newRow.paymentStatus} onChange={e=>setNewRow(p=>({...p,paymentStatus:e.target.value}))}
+                style={{ ...inpS, cursor:'pointer' }}>
+                {['Pending','Partial','Paid'].map(s=><option key={s}>{s}</option>)}
               </select>
             </div>
           </div>
           <div style={{ display:'flex', gap:10 }}>
-            <button onClick={saveNew} disabled={!newRow.invoiceNo||!newRow.invoiceDate||!newRow.invoiceAmount}
-              style={{ ...btnPrimary, opacity:!newRow.invoiceNo||!newRow.invoiceDate||!newRow.invoiceAmount?0.5:1, fontSize:13 }}>
-              ✅ Save Invoice
+            <button onClick={saveNew} disabled={saving||!newRow.invoiceNo||!newRow.invoiceDate||!newRow.invoiceAmount}
+              style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px',
+                cursor:'pointer', fontSize:13, fontWeight:600, opacity:saving||!newRow.invoiceNo||!newRow.invoiceDate||!newRow.invoiceAmount?0.5:1 }}>
+              {saving ? 'Saving…' : '✅ Save Invoice'}
             </button>
             <button onClick={()=>setAdding(false)}
               style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', color:T.text, cursor:'pointer', fontSize:13 }}>
@@ -743,16 +789,19 @@ const fmt = (n:number) => '₹'+n.toLocaleString('en-IN',{minimumFractionDigits:
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:14 }}>
         {canAdd && !adding && (
           <button onClick={()=>setAdding(true)}
-            style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8, padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
+            style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8,
+              padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
             + Add Invoice
           </button>
         )}
-        {items.length>0 && (
-          <div style={{ marginLeft:'auto', fontSize:13, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'8px 18px', borderRadius:8 }}>
+        {items.length > 0 && (
+          <div style={{ marginLeft:'auto', fontSize:13, fontWeight:700, color:T.primary,
+            background:T.primaryLight, padding:'8px 18px', borderRadius:8 }}>
             Grand Total: {fmt(totalTot)}
           </div>
         )}
       </div>
+      {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
     </div>
   );
 }
@@ -1239,7 +1288,7 @@ export default function ProjectDetailPage() {
 
         {/* ── Invoice ── */}
         {showInvoice && <div style={{ ...card, marginBottom:16 }}>
-          {sectionTitle('🧾','Invoice', 'invoice', canAddInvoice)}
+          {sectionTitle('🧾','Invoice', 'invoice', false)}
           <InvoiceSection projectId={p.id} canAdd={canAddInvoice} projectPoNo={p.poNo||''} />
         </div>}
 
