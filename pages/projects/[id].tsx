@@ -6,6 +6,7 @@ import Layout from '@/components/Layout';
 import Modal from '@/components/Modal';
 import { useInvoices } from '@/context/InvoiceContext';
 import { useExpenses } from '@/context/ExpenseContext';
+import { useWorkDocs } from '@/context/WorkDocContext';
 import { PROJECTS as SEED_PROJECTS, SHARED_EXPENSES, PO_ITEMS as SEED_PO_ITEMS, DOC_STATUS as SEED_DOC_STATUS } from '@/lib/seedData';
 import CreatableSelect from '@/components/CreatableSelect';
 import Toast from '@/components/Toast';
@@ -90,7 +91,7 @@ const DOC_TYPES = [
 
 ];
 
-const MOCK_DOCS: Record<string, { name:string; size:string; url:string; isImage:boolean }[]> = {
+const LEGACY_MOCK_DOCS: Record<string, { name:string; size:string; url:string; isImage:boolean }[]> = {
   safety_photos:    [{ name:'safety_site_01.jpg', size:'1.2 MB', url:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400', isImage:true },{ name:'safety_ppe.jpg', size:'980 KB', url:'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400', isImage:true }],
   site_photos:      [{ name:'site_progress.jpg', size:'2.1 MB', url:'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400', isImage:true }],
   jmr_document:     [{ name:'JMR_VE2025001.pdf', size:'456 KB', url:'', isImage:false }],
@@ -835,6 +836,7 @@ export default function ProjectDetailPage() {
   const showPTW           = !loading && can('sec_ptw',              'read');
 
   const { getProject, updateProject: ctxUpdateProject } = useProjects();
+  const { getByProject: getProjectDocs, addDoc, deleteDoc: deleteWorkDoc } = useWorkDocs();
   const dbProject = id ? getProject(id as string) : undefined;
   const seedFallback = (Array.isArray(SEED_PROJECTS)?SEED_PROJECTS:[]).find((p:any)=>p.id===id);
   const [projects, setProjects] = useState<Record<string,any>>({});

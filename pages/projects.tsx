@@ -7,6 +7,7 @@ import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/
 import { DOC_STATUS as PROJ_DOC_STATUS_DATA, PROJECTS as SEED_PROJECTS } from '@/lib/seedData';
 import { STN_SRN_DATA } from '@/lib/stnSrnData';
 import { useProjects } from '@/context/ProjectContext';
+import { useWorkDocs } from '@/context/WorkDocContext';
 import { MOCK_PROJECTS } from '@/lib/projectData';
 
 const fmt = (v: number) => `₹${(v / 100000).toFixed(2)}L`;
@@ -49,11 +50,12 @@ const STN_RETURN_MAP: Record<string,boolean> = Object.fromEntries(
 export default function ProjectsPage() {
   const router = useRouter();
   const { projects: dbProjects, loading: projLoading } = useProjects();
+  const { getDocStatus } = useWorkDocs();
   const { profile, can, loading } = useAuth();
   const isAdmin = !loading && (can('projects', 'create') || can('projects', 'delete'));
 
   const projects = dbProjects.length > 0 ? dbProjects as any[] : MOCK_PROJECTS as any[];
-  const PROJ_DOC_STATUS = Object.fromEntries(projects.map((p:any)=>[p.id,{ safety_photos:p.safetyPhotos, site_photos:p.sitePhotos, jmr_document:p.jmrDocument, ac_certificate:p.acCertificate, noc_document:p.nocDocument, drawing_document:p.drawingDocument, ptw_document:p.ptwDocument }]));
+  const getDocStatusForProject = (id: string) => getDocStatus(id);
   const [drafts, setDrafts]     = useState(MOCK_DRAFTS);
   const [statusFilter, setStatusFilter] = useState('All');
   const [typeFilter,   setTypeFilter]   = useState('All');
@@ -278,7 +280,7 @@ export default function ProjectsPage() {
                   <tr><td colSpan={16} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
                 )}
                 {filtered.map((p:any, idx:number) => {
-                  const docs    = PROJ_DOC_STATUS[p.id] || {};
+                  const docs    = getDocStatusForProject(p.id) || {};
                   const delDate = PROJ_DELIVERY[p.id];
                   const delDt   = delDate ? new Date(delDate) : null;
                   const isPast  = delDt && !['completed','not_started'].includes(p.status) ? delDt < new Date() : false;

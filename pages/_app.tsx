@@ -4,6 +4,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ProjectProvider } from '@/context/ProjectContext';
 import { InvoiceProvider } from '@/context/InvoiceContext';
 import { ExpenseProvider } from '@/context/ExpenseContext';
+import { WorkDocProvider } from '@/context/WorkDocContext';
 import '@/styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -21,8 +22,10 @@ export default function App({ Component, pageProps }: AppProps) {
         <ProjectProvider>
         <InvoiceProvider>
         <ExpenseProvider>
+        <WorkDocProvider>
         <Component {...pageProps} />
-      </ExpenseProvider>
+      </WorkDocProvider>
+        </ExpenseProvider>
         </InvoiceProvider>
         </ProjectProvider>
       </AuthProvider>
