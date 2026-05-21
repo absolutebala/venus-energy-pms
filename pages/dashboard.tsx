@@ -195,7 +195,7 @@ function ProjectStatusTable({ projects }: { projects: any[] }) {
             {paged.map((p, idx) => {
               const wsCfg = WORK_STATUS_CFG[p.status] || WORK_STATUS_CFG.not_started;
               const docs  = getDocStatus(p.id) || {};
-              const upd   = MOCK_UPDATED[p.id] || { date:'—', by:'—' };
+              const upd   = { date: p.updatedAt ? new Date(p.updatedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : (p.startDate ? new Date(p.startDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'), by: p.pm || '—' };
               return (
                 <tr key={p.id} style={{ background: idx%2===0 ? '#fff' : '#FAFAFA' }}
                   onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background='#F0FDFA'}
@@ -216,7 +216,7 @@ function ProjectStatusTable({ projects }: { projects: any[] }) {
                   </td>
                   <td style={{ ...tdStyle, whiteSpace:'nowrap' as const }}>
                     {(() => {
-                      const d = MOCK_DELIVERY[p.id];
+                      const d = p.endDate || null;
                       if (!d) return <span style={{ color:'#9CA3AF' }}>—</span>;
                       const dt = new Date(d);
                       const isPast = dt < new Date();
