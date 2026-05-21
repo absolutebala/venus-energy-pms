@@ -35,7 +35,7 @@ function mapToDb(inv: Partial<Invoice>): Record<string, any> {
   const db: Record<string, any> = {};
   const map: Record<string, string> = {
     invoiceNo:'invoice_no', invoiceDate:'invoice_date', workBoqRef:'work_boq_ref',
-    invoiceAmount:'invoice_amount', invoiceStatus:'invoice_status',
+    invoiceAmount:'invoice_amount', totalAmount:'total_amount', invoiceStatus:'invoice_status',
     paymentStatus:'payment_status', dueDate:'due_date',
     projectId:'project_id', poNo:'po_no', createdBy:'created_by',
   };
