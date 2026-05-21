@@ -492,6 +492,7 @@ function STNSRNSummary() {
 // ── 2. REGION MANAGER DASHBOARD ──────────────────────────────────
 
 function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
+  const projects = propProjects;
   const router = useRouter();
   const statusData = [
     { name:'Not Started',    value: projects.filter(p=>p.status==='not_started').length,     color:'#9CA3AF', status:'not_started'     },
