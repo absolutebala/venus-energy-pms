@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
 import { DOC_STATUS as PROJ_DOC_STATUS_DATA, PROJECTS as SEED_PROJECTS } from '@/lib/seedData';
 import { STN_SRN_DATA } from '@/lib/stnSrnData';
+import { useProjects } from '@/context/ProjectContext';
 import { MOCK_PROJECTS } from '@/lib/projectData';
 
 const fmt = (v: number) => `₹${(v / 100000).toFixed(2)}L`;
@@ -48,6 +49,8 @@ const STN_RETURN_MAP: Record<string,boolean> = Object.fromEntries(
 
 export default function ProjectsPage() {
   const router = useRouter();
+  const { projects: dbProjects, loading: projLoading } = useProjects();
+  const projects = dbProjects.length > 0 ? dbProjects as any[] : MOCK_PROJECTS as any[];
   const { profile, can, loading } = useAuth();
   const isAdmin = !loading && (can('projects', 'create') || can('projects', 'delete'));
 

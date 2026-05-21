@@ -8,6 +8,7 @@ import { SHARED_INVOICES } from '@/lib/invoiceData';
 import { PROJECTS as SEED_PROJECTS, SHARED_EXPENSES, PO_ITEMS as SEED_PO_ITEMS, DOC_STATUS as SEED_DOC_STATUS } from '@/lib/seedData';
 import CreatableSelect from '@/components/CreatableSelect';
 import Toast from '@/components/Toast';
+import { useProjects } from '@/context/ProjectContext';
 import { useAuth } from '@/context/AuthContext';
 import { useUpload } from '@/lib/useUpload';
 import { T, card, badge, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
@@ -827,17 +828,9 @@ export default function ProjectDetailPage() {
   const saveSection = () => {
     setSaving(true);
     setTimeout(() => {
-      setProjects((prev:any) => {
-        const updated = { ...prev, [id as string]: { ...prev[id as string], ...form } };
-        // Persist edits to localStorage
-        try {
-          const stored = localStorage.getItem('ve_projects_edits');
-          const edits = stored ? JSON.parse(stored) : {};
-          edits[id as string] = { ...(edits[id as string]||{}), ...form };
-          localStorage.setItem('ve_projects_edits', JSON.stringify(edits));
-        } catch(e) {}
-        return updated;
-      });
+      setProjects((prev:any) => ({ ...prev, [id as string]: { ...prev[id as string], ...form } }));
+        // Persist to Supabase
+        ctxUpdateProject(id as string, form, profile?.full_name).catch(console.error);
       setSaving(false); setEditingSection(null);
       setToast({ msg:'Section saved!', type:'success' });
     }, 500);
@@ -865,7 +858,10 @@ export default function ProjectDetailPage() {
     </Layout>
   );
 
-  const project = id ? projects[id as string] : null;
+  const { getProject, updateProject: ctxUpdateProject } = useProjects();
+  const dbProject = id ? getProject(id as string) : undefined;
+  // Merge: DB project takes priority over local state
+  const project = dbProject ? { ...projects[id as string], ...dbProject } : (id ? projects[id as string] : null);
   if (!project) return (
     <Layout>
       <div style={{ ...card, textAlign:'center', padding:60, margin:20 }}>
@@ -906,17 +902,9 @@ export default function ProjectDetailPage() {
   const handleSave = () => {
     setSaving(true);
     setTimeout(() => {
-      setProjects((prev:any) => {
-        const updated = { ...prev, [id as string]: { ...prev[id as string], ...form } };
-        // Persist edits to localStorage
-        try {
-          const stored = localStorage.getItem('ve_projects_edits');
-          const edits = stored ? JSON.parse(stored) : {};
-          edits[id as string] = { ...(edits[id as string]||{}), ...form };
-          localStorage.setItem('ve_projects_edits', JSON.stringify(edits));
-        } catch(e) {}
-        return updated;
-      });
+      setProjects((prev:any) => ({ ...prev, [id as string]: { ...prev[id as string], ...form } }));
+        // Persist to Supabase
+        ctxUpdateProject(id as string, form, profile?.full_name).catch(console.error);
       setSaving(false);
       setEditingSection(null);
       setToast({ msg:'Project updated successfully!', type:'success' });

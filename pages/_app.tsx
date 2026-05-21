@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { AuthProvider } from '@/context/AuthContext';
+import { ProjectProvider } from '@/context/ProjectContext'; from '@/context/AuthContext';
 import '@/styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -15,7 +16,9 @@ export default function App({ Component, pageProps }: AppProps) {
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
       </Head>
       <AuthProvider>
+        <ProjectProvider>
         <Component {...pageProps} />
+      </ProjectProvider>
       </AuthProvider>
     </>
   );

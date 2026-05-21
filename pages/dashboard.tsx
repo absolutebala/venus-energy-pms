@@ -491,7 +491,7 @@ function STNSRNSummary() {
 
 // ── 2. REGION MANAGER DASHBOARD ──────────────────────────────────
 
-function SuperAdminDashboard({ projects }: { projects: any[] }) {
+function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
   const router = useRouter();
   const statusData = [
     { name:'Not Started',    value: projects.filter(p=>p.status==='not_started').length,     color:'#9CA3AF', status:'not_started'     },
@@ -1037,7 +1037,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {role === 'super_admin'     && <SuperAdminDashboard   projects={ALL_PROJECTS} />}
+        {role === 'super_admin'     && <SuperAdminDashboard   projects={dbProjects.length>0 ? dbProjects as any[] : ALL_PROJECTS} />}
         {role === 'region_manager'  && <RegionManagerDashboard projects={ALL_PROJECTS} />}
         {role === 'project_manager' && <ProjectManagerDashboard projects={ALL_PROJECTS} />}
         {role === 'site_engineer'   && <SiteEngineerDashboard  projects={ALL_PROJECTS} />}
