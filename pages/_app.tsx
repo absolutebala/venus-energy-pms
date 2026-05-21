@@ -3,6 +3,7 @@ import Head from 'next/head';
 import { AuthProvider } from '@/context/AuthContext';
 import { ProjectProvider } from '@/context/ProjectContext';
 import { InvoiceProvider } from '@/context/InvoiceContext';
+import { ExpenseProvider } from '@/context/ExpenseContext';
 import '@/styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -19,8 +20,10 @@ export default function App({ Component, pageProps }: AppProps) {
       <AuthProvider>
         <ProjectProvider>
         <InvoiceProvider>
+        <ExpenseProvider>
         <Component {...pageProps} />
-      </InvoiceProvider>
+      </ExpenseProvider>
+        </InvoiceProvider>
         </ProjectProvider>
       </AuthProvider>
     </>
