@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Layout from '@/components/Layout';
 import Modal from '@/components/Modal';
 import { useInvoices } from '@/context/InvoiceContext';
+import { useExpenses } from '@/context/ExpenseContext';
 import { PROJECTS as SEED_PROJECTS, SHARED_EXPENSES, PO_ITEMS as SEED_PO_ITEMS, DOC_STATUS as SEED_DOC_STATUS } from '@/lib/seedData';
 import CreatableSelect from '@/components/CreatableSelect';
 import Toast from '@/components/Toast';
