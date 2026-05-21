@@ -50,7 +50,6 @@ const STN_RETURN_MAP: Record<string,boolean> = Object.fromEntries(
 export default function ProjectsPage() {
   const router = useRouter();
   const { projects: dbProjects, loading: projLoading } = useProjects();
-  const projects = dbProjects.length > 0 ? dbProjects as any[] : MOCK_PROJECTS as any[];
   const { profile, can, loading } = useAuth();
   const isAdmin = !loading && (can('projects', 'create') || can('projects', 'delete'));
 
