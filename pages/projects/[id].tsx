@@ -891,7 +891,7 @@ export default function ProjectDetailPage() {
         )
       ) : (
         <div style={{ fontSize:14, fontWeight:600, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>
-          {(form as any)[key] || '—'}
+          {type==='date' ? fmtDate((form as any)[key]||'') : ((form as any)[key] || '—')}
         </div>
       )}
     </div>
@@ -1028,8 +1028,8 @@ export default function ProjectDetailPage() {
             {[
               { label:'PO Value',      key:'poValue',      color:T.text    },
               { label:'Billed Amount', key:'billedAmount', color:T.info    },
-              { label:'Paid Amount',   key:null,           color:T.success, computed: getPaidAmount(p.id) },
-              { label:'Pending',       key:null,           color:T.warning, computed: p.billedAmount - getPaidAmount(p.id) },
+              { label:'Paid Amount',   key:null,           color:T.success, computed: p.paidAmount||0 },
+              { label:'Pending',       key:null,           color:T.warning, computed: (p.billedAmount||0) - (p.paidAmount||0) },
             ].map((r,i)=>(
               <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:`1px solid ${T.border}` }}>
                 <span style={{ fontSize:13, color:T.textMuted }}>{r.label}</span>
