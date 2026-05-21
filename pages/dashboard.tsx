@@ -996,6 +996,7 @@ function AccountingDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
 
 // ── MAIN DASHBOARD (role router) ─────────────────────────────────
 export default function Dashboard() {
+  const { projects: dbProjects } = useProjects();
   const { profile } = useAuth();
   const role = profile?.role || 'viewer';
   const name = profile?.full_name?.split(' ')[0] || 'User';
