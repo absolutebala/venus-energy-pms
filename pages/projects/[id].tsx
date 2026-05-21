@@ -858,6 +858,17 @@ export default function ProjectDetailPage() {
   );
 
   const p = project;
+
+  // Show loading while project data arrives from Supabase
+  if (!p) return (
+    <Layout>
+      <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:300, flexDirection:'column', gap:16 }}>
+        <div style={{ fontSize:32 }}>⏳</div>
+        <div style={{ fontSize:16, color:'#6B7280' }}>Loading project...</div>
+      </div>
+    </Layout>
+  );
+
   const isCompleted = ['completed','billing_review'].includes(p.status);
   const stnData = STN_SRN_DATA.find(s => s.projectId === p.id);
   const st = STATUS_COLOR[p.status] || '#64748B';
