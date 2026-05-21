@@ -844,8 +844,6 @@ export default function ProjectDetailPage() {
     </Layout>
   );
 
-  const { getProject, updateProject: ctxUpdateProject } = useProjects();
-  const dbProject = id ? getProject(id as string) : undefined;
   // Merge: DB project takes priority over local state
   const project = dbProject ? { ...projects[id as string], ...dbProject } : (id ? projects[id as string] : null);
   if (!project) return (
