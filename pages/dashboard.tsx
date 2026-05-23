@@ -228,7 +228,7 @@ function ProjectStatusTable({ projects }: { projects: any[] }) {
                   </td>
                   <td style={{ ...tdStyle }}>
                     {(() => {
-                      const start = MOCK_START[p.id];
+                      const start = p.startDate || null;
                       if (!start) return <span style={{ color:'#9CA3AF' }}>—</span>;
                       const days = Math.floor((new Date().getTime() - new Date(start).getTime()) / 86400000);
                       const color = days > 90 ? '#DC2626' : days > 60 ? '#D97706' : '#0D9488';
