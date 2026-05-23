@@ -6,7 +6,6 @@ import { T } from '@/lib/theme';
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard':          '📊  Dashboard',
-  '/projects':           '📁  Projects',
   '/vendors':            '🏢  Vendors',
   '/srn-return': '📦  STN / SRN Status', '/srn-return-old':         '↩  SRN Return',
   '/site-expenses':      '💰  Site Expenses',
@@ -15,7 +14,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/users':        '👥  User Management',
   '/admin/roles':        '🔑  Role & Permissions',
   '/teams':              '👤  Teams',
-  '/projects':           '📁  Projects',
   '/projects/new':       '📋  Add Purchase Order',
   '/projects/[id]':      '📁  Project Details',
 };
