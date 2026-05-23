@@ -4,8 +4,6 @@ import Link from 'next/link';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
-import { DOC_STATUS as PROJ_DOC_STATUS_DATA, PROJECTS as SEED_PROJECTS } from '@/lib/seedData';
-import { STN_SRN_DATA } from '@/lib/stnSrnData';
 import { useProjects } from '@/context/ProjectContext';
 import { useWorkDocs } from '@/context/WorkDocContext';
 import { MOCK_PROJECTS } from '@/lib/projectData';
@@ -46,16 +44,15 @@ const DOC_COLS_P = [
   { key:'drawing_document',label:'Drawing'     },
   { key:'ptw_document',    label:'PTW'         },
 ];
-const PROJ_DELIVERY = Object.fromEntries((SEED_PROJECTS as any[]).map(p=>[p.id, p.endDate]));
-const STN_RETURN_MAP: Record<string,boolean> = Object.fromEntries(
-  (STN_SRN_DATA as any[]).map(proj => {
+const STN_RETURN_MAP: Record<string,boolean> = {}; /*
+  ([] as any[]).map(proj => {
     const allReturned = proj.materials.every((m:any) =>
       Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0)) === 0 ||
       (m.returnQty??0) >= Math.max(0,(m.issuedQty??0)-(m.pmApprovedQty??m.utilisedQty??0))
     );
     return [proj.projectId, allReturned];
   })
-);
+); */
 // PROJ_START now derived from seedData
 
 export default function ProjectsPage() {
@@ -107,7 +104,7 @@ export default function ProjectsPage() {
     if (router.query.vendor) setVendorFilter(decodeURIComponent(router.query.vendor as string));
   }, [router.isReady, router.query]);
 
-  const searchMatch = (p: typeof MOCK_PROJECTS[0]) => {
+  const searchMatch = (p: any) => {
     if (!search) return true;
     const s = search.toLowerCase();
     return p.id.toLowerCase().includes(s) ||
@@ -302,7 +299,7 @@ export default function ProjectsPage() {
                 )}
                 {filtered.map((p:any, idx:number) => {
                   const docs    = getDocStatusForProject(p.id) || {};
-                  const delDate = PROJ_DELIVERY[p.id];
+                  const delDate = p.endDate;
                   const delDt   = delDate ? new Date(delDate) : null;
                   const isPast  = delDt && !['completed','not_started'].includes(p.status) ? delDt < new Date() : false;
                   const ageDays = getAgeDays(p.id);

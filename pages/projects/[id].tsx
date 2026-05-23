@@ -10,14 +10,13 @@ import { useWorkDocs } from '@/context/WorkDocContext';
 import { useMaterial } from '@/context/MaterialContext';
 import { usePOItems } from '@/context/POItemContext';
 import { useActivity } from '@/context/ActivityContext';
-import { PROJECTS as SEED_PROJECTS, SHARED_EXPENSES, PO_ITEMS as SEED_PO_ITEMS, DOC_STATUS as SEED_DOC_STATUS } from '@/lib/seedData';
+import { PROJECTS as SEED_PROJECTS } from '@/lib/seedData'; // fallback only
 import CreatableSelect from '@/components/CreatableSelect';
 import Toast from '@/components/Toast';
 import { useProjects } from '@/context/ProjectContext';
 import { useAuth } from '@/context/AuthContext';
 import { useUpload } from '@/lib/useUpload';
 import { T, card, badge, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
-import { STN_SRN_DATA } from '@/lib/stnSrnData';
 import { getPaidAmount, getProjectTransactions, PAYMENT_TRANSACTIONS, PaymentTransaction } from '@/lib/expensesData';
 
 // ── Mock project data ────────────────────────────────────────────
@@ -1044,7 +1043,7 @@ export default function ProjectDetailPage() {
   );
 
   const isCompleted = ['completed','billing_review'].includes(p.status);
-  const stnData = STN_SRN_DATA.find(s => s.projectId === p.id);
+  // stnData now comes from MaterialContext via SRNSection
   const st = STATUS_COLOR[p.status] || '#64748B';
 
   // Edit form state
