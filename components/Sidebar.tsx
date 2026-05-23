@@ -18,12 +18,12 @@ const ADMIN_NAV: NavItem[] = [
 ];
 
 const VENDOR_NAV: NavItem[] = [
-  { href:'/vendor/projects', label:'My Projects', icon:'📁' },
+  { href:'/projects', label:'My Projects', icon:'📁' },
 ];
 
 const PM_NAV: NavItem[] = [
   { href:'/dashboard',      label:'Dashboard',   icon:'▦'  },
-  { href:'/pm/projects',    label:'My Projects', icon:'📁' },
+  { href:'/projects', label:'My Projects', icon:'📁' },
   { href:'/profile',        label:'Profile',     icon:'👤' },
 ];
 
@@ -36,7 +36,7 @@ const ACCOUNTING_NAV: NavItem[] = [
 
 const RM_NAV: NavItem[] = [
   { href:'/dashboard',      label:'Dashboard',   icon:'▦'  },
-  { href:'/rm/projects',    label:'My Projects', icon:'📁' },
+  { href:'/projects', label:'My Projects', icon:'📁' },
   { href:'/vendors',        label:'Vendors',     icon:'🏢' },
   { href:'/invoices', label:'Invoices', icon:'🧾' },
       { href:'/reports',        label:'Reports',     icon:'📊' },
@@ -61,9 +61,9 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
     if (pathname === href) return true;
     if (href === '/dashboard') return false;
     if (href === '/projects') return pathname === '/projects' || pathname.startsWith('/projects/');
-    if (href === '/pm/projects') return pathname === '/pm/projects' || pathname.startsWith('/pm/projects/');
-    if (href === '/rm/projects') return pathname === '/rm/projects' || pathname.startsWith('/rm/projects/');
-    if (href === '/vendor/projects') return pathname === '/vendor/projects' || pathname.startsWith('/vendor/projects/');
+    if (href === '/projects') return pathname === '/projects' || pathname.startsWith('/projects/');
+
+
     return pathname.startsWith(href);
   };
 

@@ -609,8 +609,8 @@ function RegionManagerDashboard({ projects }: { projects: typeof ALL_PROJECTS })
       </div>
 
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-        <KpiCard label={globalView?'All Projects':'My Region Projects'} value={myProjects.length}                              icon="📁" color={T.primary} onClick={()=>router.push('/rm/projects')} />
-        <KpiCard label="Delayed"              value={myProjects.filter(p=>p.status==='delayed').length}           icon="⚠️" color={T.danger}  onClick={()=>router.push('/rm/projects')} />
+        <KpiCard label={globalView?'All Projects':'My Region Projects'} value={myProjects.length}                              icon="📁" color={T.primary} onClick={()=>router.push('/projects')} />
+        <KpiCard label="Delayed"              value={myProjects.filter(p=>p.status==='delayed').length}           icon="⚠️" color={T.danger}  onClick={()=>router.push('/projects')} />
         <KpiCard label="Pending Billing"      value={myProjects.filter(p=>p.status==='billing_review').length}    icon="💳" color='#7C3AED'   onClick={()=>router.push('/billing')} />
         <KpiCard label="Active PMs"           value={myPMs.length}                                                icon="👤" color={T.success} />
       </div>
@@ -645,7 +645,7 @@ function RegionManagerDashboard({ projects }: { projects: typeof ALL_PROJECTS })
         <div style={card}>
           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
             <div style={{ fontSize:14, fontWeight:600, color:T.text }}>My Projects</div>
-            <Link href="/rm/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>View All →</Link>
+            <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>View All →</Link>
           </div>
           <table style={{ width:'100%' }}><TableHead /><tbody>
             {myProjects.slice(0,5).map(p=><ProjectRow key={p.id} p={p} href={`/rm/projects/${p.id}`} />)}
@@ -667,9 +667,9 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
   return (
     <div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-        <KpiCard label="My Projects"      value={myProjects.length}                                    icon="📁" color={T.primary} onClick={()=>router.push('/pm/projects')} />
+        <KpiCard label="My Projects"      value={myProjects.length}                                    icon="📁" color={T.primary} onClick={()=>router.push('/projects')} />
         <KpiCard label="Vendor Required"  value={noVendor.length}                                      icon="⚠️" color={T.danger}  onClick={()=>router.push('/pm/projects?tab=unassigned')} />
-        <KpiCard label="In Progress"      value={myProjects.filter(p=>p.status==='in_progress').length} icon="⚡" color={T.info}    onClick={()=>router.push('/pm/projects')} />
+        <KpiCard label="In Progress"      value={myProjects.filter(p=>p.status==='in_progress').length} icon="⚡" color={T.info}    onClick={()=>router.push('/projects')} />
         <KpiCard label="Pending Invoice"  value={billing.length}                                        icon="💳" color='#7C3AED'  onClick={()=>router.push('/pm/projects?tab=billing')} />
       </div>
 
@@ -682,7 +682,7 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
       <div style={card}>
         <div style={{ display:'flex', justifyContent:'space-between', marginBottom:14 }}>
           <div style={{ fontSize:14, fontWeight:600, color:T.text }}>My Projects — Recently Assigned</div>
-          <Link href="/pm/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>View All →</Link>
+          <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>View All →</Link>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
           {recent.map((p,i)=>{
@@ -793,7 +793,7 @@ function VendorDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
       <div style={card}>
         <div style={{ display:'flex', justifyContent:'space-between', marginBottom:14 }}>
           <div style={{ fontSize:14, fontWeight:600, color:T.text }}>My Assigned Projects</div>
-          <Link href="/vendor/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>View All →</Link>
+          <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>View All →</Link>
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {myProjects.map((p,i)=>{

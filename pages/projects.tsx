@@ -66,6 +66,16 @@ export default function ProjectsPage() {
   const isAdmin = !loading && (can('projects', 'create') || can('projects', 'delete'));
 
   const projects = dbProjects.length > 0 ? dbProjects as any[] : MOCK_PROJECTS as any[];
+
+  // Role-based project filtering
+  const roleFilteredProjects = React.useMemo(() => {
+    const role = profile?.role;
+    const name = profile?.full_name || '';
+    if (role === 'project_manager')  return projects.filter((p:any) => p.pm === name);
+    if (role === 'region_manager')   return projects.filter((p:any) => p.rm === name);
+    if (role === 'vendor')           return projects.filter((p:any) => p.vendor === name);
+    return projects; // super_admin, accounting_team, site_engineer see all
+  }, [projects, profile]);
   const getDocStatusForProject = (id: string) => getDocStatus(id);
   const [drafts, setDrafts]     = useState(MOCK_DRAFTS);
   const [statusFilter, setStatusFilter] = useState('All');
@@ -81,7 +91,7 @@ export default function ProjectsPage() {
 
   // Redirect PM
   useEffect(() => {
-    if (profile?.role === 'project_manager') router.replace('/pm/projects');
+    // Role-based filtering handled below
   }, [profile?.role]);
 
   useEffect(() => {
@@ -120,7 +130,7 @@ export default function ProjectsPage() {
     }
     return p.startDate ? Math.floor((new Date().getTime() - new Date(p.startDate).getTime()) / 86400000) : (p.aging||0);
   };
-  const filtered = projects.filter(p => {
+  const filtered = roleFilteredProjects.filter(p => {
     const displayStatus = STATUS_DISPLAY[p.status] || p.status;
     if (statusFilter === 'Aging') return getAgeDays(p.id) > agingThreshold;
     if (statusFilter !== 'All' && displayStatus !== statusFilter) return false;
@@ -134,9 +144,9 @@ export default function ProjectsPage() {
 
   const counts = {
     total: projects.length,
-    inProgress: projects.filter(p=>p.status==='in_progress').length,
-    aging: projects.filter((p:any)=>!['completed','not_started'].includes(p.status)&&getAgeDays(p.id)>agingThreshold).length,
-    completed: projects.filter(p=>p.status==='completed').length,
+    inProgress: roleFilteredProjects.filter((p:any)=>p.status==='in_progress').length,
+    aging: roleFilteredProjects.filter((p:any)=>!['completed','not_started'].includes(p.status)&&getAgeDays(p.id)>agingThreshold).length,
+    completed: roleFilteredProjects.filter((p:any)=>p.status==='completed').length,
   };
 
   // Check if a PO number has multiple project records
