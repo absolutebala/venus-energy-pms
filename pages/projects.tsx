@@ -218,7 +218,7 @@ export default function ProjectsPage() {
         {/* Summary cards */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
           {[
-            { label:'Total Projects', value:counts.total,      color:T.primary, icon:'📁', filter:'All'          },
+            { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value:counts.total,      color:T.primary, icon:'📁', filter:'All'          },
             { label:'In Progress',    value:counts.inProgress, color:T.info,    icon:'⚡', filter:'In Progress'  },
             { label:'Aging (60d+)',   value:counts.aging,      color:'#D97706', icon:'⏱',  filter:'Aging'        },
             { label:'Completed',      value:counts.completed,  color:T.success, icon:'✅', filter:'Completed'    },
