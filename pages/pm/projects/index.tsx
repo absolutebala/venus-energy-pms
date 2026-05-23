@@ -36,7 +36,7 @@ export default function PMProjectsPage() {
   // Filter to this PM's projects
   // NOTE: Mock data uses hardcoded PM names. In production this filters by user ID from DB.
   // For demo: show all projects that have a PM assigned (simulates PM's assigned projects)
-  const myProjects = allProjects as any[].filter(p => p.pm !== null && p.pm !== undefined);
+  const myProjects = (allProjects as any[]).filter(p => p.pm !== null && p.pm !== undefined);
 
   // Apply filters
   const filtered = myProjects.filter(p => {
@@ -81,7 +81,7 @@ export default function PMProjectsPage() {
     color:activeTab===t?'#fff':T.textMuted, transition:'all 0.15s',
   });
 
-  const ProjectCard = ({ p }: { p: typeof allProjects as any[][0] }) => {
+  const ProjectCard = ({ p }: { p: any }) => {
     const st      = STATUS_COLOR[p.status] || T.textDim;
     const stLabel = STATUS_LABEL[p.status] || p.status;
     return (
