@@ -303,6 +303,8 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
   );
 }
 
+const PTW_DB: Record<string,any[]> = {};
+
 function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { projectId:string; vendorContact:string; canEdit:boolean; canAdd?:boolean }) {
   const [items, setItems] = React.useState<any[]>(() => PTW_DB[projectId] || []);
   const nextId = () => Math.max(0, ...items.map((i:any)=>i.id)) + 1;
