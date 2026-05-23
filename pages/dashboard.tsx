@@ -657,12 +657,12 @@ function RegionManagerDashboard({ projects }: { projects: typeof ALL_PROJECTS })
 }
 
 // ── 3. PROJECT MANAGER DASHBOARD ─────────────────────────────────
-function ProjectManagerDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
+function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName: string }) {
   const router = useRouter();
-  const myProjects = projects.filter(p=>p.pm!==null);
-  const noVendor   = myProjects.filter(p=>!p.vendorAssigned);
+  const myProjects = projects.filter(p => p.pm === pmName);
+  const noVendor   = myProjects.filter(p=>!p.vendor);
   const billing    = myProjects.filter(p=>p.status==='billing_review');
-  const recent     = [...myProjects].sort((a,b)=>new Date(b.assignedAt).getTime()-new Date(a.assignedAt).getTime()).slice(0,6);
+  const recent     = [...myProjects].sort((a,b)=>new Date(b.startDate||0).getTime()-new Date(a.startDate||0).getTime()).slice(0,6);
 
   return (
     <div>
@@ -698,12 +698,12 @@ function ProjectManagerDashboard({ projects }: { projects: typeof ALL_PROJECTS }
                   <span style={{ fontSize:11, fontWeight:700, color:T.primary }}>{p.id}</span>
                   <span style={{ fontSize:10, background:`${c}18`, color:c, padding:'2px 7px', borderRadius:10, fontWeight:600 }}>{stLabel[p.status]||p.status}</span>
                 </div>
-                <div style={{ fontSize:13, fontWeight:600, color:T.text, marginBottom:4 }}>{p.projectName}</div>
+                <div style={{ fontSize:13, fontWeight:600, color:T.text, marginBottom:4 }}>{p.site}</div>
                 <div style={{ fontSize:11, color:T.textMuted, marginBottom:8 }}>{p.site}</div>
                 <div style={{ fontSize:11, color:T.textMuted }}>
-                  {p.vendorAssigned ? `✅ ${p.vendor}` : '⚠️ No vendor assigned'}
+                  {p.vendor ? `✅ ${p.vendor}` : '⚠️ No vendor assigned'}
                 </div>
-                <div style={{ fontSize:11, color:T.textDim, marginTop:4 }}>Assigned: {new Date(p.assignedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}</div>
+                <div style={{ fontSize:11, color:T.textDim, marginTop:4 }}>Start: {p.startDate ? new Date(p.startDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</div>
               </div>
             );
           })}
@@ -1045,7 +1045,7 @@ export default function Dashboard() {
 
         {role === 'super_admin'     && <SuperAdminDashboard   projects={dbProjects.length>0 ? dbProjects as any[] : ALL_PROJECTS} />}
         {role === 'region_manager'  && <RegionManagerDashboard projects={ALL_PROJECTS} />}
-        {role === 'project_manager' && <ProjectManagerDashboard projects={ALL_PROJECTS} />}
+        {role === 'project_manager' && <ProjectManagerDashboard projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS as any[]} pmName={profile?.full_name||''} />}
         {role === 'site_engineer'   && <SiteEngineerDashboard  projects={ALL_PROJECTS} />}
         {role === 'vendor'          && <VendorDashboard         projects={ALL_PROJECTS} />}
         {role === 'viewer'          && <ViewerDashboard         projects={ALL_PROJECTS} />}
