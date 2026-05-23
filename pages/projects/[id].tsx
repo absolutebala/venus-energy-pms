@@ -121,114 +121,186 @@ const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
 
 // ── PO Items Component ───────────────────────────────────────────────────────
 function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string; editing: boolean; canAdd?: boolean }) {
-  const [items, setItems] = React.useState<any[]>(() => PO_ITEMS_DB[projectId] || []);
-  const nextId = () => Math.max(0, ...items.map((i:any)=>i.id)) + 1;
+  const { getByProject, addItem, updateItem, deleteItem, loading } = usePOItems();
+  const items = getByProject(projectId);
+  const [adding,   setAdding]   = React.useState(false);
+  const [saving,   setSaving]   = React.useState(false);
+  const [editId,   setEditId]   = React.useState<string|null>(null);
+  const [toast,    setToast]    = React.useState<any>(null);
+  const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', rate:'', gstRate:'18' });
+  const [editRow,  setEditRow]  = React.useState<any>({});
 
-  const addItem = () => setItems(prev => [...prev, { id:nextId(), description:'', hsn:'', uom:'Nos', quantity:0, rate:0, gst:18, amount:0 }]);
-  const removeItem = (id:number) => setItems(prev => prev.filter((i:any)=>i.id!==id));
-  const updateItem = (id:number, field:string, val:any) => setItems(prev => prev.map((item:any) => {
-    if (item.id !== id) return item;
-    const updated = { ...item, [field]: val };
-    updated.amount = Number(updated.quantity) * Number(updated.rate);
-    return updated;
-  }));
+  const fmt = (n: number) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits:2 });
+  const totalAmount = items.reduce((a,i) => a + i.amount, 0);
+  const totalGST    = items.reduce((a,i) => a + (i.amount * i.gstRate / 100), 0);
 
-  const totalAmount = items.reduce((a:number,i:any)=>a+Number(i.amount),0);
-  const totalGST    = items.reduce((a:number,i:any)=>a+(Number(i.amount)*Number(i.gst)/100),0);
+  const calcAmount = (qty: string, rate: string) => {
+    const q = Number(qty) || 0, r = Number(rate) || 0;
+    return q * r;
+  };
 
-  const inpStyle: React.CSSProperties = { border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 7px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text };
-  const selStyle: React.CSSProperties = { ...inpStyle, cursor:'pointer' };
+  const inpS: React.CSSProperties = { border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px',
+    fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text };
+  const thS: React.CSSProperties  = { padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase',
+    color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, background:T.primaryLight, whiteSpace:'nowrap' as const };
+  const tdS: React.CSSProperties  = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
+
+  const saveNew = async () => {
+    if (!newRow.description || !newRow.quantity || !newRow.rate) return;
+    const amt = calcAmount(newRow.quantity, newRow.rate);
+    setSaving(true);
+    try {
+      await addItem({ projectId, description:newRow.description, hsnCode:newRow.hsnCode,
+        uom:newRow.uom, quantity:Number(newRow.quantity), rate:Number(newRow.rate),
+        gstRate:Number(newRow.gstRate), amount:amt, sortOrder:items.length+1 });
+      setNewRow({ description:'', hsnCode:'', uom:'', quantity:'', rate:'', gstRate:'18' });
+      setAdding(false);
+      setToast({ msg:'✅ PO Item added', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(false); }
+  };
+
+  const saveEdit = async (id: string) => {
+    setSaving(true);
+    try {
+      const amt = calcAmount(editRow.quantity, editRow.rate);
+      await updateItem(id, { ...editRow, quantity:Number(editRow.quantity), rate:Number(editRow.rate),
+        gstRate:Number(editRow.gstRate||18), amount:amt });
+      setEditId(null);
+      setToast({ msg:'✅ PO Item updated', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(false); }
+  };
 
   return (
     <div>
-      <div style={{ overflowX:'auto' as const }}>
-        <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:800 }}>
-          <thead>
-            <tr style={{ background:T.bg }}>
-              {['#','Item Description *','HSN / SAC','UOM *','Quantity *','Rate (₹) *','GST (%)','Amount (₹)',''].map((h,i)=>(
-                <th key={i} style={{ padding:'9px 10px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:i>=4?'right' as const:'left' as const, borderBottom:`2px solid ${T.border}`, whiteSpace:'nowrap' as const }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {items.length === 0 && (
-              <tr><td colSpan={9} style={{ padding:'24px', textAlign:'center' as const, color:T.textDim, fontSize:13 }}>No PO items yet. Click "+ Add Item" to begin.</td></tr>
-            )}
-            {items.map((item:any, idx:number) => (
-              <tr key={item.id} style={{ borderBottom:`1px solid ${T.border}` }}>
-                <td style={{ padding:'8px 10px', color:T.textMuted, fontSize:12, width:36 }}>{idx+1}</td>
-                <td style={{ padding:'8px 10px', minWidth:200 }}>
-                  {editing ? <input value={item.description} onChange={e=>updateItem(item.id,'description',e.target.value)} style={inpStyle} placeholder="Item description" />
-                  : <span style={{ fontSize:13, color:T.text }}>{item.description||'—'}</span>}
-                </td>
-                <td style={{ padding:'8px 10px', width:90 }}>
-                  {editing ? <input value={item.hsn} onChange={e=>updateItem(item.id,'hsn',e.target.value)} style={inpStyle} placeholder="HSN" />
-                  : <span style={{ fontSize:12, color:T.textMuted }}>{item.hsn||'—'}</span>}
-                </td>
-                <td style={{ padding:'8px 10px', width:90 }}>
-                  {editing ? (
-                    <select value={item.uom} onChange={e=>updateItem(item.id,'uom',e.target.value)} style={selStyle}>
-                      {UOM_OPTIONS.map(u=><option key={u}>{u}</option>)}
-                    </select>
-                  ) : <span style={{ fontSize:12, color:T.textMuted }}>{item.uom}</span>}
-                </td>
-                <td style={{ padding:'8px 10px', width:100, textAlign:'right' as const }}>
-                  {editing ? <input type="number" value={item.quantity} onChange={e=>updateItem(item.id,'quantity',e.target.value)} style={{ ...inpStyle, textAlign:'right' as const }} />
-                  : <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{Number(item.quantity).toLocaleString('en-IN')}</span>}
-                </td>
-                <td style={{ padding:'8px 10px', width:120, textAlign:'right' as const }}>
-                  {editing ? <input type="number" value={item.rate} onChange={e=>updateItem(item.id,'rate',e.target.value)} style={{ ...inpStyle, textAlign:'right' as const }} />
-                  : <span style={{ fontSize:13, fontWeight:600, color:T.text }}>₹{Number(item.rate).toLocaleString('en-IN')}</span>}
-                </td>
-                <td style={{ padding:'8px 10px', width:90, textAlign:'right' as const }}>
-                  {editing ? (
-                    <select value={item.gst} onChange={e=>updateItem(item.id,'gst',e.target.value)} style={{ ...selStyle, textAlign:'right' as const }}>
-                      {GST_OPTIONS.map(g=><option key={g} value={g}>{g}%</option>)}
-                    </select>
-                  ) : <span style={{ fontSize:12, color:T.textMuted }}>{item.gst}%</span>}
-                </td>
-                <td style={{ padding:'8px 10px', fontWeight:700, color:T.primary, textAlign:'right' as const, whiteSpace:'nowrap' as const }}>
-                  ₹{Number(item.amount).toLocaleString('en-IN')}
-                </td>
-                <td style={{ padding:'8px 10px', width:36 }}>
-                  {editing && <button onClick={()=>removeItem(item.id)} style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:16 }}>🗑</button>}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {canAdd && <button onClick={addItem}
-        style={{ margin:'12px 0 4px', background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8, padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
-        + Add Item
-      </button>}
-
+      {loading && <div style={{ color:T.textMuted, fontSize:13 }}>Loading PO items...</div>}
       {items.length > 0 && (
-        <div style={{ display:'flex', justifyContent:'flex-end', gap:20, marginTop:12, padding:'10px 14px', background:T.primaryLight, borderRadius:8, fontSize:13 }}>
-          <span style={{ color:T.textMuted }}>Subtotal: <strong style={{ color:T.text }}>₹{totalAmount.toLocaleString('en-IN')}</strong></span>
-          <span style={{ color:T.textMuted }}>Total GST: <strong style={{ color:T.text }}>₹{Math.round(totalGST).toLocaleString('en-IN')}</strong></span>
-          <span style={{ color:T.primary, fontWeight:700 }}>Grand Total: ₹{Math.round(totalAmount+totalGST).toLocaleString('en-IN')}</span>
+        <div style={{ overflowX:'auto' as const }}>
+          <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+            <thead>
+              <tr>
+                {['#','Description','HSN','UOM','Qty','Rate (₹)','GST %','Amount (₹)',''].map((h,i)=>(
+                  <th key={i} style={{ ...thS, textAlign:i>=4&&i<=7?'right' as const:'left' as const }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item, idx) => (
+                <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
+                  <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
+                  {editId === item.id ? (
+                    <>
+                      <td style={tdS}><input value={editRow.description||''} onChange={e=>setEditRow((p:any)=>({...p,description:e.target.value}))} style={inpS} /></td>
+                      <td style={tdS}><input value={editRow.hsnCode||''} onChange={e=>setEditRow((p:any)=>({...p,hsnCode:e.target.value}))} style={inpS} /></td>
+                      <td style={tdS}><input value={editRow.uom||''} onChange={e=>setEditRow((p:any)=>({...p,uom:e.target.value}))} style={inpS} /></td>
+                      <td style={tdS}><input type="number" value={editRow.quantity||''} onChange={e=>setEditRow((p:any)=>({...p,quantity:e.target.value}))} style={{...inpS,textAlign:'right' as const}} /></td>
+                      <td style={tdS}><input type="number" value={editRow.rate||''} onChange={e=>setEditRow((p:any)=>({...p,rate:e.target.value}))} style={{...inpS,textAlign:'right' as const}} /></td>
+                      <td style={tdS}><input type="number" value={editRow.gstRate||18} onChange={e=>setEditRow((p:any)=>({...p,gstRate:e.target.value}))} style={{...inpS,textAlign:'right' as const}} /></td>
+                      <td style={{ ...tdS, textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(calcAmount(editRow.quantity,editRow.rate))}</td>
+                      <td style={{ ...tdS, display:'flex', gap:4 }}>
+                        <button onClick={()=>saveEdit(item.id)} disabled={saving} style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✓</button>
+                        <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✕</button>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td style={{ ...tdS, fontWeight:500 }}>{item.description}</td>
+                      <td style={{ ...tdS, color:T.textMuted }}>{item.hsnCode||'—'}</td>
+                      <td style={{ ...tdS, color:T.textMuted }}>{item.uom||'—'}</td>
+                      <td style={{ ...tdS, textAlign:'right' as const }}>{item.quantity.toLocaleString()}</td>
+                      <td style={{ ...tdS, textAlign:'right' as const }}>{fmt(item.rate)}</td>
+                      <td style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>{item.gstRate}%</td>
+                      <td style={{ ...tdS, textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
+                      <td style={{ ...tdS, width:64 }}>
+                        {canAdd && (
+                          <div style={{ display:'flex', gap:4 }}>
+                            <button onClick={()=>{ setEditId(item.id); setEditRow({...item}); }}
+                              style={{ background:'none', border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12, color:T.primary }}>✏️</button>
+                            <button onClick={()=>deleteItem(item.id)}
+                              style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:14 }}>🗑</button>
+                          </div>
+                        )}
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr style={{ background:T.primaryLight, fontWeight:700 }}>
+                <td colSpan={7} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>Subtotal excl. GST</td>
+                <td style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>{fmt(totalAmount)}</td>
+                <td style={tdS}></td>
+              </tr>
+              <tr style={{ background:T.primaryLight, fontWeight:700 }}>
+                <td colSpan={7} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>GST</td>
+                <td style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>{fmt(totalGST)}</td>
+                <td style={tdS}></td>
+              </tr>
+              <tr style={{ background:T.primaryLight, fontWeight:800 }}>
+                <td colSpan={7} style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>Grand Total</td>
+                <td style={{ ...tdS, textAlign:'right' as const, color:T.primary, fontSize:14 }}>{fmt(totalAmount + totalGST)}</td>
+                <td style={tdS}></td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
       )}
+      {!loading && items.length === 0 && (
+        <div style={{ textAlign:'center' as const, padding:'24px 0', color:T.textDim, fontSize:13 }}>No PO items for this project</div>
+      )}
+
+      {adding && (
+        <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:14, marginTop:12 }}>
+          <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New PO Item</div>
+          <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 1fr', gap:10, marginBottom:12 }}>
+            {([['Description *','description','text'],['HSN Code','hsnCode','text'],['UOM','uom','text'],
+               ['Quantity *','quantity','number'],['Rate (₹) *','rate','number'],['GST %','gstRate','number']] as [string,string,string][]).map(([l,f,t])=>(
+              <div key={f}>
+                <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
+                <input type={t} value={(newRow as any)[f]} onChange={e=>setNewRow(p=>({...p,[f]:e.target.value}))} style={inpS} />
+              </div>
+            ))}
+          </div>
+          {newRow.quantity && newRow.rate && (
+            <div style={{ fontSize:12, color:T.primary, marginBottom:10, fontWeight:600 }}>
+              Amount: {fmt(calcAmount(newRow.quantity, newRow.rate))} + GST {newRow.gstRate}% = {fmt(calcAmount(newRow.quantity,newRow.rate)*(1+Number(newRow.gstRate)/100))}
+            </div>
+          )}
+          <div style={{ display:'flex', gap:10 }}>
+            <button onClick={saveNew} disabled={saving||!newRow.description||!newRow.quantity||!newRow.rate}
+              style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px',
+                cursor:'pointer', fontSize:13, fontWeight:600, opacity:saving||!newRow.description||!newRow.quantity||!newRow.rate?0.5:1 }}>
+              {saving?'Saving…':'✅ Add Item'}
+            </button>
+            <button onClick={()=>setAdding(false)}
+              style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', color:T.text, cursor:'pointer', fontSize:13 }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:14 }}>
+        {canAdd && !adding && (
+          <button onClick={()=>setAdding(true)}
+            style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8,
+              padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
+            + Add PO Item
+          </button>
+        )}
+        {items.length > 0 && (
+          <div style={{ marginLeft:'auto', fontSize:13, fontWeight:700, color:T.primary,
+            background:T.primaryLight, padding:'8px 18px', borderRadius:8 }}>
+            Grand Total: {fmt(totalAmount + totalGST)}
+          </div>
+        )}
+      </div>
+      {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
     </div>
   );
 }
-
-
-// ── PTW List Component ───────────────────────────────────────────────────────
-const PTW_DB: Record<string, any[]> = {
-  'VE-2025-001': [
-    { id:1, ticketId:'PTW-2025-1001', supervisor:'Rajesh Kumar',  dateFrom:'2025-04-01', dateTo:'2025-06-30' },
-    { id:2, ticketId:'PTW-2025-1045', supervisor:'Mohan Lal',     dateFrom:'2025-07-01', dateTo:'2025-09-30' },
-  ],
-  'VE-2025-002': [
-    { id:1, ticketId:'PTW-2025-1002', supervisor:'Vikram Singh',  dateFrom:'2025-03-01', dateTo:'2025-04-30' },
-  ],
-  'VE-2025-003': [
-    { id:1, ticketId:'PTW-2025-1003', supervisor:'Arun Singh',    dateFrom:'2025-04-10', dateTo:'2025-05-20' },
-  ],
-};
 
 function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { projectId:string; vendorContact:string; canEdit:boolean; canAdd?:boolean }) {
   const [items, setItems] = React.useState<any[]>(() => PTW_DB[projectId] || []);
