@@ -695,6 +695,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
 function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:string; canAdd:boolean; projectPoNo?:string }) {
   const { getByProject, addInvoice, deleteInvoice, loading } = useInvoices();
   const { profile } = useAuth();
+  const { logActivity } = useActivity();
   const items = getByProject(projectId);
   const [adding,  setAdding]  = React.useState(false);
   const [saving,  setSaving]  = React.useState(false);
