@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
-import { PROJECTS } from '@/lib/seedData';
+import { useProjects } from '@/context/ProjectContext';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, inputStyle } from '@/lib/theme';
 
@@ -25,6 +25,7 @@ const STATUS_LABELS: Record<string,{label:string;color:string;bg:string}> = {
 
 export default function VendorProjectsPage() {
   const router = useRouter();
+  const { projects: allProjects } = useProjects();
   const { profile } = useAuth();
   const [search, setSearch] = useState('');
   const [focused, setFocused] = useState(false);

@@ -1,30 +1,24 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
-import { PROJECTS } from '@/lib/seedData';
+import { useProjects } from '@/context/ProjectContext';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, btnPrimary, inputStyle, badge } from '@/lib/theme';
 
-const ALL_PROJECTS = [
-  { id:'VE-2025-001', projectName:'Chennai Metro Phase II',  site:'Chennai North', type:'Tower Erection',    pm:'Arun Kumar',  poValue:1850000, aging:12, status:'in_progress', progress:65,  region:'Tamil Nadu', rm:'Ramesh Kumar' },
-  { id:'VE-2025-004', projectName:'Chennai Fiber Network',   site:'Chennai South', type:'Fiber Installation',pm:'Vijay Kumar', poValue:1230000, aging:12, status:'in_progress', progress:45,  region:'Tamil Nadu', rm:'Ramesh Kumar' },
-  { id:'VE-2025-005', projectName:'Coimbatore Tower Erect',  site:'Coimbatore',   type:'Tower Erection',    pm:'Arun Kumar',  poValue:2200000, aging:8,  status:'pending',      progress:10,  region:'Tamil Nadu', rm:'Ramesh Kumar' },
-  { id:'VE-2025-002', projectName:'Bengaluru East Maint.',   site:'Bengaluru East',type:'Tower Maintenance', pm:'Priya Sharma',poValue:420000,  aging:78, status:'delayed',      progress:30,  region:'Karnataka',  rm:'Amit Sharma'  },
-  { id:'VE-2025-006', projectName:'Pune Civil Works',        site:'Pune West',     type:'Civil Works',       pm:'Pooja Mehta', poValue:540000,  aging:95, status:'delayed',      progress:20,  region:'Maharashtra',rm:'Amit Sharma'  },
-];
 
 const fmt = (v:number) => `₹${(v/100000).toFixed(2)}L`;
 const STATUS_DISPLAY: Record<string,string> = { in_progress:'In Progress', pending:'Pending', delayed:'Delayed', completed:'Completed', pm_approved:'PM Approved' };
 
 export default function RMProjectsPage() {
   const router = useRouter();
+  const { projects: allProjects } = useProjects();
   const { profile } = useAuth();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [focused, setFocused] = useState(false);
 
   // Filter to RM's projects
-  const myProjects = ALL_PROJECTS.filter(p =>
+  const myProjects = allProjects as any[].filter(p =>
     p.rm === (profile?.full_name || 'Ramesh Kumar') &&
     (statusFilter === 'All' || STATUS_DISPLAY[p.status] === statusFilter) &&
     (!search || p.projectName.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase()) || (p as any).poNo?.toLowerCase().includes(search.toLowerCase()) || (p as any).indusId?.toLowerCase().includes(search.toLowerCase()))

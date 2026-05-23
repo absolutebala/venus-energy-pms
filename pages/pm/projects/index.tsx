@@ -1,20 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
-import { PROJECTS } from '@/lib/seedData';
+import { useProjects } from '@/context/ProjectContext';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, btnPrimary, inputStyle } from '@/lib/theme';
 
-const ALL_PROJECTS = [
-  { id:'VE-2025-001', projectName:'Chennai Metro Phase II',  poNo:'PO-2025-001', indusId:'IND-1001', site:'Chennai North',   type:'Tower Erection',     poValue:1850000, aging:12, status:'in_progress',   progress:65,  vendorAssigned:true,  vendor:'ABC Telecom Services',    deadline:'30/06/2025', pm:'Arun Kumar',   assignedAt:'2025-05-10' },
-  { id:'VE-2025-004', projectName:'Chennai Fiber Network',  poNo:'PO-2025-002', indusId:'IND-1004',   site:'Chennai South',   type:'Fiber Installation', poValue:1230000, aging:12, status:'in_progress',   progress:45,  vendorAssigned:false, vendor:null,                      deadline:'15/07/2025', pm:'Arun Kumar',   assignedAt:'2025-05-08' },
-  { id:'VE-2025-005', projectName:'Coimbatore Tower Erect', poNo:'PO-2025-003', indusId:'IND-1005',  site:'Coimbatore',      type:'Tower Erection',     poValue:2200000, aging:8,  status:'pending',        progress:10,  vendorAssigned:false, vendor:null,                      deadline:'31/08/2025', pm:'Arun Kumar',   assignedAt:'2025-05-11' },
-  { id:'VE-2025-007', projectName:'Mumbai Power Works',      poNo:'PO-2025-004', indusId:'IND-1007',      site:'Mumbai Central',  type:'Power Works',        poValue:890000,  aging:33, status:'billing_review', progress:100, vendorAssigned:true,  vendor:'PowerSys India',          deadline:'31/05/2025', pm:'Arun Kumar',   assignedAt:'2025-04-20' },
-  { id:'VE-2025-008', projectName:'Delhi NCR Maintenance',  poNo:'PO-2025-004', indusId:'IND-1008',   site:'Delhi NCR',       type:'Tower Maintenance',  poValue:380000,  aging:18, status:'in_progress',   progress:75,  vendorAssigned:true,  vendor:'XYZ Infra Solutions',     deadline:'31/05/2025', pm:'Arun Kumar',   assignedAt:'2025-05-09' },
-  { id:'VE-2025-010', projectName:'Kolkata Fiber Install',  poNo:'PO-2025-005', indusId:'IND-1010',   site:'Kolkata North',   type:'Fiber Installation', poValue:975000,  aging:5,  status:'completed',      progress:100, vendorAssigned:true,  vendor:'NetConnect Services',     deadline:'31/08/2025', pm:'Arun Kumar',   assignedAt:'2025-05-05' },
-  { id:'VE-2025-003', projectName:'Hyderabad Component Repl', poNo:'PO-2025-002', indusId:'IND-1003',site:'Hyderabad',       type:'Component Replace',  poValue:760000,  aging:22, status:'billing_review', progress:100, vendorAssigned:true,  vendor:'TowerTech Pvt Ltd',       deadline:'20/05/2025', pm:'Vijay Kumar',  assignedAt:'2025-04-15' },
-  { id:'VE-2025-009', projectName:'Kochi Component Delay',  poNo:'PO-2025-005', indusId:'IND-1009',   site:'Kochi',           type:'Component Replace',  poValue:650000,  aging:62, status:'delayed',        progress:40,  vendorAssigned:false, vendor:null,                      deadline:'30/04/2025', pm:'Vijay Kumar',  assignedAt:'2025-04-10' },
-];
 
 const STATUS_COLOR: Record<string,string> = {
   in_progress:'#2563EB', pending:'#D97706', delayed:'#DC2626',
@@ -29,6 +19,7 @@ const fmt = (v:number) => `₹${(v/100000).toFixed(1)}L`;
 
 export default function PMProjectsPage() {
   const router  = useRouter();
+  const { projects: allProjects } = useProjects();
   const { profile } = useAuth();
   const [search,    setSearch]    = useState('');
   const [focused,   setFocused]   = useState(false);
@@ -45,7 +36,7 @@ export default function PMProjectsPage() {
   // Filter to this PM's projects
   // NOTE: Mock data uses hardcoded PM names. In production this filters by user ID from DB.
   // For demo: show all projects that have a PM assigned (simulates PM's assigned projects)
-  const myProjects = ALL_PROJECTS.filter(p => p.pm !== null && p.pm !== undefined);
+  const myProjects = allProjects as any[].filter(p => p.pm !== null && p.pm !== undefined);
 
   // Apply filters
   const filtered = myProjects.filter(p => {
@@ -90,7 +81,7 @@ export default function PMProjectsPage() {
     color:activeTab===t?'#fff':T.textMuted, transition:'all 0.15s',
   });
 
-  const ProjectCard = ({ p }: { p: typeof ALL_PROJECTS[0] }) => {
+  const ProjectCard = ({ p }: { p: typeof allProjects as any[][0] }) => {
     const st      = STATUS_COLOR[p.status] || T.textDim;
     const stLabel = STATUS_LABEL[p.status] || p.status;
     return (

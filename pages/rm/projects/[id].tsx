@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Layout from '@/components/Layout';
 import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
+import { useProjects } from '@/context/ProjectContext';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
 import { TEAM_MEMBERS } from '@/lib/teamData';
