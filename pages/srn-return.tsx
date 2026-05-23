@@ -196,7 +196,7 @@ export default function SRNReturnPage() {
                               {m.utilisedQty!==null&&m.utilisedQty!==undefined ? fmt(m.utilisedQty) : '—'}
                             </td>
                             <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600,
-                              color:bal>0?Theme.danger:Theme.success }}>{approved?fmt(bal):'—'}</td>
+                              color:bal>0?Theme.danger:Theme.success }}>{m.utilisedQty!==null&&m.utilisedQty!==undefined?fmt(bal):'—'}</td>
                             <td style={{ ...tdS, textAlign:'right' as const, color:Theme.success, fontWeight:600 }}>
                               {(m.returnQty||0)>0?fmt(m.returnQty):'—'}
                             </td>
