@@ -411,113 +411,150 @@ const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-dig
 }
 // ── SRN Section Component ─────────────────────────────────────────────────────
 function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role:string; onAllApproved:(v:boolean)=>void }) {
-  const poItems = PO_ITEMS_DB[projectId] || [
-];
-  const srnDefaults = SRN_DATA_DB[projectId] || {};
+  const { getByProject, updateItem } = useMaterial();
+  const { profile } = useAuth();
+  const { logActivity: logSRN } = useActivity();
+  const [items,   setItems]   = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [saving,  setSaving]  = React.useState<string|null>(null);
+  const [toast,   setToast]   = React.useState<any>(null);
 
-  const [items, setItems] = React.useState(() =>
-    poItems.map((po:any) => ({
-      poItemId:    po.id,
-      description: po.description,
-      hsn:         po.hsn,
-      uom:         po.uom,
-      poQty:       po.quantity,
-      utilisedQty: srnDefaults[po.id]?.utilisedQty ?? null,
-      returned:    srnDefaults[po.id]?.returned ?? false,
-      approved:    srnDefaults[po.id]?.approved ?? false,
-    }))
-  );
+  React.useEffect(() => {
+    getByProject(projectId).then(data => { setItems(data); setLoading(false); });
+  }, [projectId, getByProject]);
 
-  const isVendor  = role === 'vendor';
-  const canApprove= ['super_admin','project_manager','region_manager'].includes(role);
+  React.useEffect(() => {
+    const allApproved = items.length > 0 && items.every(i => i.utilisedStatus === 'pm_approved');
+    onAllApproved(allApproved);
+  }, [items, onAllApproved]);
 
-  const updateItem = (id:number, field:string, val:any) => {
-    setItems(prev => {
-      const updated = prev.map((item:any) => item.poItemId === id ? { ...item, [field]: val } : item);
-      const allApproved = updated.every((i:any) => i.approved);
-      onAllApproved(allApproved);
-      return updated;
-    });
+  const updateLocal = (id: string, updates: any) =>
+    setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
+
+  const submitUtilised = async (item: any) => {
+    if (item.utilisedQty === null || item.utilisedQty === undefined) return;
+    setSaving(item.id);
+    try {
+      await updateItem(item.id, { utilisedQty: item.utilisedQty, utilisedStatus: 'submitted', utilisedRemarks: item.utilisedRemarks||'' });
+      updateLocal(item.id, { utilisedStatus: 'submitted' });
+      logSRN(projectId, `Material ${item.code} utilisation submitted (${item.utilisedQty} ${item.uom})`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+      setToast({ msg:'✅ Utilisation submitted for PM approval', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(null); }
   };
 
-  const allApproved = items.every((i:any) => i.approved);
-  const allReturned = items.every((i:any) => i.returned);
+  const pmApprove = async (item: any) => {
+    setSaving(item.id);
+    try {
+      const bal = (item.issuedQty||0) - (item.utilisedQty||0);
+      await updateItem(item.id, { utilisedStatus:'pm_approved', pmApprovedQty: item.utilisedQty||0, returnQty: bal, srnQty: bal });
+      updateLocal(item.id, { utilisedStatus:'pm_approved', pmApprovedQty: item.utilisedQty||0, returnQty: bal, srnQty: bal });
+      logSRN(projectId, `Material ${item.code} PM approved (${item.utilisedQty} ${item.uom})`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+      setToast({ msg:'✅ Approved', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(null); }
+  };
 
-  if (poItems.length === 0) return (
-    <div style={{ textAlign:'center', padding:30, color:T.textDim, fontSize:13 }}>
-      No PO items found. Add items in the PO Items section first.
-    </div>
-  );
+  const pmReject = async (item: any) => {
+    setSaving(item.id);
+    try {
+      await updateItem(item.id, { utilisedStatus:'pm_rejected' });
+      updateLocal(item.id, { utilisedStatus:'pm_rejected' });
+      setToast({ msg:'Returned for revision', type:'info' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(null); }
+  };
+
+  const STATUS_BADGE: Record<string,{color:string;bg:string;label:string}> = {
+    pending:     { color:'#6B7280', bg:'#F9FAFB', label:'Pending'   },
+    submitted:   { color:'#2563EB', bg:'#EFF6FF', label:'Submitted' },
+    pm_approved: { color:'#0D9488', bg:'#F0FDFA', label:'Approved'  },
+    pm_rejected: { color:'#DC2626', bg:'#FEF2F2', label:'Rejected'  },
+  };
+
+  const isPM    = ['project_manager','super_admin','region_manager'].includes(role);
+  const isVendor = role === 'vendor';
+
+  const thS: React.CSSProperties = { padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase',
+    color:T.primary, background:T.primaryLight, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const };
+  const tdS: React.CSSProperties = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
+
+  if (loading) return <div style={{ color:T.textMuted, fontSize:13 }}>Loading materials...</div>;
+  if (items.length === 0) return <div style={{ textAlign:'center' as const, padding:'24px 0', color:T.textDim, fontSize:13 }}>No material items for this project</div>;
 
   return (
     <div>
-      {/* Status banner */}
-      <div style={{ display:'flex', gap:12, marginBottom:14, flexWrap:'wrap' as const }}>
-        <span style={{ fontSize:12, fontWeight:600, color:allApproved?T.success:T.warning, background:allApproved?T.successBg:T.warningBg, padding:'4px 12px', borderRadius:20 }}>
-          {allApproved?'✅ All Items Approved':'⏳ Pending Approval'}
-        </span>
-        <span style={{ fontSize:12, fontWeight:600, color:allReturned?T.success:T.textMuted, background:allReturned?T.successBg:T.bg, padding:'4px 12px', borderRadius:20 }}>
-          {allReturned?'✅ All Returned':'📦 Returns Pending'}
-        </span>
-        {allApproved && <span style={{ fontSize:12, color:T.info, fontWeight:600 }}>🔓 Billing Review now unlockable</span>}
-      </div>
-
       <div style={{ overflowX:'auto' as const }}>
-        <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:760 }}>
+        <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
           <thead>
-            <tr style={{ background:T.bg }}>
-              {['#','Item Description','UOM','PO Qty','Utilised','Balance','Returned','Approved'].map((h,i)=>(
-                <th key={i} style={{ padding:'9px 10px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:i>=3?['#2563EB','#16A34A','#D97706','#7C3AED','#0D9488'][i-3]:T.textMuted, textAlign:i>=3?'center' as const:'left' as const, borderBottom:`2px solid ${T.border}`, whiteSpace:'nowrap' as const }}>{h}</th>
+            <tr>
+              {['#','Code','Description','UOM','Issued','Utilised','Status','PM Approved','Balance','Actions'].map((h,i)=>(
+                <th key={i} style={{ ...thS, textAlign:i>=4?'right' as const:'left' as const }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {items.map((item:any, idx:number) => {
-              const balance = (item.poQty || 0) - (item.utilisedQty || 0);
+            {items.map((item, idx) => {
+              const badge = STATUS_BADGE[item.utilisedStatus] || STATUS_BADGE.pending;
+              const balance = (item.issuedQty||0) - (item.pmApprovedQty||0);
+              const isSaving = saving === item.id;
               return (
-                <tr key={item.poItemId} style={{ borderBottom:`1px solid ${T.border}`, background:item.approved?`${T.success}08`:item.returned?`${T.info}06`:'transparent' }}>
-                  <td style={{ padding:'10px', color:T.textMuted, fontSize:12 }}>{idx+1}</td>
-                  <td style={{ padding:'10px' }}>
-                    <div style={{ fontSize:13, fontWeight:500, color:T.text }}>{item.description}</div>
-                    {item.hsn && <div style={{ fontSize:11, color:T.textDim }}>HSN: {item.hsn}</div>}
+                <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
+                  <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
+                  <td style={{ ...tdS, fontWeight:600, color:T.primary, whiteSpace:'nowrap' as const }}>{item.code}</td>
+                  <td style={{ ...tdS }}>{item.description}</td>
+                  <td style={{ ...tdS, color:T.textMuted }}>{item.uom}</td>
+                  <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600 }}>{item.issuedQty}</td>
+                  <td style={{ ...tdS, textAlign:'right' as const }}>
+                    {isVendor && item.utilisedStatus === 'pending' ? (
+                      <input type="number" value={item.utilisedQty??''} min={0} max={item.issuedQty}
+                        onChange={e=>updateLocal(item.id,{utilisedQty:Number(e.target.value)})}
+                        style={{ width:64, border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 6px',
+                          fontSize:12, textAlign:'right' as const, outline:'none' }} />
+                    ) : <span style={{ fontWeight:600 }}>{item.utilisedQty??'—'}</span>}
                   </td>
-                  <td style={{ padding:'10px', fontSize:12, color:T.textMuted }}>{item.uom}</td>
-                  <td style={{ padding:'10px', textAlign:'center' as const, fontWeight:700, color:T.text }}>{item.poQty}</td>
-                  <td style={{ padding:'10px', textAlign:'center' as const }}>
-                    {isVendor && !item.approved ? (
-                      <input type="number" min="0" max={item.poQty}
-                        value={item.utilisedQty ?? ''}
-                        onChange={e=>updateItem(item.poItemId,'utilisedQty',e.target.value===''?null:Number(e.target.value))}
-                        style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 8px', fontSize:12, width:70, textAlign:'center' as const, outline:'none' }} />
-                    ) : (
-                      <span style={{ fontSize:13, fontWeight:600, color:item.utilisedQty!==null?T.info:T.textDim }}>
-                        {item.utilisedQty ?? '—'}
-                      </span>
+                  <td style={{ ...tdS }}>
+                    <span style={{ fontSize:11, fontWeight:700, color:badge.color, background:badge.bg,
+                      padding:'2px 8px', borderRadius:20, whiteSpace:'nowrap' as const }}>{badge.label}</span>
+                  </td>
+                  <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600, color:T.success }}>
+                    {item.utilisedStatus==='pm_approved'?item.pmApprovedQty:'—'}
+                  </td>
+                  <td style={{ ...tdS, textAlign:'right' as const, color:balance>0?T.warning:T.success, fontWeight:600 }}>
+                    {item.utilisedStatus==='pm_approved'?balance:'—'}
+                  </td>
+                  <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
+                    {isVendor && item.utilisedStatus==='pending' && (
+                      <button onClick={()=>submitUtilised(item)} disabled={isSaving||item.utilisedQty===null}
+                        style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6,
+                          padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600,
+                          opacity:isSaving||item.utilisedQty===null?0.5:1 }}>
+                        {isSaving?'…':'Submit'}
+                      </button>
                     )}
-                  </td>
-                  <td style={{ padding:'10px', textAlign:'center' as const }}>
-                    <span style={{ fontSize:13, fontWeight:700, color:balance>0?T.danger:T.success }}>
-                      {item.utilisedQty!==null ? balance : '—'}
-                    </span>
-                  </td>
-                  <td style={{ padding:'10px', textAlign:'center' as const }}>
-                    {balance === 0 ? (
-                      <span style={{ fontSize:12, color:T.textMuted }}>N/A</span>
-                    ) : isVendor ? (
-                      <input type="checkbox" checked={item.returned} disabled={item.utilisedQty===null}
-                        onChange={e=>updateItem(item.poItemId,'returned',e.target.checked)}
-                        style={{ width:18, height:18, cursor:'pointer', accentColor:T.primary }} />
-                    ) : (
-                      <span style={{ fontSize:16 }}>{item.returned?'✅':'—'}</span>
+                    {isPM && item.utilisedStatus==='submitted' && (
+                      <div style={{ display:'flex', gap:4 }}>
+                        <button onClick={()=>pmApprove(item)} disabled={isSaving}
+                          style={{ background:T.success, color:'#fff', border:'none', borderRadius:6,
+                            padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                          ✓ Approve
+                        </button>
+                        <button onClick={()=>pmReject(item)} disabled={isSaving}
+                          style={{ background:T.danger, color:'#fff', border:'none', borderRadius:6,
+                            padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                          ✗ Reject
+                        </button>
+                      </div>
                     )}
-                  </td>
-                  <td style={{ padding:'10px', textAlign:'center' as const }}>
-                    {canApprove ? (
-                      <input type="checkbox" checked={item.approved} disabled={balance > 0 && !item.returned}
-                        onChange={e=>updateItem(item.poItemId,'approved',e.target.checked)}
-                        style={{ width:18, height:18, cursor:item.returned?'pointer':'not-allowed', accentColor:T.success }} />
-                    ) : (
-                      <span style={{ fontSize:16 }}>{item.approved?'✅':'—'}</span>
+                    {item.utilisedStatus==='pm_approved' && (
+                      <span style={{ fontSize:11, color:T.success, fontWeight:600 }}>✓ Complete</span>
+                    )}
+                    {item.utilisedStatus==='pm_rejected' && isVendor && (
+                      <button onClick={()=>updateLocal(item.id,{utilisedStatus:'pending'})}
+                        style={{ background:T.warning, color:'#fff', border:'none', borderRadius:6,
+                          padding:'4px 10px', fontSize:11, cursor:'pointer' }}>
+                        Revise
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -526,21 +563,10 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
           </tbody>
         </table>
       </div>
-
-      {canApprove && !allApproved && (
-        <div style={{ marginTop:12, fontSize:12, color:T.textMuted }}>
-          ℹ️ Approve each item only after verifying physical return from vendor. All items must be approved to unlock Billing Review.
-        </div>
-      )}
+      {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
     </div>
   );
 }
-
-
-// ── Expenses Section Component ───────────────────────────────────────────────
-const EXPENSES_DB: Record<string,any[]> = {};
-const EXPENSE_TYPES   = ['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'];
-const PAYMENT_MODES   = ['Cash','Bank Transfer','Cheque','UPI','DD'];
 
 function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boolean }) {
   const { getByProject, addExpense, deleteExpense, loading } = useExpenses();
