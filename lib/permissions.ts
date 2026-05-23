@@ -48,6 +48,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_ptw_detail:        perm(true, true, true, false),
     sec_srn_detail:        perm(false,true, true, false),
     sec_stn_srn_summary:   perm(false,true, false,false),
+    safety_compliance:     perm(false,true, false,false),
   },
 
   project_manager: {
@@ -73,6 +74,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_ptw_detail:        perm(true, true, true, false),
     sec_srn_detail:        perm(false,true, true, false),
     sec_stn_srn_summary:   perm(false,true, false,false),
+    safety_compliance:     perm(false,true, false,false),
   },
 
   site_engineer: {
@@ -98,6 +100,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_ptw_detail:        perm(false,true, false,false),
     sec_srn_detail:        perm(false,true, false,false),
     sec_stn_srn_summary:   perm(false,true, false,false),
+    safety_compliance:     perm(false,true, false,false),
   },
 
   accounting_team: {
@@ -123,6 +126,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_ptw_detail:        perm(false,true, false,false),
     sec_srn_detail:        perm(false,true, false,false),
     sec_stn_srn_summary:   perm(false,true, false,false),
+    safety_compliance:     perm(false,true, false,false),
   },
 
   vendor: {
@@ -148,6 +152,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_ptw_detail:        perm(false,true, false,false),
     sec_srn_detail:        perm(false,true, true, false),
     sec_stn_srn_summary:   perm(false,false,false,false),
+    safety_compliance:     perm(false,false,false,false),
   },
 
   viewer: {
@@ -173,6 +178,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_ptw_detail:        perm(false,true, false,false),
     sec_srn_detail:        perm(false,true, false,false),
     sec_stn_srn_summary:   perm(false,true, false,false),
+    safety_compliance:     perm(false,true, false,false),
   },
 };
 
