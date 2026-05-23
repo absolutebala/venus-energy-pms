@@ -17,7 +17,7 @@ import { useProjects } from '@/context/ProjectContext';
 import { useAuth } from '@/context/AuthContext';
 import { useUpload } from '@/lib/useUpload';
 import { T, card, badge, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
-import { getPaidAmount, getProjectTransactions, PAYMENT_TRANSACTIONS, PaymentTransaction } from '@/lib/expensesData';
+import { PAYMENT_TRANSACTIONS, PaymentTransaction } from '@/lib/expensesData'; // payment log
 
 // ── Mock project data ────────────────────────────────────────────
 const PROJECT_DB: Record<string,any> = {

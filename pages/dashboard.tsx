@@ -7,7 +7,7 @@ import { T, card, badge } from '@/lib/theme';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 // ── Shared mock data ──────────────────────────────────────────────
-import { DOC_STATUS, PROJECTS as SEED_DATA } from '@/lib/seedData';
+import { PROJECTS as SEED_DATA } from '@/lib/seedData'; // fallback only for ALL_PROJECTS
 import { useProjects } from '@/context/ProjectContext';
 import { useWorkDocs } from '@/context/WorkDocContext';
 const ALL_PROJECTS = SEED_DATA as any[];
@@ -1041,12 +1041,12 @@ export default function Dashboard() {
         </div>
 
         {role === 'super_admin'     && <SuperAdminDashboard   projects={dbProjects.length>0 ? dbProjects as any[] : ALL_PROJECTS} />}
-        {role === 'region_manager'  && <RegionManagerDashboard projects={ALL_PROJECTS} />}
+        {role === 'region_manager'  && <RegionManagerDashboard projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS} />}
         {role === 'project_manager' && <ProjectManagerDashboard projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS as any[]} pmName={profile?.full_name||''} />}
-        {role === 'site_engineer'   && <SiteEngineerDashboard  projects={ALL_PROJECTS} />}
-        {role === 'vendor'          && <VendorDashboard         projects={ALL_PROJECTS} />}
-        {role === 'viewer'          && <ViewerDashboard         projects={ALL_PROJECTS} />}
-        {role === 'accounting_team' && <AccountingDashboard     projects={ALL_PROJECTS} />}
+        {role === 'site_engineer'   && <SiteEngineerDashboard  projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS} />}
+        {role === 'vendor'          && <VendorDashboard         projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS} />}
+        {role === 'viewer'          && <ViewerDashboard         projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS} />}
+        {role === 'accounting_team' && <AccountingDashboard     projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS} />}
       </div>
     </Layout>
   );
