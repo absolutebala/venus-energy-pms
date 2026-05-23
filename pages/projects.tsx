@@ -17,6 +17,17 @@ const STATUS_DISPLAY: Record<string,string> = {
   submitted:'Submitted', pm_approved:'PM Approved', billing_review:'Billing Review',
 };
 
+const WORK_STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
+  not_started:    { label:'Not Started',    color:'#6B7280', bg:'#F9FAFB' },
+  in_progress:    { label:'In Progress',    color:'#D97706', bg:'#FFFBEB' },
+  delayed:        { label:'Delayed',        color:'#DC2626', bg:'#FEF2F2' },
+  on_hold:        { label:'On Hold',        color:'#7C3AED', bg:'#F5F3FF' },
+  submitted:      { label:'Submitted',      color:'#2563EB', bg:'#EFF6FF' },
+  under_review:   { label:'Under Review',   color:'#7C3AED', bg:'#F5F3FF' },
+  pm_approved:    { label:'PM Approved',    color:'#0D9488', bg:'#F0FDFA' },
+  billing_review: { label:'Billing Review', color:'#D97706', bg:'#FFFBEB' },
+  completed:      { label:'Completed',      color:'#16A34A', bg:'#F0FDF4' },
+};
 const STATUSES_FILTER = ['All','In Progress','Aging','Delayed','Completed','Pending','Billing Review'];
 const TYPES = ['All','Tower Erection','Tower Maintenance','Component Replacement','Fiber Installation','Civil Works','Power Works'];
 
@@ -287,7 +298,7 @@ export default function ProjectsPage() {
                   const ageDays = getAgeDays(p.id);
                   const ageColor= ageDays > 90 ? '#DC2626' : ageDays > 60 ? '#D97706' : '#0D9488';
                   const ageBg   = ageDays > 90 ? '#FEF2F2' : ageDays > 60 ? '#FFFBEB' : '#F0FDFA';
-                  const ws = STATUS_DISPLAY[p.status as keyof typeof STATUS_DISPLAY] || { label: p.status, color: T.textMuted };
+                  const ws = WORK_STATUS_CFG[p.status] || { label: p.status||'—', color:'#6B7280', bg:'#F9FAFB' };
                   return (
                     <tr key={p.id} style={{ background:idx%2===0?'#fff':T.bg, cursor:'pointer' }}
                       onClick={()=>router.push(`/projects/${p.id}`)}
@@ -303,7 +314,7 @@ export default function ProjectsPage() {
                         <div style={{ fontSize:11, color:T.textMuted }}>{p.pm}</div>
                       </td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
-                        <span style={{ fontSize:11, fontWeight:700, color:(ws as any).color, background:`${(ws as any).color}15`, padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{(ws as any).label}</span>
+                        <span style={{ fontSize:11, fontWeight:700, color:ws.color, background:ws.bg, padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{ws.label}</span>
                       </td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, whiteSpace:'nowrap' as const }}>
                         {delDt ? <span style={{ fontSize:12, color:isPast?'#DC2626':'#374151', fontWeight:isPast?600:400 }}>
