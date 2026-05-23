@@ -69,6 +69,13 @@ export function POItemProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => { fetchItems(); }, [fetchItems]);
+  // Re-fetch when browser tab regains focus (avoids stale data after navigation)
+  useEffect(() => {
+    const onFocus = () => fetchItems();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [fetchItems]);
+
 
   const getByProject = useCallback(
     (projectId: string) => items.filter(i => i.projectId === projectId),

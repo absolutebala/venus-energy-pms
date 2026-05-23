@@ -79,6 +79,13 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
+  // Re-fetch when browser tab regains focus (avoids stale data after navigation)
+  useEffect(() => {
+    const onFocus = () => fetchInvoices();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [fetchInvoices]);
+
 
   const getByProject = useCallback(
     (projectId: string) => invoices.filter(i => i.projectId === projectId),

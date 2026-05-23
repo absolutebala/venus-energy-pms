@@ -132,6 +132,13 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
+  // Re-fetch when browser tab regains focus (avoids stale data after navigation)
+  useEffect(() => {
+    const onFocus = () => fetchProjects();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [fetchProjects]);
+
 
   const getProject = useCallback(
     (id: string) => projects.find(p => p.id === id),

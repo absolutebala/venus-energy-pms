@@ -75,6 +75,13 @@ export function ExpenseProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => { fetchExpenses(); }, [fetchExpenses]);
+  // Re-fetch when browser tab regains focus (avoids stale data after navigation)
+  useEffect(() => {
+    const onFocus = () => fetchExpenses();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [fetchExpenses]);
+
 
   const getByProject = useCallback(
     (projectId: string) => expenses.filter(e => e.projectId === projectId),

@@ -54,6 +54,13 @@ export function WorkDocProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => { fetchDocs(); }, [fetchDocs]);
+  // Re-fetch when browser tab regains focus (avoids stale data after navigation)
+  useEffect(() => {
+    const onFocus = () => fetchDocs();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [fetchDocs]);
+
 
   const getByProject = useCallback(
     (projectId: string) => docs.filter(d => d.projectId === projectId),
