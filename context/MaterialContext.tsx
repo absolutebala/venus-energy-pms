@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 
 const supabase = createClient();
@@ -30,18 +30,43 @@ function mapRow(row: any): MaterialItem {
 }
 
 interface MaterialContextType {
+  allItems: MaterialItem[];
+  loading: boolean;
   getByProject: (projectId: string) => Promise<MaterialItem[]>;
   updateItem: (id: string, updates: Partial<MaterialItem>) => Promise<void>;
   addItem: (item: Omit<MaterialItem, 'id'>) => Promise<MaterialItem>;
+  refreshItems: () => Promise<void>;
 }
 
 const MaterialContext = createContext<MaterialContextType>({
+  allItems: [], loading: true,
   getByProject: async () => [],
   updateItem:   async () => {},
   addItem:      async () => ({} as MaterialItem),
+  refreshItems: async () => {},
 });
 
 export function MaterialProvider({ children }: { children: React.ReactNode }) {
+  const [allItems, setAllItems] = useState<MaterialItem[]>([]);
+  const [loading,  setLoading]  = useState(true);
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('material_items').select('*').order('project_id').order('sort_order');
+    if (!error) setAllItems((data || []).map(mapRow));
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // Re-fetch on window focus
+  useEffect(() => {
+    const onFocus = () => fetchAll();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [fetchAll]);
+
   const getByProject = useCallback(async (projectId: string) => {
     const { data, error } = await supabase
       .from('material_items').select('*')
@@ -79,7 +104,7 @@ export function MaterialProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <MaterialContext.Provider value={{ getByProject, updateItem, addItem }}>
+    <MaterialContext.Provider value={{ allItems, loading, getByProject, updateItem, addItem, refreshItems: fetchAll }}>
       {children}
     </MaterialContext.Provider>
   );
