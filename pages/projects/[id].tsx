@@ -8,6 +8,7 @@ import { useInvoices } from '@/context/InvoiceContext';
 import { useExpenses } from '@/context/ExpenseContext';
 import { useWorkDocs } from '@/context/WorkDocContext';
 import { usePOItems } from '@/context/POItemContext';
+import { useActivity } from '@/context/ActivityContext';
 import { PROJECTS as SEED_PROJECTS, SHARED_EXPENSES, PO_ITEMS as SEED_PO_ITEMS, DOC_STATUS as SEED_DOC_STATUS } from '@/lib/seedData';
 import CreatableSelect from '@/components/CreatableSelect';
 import Toast from '@/components/Toast';
@@ -746,6 +747,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
       setNewRow({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'',
         gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo });
       setAdding(false);
+      logActivity(projectId, `Invoice ${newRow.invoiceNo} added`, profile?.full_name||'', profile?.role||'').catch(console.error);
       setToast({ msg:'✅ Invoice saved', type:'success' });
     } catch (err: any) {
       setToast({ msg:'❌ ' + err.message, type:'error' });
@@ -913,6 +915,7 @@ export default function ProjectDetailPage() {
 
   const { getProject, updateProject: ctxUpdateProject } = useProjects();
   const { getByProject: getProjectDocs, addDoc, deleteDoc: deleteWorkDoc } = useWorkDocs();
+  const { getByProject: getActivityLog, logActivity } = useActivity();
   const dbProject = id ? getProject(id as string) : undefined;
   const seedFallback = (Array.isArray(SEED_PROJECTS)?SEED_PROJECTS:[]).find((p:any)=>p.id===id);
   const [projects, setProjects] = useState<Record<string,any>>({});
@@ -938,6 +941,7 @@ export default function ProjectDetailPage() {
       .then(() => {
         setToast({ msg:'✅ Saved successfully!', type:'success' });
         setEditingSection(null);
+        logActivity(id as string, `Section updated by ${profile?.full_name||'user'}`, profile?.full_name||'', profile?.role||'').catch(console.error);
       })
       .catch((err:any) => {
         console.error('Save error:', err);
@@ -981,6 +985,11 @@ export default function ProjectDetailPage() {
   );
 
   const p = project;
+
+  const [activityEntries, setActivityEntries] = React.useState<any[]>([]);
+  React.useEffect(() => {
+    if (id) getActivityLog(id as string).then(setActivityEntries);
+  }, [id, getActivityLog]);
 
   const workDocsList = getProjectDocs((id as string) || '');
   const workDocs: Record<string, any[]> = DOC_TYPES.reduce((acc:any, dt:any) => {
@@ -1087,8 +1096,15 @@ export default function ProjectDetailPage() {
     by: t.addedBy,
     role: 'Payment' as const,
   }));
-  const ACTIVITY_LOG = [...txnLogs, ...BASE_ACTIVITY_LOG
-];
+  const fmtActivityDate = (d: string) => {
+    if (!d) return '—';
+    try { return new Date(d).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+    catch { return d; }
+  };
+  const ACTIVITY_LOG = [
+    ...txnLogs,
+    ...activityEntries.map(e => ({ date: fmtActivityDate(e.createdAt), action: e.action, by: e.byName, role: e.byRole }))
+  ].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <Layout>

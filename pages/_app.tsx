@@ -6,6 +6,7 @@ import { InvoiceProvider } from '@/context/InvoiceContext';
 import { ExpenseProvider } from '@/context/ExpenseContext';
 import { WorkDocProvider } from '@/context/WorkDocContext';
 import { POItemProvider } from '@/context/POItemContext';
+import { ActivityProvider } from '@/context/ActivityContext';
 import '@/styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -25,8 +26,10 @@ export default function App({ Component, pageProps }: AppProps) {
         <ExpenseProvider>
         <WorkDocProvider>
         <POItemProvider>
+        <ActivityProvider>
         <Component {...pageProps} />
-      </POItemProvider>
+      </ActivityProvider>
+        </POItemProvider>
         </WorkDocProvider>
         </ExpenseProvider>
         </InvoiceProvider>
