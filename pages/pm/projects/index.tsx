@@ -41,7 +41,7 @@ export default function PMProjectsPage() {
   // Apply filters
   const filtered = myProjects.filter(p => {
     // Search
-    if (search && !p.projectName.toLowerCase().includes(search.toLowerCase()) && !p.id.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !p.site||p.projectName||"".toLowerCase().includes(search.toLowerCase()) && !p.id.toLowerCase().includes(search.toLowerCase())) return false;
     // Tab/URL filters
     if (activeTab === 'all') return true;
     if (activeTab === 'unassigned') return !p.vendorAssigned;
@@ -92,7 +92,7 @@ export default function PMProjectsPage() {
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
           <div>
             <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:3 }}>{p.id}</div>
-            <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:2 }}>{p.projectName}</div>
+            <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:2 }}>{p.site||p.projectName||""}</div>
             <div style={{ fontSize:11, color:T.textMuted }}>{p.site} · {p.type}</div>
           </div>
           <span style={{ background:`${st}18`, color:st, border:`1px solid ${st}40`, padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:700, whiteSpace:'nowrap' as const, flexShrink:0, marginLeft:8 }}>{stLabel}</span>

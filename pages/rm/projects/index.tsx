@@ -18,10 +18,10 @@ export default function RMProjectsPage() {
   const [focused, setFocused] = useState(false);
 
   // Filter to RM's projects
-  const myProjects = allProjects as any[].filter(p =>
+  const myProjects = (allProjects as any[]).filter(p =>
     p.rm === (profile?.full_name || 'Ramesh Kumar') &&
     (statusFilter === 'All' || STATUS_DISPLAY[p.status] === statusFilter) &&
-    (!search || p.projectName.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase()) || (p as any).poNo?.toLowerCase().includes(search.toLowerCase()) || (p as any).indusId?.toLowerCase().includes(search.toLowerCase()))
+    (!search || p.site||p.projectName||"".toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase()) || (p as any).poNo?.toLowerCase().includes(search.toLowerCase()) || (p as any).indusId?.toLowerCase().includes(search.toLowerCase()))
   );
 
   const counts = {
@@ -81,7 +81,7 @@ export default function RMProjectsPage() {
                     <td style={{ padding:'10px 12px', color:T.primary, fontWeight:700 }}>{p.id}</td>
                     <td style={{ padding:'10px 12px', fontSize:12, color:T.text, fontWeight:600 }}>{(p as any).poNo||'—'}</td>
                     <td style={{ padding:'10px 12px', fontSize:11, color:T.textMuted }}>{(p as any).indusId||'—'}</td>
-                    <td style={{ padding:'10px 12px', fontWeight:500, color:T.text }}>{p.projectName}</td>
+                    <td style={{ padding:'10px 12px', fontWeight:500, color:T.text }}>{p.site||p.projectName||""}</td>
                     <td style={{ padding:'10px 12px', fontSize:12, color:T.textMuted }}>{p.site}</td>
                     <td style={{ padding:'10px 12px' }}><span style={{ fontSize:11, background:T.primaryLight, color:T.primary, padding:'2px 8px', borderRadius:5, fontWeight:500 }}>{p.type}</span></td>
                     <td style={{ padding:'10px 12px', fontWeight:500 }}>{p.pm}</td>
