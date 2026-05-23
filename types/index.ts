@@ -73,6 +73,7 @@ export const MODULE_LABELS: Record<AppModule, string> = {
   sec_po_items:           'PO Items Section',
   sec_ptw_detail:         'PTW Detail Section',
   sec_srn_detail:         'SRN Detail Section',
+  safety_compliance:      'Safety Compliance',
 };
 
 export interface Permission {
