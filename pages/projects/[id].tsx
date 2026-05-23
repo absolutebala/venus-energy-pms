@@ -124,6 +124,8 @@ const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
 // ── PO Items Component ───────────────────────────────────────────────────────
 function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string; editing: boolean; canAdd?: boolean }) {
   const { getByProject, addItem, updateItem, deleteItem, loading } = usePOItems();
+  const { logActivity } = useActivity();
+  const { profile: poProfile } = useAuth();
   const items = getByProject(projectId);
   const [adding,   setAdding]   = React.useState(false);
   const [saving,   setSaving]   = React.useState(false);
@@ -157,6 +159,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
         gstRate:Number(newRow.gstRate), amount:amt, sortOrder:items.length+1 });
       setNewRow({ description:'', hsnCode:'', uom:'', quantity:'', rate:'', gstRate:'18' });
       setAdding(false);
+      logActivity(projectId, `PO Item '${newRow.description}' added`, poProfile?.full_name||'', poProfile?.role||'').catch(console.error);
       setToast({ msg:'✅ PO Item added', type:'success' });
     } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
     finally { setSaving(false); }
@@ -169,6 +172,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
       await updateItem(id, { ...editRow, quantity:Number(editRow.quantity), rate:Number(editRow.rate),
         gstRate:Number(editRow.gstRate||18), amount:amt });
       setEditId(null);
+      logActivity(projectId, `PO Item updated`, poProfile?.full_name||'', poProfile?.role||'').catch(console.error);
       setToast({ msg:'✅ PO Item updated', type:'success' });
     } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
     finally { setSaving(false); }
@@ -541,6 +545,7 @@ const PAYMENT_MODES   = ['Cash','Bank Transfer','Cheque','UPI','DD'];
 function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boolean }) {
   const { getByProject, addExpense, deleteExpense, loading } = useExpenses();
   const { profile } = useAuth();
+  const { logActivity: logExpenseActivity } = useActivity();
   const items = getByProject(projectId);
   const [adding,  setAdding]  = React.useState(false);
   const [saving,  setSaving]  = React.useState(false);
@@ -577,6 +582,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
       });
       setNewRow({ txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'Bank Transfer', remarks:'' });
       setAdding(false);
+      logExpenseActivity(projectId, `Expense ${newRow.txnRef} added (₹${Number(newRow.amount).toLocaleString('en-IN')})`, profile?.full_name||'', profile?.role||'').catch(console.error);
       setToast({ msg:'✅ Expense saved', type:'success' });
     } catch (err:any) {
       setToast({ msg:'❌ ' + err.message, type:'error' });
@@ -1331,6 +1337,7 @@ export default function ProjectDetailPage() {
                               await addDoc({ projectId: id as string, docType: doc.key,
                                 fileName: result.fileName, fileUrl: result.publicUrl,
                                 fileSize: result.fileSize, uploadedByName: profile?.full_name || '' });
+                              logActivity(id as string, `${doc.label} uploaded`, profile?.full_name||'', profile?.role||'').catch(console.error);
                               setToast({ msg:'✅ File uploaded successfully', type:'success' });
                             } catch(err:any) {
                               console.error('Upload error:', err);
