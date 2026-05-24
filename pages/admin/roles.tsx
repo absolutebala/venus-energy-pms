@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createClient } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import Layout from '@/components/Layout';
 import Toast from '@/components/Toast';
 import { T, card, btnPrimary } from '@/lib/theme';
@@ -173,6 +174,7 @@ export default function RolesPage() {
   const [perms, setPerms]         = useState(() => JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS)));
   const [sectionPerms, setSectionPerms] = useState(() => JSON.parse(JSON.stringify(DEFAULT_SECTION_PERMS)));
   const [activeRole, setRole] = useState<UserRole>('super_admin');
+  const { refreshProfile } = useAuth();
   const [saving,    setSaving] = useState(false);
   const [toast, setToast]     = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
 
@@ -281,6 +283,7 @@ export default function RolesPage() {
                   } catch (err: any) {
                     setToast({ msg:`Error: ${err.message}`, type:'error' });
                   }
+                  await refreshProfile();
                   setSaving(false);
                 }}
                   disabled={saving} style={{ ...btnPrimary, opacity:saving?0.8:1 }}>
