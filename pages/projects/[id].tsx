@@ -986,6 +986,20 @@ export default function ProjectDetailPage() {
 
   // Preview modal
   const [previewDoc, setPreviewDoc] = useState<{name:string;url:string;isImage:boolean}|null>(null);
+  // RM and PM lists from Supabase profiles
+  const [rmList, setRmList] = React.useState<string[]>([]);
+  const [pmList, setPmList] = React.useState<string[]>([]);
+  React.useEffect(() => {
+    const sb = createClient();
+    sb.from('profiles').select('full_name,role').in('role',['region_manager','project_manager']).eq('is_active',true)
+      .then(({data}) => {
+        if (data) {
+          setRmList(data.filter((p:any)=>p.role==='region_manager').map((p:any)=>p.full_name||'').filter(Boolean));
+          setPmList(data.filter((p:any)=>p.role==='project_manager').map((p:any)=>p.full_name||'').filter(Boolean));
+        }
+      });
+  }, []);
+
 
   // Billing checklist
   const [checklist, setChecklist] = useState({ stn:false, srn:false, ptw:false, materials:false });
@@ -1190,8 +1204,8 @@ export default function ProjectDetailPage() {
               {F('Job Type',         'type',        'text', TYPES)}
               {F('Start Date',       'startDate',   'date')}
               {F('End Date',         'endDate',     'date')}
-              {F('Region Manager',   'rm',          'text', undefined, true)}
-              {F('Project Manager',  'pm')}
+              {F('Region Manager', 'rm', 'text', rmList.length > 0 ? rmList : undefined)}
+              {F('Project Manager', 'pm', 'text', pmList.length > 0 ? pmList : undefined)}
             </div>
             <div style={{ marginBottom:14 }}>
               <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Remarks</label>
