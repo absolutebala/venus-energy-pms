@@ -12,7 +12,6 @@ const ADMIN_NAV: NavItem[] = [
   { href:'/vendors',           label:'Vendors',            icon:'🏢' },
   { href:'/srn-return',        label:'STN / SRN Status',   icon:'📦' },
   { href:'/site-expenses',     label:'Expenses',      icon:'💰' },
-  { href:'/teams',             label:'Teams',              icon:'👤' },
   { href:'/invoices', label:'Invoices', icon:'🧾' },
       { href:'/reports',           label:'Reports',            icon:'📊' },
   { href:'/safety-compliance', label:'Safety Compliance', icon:'🛡', module:'safety_compliance' },
