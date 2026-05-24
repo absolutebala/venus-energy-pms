@@ -1,4 +1,5 @@
 // v-fix-braces
+import { createClient } from '@/lib/supabase';
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
