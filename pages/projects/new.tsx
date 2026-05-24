@@ -68,6 +68,19 @@ export default function NewProjectPage() {
   const { upload } = useUpload();
   const { getAccessToken } = useAuth();
   const [extracting, setExtracting] = useState(false);
+  const [rmList, setRmList] = React.useState<string[]>([]);
+  const [pmList, setPmList] = React.useState<string[]>([]);
+  React.useEffect(() => {
+    const sb = createClient();
+    sb.from('profiles').select('full_name,role').in('role',['region_manager','project_manager']).eq('is_active',true)
+      .then(({data}) => {
+        if (data) {
+          setRmList(data.filter((p:any)=>p.role==='region_manager').map((p:any)=>p.full_name||''));
+          setPmList(data.filter((p:any)=>p.role==='project_manager').map((p:any)=>p.full_name||''));
+        }
+      });
+  }, []);
+
   const [showNoKeyModal, setShowNoKeyModal] = useState(false);
   const poFileRef = useRef<HTMLInputElement>(null);
   const [sites,   setSites]   = useState(INIT_SITES);
