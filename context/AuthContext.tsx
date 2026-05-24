@@ -96,10 +96,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const can = (module: AppModule, action: 'create' | 'read' | 'edit' | 'delete'): boolean => {
-    if (profile?.role === 'super_admin') return true;
     const p = permissions[module];
-    if (!p) return false;
-    return action === 'create' ? p.can_create : action === 'read' ? p.can_read : action === 'edit' ? p.can_edit : p.can_delete;
+    // If module permission not saved yet, SA defaults to true, others to false
+    if (!p) return profile?.role === 'super_admin';
+    const val = action === 'create' ? p.can_create : action === 'read' ? p.can_read : action === 'edit' ? p.can_edit : p.can_delete;
+    // SA safety: if ALL permissions are false for a module, still allow SA access
+    if (!val && profile?.role === 'super_admin' && !Object.values(p).some(Boolean)) return true;
+    return val ?? false;
   };
 
   const isVendor = profile?.role === 'vendor';
