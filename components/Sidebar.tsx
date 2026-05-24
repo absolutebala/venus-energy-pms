@@ -15,6 +15,7 @@ const ADMIN_NAV: NavItem[] = [
   { href:'/teams',             label:'Teams',              icon:'👤' },
   { href:'/invoices', label:'Invoices', icon:'🧾' },
       { href:'/reports',           label:'Reports',            icon:'📊' },
+  { href:'/safety-compliance', label:'Safety Compliance', icon:'🛡', module:'safety_compliance' },
 ];
 
 const VENDOR_NAV: NavItem[] = [
@@ -32,6 +33,7 @@ const ACCOUNTING_NAV: NavItem[] = [
   { href:'/projects',   label:'Projects',           icon:'📁' },
   { href:'/invoices', label:'Invoices', icon:'🧾' },
       { href:'/reports',    label:'Reports',            icon:'📊' },
+  { href:'/safety-compliance', label:'Safety Compliance', icon:'🛡', module:'safety_compliance' },
 ];
 
 const RM_NAV: NavItem[] = [
@@ -40,6 +42,7 @@ const RM_NAV: NavItem[] = [
   { href:'/vendors',        label:'Vendors',     icon:'🏢' },
   { href:'/invoices', label:'Invoices', icon:'🧾' },
       { href:'/reports',        label:'Reports',     icon:'📊' },
+  { href:'/safety-compliance', label:'Safety Compliance', icon:'🛡', module:'safety_compliance' },
 ];
 
 const SUPER_ADMIN_NAV: NavItem[] = [
