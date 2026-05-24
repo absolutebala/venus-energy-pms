@@ -8,7 +8,7 @@ import Modal from '@/components/Modal';
 import { T, inputStyle, btnPrimary, btnSecondary } from '@/lib/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useUpload, UploadResult } from '@/lib/useUpload';
-import { TEAM_MEMBERS } from '@/lib/teamData';
+import { createClient } from '@/lib/supabase';
 
 // Seed data
 const INIT_SITES    = ['Station 3 - Pile Cap Area','Station 5 - Tower Base','Chennai East Site','Bengaluru North Hub','Mumbai Tower Site','Delhi NCR Zone A'];
@@ -19,9 +19,7 @@ const CURRENCIES    = ['INR','USD','EUR','AED'];
 const REGIONS       = ['Tamil Nadu','Karnataka','Telangana','Maharashtra','Delhi','Kerala','West Bengal','Gujarat','Rajasthan','Andhra Pradesh'];
 const PROJECT_TYPES = ['Tower Erection','Tower Maintenance','Component Replacement','Fiber Installation','Civil Works','Power Works','Survey & Design','Testing & Commissioning'];
 
-// Pull RM and PM from TEAM_MEMBERS
-const REGIONAL_MANAGERS = TEAM_MEMBERS.filter(m => m.role === 'region_manager' && m.is_active).map(m => m.full_name);
-const PROJECT_MANAGERS  = TEAM_MEMBERS.filter(m => m.role === 'project_manager' && m.is_active).map(m => m.full_name);
+const supabase = createClient();
 
 interface POItem {
   id: number;
@@ -408,14 +406,14 @@ export default function NewProjectPage() {
                 <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>Regional Manager <span style={{ color:T.danger }}>*</span></label>
                 <select value={regionalManager} onChange={e=>setRegionalManager(e.target.value)} style={{ ...inputStyle(), width:'100%', appearance:'none' as const }}>
                   <option value="">Select Regional Manager…</option>
-                  {REGIONAL_MANAGERS.map(m=><option key={m}>{m}</option>)}
+                  {rmList.map(m=><option key={m}>{m}</option>)}
                 </select>
               </div>
               <div>
                 <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>Project Manager <span style={{ color:T.danger }}>*</span></label>
                 <select value={projectManager} onChange={e=>setProjectManager(e.target.value)} style={{ ...inputStyle(), width:'100%', appearance:'none' as const }}>
                   <option value="">Select Project Manager…</option>
-                  {PROJECT_MANAGERS.map(m=><option key={m}>{m}</option>)}
+                  {pmList.map(m=><option key={m}>{m}</option>)}
                 </select>
               </div>
 
