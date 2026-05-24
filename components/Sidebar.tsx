@@ -14,7 +14,6 @@ const ADMIN_NAV: NavItem[] = [
   { href:'/site-expenses',     label:'Expenses',      icon:'💰' },
   { href:'/teams',             label:'Teams',              icon:'👤' },
   { href:'/invoices', label:'Invoices', icon:'🧾' },
-  { href:'/billing',  label:'Billing',  icon:'💳' },
       { href:'/reports',           label:'Reports',            icon:'📊' },
   { href:'/safety-compliance', label:'Safety Compliance',   icon:'🛡' },
 ];

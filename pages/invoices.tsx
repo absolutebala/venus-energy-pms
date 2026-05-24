@@ -47,9 +47,10 @@ type SortKey = "invoiceNo"|"invoiceDate"|"invoiceAmount"|"totalAmount"|"dueDate"
 export default function InvoicesPage() {
   const router = useRouter();
   const { profile, can, loading: authLoading } = useAuth();
-  const { invoices, loading: invLoading, addInvoice } = useInvoices();
+  const { invoices, loading: invLoading, addInvoice, updateInvoice } = useInvoices();
   const { projects } = useProjects();
-  const canCreate = !authLoading && can("invoices", "create");
+  const canCreate  = !authLoading && can("invoices", "create");
+  const canApprove = !authLoading && (profile?.role === 'super_admin' || profile?.role === 'accounting_team');
 
   const [poSearch,    setPoSearch]    = useState("");
   const [poInput,     setPoInput]     = useState("");
@@ -105,6 +106,15 @@ export default function InvoicesPage() {
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
     else { setSortKey(key); setSortDir("desc"); }
+  };
+
+  const handleUpdateStatus = async (id: string, invoiceNo: string, newStatus: string) => {
+    try {
+      await updateInvoice(id, { invoiceStatus: newStatus });
+      setToast({ msg:`✅ Invoice ${invoiceNo} marked as ${newStatus}`, type:'success' });
+    } catch(err:any) {
+      setToast({ msg:'❌ '+err.message, type:'error' });
+    }
   };
 
   const saveInvoice = async () => {
@@ -301,6 +311,28 @@ export default function InvoicesPage() {
                       <td style={tdS}><StatusPill label={inv.invoiceStatus} cfg={INV_STATUS_CFG[inv.invoiceStatus] || INV_STATUS_CFG.Draft} /></td>
                       <td style={tdS}><StatusPill label={inv.paymentStatus} cfg={PAY_STATUS_CFG[inv.paymentStatus] || PAY_STATUS_CFG.Pending} /></td>
                       <td style={{ ...tdS, whiteSpace:"nowrap" as const, color:T.textMuted }}>{fmtDate(inv.dueDate)}</td>
+                      {canApprove && (
+                        <td style={tdS}>
+                          <div style={{ display:'flex', gap:4 }}>
+                            {inv.invoiceStatus==='Submitted' && (
+                              <>
+                                <button onClick={e=>{e.stopPropagation();handleUpdateStatus(inv.id,inv.invoiceNo,'Approved');}}
+                                  style={{ background:'#F0FDFA', border:'none', borderRadius:5, padding:'4px 8px', color:'#0D9488', cursor:'pointer', fontSize:11, fontWeight:600 }}>✓ Approve</button>
+                                <button onClick={e=>{e.stopPropagation();handleUpdateStatus(inv.id,inv.invoiceNo,'Rejected');}}
+                                  style={{ background:'#FEF2F2', border:'none', borderRadius:5, padding:'4px 8px', color:'#DC2626', cursor:'pointer', fontSize:11, fontWeight:600 }}>✗ Reject</button>
+                              </>
+                            )}
+                            {inv.invoiceStatus==='Draft' && (
+                              <button onClick={e=>{e.stopPropagation();handleUpdateStatus(inv.id,inv.invoiceNo,'Submitted');}}
+                                style={{ background:'#EFF6FF', border:'none', borderRadius:5, padding:'4px 8px', color:'#2563EB', cursor:'pointer', fontSize:11, fontWeight:600 }}>Submit</button>
+                            )}
+                            {inv.invoiceStatus==='Under Review' && (
+                              <button onClick={e=>{e.stopPropagation();handleUpdateStatus(inv.id,inv.invoiceNo,'Approved');}}
+                                style={{ background:'#F0FDFA', border:'none', borderRadius:5, padding:'4px 8px', color:'#0D9488', cursor:'pointer', fontSize:11, fontWeight:600 }}>✓ Approve</button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
