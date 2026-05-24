@@ -25,6 +25,7 @@ const MODULES: { key: string; label: string; icon: string; desc: string; note?: 
   { key:'ptw',          label:'PTW Management',   icon:'🔑', desc:'Permit to Work inside project detail | SA/RM/PM can create & edit'                 },
   { key:'invoices', label:'Invoices', icon:'🧾', desc:'Invoice management — create, track and manage project invoices. PO search, financial summary, sortable table' },
   { key:'reports',      label:'Reports',          icon:'📊', desc:'Auto-generated reports — Read only for all roles (no manual create)'               },
+  { key:'safety_compliance', label:'Safety Compliance', icon:'🛡', desc:'Site safety inspection tracking — enable per role when ready to use' },
 ];
 
 
