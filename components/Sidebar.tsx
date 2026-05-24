@@ -71,9 +71,8 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
   };
 
   const shouldShow = (item: NavItem) => {
-    if (isSuperAdmin) return true;
     if (!item.module) return true;
-    if (loading) return true; // show all main nav during load (no admin-only items in ADMIN_NAV)
+    if (loading) return true;
     return can(item.module as any, 'read');
   };
 
