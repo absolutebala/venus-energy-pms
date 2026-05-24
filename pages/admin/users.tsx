@@ -54,8 +54,14 @@ export default function AdminUsersPage() {
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-    if (data) setUsers(data as UserRow[]);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) { setLoading(false); return; }
+      const res = await fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } });
+      const json = await res.json();
+      if (json.users) setUsers(json.users as UserRow[]);
+    } catch(err) { console.error('fetchUsers error:', err); }
     setLoading(false);
   }, []);
 
