@@ -347,6 +347,27 @@ function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { pr
   const update = (id:string|number, field:string, val:string) =>
     setItems(prev => prev.map((item:any) => item.id===id ? {...item,[field]:val} : item));
 
+  const saveAllPTW = async () => {
+    setSaving('all');
+    const sb = createClient();
+    for (const item of items) {
+      const payload = {
+        project_id: projectId, ticket_id: item.ticketId, supervisor: item.supervisor,
+        date_from: item.dateFrom||null, date_to: item.dateTo||null,
+      };
+      if (item.isNew) {
+        const { data } = await sb.from('ptw_items').insert(payload).select().single();
+        if (data) setItems(prev => prev.map((i:any) => i.id===item.id ? {
+          ...item, id:data.id, isNew:false
+        } : i));
+      } else {
+        await sb.from('ptw_items').update(payload).eq('id', item.id);
+      }
+    }
+    setToast({ msg:'✅ All PTW records saved', type:'success' });
+    setSaving(null);
+  };
+
   const savePTW = async (item:any) => {
     setSaving(item.id);
     const sb = createClient();
@@ -431,16 +452,10 @@ const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-dig
                       </span>
                     ) : <span style={{ fontSize:12, color:T.textDim }}>—</span>}
                   </td>
-                  <td style={{ padding:'8px 10px', width:80 }}>
+                  <td style={{ padding:'8px 10px', width:36 }}>
                     {canEdit && (
-                      <div style={{ display:'flex', gap:4 }}>
-                        <button onClick={()=>savePTW(item)} disabled={saving===item.id}
-                          style={{ background:T.primary, border:'none', borderRadius:5, padding:'4px 8px', color:'#fff', cursor:'pointer', fontSize:11, fontWeight:600 }}>
-                          {saving===item.id?'…':'Save'}
-                        </button>
-                        <button onClick={()=>removeItem(item.id)}
+                      <button onClick={()=>removeItem(item.id)}
                         style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:16, padding:2 }}>🗑</button>
-                      </div>
                     )}
                   </td>
                 </tr>
@@ -450,10 +465,18 @@ const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-dig
         </table>
       )}
 
-      {canAdd && <button onClick={addPTW}
-        style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8, padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
-        + Add PTW
-      </button>}
+      <div style={{ display:'flex', gap:10, alignItems:'center', marginTop:8 }}>
+        {canAdd && <button onClick={addPTW}
+          style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8, padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
+          + Add PTW
+        </button>}
+        {canEdit && items.length > 0 && (
+          <button onClick={saveAllPTW} disabled={!!saving}
+            style={{ background:T.primary, border:'none', borderRadius:8, padding:'8px 18px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:700, opacity:saving?0.7:1 }}>
+            {saving ? 'Saving…' : '💾 Save PTW Records'}
+          </button>
+        )}
+      </div>
 
       {!canEdit && items.length === 0 && (
         <div style={{ padding:'10px 14px', borderRadius:8, background:'#FEF2F2', border:'1px solid #FECACA' }}>
