@@ -5,6 +5,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
 import { useProjects } from '@/context/ProjectContext';
+import { createClient } from '@/lib/supabase';
 import { useWorkDocs } from '@/context/WorkDocContext';
 import { MOCK_PROJECTS } from '@/lib/projectData';
 
@@ -29,10 +30,7 @@ const WORK_STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
 const STATUSES_FILTER = ['All','In Progress','Aging','Delayed','Completed','Pending','Billing Review'];
 const TYPES = ['All','Tower Erection','Tower Maintenance','Component Replacement','Fiber Installation','Civil Works','Power Works'];
 
-const MOCK_DRAFTS = [
-  { id:'DRAFT-001', projectName:'Mysuru Tower Erection Phase 1', poNo:'PO-2025-006', indusId:'IND-2001', savedAt:'07/05/2025 10:15 AM', region:'Karnataka',      type:'Tower Erection'    },
-  { id:'DRAFT-002', projectName:'Vizag Fiber Installation',       poNo:'PO-2025-007', indusId:'IND-2002', savedAt:'06/05/2025 03:42 PM', region:'Andhra Pradesh', type:'Fiber Installation' },
-];
+// Drafts loaded from Supabase
 
  
 const DOC_COLS_P = [
@@ -74,7 +72,12 @@ export default function ProjectsPage() {
     return projects; // super_admin, accounting_team, site_engineer see all
   }, [projects, profile]);
   const getDocStatusForProject = (id: string) => getDocStatus(id);
-  const [drafts, setDrafts]     = useState(MOCK_DRAFTS);
+  const [drafts, setDrafts] = useState<any[]>([]);
+  useEffect(() => {
+    const sb = createClient();
+    sb.from('project_drafts').select('*').order('updated_at', { ascending: false })
+      .then(({ data }) => { if (data) setDrafts(data); });
+  }, []);
   const [statusFilter, setStatusFilter] = useState('All');
   const [typeFilter,   setTypeFilter]   = useState('All');
   const [search,       setSearch]       = useState('');
