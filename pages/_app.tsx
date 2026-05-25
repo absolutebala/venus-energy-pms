@@ -1,4 +1,5 @@
 import type { AppProps } from 'next/app';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import Head from 'next/head';
 import { AuthProvider } from '@/context/AuthContext';
 import { ProjectProvider } from '@/context/ProjectContext';
@@ -29,7 +30,9 @@ export default function App({ Component, pageProps }: AppProps) {
         <POItemProvider>
         <ActivityProvider>
         <MaterialProvider>
+        <ErrorBoundary>
         <Component {...pageProps} />
+      </ErrorBoundary>
       </MaterialProvider>
         </ActivityProvider>
         </POItemProvider>
