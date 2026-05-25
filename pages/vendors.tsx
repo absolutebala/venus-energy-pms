@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Icon from '@/components/Icon';
 import Layout from '@/components/Layout';
 import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
@@ -130,10 +131,10 @@ export default function VendorsPage() {
         {/* Summary */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
           {[
-            { label:'Total Vendors',  value:vendors.length,                   color:T.primary, icon:'🏢' },
-            { label:'Active',         value:vendors.filter(v=>v.active).length,   color:T.success, icon:'✅' },
+            { label:'Total Vendors',  value:vendors.length,                   color:T.primary, icon:'vendors' },
+            { label:'Active',         value:vendors.filter(v=>v.active).length,   color:T.success, icon:'check' },
             { label:'Invited',        value:vendors.filter(v=>v.inviteStatus==='invitation_sent'||v.inviteStatus==='active').length, color:T.info, icon:'🔗' },
-            { label:'Total PO Value', value:`₹${(vendors.reduce((a,v)=>a+v.poValue,0)/10000000).toFixed(2)}Cr`, color:T.warning, icon:'💰' },
+            { label:'Total PO Value', value:`₹${(vendors.reduce((a,v)=>a+v.poValue,0)/10000000).toFixed(2)}Cr`, color:T.warning, icon:'wallet' },
           ].map((s,i)=>(
             <div key={i} style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px' }}>
               <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:s.color }} />

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Icon from '@/components/Icon';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import Layout from '@/components/Layout';
@@ -8,42 +9,42 @@ import { DEFAULT_PERMISSIONS } from '@/lib/permissions';
 import { UserRole } from '@/types';
 
 const ROLES: { key: UserRole; label: string; icon: string; desc: string }[] = [
-  { key:'super_admin',    label:'Super Admin',    icon:'👑', desc:'Full access — all modules'                              },
+  { key:'super_admin',    label:'Super Admin',    icon:'key', desc:'Full access — all modules'                              },
   { key:'region_manager', label:'Region Manager', icon:'📍', desc:'Regional projects, vendors, PTW, approve utilisations'  },
-  { key:'project_manager',label:'Project Manager',icon:'📋', desc:'Project edit, vendor assign, PTW, approve utilisations' },
+  { key:'project_manager',label:'Project Manager',icon:'clipboard', desc:'Project edit, vendor assign, PTW, approve utilisations' },
   { key:'site_engineer',  label:'Site Engineer',  icon:'👷', desc:'Read-only — projects in their region'                   },
-  { key:'accounting_team',label:'Accounting',     icon:'💳', desc:'Site Expenses full access, STN/SRN reconciliation'     },
-  { key:'vendor',         label:'Vendor',         icon:'🏢', desc:'Upload docs, submit utilisation per item'               },
-  { key:'viewer',         label:'Viewer',         icon:'👁',  desc:'Read-only access to all modules'                       },
+  { key:'accounting_team',label:'Accounting',     icon:'credit', desc:'Site Expenses full access, STN/SRN reconciliation'     },
+  { key:'vendor',         label:'Vendor',         icon:'vendors', desc:'Upload docs, submit utilisation per item'               },
+  { key:'viewer',         label:'Viewer',         icon:'eye',  desc:'Read-only access to all modules'                       },
 ];
 
 const MODULES: { key: string; label: string; icon: string; desc: string; note?: string }[] = [
-  { key:'dashboard',    label:'Dashboard',        icon:'▦',  desc:'Role-specific dashboard and KPIs'                      },
-  { key:'projects',     label:'Projects',         icon:'📁', desc:'Project list, details, edit, vendor assign, PTW'       },
-  { key:'vendors',      label:'Vendors',          icon:'🏢', desc:'Vendor management, invite, activate, deactivate'       },
-  { key:'srn_return',   label:'STN / SRN Status', icon:'📦', desc:'Material tracking — Read: all | Edit: SA/RM/PM approve, Vendor submit utilisation', note:'⚠️ Create = recording STN from Indus (future feature). Currently Indus issues STN externally.' },
-  { key:'site_expenses',label:'Site Expenses',    icon:'💰', desc:'Payments to vendors per project | Accounting adds, others view only'                },
-  { key:'ptw',          label:'PTW Management',   icon:'🔑', desc:'Permit to Work inside project detail | SA/RM/PM can create & edit'                 },
-  { key:'invoices', label:'Invoices', icon:'🧾', desc:'Invoice management — create, track and manage project invoices. PO search, financial summary, sortable table' },
-  { key:'reports',      label:'Reports',          icon:'📊', desc:'Auto-generated reports — Read only for all roles (no manual create)'               },
-  { key:'safety_compliance', label:'Safety Compliance', icon:'🛡', desc:'Site safety inspection tracking — enable per role when ready to use' },
+  { key:'dashboard',    label:'Dashboard',        icon:'dashboard',  desc:'Role-specific dashboard and KPIs'                      },
+  { key:'projects',     label:'Projects',         icon:'projects', desc:'Project list, details, edit, vendor assign, PTW'       },
+  { key:'vendors',      label:'Vendors',          icon:'vendors', desc:'Vendor management, invite, activate, deactivate'       },
+  { key:'srn_return',   label:'STN / SRN Status', icon:'package', desc:'Material tracking — Read: all | Edit: SA/RM/PM approve, Vendor submit utilisation', note:'⚠️ Create = recording STN from Indus (future feature). Currently Indus issues STN externally.' },
+  { key:'site_expenses',label:'Site Expenses',    icon:'wallet', desc:'Payments to vendors per project | Accounting adds, others view only'                },
+  { key:'ptw',          label:'PTW Management',   icon:'key', desc:'Permit to Work inside project detail | SA/RM/PM can create & edit'                 },
+  { key:'invoices', label:'Invoices', icon:'invoice', desc:'Invoice management — create, track and manage project invoices. PO search, financial summary, sortable table' },
+  { key:'reports',      label:'Reports',          icon:'reports', desc:'Auto-generated reports — Read only for all roles (no manual create)'               },
+  { key:'safety_compliance', label:'Safety Compliance', icon:'shield', desc:'Site safety inspection tracking — enable per role when ready to use' },
 ];
 
 
 const PROJECT_SECTIONS: { key: string; label: string; icon: string; desc: string }[] = [
-  { key:'sec_project_details',  label:'Project Details',         icon:'📋', desc:'Project No, PO Number, Indus ID, Site, Region, Job Type, Dates, PM, RM' },
-  { key:'sec_financial',        label:'Financial Summary',        icon:'💰', desc:'PO Value, Billed Amount, Paid Amount, Pending, PO Aging'                },
-  { key:'sec_vendor_assignment',label:'Vendor Assignment',        icon:'🏢', desc:'Vendor selection, contact details, work scope'                          },
-  { key:'sec_ptw',              label:'PTW — Permit to Work',     icon:'🔑', desc:'Ticket ID, Supervisor Name, Allowed Date From/To, status indicator'     },
+  { key:'sec_project_details',  label:'Project Details',         icon:'clipboard', desc:'Project No, PO Number, Indus ID, Site, Region, Job Type, Dates, PM, RM' },
+  { key:'sec_financial',        label:'Financial Summary',        icon:'wallet', desc:'PO Value, Billed Amount, Paid Amount, Pending, PO Aging'                },
+  { key:'sec_vendor_assignment',label:'Vendor Assignment',        icon:'vendors', desc:'Vendor selection, contact details, work scope'                          },
+  { key:'sec_ptw',              label:'PTW — Permit to Work',     icon:'key', desc:'Ticket ID, Supervisor Name, Allowed Date From/To, status indicator'     },
   { key:'sec_work_documents',   label:'Work Documents',           icon:'📂', desc:'6 document types with thumbnail preview and upload'                     },
-  { key:'sec_stn_srn',          label:'STN/SRN Material Tracking',icon:'📦', desc:'Materials issued by Indus, utilisation per item, return qty'            },
-  { key:'sec_billing_review',   label:'Billing Review Checklist', icon:'✅', desc:'STN ✓ SRN ✓ PTW ✓ Materials Returned to Indus ✓ — payment release'      },
-  { key:'sec_po_items',  label:'PO Items',                 icon:'📋', desc:'Line items from the Indus PO — Description, HSN, UOM, Qty, Rate, GST, Amount' },
-  { key:'sec_ptw_detail',label:'PTW Section',               icon:'🔑', desc:'Permit to Work — Ticket ID, Supervisor Name, From/To Date, status indicator'    },
-  { key:'sec_srn_detail', label:'SRN — Utilisation & Return',icon:'📦', desc:'Material utilisation per item, Balance, Returned (vendor), Approved (PM/Admin)'  },
-  { key:'sec_stn_srn_summary', label:'STN/SRN Dashboard Summary', icon:'📦', desc:'Vendor-wise and site-wise STN/SRN material utilisation and return summary' },
-  { key:'sec_invoice', label:'Invoice', icon:'🧾', desc:'Invoice records per project — Invoice No, Date, BOQ Ref, Amount, GST, Status, Payment Status, Due Date' },
-  { key:'sec_activity_log',     label:'Activity Log',             icon:'📝', desc:'Full timeline — project creation to billing, all actions by all roles'  },
+  { key:'sec_stn_srn',          label:'STN/SRN Material Tracking',icon:'package', desc:'Materials issued by Indus, utilisation per item, return qty'            },
+  { key:'sec_billing_review',   label:'Billing Review Checklist', icon:'check', desc:'STN ✓ SRN ✓ PTW ✓ Materials Returned to Indus ✓ — payment release'      },
+  { key:'sec_po_items',  label:'PO Items',                 icon:'clipboard', desc:'Line items from the Indus PO — Description, HSN, UOM, Qty, Rate, GST, Amount' },
+  { key:'sec_ptw_detail',label:'PTW Section',               icon:'key', desc:'Permit to Work — Ticket ID, Supervisor Name, From/To Date, status indicator'    },
+  { key:'sec_srn_detail', label:'SRN — Utilisation & Return',icon:'package', desc:'Material utilisation per item, Balance, Returned (vendor), Approved (PM/Admin)'  },
+  { key:'sec_stn_srn_summary', label:'STN/SRN Dashboard Summary', icon:'package', desc:'Vendor-wise and site-wise STN/SRN material utilisation and return summary' },
+  { key:'sec_invoice', label:'Invoice', icon:'invoice', desc:'Invoice records per project — Invoice No, Date, BOQ Ref, Amount, GST, Status, Payment Status, Due Date' },
+  { key:'sec_activity_log',     label:'Activity Log',             icon:'edit', desc:'Full timeline — project creation to billing, all actions by all roles'  },
 ];
 
 // Default section permissions per role

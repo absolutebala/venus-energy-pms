@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Icon from '@/components/Icon';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/router';
@@ -193,10 +194,10 @@ export default function AdminUsersPage() {
         {/* Stats */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
           {[
-            { label:'Total Users', value:users.length, icon:'👥', color:T.primary },
-            { label:'Active',      value:users.filter(u=>u.is_active).length, icon:'✅', color:T.success },
-            { label:'Inactive',    value:users.filter(u=>!u.is_active).length, icon:'⛔', color:T.danger  },
-            { label:'Admins',      value:users.filter(u=>u.role==='super_admin').length, icon:'🔑', color:T.warning },
+            { label:'Total Users', value:users.length, icon:'users', color:T.primary },
+            { label:'Active',      value:users.filter(u=>u.is_active).length, icon:'check', color:T.success },
+            { label:'Inactive',    value:users.filter(u=>!u.is_active).length, icon:'x', color:T.danger  },
+            { label:'Admins',      value:users.filter(u=>u.role==='super_admin').length, icon:'key', color:T.warning },
           ].map((s,i) => (
             <div key={i} style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px' }}>
               <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:s.color }} />

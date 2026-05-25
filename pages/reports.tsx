@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import Icon from '@/components/Icon';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useProjects } from '@/context/ProjectContext';
@@ -24,14 +25,14 @@ const PROGRESS_MAP: Record<string,number> = {
 };
 
 const REPORTS = [
-  { key:'executive', label:'Executive Summary',      icon:'📊', desc:'KPIs, status distribution, aging overview' },
-  { key:'status',    label:'Project Status Report',  icon:'📋', desc:'All projects by status, region, aging'    },
-  { key:'financial', label:'Financial Summary',      icon:'💰', desc:'PO value, billed, paid by region'         },
-  { key:'pm',        label:'PM Performance',         icon:'👤', desc:'On-time rate, delayed, completed per PM'  },
-  { key:'vendor',    label:'Vendor Performance',     icon:'🏢', desc:'Completion rate, delays per vendor'       },
+  { key:'executive', label:'Executive Summary',      icon:'reports', desc:'KPIs, status distribution, aging overview' },
+  { key:'status',    label:'Project Status Report',  icon:'clipboard', desc:'All projects by status, region, aging'    },
+  { key:'financial', label:'Financial Summary',      icon:'wallet', desc:'PO value, billed, paid by region'         },
+  { key:'pm',        label:'PM Performance',         icon:'user', desc:'On-time rate, delayed, completed per PM'  },
+  { key:'vendor',    label:'Vendor Performance',     icon:'vendors', desc:'Completion rate, delays per vendor'       },
   { key:'aging',     label:'PO Aging Analysis',      icon:'⏰', desc:'Aging buckets, overdue projects'          },
-  { key:'stnsrn',    label:'STN/SRN Material Report',icon:'📦', desc:'Utilisation and return per project'       },
-  { key:'ptw',       label:'PTW Compliance Report',  icon:'🔑', desc:'Permit to Work status per project'        },
+  { key:'stnsrn',    label:'STN/SRN Material Report',icon:'package', desc:'Utilisation and return per project'       },
+  { key:'ptw',       label:'PTW Compliance Report',  icon:'key', desc:'Permit to Work status per project'        },
 ];
 
 const PIE_COLORS = ['#2563EB','#DC2626','#16A34A','#D97706','#7C3AED','#6B7280'];

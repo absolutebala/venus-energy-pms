@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Icon from '@/components/Icon';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
@@ -54,7 +55,7 @@ const KpiCard = ({ label, value, icon, color, onClick }: any) => (
         <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase', letterSpacing:0.5, marginBottom:5 }}>{label}</div>
         <div style={{ fontSize:24, fontWeight:700, color:T.text }}>{value}</div>
       </div>
-      <div style={{ fontSize:24 }}>{icon}</div>
+      <div style={{ display:'flex', alignItems:'center' }}><Icon name={icon} size={22} /></div>
     </div>
   </div>
 );
@@ -317,9 +318,9 @@ const SITE_SUMMARY = [
 
 function ApprovalBadge({ status }: { status: string }) {
   const cfg: Record<string,{color:string;bg:string;border:string;icon:string}> = {
-    'Yes':      { color:'#0D9488', bg:'#F0FDFA', border:'#99F6E4', icon:'✅' },
-    'Pending':  { color:'#D97706', bg:'#FFFBEB', border:'#FDE68A', icon:'⏳' },
-    'Rejected': { color:'#DC2626', bg:'#FEF2F2', border:'#FECACA', icon:'❌' },
+    'Yes':      { color:'#0D9488', bg:'#F0FDFA', border:'#99F6E4', icon:'check' },
+    'Pending':  { color:'#D97706', bg:'#FFFBEB', border:'#FDE68A', icon:'clock' },
+    'Rejected': { color:'#DC2626', bg:'#FEF2F2', border:'#FECACA', icon:'x' },
   };
   const c = cfg[status] || cfg['Pending'];
   return (
