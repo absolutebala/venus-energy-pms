@@ -16,41 +16,41 @@ const iconProps = { size: iconSize, strokeWidth: 1.75 };
 
 // ── Per-role nav configs ─────────────────────────────────────────
 const SA_NAV: NavItem[] = [
-  { href:'/dashboard',         label:'Dashboard',        icon:<LayoutDashboard {...iconProps} /> },
-  { href:'/projects',          label:'Projects',         icon:<FolderOpen {...iconProps} /> },
-  { href:'/vendors',           label:'Vendors',          icon:<Building2 {...iconProps} /> },
-  { href:'/srn-return',        label:'STN / SRN Status', icon:<Package {...iconProps} /> },
-  { href:'/site-expenses',     label:'Expenses',         icon:<Wallet {...iconProps} /> },
-  { href:'/invoices',          label:'Invoices',         icon:<FileText {...iconProps} /> },
-  { href:'/reports',           label:'Reports',          icon:<BarChart3 {...iconProps} /> },
-  { href:'/safety-compliance', label:'Safety Compliance',icon:<Shield {...iconProps} />, module:'safety_compliance' },
+  { href:'/dashboard',         label:'Dashboard',        icon:<LayoutDashboard {...iconProps} />, module:'dashboard'         },
+  { href:'/projects',          label:'Projects',         icon:<FolderOpen {...iconProps} />,      module:'projects'          },
+  { href:'/vendors',           label:'Vendors',          icon:<Building2 {...iconProps} />,        module:'vendors'           },
+  { href:'/srn-return',        label:'STN / SRN Status', icon:<Package {...iconProps} />,          module:'srn_return'        },
+  { href:'/site-expenses',     label:'Expenses',         icon:<Wallet {...iconProps} />,           module:'site_expenses'     },
+  { href:'/invoices',          label:'Invoices',         icon:<FileText {...iconProps} />,         module:'invoices'          },
+  { href:'/reports',           label:'Reports',          icon:<BarChart3 {...iconProps} />,        module:'reports'           },
+  { href:'/safety-compliance', label:'Safety Compliance',icon:<Shield {...iconProps} />,           module:'safety_compliance' },
 ];
 
 const VENDOR_NAV: NavItem[] = [
-  { href:'/projects', label:'My Projects', icon:<FolderOpen {...iconProps} /> },
+  { href:'/projects', label:'My Projects', icon:<FolderOpen {...iconProps} />, module:'projects' },
 ];
 
 const PM_NAV: NavItem[] = [
-  { href:'/dashboard', label:'Dashboard',   icon:<LayoutDashboard {...iconProps} /> },
-  { href:'/projects',  label:'My Projects', icon:<FolderOpen {...iconProps} /> },
-  { href:'/profile',   label:'Profile',     icon:<User {...iconProps} /> },
+  { href:'/dashboard', label:'Dashboard',   icon:<LayoutDashboard {...iconProps} />, module:'dashboard' },
+  { href:'/projects',  label:'My Projects', icon:<FolderOpen {...iconProps} />,      module:'projects'  },
+  { href:'/profile',   label:'Profile',     icon:<User {...iconProps} />                               },
 ];
 
 const RM_NAV: NavItem[] = [
-  { href:'/dashboard',      label:'Dashboard',        icon:<LayoutDashboard {...iconProps} /> },
-  { href:'/projects',       label:'Projects',         icon:<FolderOpen {...iconProps} /> },
-  { href:'/invoices',       label:'Invoices',         icon:<FileText {...iconProps} /> },
-  { href:'/reports',        label:'Reports',          icon:<BarChart3 {...iconProps} /> },
-  { href:'/safety-compliance', label:'Safety Compliance', icon:<Shield {...iconProps} />, module:'safety_compliance' },
+  { href:'/dashboard',         label:'Dashboard',        icon:<LayoutDashboard {...iconProps} />, module:'dashboard'         },
+  { href:'/projects',          label:'Projects',         icon:<FolderOpen {...iconProps} />,      module:'projects'          },
+  { href:'/invoices',          label:'Invoices',         icon:<FileText {...iconProps} />,         module:'invoices'          },
+  { href:'/reports',           label:'Reports',          icon:<BarChart3 {...iconProps} />,        module:'reports'           },
+  { href:'/safety-compliance', label:'Safety Compliance',icon:<Shield {...iconProps} />,           module:'safety_compliance' },
 ];
 
 const ACCOUNTING_NAV: NavItem[] = [
-  { href:'/dashboard',      label:'Dashboard',        icon:<LayoutDashboard {...iconProps} /> },
-  { href:'/projects',       label:'Projects',         icon:<FolderOpen {...iconProps} /> },
-  { href:'/vendors',        label:'Vendors',          icon:<Building2 {...iconProps} /> },
-  { href:'/invoices',       label:'Invoices',         icon:<FileText {...iconProps} /> },
-  { href:'/reports',        label:'Reports',          icon:<BarChart3 {...iconProps} /> },
-  { href:'/safety-compliance', label:'Safety Compliance', icon:<Shield {...iconProps} />, module:'safety_compliance' },
+  { href:'/dashboard',         label:'Dashboard',        icon:<LayoutDashboard {...iconProps} />, module:'dashboard'         },
+  { href:'/projects',          label:'Projects',         icon:<FolderOpen {...iconProps} />,      module:'projects'          },
+  { href:'/vendors',           label:'Vendors',          icon:<Building2 {...iconProps} />,        module:'vendors'           },
+  { href:'/invoices',          label:'Invoices',         icon:<FileText {...iconProps} />,         module:'invoices'          },
+  { href:'/reports',           label:'Reports',          icon:<BarChart3 {...iconProps} />,        module:'reports'           },
+  { href:'/safety-compliance', label:'Safety Compliance',icon:<Shield {...iconProps} />,           module:'safety_compliance' },
 ];
 
 const ADMIN_NAV: NavItem[] = [
