@@ -130,6 +130,13 @@ export default function Header() {
 
   useEffect(() => { if (profile) fetchNotifications(); }, [profile, fetchNotifications]);
 
+  // Polling fallback — refresh every 30 seconds
+  useEffect(() => {
+    if (!profile) return;
+    const interval = setInterval(() => { fetchRef.current(); }, 30000);
+    return () => clearInterval(interval);
+  }, [profile?.role]);
+
   // Realtime: re-fetch notifications on any project/invoice change
   useEffect(() => {
     if (!profile) return;
