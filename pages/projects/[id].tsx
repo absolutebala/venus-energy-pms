@@ -309,20 +309,65 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
   );
 }
 
-const PTW_DB: Record<string,any[]> = {};
-
 function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { projectId:string; vendorContact:string; canEdit:boolean; canAdd?:boolean }) {
-  const [items, setItems] = React.useState<any[]>(() => PTW_DB[projectId] || []);
-  const nextId = () => Math.max(0, ...items.map((i:any)=>i.id)) + 1;
+  const [items,   setItems]   = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [saving,  setSaving]  = React.useState<string|null>(null);
+  const [toast,   setToast]   = React.useState<any>(null);
+
+  React.useEffect(() => {
+    if (!projectId) return;
+    const sb = createClient();
+    sb.from('ptw_items').select('*').eq('project_id', projectId).order('created_at')
+      .then(({ data }) => {
+        if (data) setItems(data.map((r:any) => ({
+          id: r.id, ticketId: r.ticket_id||'', supervisor: r.supervisor||'',
+          dateFrom: r.date_from||'', dateTo: r.date_to||'', isNew: false,
+        })));
+        setLoading(false);
+      });
+  }, [projectId]);
 
   const addPTW = () => setItems(prev => [...prev, {
-    id: nextId(), ticketId:'', supervisor: vendorContact||'', dateFrom:'', dateTo:''
+    id: `new-${Date.now()}`, ticketId:'', supervisor: vendorContact||'',
+    dateFrom:'', dateTo:'', isNew: true,
   }]);
 
-  const removeItem = (id:number) => setItems(prev => prev.filter((i:any)=>i.id!==id));
+  const removeItem = async (id:string|number) => {
+    if (String(id).startsWith('new-')) {
+      setItems(prev => prev.filter((i:any)=>i.id!==id));
+      return;
+    }
+    if (!window.confirm('Delete this PTW record?')) return;
+    const sb = createClient();
+    await sb.from('ptw_items').delete().eq('id', id);
+    setItems(prev => prev.filter((i:any)=>i.id!==id));
+  };
 
-  const update = (id:number, field:string, val:string) =>
+  const update = (id:string|number, field:string, val:string) =>
     setItems(prev => prev.map((item:any) => item.id===id ? {...item,[field]:val} : item));
+
+  const savePTW = async (item:any) => {
+    setSaving(item.id);
+    const sb = createClient();
+    const payload = {
+      project_id: projectId, ticket_id: item.ticketId, supervisor: item.supervisor,
+      date_from: item.dateFrom||null, date_to: item.dateTo||null,
+    };
+    if (item.isNew) {
+      const { data, error } = await sb.from('ptw_items').insert(payload).select().single();
+      if (!error && data) {
+        setItems(prev => prev.map((i:any) => i.id===item.id ? {...data, id:data.id,
+          ticketId:data.ticket_id, supervisor:data.supervisor,
+          dateFrom:data.date_from||'', dateTo:data.date_to||'', isNew:false} : i));
+        setToast({ msg:'✅ PTW saved', type:'success' });
+      }
+    } else {
+      const { error } = await sb.from('ptw_items').update(payload).eq('id', item.id);
+      if (!error) setToast({ msg:'✅ PTW updated', type:'success' });
+    }
+    setSaving(null);
+  };
 
   const getStatus = (from:string, to:string) => {
     if (!from || !to) return null;
@@ -340,8 +385,10 @@ const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-dig
       style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text }} />
   );
 
+  if (loading) return <div style={{ padding:20, textAlign:'center' as const, color:'#6B7280', fontSize:13 }}>Loading PTW records…</div>;
+
   if (items.length === 0 && !canEdit) return (
-    <div style={{ textAlign:'center', padding:24, color:T.textDim, fontSize:13 }}>No PTW records yet.</div>
+    <div style={{ textAlign:'center', padding:24, color:'#9CA3AF', fontSize:13 }}>No PTW records yet.</div>
   );
 
   return (
@@ -384,10 +431,16 @@ const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-dig
                       </span>
                     ) : <span style={{ fontSize:12, color:T.textDim }}>—</span>}
                   </td>
-                  <td style={{ padding:'8px 10px', width:36 }}>
+                  <td style={{ padding:'8px 10px', width:80 }}>
                     {canEdit && (
-                      <button onClick={()=>removeItem(item.id)}
+                      <div style={{ display:'flex', gap:4 }}>
+                        <button onClick={()=>savePTW(item)} disabled={saving===item.id}
+                          style={{ background:T.primary, border:'none', borderRadius:5, padding:'4px 8px', color:'#fff', cursor:'pointer', fontSize:11, fontWeight:600 }}>
+                          {saving===item.id?'…':'Save'}
+                        </button>
+                        <button onClick={()=>removeItem(item.id)}
                         style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:16, padding:2 }}>🗑</button>
+                      </div>
                     )}
                   </td>
                 </tr>
