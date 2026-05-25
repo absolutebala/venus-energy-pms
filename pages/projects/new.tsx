@@ -224,7 +224,7 @@ export default function NewProjectPage() {
           indus_id: indusId,
           region,
           job_type: projectType,
-          form_data: { projectName, site, indusId, poNo, region, projectType, pm, rm, vendor },
+          form_data: { projectName, site, indusId, poNo, region, projectType, pm: projectManager, rm: regionalManager },
           created_by: profile?.email || '',
         });
         if (error) throw error;
