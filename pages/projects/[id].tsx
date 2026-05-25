@@ -964,6 +964,7 @@ export default function ProjectDetailPage() {
 
   const editing    = (s: string) => editingSection === s;
   const notEditing = editingSection === null;
+
   const [form, setForm] = useState<any>({});
   React.useEffect(() => { if (p) setForm({...p}); }, [p?.id]);
 
