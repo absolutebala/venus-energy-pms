@@ -1,4 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useProjects } from '@/context/ProjectContext';
@@ -147,6 +150,152 @@ export default function ReportsPage() {
     return true;
   });
 
+
+  const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
+
+  // ── Excel export ──────────────────────────────────────────────
+  const exportExcel = useCallback(() => {
+    let rows: any[] = [];
+    let sheetName = active;
+
+    if (active === 'status') {
+      sheetName = 'Project Status';
+      rows = projects.map((p:any) => ({
+        'Project ID': p.id, 'Site': p.site, 'Region': p.region,
+        'Status': p.status, 'PM': p.pm, 'RM': p.rm,
+        'Start Date': p.startDate, 'End Date': p.endDate,
+        'Aging (days)': p.aging, 'PO Value': p.poValue,
+        'Billed': p.billedAmt, 'Paid': p.paidAmt,
+      }));
+    } else if (active === 'financial') {
+      sheetName = 'Financial Summary';
+      rows = regionFinancial.map(r => ({
+        'Region': r.region,
+        'PO Value (L)': r.poValue.toFixed(2),
+        'Billed (L)': r.billed.toFixed(2),
+        'Paid (L)': r.paid.toFixed(2),
+        'Pending (L)': (r.billed - r.paid).toFixed(2),
+      }));
+    } else if (active === 'pm') {
+      sheetName = 'PM Performance';
+      rows = pmData.map(p => ({
+        'Project Manager': p.name, 'Total Projects': p.total,
+        'Completed': p.completed, 'Delayed': p.delayed,
+        'On-Time Rate (%)': p.onTime,
+      }));
+    } else if (active === 'vendor') {
+      sheetName = 'Vendor Performance';
+      rows = vendorData.map(v => ({
+        'Vendor': v.fullName, 'Total Projects': v.total,
+        'Completed': v.completed, 'Delayed': v.delayed,
+        'Completion Rate (%)': v.completionRate,
+      }));
+    } else if (active === 'aging') {
+      sheetName = 'PO Aging';
+      rows = activeProjects.filter((p:any)=>p.aging>60).sort((a:any,b:any)=>b.aging-a.aging).map((p:any) => ({
+        'Project ID': p.id, 'Site': p.site, 'Region': p.region,
+        'Status': p.status, 'Aging (days)': p.aging,
+        'PO Value': p.poValue, 'Start Date': p.startDate,
+      }));
+    } else if (active === 'stnsrn') {
+      sheetName = 'STN-SRN Report';
+      rows = Object.entries(stnSrnData).flatMap(([projId, items]:any) =>
+        items.map((m:any) => ({
+          'Project ID': projId, 'Code': m.code, 'Description': m.description,
+          'Issued Qty': m.issuedQty, 'Utilised Qty': m.utilisedQty,
+          'Return Qty': m.returnQty||0, 'Status': m.utilisedStatus,
+        }))
+      );
+    } else if (active === 'ptw') {
+      sheetName = 'PTW Compliance';
+      rows = projects.filter((p:any)=>p.ptwTicketId).map((p:any) => ({
+        'Project ID': p.id, 'Site': p.site, 'PTW Ticket': p.ptwTicketId,
+        'Supervisor': p.ptwSupervisor, 'Valid From': p.ptwDateFrom,
+        'Valid To': p.ptwDateTo, 'Status': p.status,
+      }));
+    } else {
+      sheetName = 'Executive Summary';
+      rows = [
+        { Metric: 'Total Projects', Value: projects.length },
+        { Metric: 'In Progress', Value: projects.filter((p:any)=>p.status==='in_progress').length },
+        { Metric: 'Delayed', Value: projects.filter((p:any)=>p.status==='delayed').length },
+        { Metric: 'Completed', Value: projects.filter((p:any)=>p.status==='completed').length },
+        { Metric: 'Total PO Value', Value: fmt(totalPO) },
+        { Metric: 'Total Billed', Value: fmt(totalBilled) },
+        { Metric: 'Total Paid', Value: fmt(totalPaid) },
+        { Metric: 'Pending', Value: fmt(totalPending) },
+      ];
+    }
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    XLSX.writeFile(wb, `Venus_Energy_${sheetName}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  }, [active, projects, regionFinancial, pmData, vendorData, activeProjects, stnSrnData, totalPO, totalBilled, totalPaid, totalPending]);
+
+  // ── PDF export ────────────────────────────────────────────────
+  const exportPDF = useCallback(() => {
+    const doc = new jsPDF({ orientation:'landscape' });
+    const title = REPORT_TABS.find(t=>t.key===active)?.label || 'Report';
+    doc.setFontSize(14); doc.setTextColor(13,148,136);
+    doc.text('Venus Energy Pvt. Ltd.', 14, 14);
+    doc.setFontSize(11); doc.setTextColor(30,41,59);
+    doc.text(title, 14, 22);
+    doc.setFontSize(8); doc.setTextColor(100,116,139);
+    doc.text(`Generated: ${new Date().toLocaleDateString('en-IN')} | Region: ${region}`, 14, 28);
+
+    let head: string[][] = [];
+    let body: any[][] = [];
+
+    if (active === 'status') {
+      head = [['Project ID','Site','Region','Status','PM','Aging','PO Value','Billed']];
+      body = projects.map((p:any)=>[p.id,p.site,p.region,p.status,p.pm||'—',`${p.aging}d`,fmt(p.poValue),fmt(p.billedAmt)]);
+    } else if (active === 'financial') {
+      head = [['Region','PO Value (L)','Billed (L)','Paid (L)','Pending (L)']];
+      body = regionFinancial.map(r=>[r.region,r.poValue.toFixed(1),r.billed.toFixed(1),r.paid.toFixed(1),(r.billed-r.paid).toFixed(1)]);
+    } else if (active === 'pm') {
+      head = [['Project Manager','Total','Completed','Delayed','On-Time %']];
+      body = pmData.map(p=>[p.name,p.total,p.completed,p.delayed,`${p.onTime}%`]);
+    } else if (active === 'vendor') {
+      head = [['Vendor','Total','Completed','Delayed','Rate %']];
+      body = vendorData.map(v=>[v.fullName,v.total,v.completed,v.delayed,`${v.completionRate}%`]);
+    } else if (active === 'aging') {
+      head = [['Project ID','Site','Region','Status','Aging (days)','PO Value']];
+      body = activeProjects.filter((p:any)=>p.aging>60).sort((a:any,b:any)=>b.aging-a.aging)
+        .map((p:any)=>[p.id,p.site,p.region,p.status,`${p.aging}d`,fmt(p.poValue)]);
+    } else if (active === 'stnsrn') {
+      head = [['Project ID','Code','Description','Issued','Utilised','Return','Status']];
+      body = Object.entries(stnSrnData).flatMap(([pid,items]:any)=>
+        items.map((m:any)=>[pid,m.code,m.description,m.issuedQty,m.utilisedQty,m.returnQty||0,m.utilisedStatus])
+      );
+    } else if (active === 'ptw') {
+      head = [['Project ID','Site','PTW Ticket','Supervisor','From','To','Status']];
+      body = projects.filter((p:any)=>p.ptwTicketId)
+        .map((p:any)=>[p.id,p.site,p.ptwTicketId,p.ptwSupervisor||'—',p.ptwDateFrom,p.ptwDateTo,p.status]);
+    } else {
+      head = [['Metric','Value']];
+      body = [
+        ['Total Projects', projects.length],
+        ['In Progress', projects.filter((p:any)=>p.status==='in_progress').length],
+        ['Delayed', projects.filter((p:any)=>p.status==='delayed').length],
+        ['Completed', projects.filter((p:any)=>p.status==='completed').length],
+        ['Total PO Value', fmt(totalPO)],
+        ['Total Billed', fmt(totalBilled)],
+        ['Total Paid', fmt(totalPaid)],
+      ];
+    }
+
+    (doc as any).autoTable({
+      head, body, startY: 34,
+      headStyles: { fillColor:[13,148,136], textColor:255, fontSize:8, fontStyle:'bold' },
+      bodyStyles: { fontSize:8 },
+      alternateRowStyles: { fillColor:[240,253,250] },
+      margin: { left:14, right:14 },
+    });
+
+    doc.save(`Venus_Energy_${title.replace(/ /g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+  }, [active, projects, regionFinancial, pmData, vendorData, activeProjects, stnSrnData, region, totalPO, totalBilled, totalPaid, totalPending]);
+
   return (
     <Layout>
       <div className="fade-in">
@@ -158,7 +307,19 @@ export default function ReportsPage() {
             </p>
           </div>
           <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-            <select value={region} onChange={e=>setRegion(e.target.value)} style={selS}>
+            <button onClick={exportExcel}
+            style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px',
+              background:'#16A34A', color:'#fff', border:'none', borderRadius:8,
+              cursor:'pointer', fontSize:12, fontWeight:600 }}>
+            📊 Excel
+          </button>
+          <button onClick={exportPDF}
+            style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px',
+              background:'#DC2626', color:'#fff', border:'none', borderRadius:8,
+              cursor:'pointer', fontSize:12, fontWeight:600 }}>
+            📄 PDF
+          </button>
+          <select value={region} onChange={e=>setRegion(e.target.value)} style={selS}>
               <option>All</option>{(regions as string[]).map(r=><option key={r}>{r}</option>)}
             </select>
             <button onClick={()=>window.print()} style={{ background:T.bg, border:`1px solid ${T.border}`, borderRadius:8, padding:'7px 14px', fontSize:12, cursor:'pointer', color:T.text }}>🖨 Print</button>
