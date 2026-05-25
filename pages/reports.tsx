@@ -63,13 +63,12 @@ const ALL_COLS: Record<string, {key:string; label:string}[]> = {
     { key:'jobType',   label:'Job Type'     },
   ],
   stnsrn: [
-    { key:'projectId',      label:'Project ID'   },
-    { key:'code',           label:'Code'         },
-    { key:'description',    label:'Description'  },
-    { key:'issuedQty',      label:'Issued Qty'   },
-    { key:'utilisedQty',    label:'Utilised Qty' },
-    { key:'returnQty',      label:'Return Qty'   },
-    { key:'utilisedStatus', label:'Status'       },
+    { key:'id',       label:'Project ID'    },
+    { key:'vendor',   label:'Vendor'        },
+    { key:'issued',   label:'Issued Qty'    },
+    { key:'returned', label:'Returned Qty'  },
+    { key:'balance',  label:'Balance'       },
+    { key:'pct',      label:'Utilised %'    },
   ],
   vendor: [
     { key:'fullName',       label:'Vendor Name'      },
@@ -669,9 +668,7 @@ export default function ReportsPage() {
                   <thead><tr>{getVisibleCols('stnsrn').map(k=>(
                     <th key={k} style={thS}>{getColLabel('stnsrn',k)}</th>
                   ))}</tr></thead>
-                  <tbody>{Object.entries(stnSrnData as Record<string,any[]>).flatMap(([pid,items])=>
-                    items.map((m:any,j:number)=>({...m, projectId:pid, _key:`${pid}-${j}`}))
-                  ).map((r:any,i:number)=>(
+                  <tbody>{(stnSrnData as any[]).map((r:any,i:number)=>(
                     <tr key={r.id} style={{ background:i%2===0?'#fff':T.bg, borderBottom:`1px solid ${T.border}` }}>
                       <td style={{ padding:'9px 10px', color:T.primary, fontWeight:700, fontSize:12 }}>{r.id}</td>
                       <td style={{ padding:'9px 10px', fontSize:12 }}>{r.vendor}</td>
