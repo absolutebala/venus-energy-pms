@@ -964,6 +964,9 @@ export default function ProjectDetailPage() {
 
   const editing    = (s: string) => editingSection === s;
   const notEditing = editingSection === null;
+  const [form, setForm] = useState<any>({});
+  React.useEffect(() => { if (p) setForm({...p}); }, [p?.id]);
+
   const startEdit  = (s: string) => { setForm({...(id ? projects[id as string] : {})}); setEditingSection(s); };
   const cancelEdit = () => { setForm({...(id ? projects[id as string] : {})}); setEditingSection(null); };
   const saveSection = () => {
@@ -1015,8 +1018,6 @@ export default function ProjectDetailPage() {
   React.useEffect(() => {
     if (id) getActivityLog(id as string).then(setActivityEntries);
   // form state
-  const [form, setForm] = useState<any>({});
-  React.useEffect(() => { if (p) setForm({...p}); }, [p?.id]);
 
   if (!router.isReady) return (
     <Layout>
