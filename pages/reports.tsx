@@ -116,6 +116,21 @@ export default function ReportsPage() {
   }, []);
 
   const getVisibleCols = (key: string) => colConfigs[key] || ALL_COLS[key]?.map(c=>c.key) || [];
+  const getCellValue = (colKey: string, row: any): string => {
+    const v = row[colKey];
+    if (v === null || v === undefined || v === '') return '—';
+    if (colKey === 'poValue' || colKey === 'billedAmt' || colKey === 'paidAmt') return fmt(Number(v));
+    if (colKey === 'aging') return `${v}d`;
+    if (colKey === 'completionRate') return `${v}%`;
+    if (colKey === 'status' || colKey === 'utilisedStatus') return String(v).replace(/_/g,' ');
+    return String(v);
+  };
+
+  const getColLabel = (reportKey: string, colKey: string): string => {
+    return ALL_COLS[reportKey]?.find(c=>c.key===colKey)?.label || colKey;
+  };
+
+
 
   const openColModal = (key: string) => {
     setDraftCols(getVisibleCols(key));
@@ -509,31 +524,18 @@ export default function ReportsPage() {
                 </div>
                 <div style={{ overflowX:'auto' as const }}>
                   <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
-                    <thead><tr>{['Project','PM','Region','Job Type','PO Value','Aging','Progress','Status'].map(h=>(
-                      <th key={h} style={thS}>{h}</th>
+                    <thead><tr>{getVisibleCols('status').map(k=>(
+                      <th key={k} style={thS}>{getColLabel('status',k)}</th>
                     ))}</tr></thead>
                     <tbody>{projects.map((p:any,i:number)=>(
                       <tr key={p.id} style={{ background:i%2===0?'#fff':T.bg, borderBottom:`1px solid ${T.border}` }}>
-                        <td style={{ padding:'9px 10px', color:T.primary, fontWeight:700, fontSize:12 }}>{p.id}</td>
-                        <td style={{ padding:'9px 10px', fontSize:12 }}>{p.pm}</td>
-                        <td style={{ padding:'9px 10px', fontSize:12, color:T.textMuted }}>{p.region}</td>
-                        <td style={{ padding:'9px 10px', fontSize:11 }}>{p.jobType||'—'}</td>
-                        <td style={{ padding:'9px 10px', fontWeight:600, fontSize:12 }}>{fmt(p.poValue)}</td>
-                        <td style={{ padding:'9px 10px' }}><span style={{ fontWeight:700, color:p.aging>90?T.danger:p.aging>60?'#D97706':T.success }}>{p.aging}d</span></td>
-                        <td style={{ padding:'9px 10px', fontSize:12 }}>
-                          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                            <div style={{ flex:1, height:5, background:T.border, borderRadius:3, minWidth:60 }}>
-                              <div style={{ height:'100%', width:`${p.progress}%`, background:p.status==='delayed'?T.danger:T.primary, borderRadius:3 }} />
-                            </div>
-                            <span style={{ fontSize:11, color:T.textDim }}>{p.progress}%</span>
-                          </div>
-                        </td>
-                        <td style={{ padding:'9px 10px' }}>
-                          <span style={{ fontSize:11, fontWeight:700, color:['#2563EB','#DC2626','#16A34A','#D97706','#7C3AED','#0D9488','#6B7280'][['in_progress','delayed','completed','pending','billing_review','pm_approved','not_started'].indexOf(p.status)]||T.textMuted,
-                            background:'#F9FAFB', padding:'2px 8px', borderRadius:20 }}>
-                            {p.status?.replace(/_/g,' ')||'—'}
-                          </span>
-                        </td>
+                        {getVisibleCols('status').map(k=>(
+                          <td key={k} style={{ padding:'9px 10px', fontSize:12,
+                            color: k==='id'?T.primary:k==='aging'&&p.aging>90?T.danger:k==='aging'&&p.aging>60?'#D97706':T.text,
+                            fontWeight: k==='id'||k==='poValue'||k==='billedAmt'?700:400 }}>
+                            {getCellValue(k, p)}
+                          </td>
+                        ))}
                       </tr>
                     ))}</tbody>
                   </table>
@@ -598,8 +600,8 @@ export default function ReportsPage() {
               <div style={card}>
                 <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>Vendor Performance Overview</div>
                 <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
-                  <thead><tr>{['Vendor','Total','Completed','Delayed','Completion Rate'].map(h=>(
-                    <th key={h} style={thS}>{h}</th>
+                  <thead><tr>{getVisibleCols('vendor').map(k=>(
+                    <th key={k} style={thS}>{getColLabel('vendor',k)}</th>
                   ))}</tr></thead>
                   <tbody>{vendorData.map((v,i)=>(
                     <tr key={i} style={{ background:i%2===0?'#fff':T.bg, borderBottom:`1px solid ${T.border}` }}>
@@ -636,8 +638,8 @@ export default function ReportsPage() {
                 <div style={card}>
                   <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>High Aging Projects (&gt;60 days)</div>
                   <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
-                    <thead><tr>{['Project','PM','Region','Vendor','Aging','Status'].map(h=>(
-                      <th key={h} style={thS}>{h}</th>
+                    <thead><tr>{getVisibleCols('aging').map(k=>(
+                      <th key={k} style={thS}>{getColLabel('aging',k)}</th>
                     ))}</tr></thead>
                     <tbody>{projects.filter((p:any)=>p.aging>60&&p.status!=="completed").sort((a:any,b:any)=>b.aging-a.aging).map((p:any,i:number)=>(
                       <tr key={p.id} style={{ background:i%2===0?'#fff':T.bg, borderBottom:`1px solid ${T.border}` }}>
@@ -664,10 +666,12 @@ export default function ReportsPage() {
                 <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:8 }}>STN/SRN Material Utilisation Report</div>
                 <div style={{ fontSize:12, color:T.textMuted, marginBottom:16 }}>Live data from Supabase material_items table</div>
                 <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
-                  <thead><tr>{['Project','Vendor','Issued','Returned','Balance','% Utilised','Status'].map(h=>(
-                    <th key={h} style={thS}>{h}</th>
+                  <thead><tr>{getVisibleCols('stnsrn').map(k=>(
+                    <th key={k} style={thS}>{getColLabel('stnsrn',k)}</th>
                   ))}</tr></thead>
-                  <tbody>{stnSrnData.map((r,i)=>(
+                  <tbody>{Object.entries(stnSrnData as Record<string,any[]>).flatMap(([pid,items])=>
+                    items.map((m:any,j:number)=>({...m, projectId:pid, _key:`${pid}-${j}`}))
+                  ).map((r:any,i:number)=>(
                     <tr key={r.id} style={{ background:i%2===0?'#fff':T.bg, borderBottom:`1px solid ${T.border}` }}>
                       <td style={{ padding:'9px 10px', color:T.primary, fontWeight:700, fontSize:12 }}>{r.id}</td>
                       <td style={{ padding:'9px 10px', fontSize:12 }}>{r.vendor}</td>
