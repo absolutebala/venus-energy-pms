@@ -106,8 +106,9 @@ export default function ReportsPage() {
 
   // Load column configs from Supabase
   useEffect(() => {
-    supabase.from('report_configs').select('report_key,visible_cols')
-      .then(({ data, error }) => {
+    (async () => {
+      try {
+        const { data, error } = await supabase.from('report_configs').select('report_key,visible_cols');
         if (error) {
           console.error('Failed to load column configs:', error.message);
           setConfigError('Column preferences could not be loaded. Using defaults.');
@@ -116,11 +117,11 @@ export default function ReportsPage() {
           data.forEach((r:any) => { map[r.report_key] = r.visible_cols; });
           setColConfigs(map);
         }
-      })
-      .catch(err => {
+      } catch(err: any) {
         console.error('Column config fetch error:', err);
         setConfigError('Unable to connect. Using default columns.');
-      });
+      }
+    })();
   }, []);
 
   const getVisibleCols = (key: string) => colConfigs[key] || ALL_COLS[key]?.map(c=>c.key) || [];
