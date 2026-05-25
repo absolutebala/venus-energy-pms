@@ -1,4 +1,6 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { createClient } from '@/lib/supabase';
+const supabase = createClient();
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -39,11 +41,110 @@ const REPORTS = [
 
 const PIE_COLORS = ['#2563EB','#DC2626','#16A34A','#D97706','#7C3AED','#6B7280'];
 
+
+// ── Available columns per report type ────────────────────────────
+const ALL_COLS: Record<string, {key:string; label:string}[]> = {
+  status: [
+    { key:'id',        label:'Project ID'   },
+    { key:'site',      label:'Site'         },
+    { key:'region',    label:'Region'       },
+    { key:'status',    label:'Status'       },
+    { key:'pm',        label:'PM'           },
+    { key:'rm',        label:'RM'           },
+    { key:'vendor',    label:'Vendor'       },
+    { key:'aging',     label:'Aging (days)' },
+    { key:'poValue',   label:'PO Value'     },
+    { key:'billedAmt', label:'Billed'       },
+    { key:'paidAmt',   label:'Paid'         },
+    { key:'startDate', label:'Start Date'   },
+    { key:'endDate',   label:'End Date'     },
+    { key:'indusId',   label:'Indus ID'     },
+    { key:'poNo',      label:'PO Number'    },
+    { key:'jobType',   label:'Job Type'     },
+  ],
+  stnsrn: [
+    { key:'projectId',      label:'Project ID'   },
+    { key:'code',           label:'Code'         },
+    { key:'description',    label:'Description'  },
+    { key:'issuedQty',      label:'Issued Qty'   },
+    { key:'utilisedQty',    label:'Utilised Qty' },
+    { key:'returnQty',      label:'Return Qty'   },
+    { key:'utilisedStatus', label:'Status'       },
+  ],
+  vendor: [
+    { key:'fullName',       label:'Vendor Name'      },
+    { key:'total',          label:'Total Projects'   },
+    { key:'completed',      label:'Completed'        },
+    { key:'delayed',        label:'Delayed'          },
+    { key:'completionRate', label:'Completion Rate %'},
+  ],
+  aging: [
+    { key:'id',        label:'Project ID'   },
+    { key:'site',      label:'Site'         },
+    { key:'region',    label:'Region'       },
+    { key:'status',    label:'Status'       },
+    { key:'aging',     label:'Aging (days)' },
+    { key:'poValue',   label:'PO Value'     },
+    { key:'startDate', label:'Start Date'   },
+    { key:'pm',        label:'PM'           },
+    { key:'vendor',    label:'Vendor'       },
+  ],
+};
+
+const CONFIGURABLE = ['status','stnsrn','vendor','aging'];
+
 export default function ReportsPage() {
   const { profile } = useAuth();
   const { projects: rawProjects, loading: projLoading } = useProjects();
   const { invoices, loading: invLoading } = useInvoices();
   const { allItems: materials, loading: matLoading } = useMaterial();
+
+  const [colConfigs, setColConfigs] = useState<Record<string,string[]>>({});
+  const [colModal,   setColModal]   = useState<string|null>(null); // active report key
+  const [savingCols, setSavingCols] = useState(false);
+  const [draftCols,  setDraftCols]  = useState<string[]>([]);
+
+  // Load column configs from Supabase
+  useEffect(() => {
+    supabase.from('report_configs').select('report_key,visible_cols').then(({data}) => {
+      if (data) {
+        const map: Record<string,string[]> = {};
+        data.forEach((r:any) => { map[r.report_key] = r.visible_cols; });
+        setColConfigs(map);
+      }
+    });
+  }, []);
+
+  const getVisibleCols = (key: string) => colConfigs[key] || ALL_COLS[key]?.map(c=>c.key) || [];
+
+  const openColModal = (key: string) => {
+    setDraftCols(getVisibleCols(key));
+    setColModal(key);
+  };
+
+  const toggleCol = (key: string) => {
+    setDraftCols(prev => prev.includes(key) ? prev.filter(k=>k!==key) : [...prev, key]);
+  };
+
+  const moveCol = (key: string, dir: 'up'|'down') => {
+    setDraftCols(prev => {
+      const idx = prev.indexOf(key);
+      if (dir==='up' && idx>0) { const a=[...prev]; [a[idx-1],a[idx]]=[a[idx],a[idx-1]]; return a; }
+      if (dir==='down' && idx<prev.length-1) { const a=[...prev]; [a[idx],a[idx+1]]=[a[idx+1],a[idx]]; return a; }
+      return prev;
+    });
+  };
+
+  const saveCols = async () => {
+    if (!colModal) return;
+    setSavingCols(true);
+    await supabase.from('report_configs').upsert({
+      report_key: colModal, visible_cols: draftCols
+    }, { onConflict: 'report_key' });
+    setColConfigs(prev => ({ ...prev, [colModal]: draftCols }));
+    setSavingCols(false);
+    setColModal(null);
+  };
 
   const [active,   setActive]   = useState('executive');
   const [region,   setRegion]   = useState('All');
@@ -307,7 +408,15 @@ export default function ReportsPage() {
             </p>
           </div>
           <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-            <button onClick={exportExcel}
+            {CONFIGURABLE.includes(active) && (
+            <button onClick={() => openColModal(active)}
+              style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px',
+                background:'#7C3AED', color:'#fff', border:'none', borderRadius:8,
+                cursor:'pointer', fontSize:12, fontWeight:600 }}>
+              ⚙ Columns
+            </button>
+          )}
+          <button onClick={exportExcel}
             style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px',
               background:'#16A34A', color:'#fff', border:'none', borderRadius:8,
               cursor:'pointer', fontSize:12, fontWeight:600 }}>
@@ -623,6 +732,97 @@ export default function ReportsPage() {
           </div>
         </div>
       </div>
+
+      {/* Column Manager Modal */}
+      {colModal && ALL_COLS[colModal] && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:1000,
+          display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ background:'#fff', borderRadius:16, width:480, maxHeight:'80vh',
+            display:'flex', flexDirection:'column', boxShadow:'0 20px 60px rgba(0,0,0,0.2)' }}>
+            <div style={{ padding:'18px 20px', borderBottom:`1px solid ${T.border}`,
+              display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <div>
+                <div style={{ fontSize:15, fontWeight:700, color:T.text }}>Manage Columns</div>
+                <div style={{ fontSize:12, color:T.textMuted, marginTop:2 }}>
+                  Select and order columns for this report
+                </div>
+              </div>
+              <button onClick={()=>setColModal(null)}
+                style={{ background:'none', border:'none', cursor:'pointer', fontSize:18, color:T.textMuted }}>✕</button>
+            </div>
+
+            <div style={{ padding:'16px 20px', overflowY:'auto', flex:1 }}>
+              {/* Available columns */}
+              <div style={{ fontSize:11, fontWeight:700, color:T.textMuted, textTransform:'uppercase',
+                letterSpacing:0.5, marginBottom:10 }}>Available Columns</div>
+              {ALL_COLS[colModal].map(col => (
+                <div key={col.key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+                  padding:'8px 12px', borderRadius:8, marginBottom:4,
+                  background: draftCols.includes(col.key) ? T.primaryLight : T.bg,
+                  border:`1px solid ${draftCols.includes(col.key) ? T.primaryMid : T.border}` }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <input type="checkbox" checked={draftCols.includes(col.key)}
+                      onChange={()=>toggleCol(col.key)}
+                      style={{ cursor:'pointer', accentColor:T.primary }} />
+                    <span style={{ fontSize:13, color:T.text, fontWeight: draftCols.includes(col.key)?600:400 }}>
+                      {col.label}
+                    </span>
+                  </div>
+                  {draftCols.includes(col.key) && (
+                    <div style={{ display:'flex', gap:4 }}>
+                      <button onClick={()=>moveCol(col.key,'up')}
+                        style={{ background:'none', border:`1px solid ${T.border}`, borderRadius:5,
+                          padding:'2px 6px', cursor:'pointer', fontSize:11, color:T.textMuted }}>↑</button>
+                      <button onClick={()=>moveCol(col.key,'down')}
+                        style={{ background:'none', border:`1px solid ${T.border}`, borderRadius:5,
+                          padding:'2px 6px', cursor:'pointer', fontSize:11, color:T.textMuted }}>↓</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Column order preview */}
+              {draftCols.length > 0 && (
+                <div style={{ marginTop:16 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:T.textMuted, textTransform:'uppercase',
+                    letterSpacing:0.5, marginBottom:8 }}>Column Order Preview</div>
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                    {draftCols.map((k,i) => {
+                      const col = ALL_COLS[colModal!].find(c=>c.key===k);
+                      return (
+                        <span key={k} style={{ fontSize:11, padding:'3px 10px', borderRadius:20,
+                          background:T.primary, color:'#fff', fontWeight:500 }}>
+                          {i+1}. {col?.label||k}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ padding:'14px 20px', borderTop:`1px solid ${T.border}`,
+              display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <button onClick={()=>setDraftCols(ALL_COLS[colModal!].map(c=>c.key))}
+                style={{ fontSize:12, color:T.textMuted, background:'none', border:'none', cursor:'pointer' }}>
+                Reset to Default
+              </button>
+              <div style={{ display:'flex', gap:10 }}>
+                <button onClick={()=>setColModal(null)}
+                  style={{ padding:'8px 16px', background:T.bg, border:`1px solid ${T.border}`,
+                    borderRadius:8, cursor:'pointer', fontSize:13, color:T.text }}>Cancel</button>
+                <button onClick={saveCols} disabled={savingCols||draftCols.length===0}
+                  style={{ padding:'8px 20px', background:T.primary, color:'#fff', border:'none',
+                    borderRadius:8, cursor:'pointer', fontSize:13, fontWeight:600,
+                    opacity: savingCols||draftCols.length===0 ? 0.6 : 1 }}>
+                  {savingCols ? 'Saving…' : '💾 Save Columns'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </Layout>
   );
 }
