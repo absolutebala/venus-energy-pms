@@ -209,17 +209,44 @@ export default function NewProjectPage() {
     if (poFileRef.current) poFileRef.current.value = '';
   };
 
-  const handleSubmit = (draft: boolean) => {
+  const handleSubmit = async (draft: boolean) => {
     if (!projectName) { setToast({ msg:'Project Name is required.', type:'error' }); return; }
     if (!site)        { setToast({ msg:'Site Name is required.', type:'error' }); return; }
-    const hasItems = items.some(i => i.description && i.qty && i.rate);
-    if (!hasItems) { setToast({ msg:'Please add at least one PO item.', type:'error' }); return; }
+    // PO items are optional
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
-      setToast({ msg: draft ? `PO ${poNo} saved as Draft!` : `PO ${poNo} submitted for approval!`, type:'success' });
+    try {
+      const sb = createClient();
+      if (draft) {
+        // Save as draft to project_drafts table
+        const { error } = await sb.from('project_drafts').insert({
+          project_name: projectName,
+          po_no:   poNo,
+          indus_id: indusId,
+          region,
+          job_type: jobType,
+          form_data: { projectName, site, indusId, poNo, region, jobType, pm, rm, vendor },
+          created_by: profile?.email || '',
+        });
+        if (error) throw error;
+        setToast({ msg:`Draft saved: ${projectName}`, type:'success' });
+      } else {
+        // Submit — create project in projects table
+        const { error } = await sb.from('projects').insert({
+          id: poNo || `VE-${Date.now()}`,
+          site, indus_id: indusId, po_no: poNo, region,
+          job_type: jobType, pm, rm, vendor,
+          status: 'pending', po_value: 0,
+          start_date: null, end_date: null,
+        });
+        if (error) throw error;
+        setToast({ msg:`Project ${poNo} submitted!`, type:'success' });
+      }
       setTimeout(() => router.push('/projects'), 1500);
-    }, 800);
+    } catch(err: any) {
+      setToast({ msg:'❌ ' + err.message, type:'error' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
