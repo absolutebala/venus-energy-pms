@@ -10,7 +10,12 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 const fmt    = (v:number) => `₹${(v/100000).toFixed(1)}L`;
 const fmtCr  = (v:number) => `₹${(v/10000000).toFixed(2)} Cr`;
 const PCT_CLR= (v:number) => v>=80?T.success:v>=50?T.info:T.danger;
-const getAging = (d:string) => d ? Math.floor((Date.now()-new Date(d).getTime())/86400000) : 0;
+const getAging = (startDate:string, status?:string, endDate?:string) => {
+  if (!startDate) return 0;
+  if (status === "completed" && endDate)
+    return Math.floor((new Date(endDate).getTime()-new Date(startDate).getTime())/86400000);
+  return Math.floor((Date.now()-new Date(startDate).getTime())/86400000);
+};
 const fmtDate  = (d:string) => { try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d||'—'; }};
 
 const PROGRESS_MAP: Record<string,number> = {
@@ -46,7 +51,7 @@ export default function ReportsPage() {
   // Enrich projects with computed fields
   const projects = useMemo(() => {
     return (rawProjects as any[]).map(p => {
-      const aging    = getAging(p.startDate);
+      const aging    = getAging(p.startDate, p.status, p.endDate);
       const progress = PROGRESS_MAP[p.status] || 0;
       const projInvs = invoices.filter(i => i.projectId === p.id);
       const billedAmt = projInvs.filter(i => ['Approved','Submitted','Under Review'].includes(i.invoiceStatus))
@@ -70,11 +75,12 @@ export default function ReportsPage() {
     { name:'Billing Review',value:projects.filter((p:any)=>p.status==='billing_review').length, color:'#7C3AED' },
   ].filter(s=>s.value>0);
 
+  const activeProjects = projects.filter((p:any) => p.status !== "completed");
   const agingData = [
-    { range:'0–30d',  count:projects.filter((p:any)=>p.aging<=30).length,              color:T.success },
-    { range:'31–60d', count:projects.filter((p:any)=>p.aging>30&&p.aging<=60).length,  color:T.info    },
-    { range:'61–90d', count:projects.filter((p:any)=>p.aging>60&&p.aging<=90).length,  color:T.warning },
-    { range:'90+d',   count:projects.filter((p:any)=>p.aging>90).length,               color:T.danger  },
+    { range:'0–30d',  count:activeProjects.filter((p:any)=>p.aging<=30).length,  color:T.success },
+    { range:'31–60d', count:activeProjects.filter((p:any)=>p.aging>30&&p.aging<=60).length, color:T.info },
+    { range:'61–90d', count:activeProjects.filter((p:any)=>p.aging>60&&p.aging<=90).length, color:T.warning },
+    { range:'90+d',   count:activeProjects.filter((p:any)=>p.aging>90).length,  color:T.danger },
   ];
 
   const pms = Array.from(new Set(projects.map((p:any)=>p.pm).filter(Boolean))) as string[];
@@ -363,7 +369,7 @@ export default function ReportsPage() {
                     <thead><tr>{['Project','PM','Region','Vendor','Aging','Status'].map(h=>(
                       <th key={h} style={thS}>{h}</th>
                     ))}</tr></thead>
-                    <tbody>{projects.filter((p:any)=>p.aging>60).sort((a:any,b:any)=>b.aging-a.aging).map((p:any,i:number)=>(
+                    <tbody>{projects.filter((p:any)=>p.aging>60&&p.status!=="completed").sort((a:any,b:any)=>b.aging-a.aging).map((p:any,i:number)=>(
                       <tr key={p.id} style={{ background:i%2===0?'#fff':T.bg, borderBottom:`1px solid ${T.border}` }}>
                         <td style={{ padding:'9px 10px', color:T.primary, fontWeight:700 }}>{p.id}</td>
                         <td style={{ padding:'9px 10px', fontSize:12 }}>{p.pm}</td>
