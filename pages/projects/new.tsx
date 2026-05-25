@@ -223,8 +223,8 @@ export default function NewProjectPage() {
           po_no:   poNo,
           indus_id: indusId,
           region,
-          job_type: jobType,
-          form_data: { projectName, site, indusId, poNo, region, jobType, pm, rm, vendor },
+          job_type: projectType,
+          form_data: { projectName, site, indusId, poNo, region, projectType, pm, rm, vendor },
           created_by: profile?.email || '',
         });
         if (error) throw error;
@@ -234,7 +234,7 @@ export default function NewProjectPage() {
         const { error } = await sb.from('projects').insert({
           id: poNo || `VE-${Date.now()}`,
           site, indus_id: indusId, po_no: poNo, region,
-          job_type: jobType, pm, rm, vendor,
+          job_type: projectType, pm, rm, vendor,
           status: 'pending', po_value: 0,
           start_date: null, end_date: null,
         });
