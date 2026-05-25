@@ -98,20 +98,29 @@ export default function ReportsPage() {
   const { invoices, loading: invLoading } = useInvoices();
   const { allItems: materials, loading: matLoading } = useMaterial();
 
-  const [colConfigs, setColConfigs] = useState<Record<string,string[]>>({});
+  const [colConfigs,  setColConfigs]  = useState<Record<string,string[]>>({});
+  const [configError, setConfigError] = useState<string|null>(null);
   const [colModal,   setColModal]   = useState<string|null>(null); // active report key
   const [savingCols, setSavingCols] = useState(false);
   const [draftCols,  setDraftCols]  = useState<string[]>([]);
 
   // Load column configs from Supabase
   useEffect(() => {
-    supabase.from('report_configs').select('report_key,visible_cols').then(({data}) => {
-      if (data) {
-        const map: Record<string,string[]> = {};
-        data.forEach((r:any) => { map[r.report_key] = r.visible_cols; });
-        setColConfigs(map);
-      }
-    });
+    supabase.from('report_configs').select('report_key,visible_cols')
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Failed to load column configs:', error.message);
+          setConfigError('Column preferences could not be loaded. Using defaults.');
+        } else if (data) {
+          const map: Record<string,string[]> = {};
+          data.forEach((r:any) => { map[r.report_key] = r.visible_cols; });
+          setColConfigs(map);
+        }
+      })
+      .catch(err => {
+        console.error('Column config fetch error:', err);
+        setConfigError('Unable to connect. Using default columns.');
+      });
   }, []);
 
   const getVisibleCols = (key: string) => colConfigs[key] || ALL_COLS[key]?.map(c=>c.key) || [];
@@ -152,12 +161,18 @@ export default function ReportsPage() {
   const saveCols = async () => {
     if (!colModal) return;
     setSavingCols(true);
-    await supabase.from('report_configs').upsert({
-      report_key: colModal, visible_cols: draftCols
-    }, { onConflict: 'report_key' });
-    setColConfigs(prev => ({ ...prev, [colModal]: draftCols }));
-    setSavingCols(false);
-    setColModal(null);
+    try {
+      const { error } = await supabase.from('report_configs').upsert({
+        report_key: colModal, visible_cols: draftCols
+      }, { onConflict: 'report_key' });
+      if (error) throw new Error(error.message);
+      setColConfigs(prev => ({ ...prev, [colModal!]: draftCols }));
+      setColModal(null);
+    } catch(err: any) {
+      alert('Failed to save column preferences: ' + err.message);
+    } finally {
+      setSavingCols(false);
+    }
   };
 
   const [active,   setActive]   = useState('executive');
@@ -165,6 +180,7 @@ export default function ReportsPage() {
 
   const role = profile?.role || 'viewer';
   const loading = projLoading || invLoading;
+  const hasData = (rawProjects as any[]).length > 0 || invoices.length > 0;
 
   // Enrich projects with computed fields
   const projects = useMemo(() => {
@@ -270,6 +286,7 @@ export default function ReportsPage() {
 
   // ── Excel export ──────────────────────────────────────────────
   const exportExcel = useCallback(() => {
+    try {
     let rows: any[] = [];
     let sheetName = active;
 
@@ -346,10 +363,14 @@ export default function ReportsPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
     XLSX.writeFile(wb, `Venus_Energy_${sheetName}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch(err: any) {
+      alert('Excel export failed: ' + err.message);
+    }
   }, [active, projects, regionFinancial, pmData, vendorData, activeProjects, stnSrnData, totalPO, totalBilled, totalPaid, totalPending]);
 
   // ── PDF export ────────────────────────────────────────────────
   const exportPDF = useCallback(() => {
+    try {
     const doc = new jsPDF({ orientation:'landscape' });
     const title = REPORTS.find(t=>t.key===active)?.label || 'Report';
     doc.setFontSize(14); doc.setTextColor(13,148,136);
@@ -409,11 +430,23 @@ export default function ReportsPage() {
     });
 
     doc.save(`Venus_Energy_${title.replace(/ /g,'_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch(err: any) {
+      alert('PDF export failed: ' + err.message);
+    }
   }, [active, projects, regionFinancial, pmData, vendorData, activeProjects, stnSrnData, region, totalPO, totalBilled, totalPaid, totalPending]);
 
   return (
     <Layout>
       <div className="fade-in">
+        {configError && (
+          <div style={{ background:'#FFFBEB', border:'1px solid #FDE68A', borderRadius:8,
+            padding:'10px 14px', marginBottom:14, fontSize:13, color:'#D97706',
+            display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <span>⚠️ {configError}</span>
+            <button onClick={()=>setConfigError(null)}
+              style={{ background:'none', border:'none', cursor:'pointer', color:'#D97706', fontSize:16 }}>✕</button>
+          </div>
+        )}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20, flexWrap:'wrap', gap:12 }}>
           <div>
             <h2 style={{ fontSize:16, fontWeight:700, color:T.text, margin:0 }}>Management Reports</h2>
