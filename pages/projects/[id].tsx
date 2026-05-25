@@ -1018,7 +1018,7 @@ export default function ProjectDetailPage() {
   const [activityEntries, setActivityEntries] = React.useState<any[]>([]);
   React.useEffect(() => {
     if (id) getActivityLog(id as string).then(setActivityEntries);
-  // form state
+  }, [id, getActivityLog]);
 
   if (!router.isReady) return (
     <Layout>
