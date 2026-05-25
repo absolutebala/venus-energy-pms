@@ -126,6 +126,17 @@ export default function Header() {
 
   useEffect(() => { if (profile) fetchNotifications(); }, [profile, fetchNotifications]);
 
+  // Realtime: re-fetch notifications on any project/invoice change
+  useEffect(() => {
+    if (!profile) return;
+    const channel = supabase
+      .channel('notifications-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => fetchNotifications())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices' }, () => fetchNotifications())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [profile, fetchNotifications]);
+
   // Close dropdowns on outside click
   useEffect(() => {
     const handle = (e: MouseEvent) => {
