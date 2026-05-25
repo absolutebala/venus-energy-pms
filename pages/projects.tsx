@@ -178,8 +178,13 @@ export default function ProjectsPage() {
                     <Link href={`/projects/new?draft=${d.id}`} style={{ textDecoration:'none', flex:1 }}>
                       <button style={{ ...btnSecondary, width:'100%', justifyContent:'center', fontSize:12, padding:'6px 0' }}>✏️ Continue</button>
                     </Link>
-                    <button onClick={()=>setDrafts(p=>p.filter(x=>x.id!==d.id))} style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:'6px 12px', color:T.primary, cursor:'pointer', fontSize:12, fontWeight:600 }}>📤 Submit</button>
-                    {isAdmin && <button onClick={()=>setDrafts(p=>p.filter(x=>x.id!==d.id))} style={{ background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:8, padding:'6px 10px', color:T.danger, cursor:'pointer', fontSize:13 }}>🗑</button>}
+                    <button onClick={()=>router.push(`/projects/new?draft=${d.id}`)} style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:'6px 12px', color:T.primary, cursor:'pointer', fontSize:12, fontWeight:600 }}>✏️ Continue</button>
+                    {isAdmin && <button onClick={async ()=>{
+                        if (!window.confirm('Delete this draft? This cannot be undone.')) return;
+                        const sb = createClient();
+                        const { error } = await sb.from('project_drafts').delete().eq('id', d.id);
+                        if (!error) setDrafts(p=>p.filter(x=>x.id!==d.id));
+                      }} style={{ background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:8, padding:'6px 10px', color:T.danger, cursor:'pointer', fontSize:13 }}>🗑</button>}
                   </div>
                 </div>
               ))}
