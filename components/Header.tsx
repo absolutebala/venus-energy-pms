@@ -61,13 +61,67 @@ export default function Header() {
   const unread = notifications.filter(n => !n.is_read).length;
 
   const fetchNotifications = useCallback(async () => {
-    const { data } = await supabase
-      .from('notifications')
-      .select('*')
-      .or(`role.eq.all,role.eq.${profile?.role || 'all'}`)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    if (data) setNotifications(data as Notification[]);
+    const notifs: Notification[] = [];
+    const now = new Date();
+
+    // 1. Invoices pending approval
+    const { data: pendingInv } = await supabase
+      .from('invoices').select('id,invoice_no,project_id').eq('invoice_status','Submitted');
+    if (pendingInv && pendingInv.length > 0) {
+      notifs.push({ id:'inv-pending', type:'warning', is_read:false,
+        title:`${pendingInv.length} Invoice${pendingInv.length>1?'s':''} Pending Approval`,
+        message: pendingInv.slice(0,3).map((i:any)=>i.invoice_no).join(', '),
+        link:'/invoices', created_at: now.toISOString() });
+    }
+
+    // 2. Delayed projects
+    const { data: delayedProj } = await supabase
+      .from('projects').select('id,site').eq('status','delayed');
+    if (delayedProj && delayedProj.length > 0) {
+      notifs.push({ id:'proj-delayed', type:'error', is_read:false,
+        title:`${delayedProj.length} Project${delayedProj.length>1?'s':''} Delayed`,
+        message: delayedProj.slice(0,3).map((p:any)=>p.id).join(', '),
+        link:'/projects', created_at: new Date(now.getTime()-60000).toISOString() });
+    }
+
+    // 3. PTW expiring within 30 days
+    const in30 = new Date(now.getTime() + 30*24*60*60*1000).toISOString().split('T')[0];
+    const today = now.toISOString().split('T')[0];
+    const { data: ptwExpiring } = await supabase
+      .from('projects').select('id,site,ptw_date_to,ptw_ticket_id')
+      .not('ptw_date_to','is',null).neq('ptw_date_to','')
+      .lte('ptw_date_to', in30).gte('ptw_date_to', today);
+    if (ptwExpiring && ptwExpiring.length > 0) {
+      ptwExpiring.forEach((p:any) => {
+        notifs.push({ id:`ptw-${p.id}`, type:'warning', is_read:false,
+          title:`PTW Expiring: ${p.ptw_ticket_id||p.id}`,
+          message:`Expires on ${new Date(p.ptw_date_to).toLocaleDateString('en-IN')} — ${p.site}`,
+          link:`/projects/${p.id}`, created_at: new Date(now.getTime()-120000).toISOString() });
+      });
+    }
+
+    // 4. Projects in billing review
+    const { data: billingProj } = await supabase
+      .from('projects').select('id,site').eq('status','billing_review');
+    if (billingProj && billingProj.length > 0) {
+      notifs.push({ id:'billing-review', type:'info', is_read:false,
+        title:`${billingProj.length} Project${billingProj.length>1?'s':''} in Billing Review`,
+        message: billingProj.slice(0,3).map((p:any)=>p.site).join(', '),
+        link:'/invoices', created_at: new Date(now.getTime()-180000).toISOString() });
+    }
+
+    // 5. Recent documents (last 7 days)
+    const week = new Date(now.getTime()-7*24*60*60*1000).toISOString();
+    const { data: recentDocs } = await supabase
+      .from('work_documents').select('project_id,doc_name').gte('created_at', week).limit(3);
+    if (recentDocs && recentDocs.length > 0) {
+      notifs.push({ id:'recent-docs', type:'success', is_read:false,
+        title:`${recentDocs.length} Document${recentDocs.length>1?'s':''} Uploaded Recently`,
+        message: recentDocs.map((d:any)=>d.doc_name||d.project_id).slice(0,2).join(', '),
+        link:'/projects', created_at: new Date(now.getTime()-240000).toISOString() });
+    }
+
+    setNotifications(notifs);
   }, [profile?.role]);
 
   useEffect(() => { if (profile) fetchNotifications(); }, [profile, fetchNotifications]);
@@ -82,13 +136,11 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handle);
   }, []);
 
-  const markRead = async (id: string) => {
-    await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+  const markRead = (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
   };
 
-  const markAllRead = async () => {
-    await supabase.from('notifications').update({ is_read: true }).eq('is_read', false);
+  const markAllRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
   };
 
