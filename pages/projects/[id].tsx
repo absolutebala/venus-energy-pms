@@ -966,7 +966,7 @@ export default function ProjectDetailPage() {
   const notEditing = editingSection === null;
 
   const [form, setForm] = useState<any>({});
-  React.useEffect(() => { if (p) setForm({...p}); }, [p?.id]);
+  React.useEffect(() => { if (dbProject) setForm({...dbProject}); }, [dbProject?.id]);
 
   const startEdit  = (s: string) => { setForm({...(id ? projects[id as string] : {})}); setEditingSection(s); };
   const cancelEdit = () => { setForm({...(id ? projects[id as string] : {})}); setEditingSection(null); };
