@@ -67,12 +67,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const backupUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
 
     // ── 3. Log to activity_log ────────────────────────────────
-    await admin.from('activity_log').insert({
-      project_id:   'SYSTEM',
-      action:       `Weekly backup saved to R2 — ${Object.keys(backup).length} tables, ${totalRecords} records — ${key}`,
-      performed_by: 'System Cron',
-      role:         'system',
-    }).catch(console.error);
+    try {
+      await admin.from('activity_log').insert({
+        project_id:   'SYSTEM',
+        action:       `Weekly backup saved to R2 — ${Object.keys(backup).length} tables, ${totalRecords} records — ${key}`,
+        performed_by: 'System Cron',
+        role:         'system',
+      });
+    } catch(logErr) { console.error('Log error:', logErr); }
 
     console.log('✅ Backup complete:', summary);
 
@@ -87,12 +89,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('❌ Backup failed:', err);
 
     // Log failure
-    await admin.from('activity_log').insert({
-      project_id:   'SYSTEM',
-      action:       `Weekly backup FAILED: ${err.message}`,
-      performed_by: 'System Cron',
-      role:         'system',
-    }).catch(console.error);
+    try {
+      await admin.from('activity_log').insert({
+        project_id:   'SYSTEM',
+        action:       `Weekly backup FAILED: ${err.message}`,
+        performed_by: 'System Cron',
+        role:         'system',
+      });
+    } catch(logErr) { console.error('Log error:', logErr); }
 
     return res.status(500).json({ error: err.message });
   }
