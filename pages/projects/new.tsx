@@ -225,7 +225,6 @@ export default function NewProjectPage() {
           region,
           job_type: projectType,
           form_data: { projectName, site, indusId, poNo, region, projectType, pm: projectManager, rm: regionalManager },
-          created_by: profile?.email || '',
         });
         if (error) throw error;
         setToast({ msg:`Draft saved: ${projectName}`, type:'success' });
