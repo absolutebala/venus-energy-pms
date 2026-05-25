@@ -1043,8 +1043,6 @@ export default function ProjectDetailPage() {
 
   const p = project;
 
-  }, [id, getActivityLog]);
-
   const workDocsList = getProjectDocs((id as string) || '');
   const workDocs: Record<string, any[]> = DOC_TYPES.reduce((acc:any, dt:any) => {
     acc[dt.key] = workDocsList.filter((d:any) => d.docType === dt.key).map((d:any) => ({
