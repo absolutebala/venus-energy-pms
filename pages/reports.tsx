@@ -759,7 +759,7 @@ export default function ReportsPage() {
               {[
                 ...draftCols.map(k => ALL_COLS[colModal!].find(c=>c.key===k)).filter(Boolean),
                 ...ALL_COLS[colModal!].filter(col => !draftCols.includes(col!.key))
-              ].map(col => (
+              ].filter(Boolean).map(col => (
                 <div key={col.key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
                   padding:'8px 12px', borderRadius:8, marginBottom:4,
                   background: draftCols.includes(col.key) ? T.primaryLight : T.bg,
