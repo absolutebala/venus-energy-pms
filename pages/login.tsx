@@ -24,8 +24,22 @@ export default function LoginPage() {
     setBusy(true); setError('');
     const { error: err } = await signIn(email, password);
     setBusy(false);
-    if (err) setError(err);
-    else router.replace('/dashboard');
+    if (err) {
+      const isRateLimit =
+        err.toLowerCase().includes('rate') ||
+        err.toLowerCase().includes('too many') ||
+        err.toLowerCase().includes('limit') ||
+        err.toLowerCase().includes('429');
+      if (isRateLimit) {
+        setError('Too many login attempts. For security, please wait 5 minutes before trying again.');
+      } else if (err.toLowerCase().includes('invalid') || err.toLowerCase().includes('credentials')) {
+        setError('Invalid email or password. Please check your credentials and try again.');
+      } else {
+        setError(err);
+      }
+    } else {
+      router.replace('/dashboard');
+    }
   };
 
   return (
