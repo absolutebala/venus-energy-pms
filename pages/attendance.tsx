@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Icon from '@/components/Icon';
 import Layout from '@/components/Layout';
 import { T, card, badge, th, td, btnPrimary, inputStyle } from '@/lib/theme';
 import Toast from '@/components/Toast';
@@ -41,9 +40,9 @@ export default function AttendancePage() {
       <div className="fade-in">
         <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:14, marginBottom:20 }}>
           {[
-            { label:'Total Workforce', value:attendance.length, color:T.primary, icon:'users' },
-            { label:'Present',         value:present,           color:T.success, icon:'check' },
-            { label:'Absent',          value:absent,            color:T.danger,  icon:'x' },
+            { label:'Total Workforce', value:attendance.length, color:T.primary, icon:'👥' },
+            { label:'Present',         value:present,           color:T.success, icon:'✅' },
+            { label:'Absent',          value:absent,            color:T.danger,  icon:'❌' },
             { label:'Late',            value:late,              color:T.warning, icon:'⏰' },
             { label:'On Leave',        value:onLeave,           color:T.info,    icon:'🏖' },
           ].map((s,i)=>(

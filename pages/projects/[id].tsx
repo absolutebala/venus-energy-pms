@@ -1,6 +1,5 @@
 // v-fix-braces
 import { createClient } from '@/lib/supabase';
-import Icon from '@/components/Icon';
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -84,13 +83,13 @@ const TYPES    = ['Tower Erection','Tower Maintenance','Component Replacement','
 ];
 
 const DOC_TYPES = [
-  { key:'safety_photos',   label:'Safety Photos',   icon:'eye', accept:'image/*'           },
-  { key:'site_photos',     label:'Site Photos',     icon:'hardhat',  accept:'image/*'           },
-  { key:'jmr_document',   label:'JMR Document',    icon:'invoice', accept:'.pdf,.doc,.docx'    },
-  { key:'ac_certificate', label:'AC Certificate',  icon:'badge', accept:'.pdf,.doc,.docx'    },
-  { key:'noc_document',   label:'NOC Document',    icon:'clipboard', accept:'.pdf,.doc,.docx'    },
-  { key:'drawing_document',label:'Drawing Document',icon:'wrench', accept:'.pdf,.dwg,.png,.jpg'},
-  { key:'ptw_document',   label:'PTW Document',     icon:'key', accept:'.pdf,.doc,.docx'    },
+  { key:'safety_photos',   label:'Safety Photos',   icon:'📷', accept:'image/*'           },
+  { key:'site_photos',     label:'Site Photos',     icon:'🏗',  accept:'image/*'           },
+  { key:'jmr_document',   label:'JMR Document',    icon:'📄', accept:'.pdf,.doc,.docx'    },
+  { key:'ac_certificate', label:'AC Certificate',  icon:'🏅', accept:'.pdf,.doc,.docx'    },
+  { key:'noc_document',   label:'NOC Document',    icon:'📋', accept:'.pdf,.doc,.docx'    },
+  { key:'drawing_document',label:'Drawing Document',icon:'📐', accept:'.pdf,.dwg,.png,.jpg'},
+  { key:'ptw_document',   label:'PTW Document',     icon:'🔑', accept:'.pdf,.doc,.docx'    },
 
 
 ];

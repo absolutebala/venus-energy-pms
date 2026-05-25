@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Icon from '@/components/Icon';
 import Layout from '@/components/Layout';
 import Toast from '@/components/Toast';
 import { useAuth } from '@/context/AuthContext';
@@ -161,10 +160,10 @@ export default function SafetyCompliancePage() {
         {/* Summary cards */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
           {[
-            { label:'Total Checks',   value:checks.length,                                         color:T.primary, icon:'shield' },
-            { label:'Compliant',      value:checks.filter(c=>c.status==='Compliant').length,        color:T.success, icon:'check' },
-            { label:'Non-Compliant',  value:checks.filter(c=>c.status==='Non-Compliant').length,    color:T.danger,  icon:'warning' },
-            { label:'Avg Score',      value:`${Math.round(checks.reduce((a,c)=>a+c.score,0)/(checks.length||1))}%`, color:T.info, icon:'reports' },
+            { label:'Total Checks',   value:checks.length,                                         color:T.primary, icon:'🛡' },
+            { label:'Compliant',      value:checks.filter(c=>c.status==='Compliant').length,        color:T.success, icon:'✅' },
+            { label:'Non-Compliant',  value:checks.filter(c=>c.status==='Non-Compliant').length,    color:T.danger,  icon:'⚠️' },
+            { label:'Avg Score',      value:`${Math.round(checks.reduce((a,c)=>a+c.score,0)/(checks.length||1))}%`, color:T.info, icon:'📊' },
           ].map((s,i)=>(
             <div key={i} style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px' }}>
               <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:s.color }} />

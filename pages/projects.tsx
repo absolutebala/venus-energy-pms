@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Icon from '@/components/Icon';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
@@ -224,10 +223,10 @@ export default function ProjectsPage() {
         {/* Summary cards */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
           {[
-            { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value:counts.total,      color:T.primary, icon:'projects', filter:'All'          },
-            { label:'In Progress',    value:counts.inProgress, color:T.info,    icon:'zap', filter:'In Progress'  },
+            { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value:counts.total,      color:T.primary, icon:'📁', filter:'All'          },
+            { label:'In Progress',    value:counts.inProgress, color:T.info,    icon:'⚡', filter:'In Progress'  },
             { label:'Aging (60d+)',   value:counts.aging,      color:'#D97706', icon:'⏱',  filter:'Aging'        },
-            { label:'Completed',      value:counts.completed,  color:T.success, icon:'check', filter:'Completed'    },
+            { label:'Completed',      value:counts.completed,  color:T.success, icon:'✅', filter:'Completed'    },
           ].map((s,i)=>(
             <div key={i} onClick={()=>{ setStatusFilter(statusFilter===s.filter?'All':s.filter); setAgeMin(null); setAgeMax(null); }}
               style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px', cursor:'pointer', borderColor:statusFilter===s.filter?s.color:T.border, transition:'all 0.15s' }}
