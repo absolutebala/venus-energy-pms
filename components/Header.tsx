@@ -124,6 +124,10 @@ export default function Header() {
     setNotifications(notifs);
   }, [profile?.role]);
 
+  // Keep ref to latest fetchNotifications to avoid stale closure in Realtime
+  const fetchRef = useRef(fetchNotifications);
+  useEffect(() => { fetchRef.current = fetchNotifications; }, [fetchNotifications]);
+
   useEffect(() => { if (profile) fetchNotifications(); }, [profile, fetchNotifications]);
 
   // Realtime: re-fetch notifications on any project/invoice change
@@ -131,11 +135,13 @@ export default function Header() {
     if (!profile) return;
     const channel = supabase
       .channel('notifications-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => fetchNotifications())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices' }, () => fetchNotifications())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' },
+        () => { fetchRef.current(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices' },
+        () => { fetchRef.current(); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [profile, fetchNotifications]);
+  }, [profile?.role]);
 
   // Close dropdowns on outside click
   useEffect(() => {
