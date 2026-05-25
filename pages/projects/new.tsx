@@ -66,7 +66,7 @@ export default function NewProjectPage() {
   const router = useRouter();
 
   const { upload } = useUpload();
-  const { getAccessToken } = useAuth();
+  const { getAccessToken, profile } = useAuth();
   const [extracting, setExtracting] = useState(false);
   const [rmList, setRmList] = React.useState<string[]>([]);
   const [pmList, setPmList] = React.useState<string[]>([]);
