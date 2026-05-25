@@ -236,7 +236,7 @@ export default function ReportsPage() {
   // ── PDF export ────────────────────────────────────────────────
   const exportPDF = useCallback(() => {
     const doc = new jsPDF({ orientation:'landscape' });
-    const title = REPORT_TABS.find(t=>t.key===active)?.label || 'Report';
+    const title = REPORTS.find(t=>t.key===active)?.label || 'Report';
     doc.setFontSize(14); doc.setTextColor(13,148,136);
     doc.text('Venus Energy Pvt. Ltd.', 14, 14);
     doc.setFontSize(11); doc.setTextColor(30,41,59);
