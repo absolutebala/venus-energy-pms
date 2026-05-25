@@ -753,10 +753,13 @@ export default function ReportsPage() {
             </div>
 
             <div style={{ padding:'16px 20px', overflowY:'auto', flex:1 }}>
-              {/* Available columns */}
+              {/* Selected columns in order first, then unchecked */}
               <div style={{ fontSize:11, fontWeight:700, color:T.textMuted, textTransform:'uppercase',
                 letterSpacing:0.5, marginBottom:10 }}>Available Columns</div>
-              {ALL_COLS[colModal].map(col => (
+              {[
+                ...draftCols.map(k => ALL_COLS[colModal!].find(c=>c.key===k)).filter(Boolean),
+                ...ALL_COLS[colModal!].filter(col => !draftCols.includes(col!.key))
+              ].map(col => (
                 <div key={col.key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
                   padding:'8px 12px', borderRadius:8, marginBottom:4,
                   background: draftCols.includes(col.key) ? T.primaryLight : T.bg,
