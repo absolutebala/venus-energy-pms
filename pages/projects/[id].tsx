@@ -1011,6 +1011,13 @@ export default function ProjectDetailPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [showReject,   setShowReject]   = useState(false);
 
+  const [activityEntries, setActivityEntries] = React.useState<any[]>([]);
+  React.useEffect(() => {
+    if (id) getActivityLog(id as string).then(setActivityEntries);
+  // form state
+  const [form, setForm] = useState<any>({});
+  React.useEffect(() => { if (p) setForm({...p}); }, [p?.id]);
+
   if (!router.isReady) return (
     <Layout>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh', flexDirection:'column', gap:16 }}>
@@ -1034,9 +1041,6 @@ export default function ProjectDetailPage() {
 
   const p = project;
 
-  const [activityEntries, setActivityEntries] = React.useState<any[]>([]);
-  React.useEffect(() => {
-    if (id) getActivityLog(id as string).then(setActivityEntries);
   }, [id, getActivityLog]);
 
   const workDocsList = getProjectDocs((id as string) || '');
@@ -1062,8 +1066,6 @@ export default function ProjectDetailPage() {
   const st = STATUS_COLOR[p.status] || '#64748B';
 
   // Edit form state
-  const [form, setForm] = useState<any>({});
-  React.useEffect(() => { if (p) setForm({...p}); }, [p?.id]);
   const F = (label:string, key:string, type='text', options?:string[], readOnly=false, sectionCanEdit=editing('details') && canEditDetails) => (
     <div style={{ marginBottom:14 }}>
       <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>{label}</label>
