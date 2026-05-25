@@ -1069,8 +1069,13 @@ export default function ProjectDetailPage() {
       <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>{label}</label>
       {editingSection !== null && !readOnly && sectionCanEdit ? (
         options ? (
-          <select value={(form as any)[key]} onChange={e=>setForm((f:any)=>({...f,[key]:e.target.value}))} style={{ ...inputStyle(), width:'100%' }}>
-            {options.map(o=><option key={o}>{o}</option>)}
+          <select value={(form as any)[key]||''} onChange={e=>setForm((f:any)=>({...f,[key]:e.target.value}))} style={{ ...inputStyle(), width:'100%' }}>
+            <option value="">— Select —</option>
+            {/* Include current value even if not in list */}
+            {(form as any)[key] && !options.includes((form as any)[key]) && (
+              <option value={(form as any)[key]}>{(form as any)[key]}</option>
+            )}
+            {options.map(o=><option key={o} value={o}>{o}</option>)}
           </select>
         ) : (
           <input type={type} value={(form as any)[key]||''} onChange={e=>setForm((f:any)=>({...f,[key]:e.target.value}))}
