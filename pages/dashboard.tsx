@@ -105,11 +105,7 @@ const DOC_COLS = [
 ];
 
 // MOCK_DOC_STATUS replaced by useWorkDocs
-const MOCK_STN_RETURN: Record<string, boolean> = {
-  'VE-2025-001':false,'VE-2025-002':true,'VE-2025-003':false,'VE-2025-004':false,
-  'VE-2025-005':true, 'VE-2025-006':false,'VE-2025-007':false,'VE-2025-008':false,
-  'VE-2025-009':false,'VE-2025-010':true,
-};
+// STN Return now computed from live MaterialContext data
 
 const WORK_STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
   in_progress:    { label:'In Progress',    color:'#D97706', bg:'#FFFBEB' },
@@ -239,7 +235,7 @@ function ProjectStatusTable({ projects }: { projects: any[] }) {
                     </td>
                   ))}
                   <td style={{ ...tdStyle }}>
-                    <StatusBadge done={!!MOCK_STN_RETURN[p.id]} />
+                    <StatusBadge done={false} />
                   </td>
                   <td style={{ ...tdStyle, color:'#6B7280', whiteSpace:'nowrap' as const }}>{upd.date}</td>
 
@@ -275,61 +271,178 @@ const pgBtn: React.CSSProperties = {
 };
 
 
-// ── STN/SRN Summary Data ──────────────────────────────────────────────────────
-const VENDOR_PROJECT_DATA: Record<string, any[]> = {
-  'ABC Telecom Services': [
-    { id:'VE-2025-001', name:'Andheri Tower Site',    status:'in_progress', deliveryDate:'30 Jul 2025', issued:12, utilised:10, pendingReturn:2, approvalStatus:'Pending'  },
-    { id:'VE-2025-007', name:'Dadar Junction Node',   status:'in_progress', deliveryDate:'15 Aug 2025', issued:8,  utilised:5,  pendingReturn:1, approvalStatus:'Pending'  },
-    { id:'VE-2025-010', name:'Versova Tower',         status:'completed',   deliveryDate:'30 Apr 2025', issued:4,  utilised:4,  pendingReturn:0, approvalStatus:'Yes'      },
-  ],
-  'XYZ Infra Solutions': [
-    { id:'VE-2025-002', name:'Bandra Roof Site',      status:'in_progress', deliveryDate:'31 Aug 2025', issued:16, utilised:12, pendingReturn:2, approvalStatus:'Pending'  },
-    { id:'VE-2025-008', name:'Santacruz Hub',         status:'delayed',     deliveryDate:'30 Jun 2025', issued:6,  utilised:3,  pendingReturn:1, approvalStatus:'Rejected' },
-  ],
-  'TowerTech Pvt Ltd': [
-    { id:'VE-2025-003', name:'Kurla Junction Tower',  status:'in_progress', deliveryDate:'15 Sep 2025', issued:14, utilised:11, pendingReturn:3, approvalStatus:'Pending'  },
-    { id:'VE-2025-004', name:'Ghatkopar Site A',      status:'in_progress', deliveryDate:'31 Oct 2025', issued:10, utilised:6,  pendingReturn:2, approvalStatus:'Pending'  },
-    { id:'VE-2025-005', name:'Mulund Tower',          status:'completed',   deliveryDate:'28 Feb 2025', issued:8,  utilised:8,  pendingReturn:0, approvalStatus:'Yes'      },
-    { id:'VE-2025-009', name:'Thane Central Node',    status:'on_hold',     deliveryDate:'30 Nov 2025', issued:6,  utilised:2,  pendingReturn:1, approvalStatus:'Pending'  },
-  ],
-  'NetConnect Services': [
-    { id:'VE-2025-006', name:'Pune Kharadi Site',     status:'in_progress', deliveryDate:'30 Sep 2025', issued:8,  utilised:5,  pendingReturn:1, approvalStatus:'Pending'  },
-  ],
-  'PowerSys India': [
-    { id:'VE-2025-011', name:'Chennai Hub Site',      status:'in_progress', deliveryDate:'31 Oct 2025', issued:10, utilised:7,  pendingReturn:2, approvalStatus:'Pending'  },
-    { id:'VE-2025-012', name:'Coimbatore Tower',      status:'in_progress', deliveryDate:'15 Nov 2025', issued:8,  utilised:4,  pendingReturn:1, approvalStatus:'Pending'  },
-  ],
-  'BuildRight Constructions': [
-    { id:'VE-2025-013', name:'Bangalore MG Road',     status:'completed',   deliveryDate:'30 Apr 2025', issued:6,  utilised:6,  pendingReturn:0, approvalStatus:'Yes'      },
-  ],
-};
-
-const SITE_SUMMARY = [
-  { name:'Andheri Tower Site',   region:'Maharashtra', issued:12, utilised:10, balance:2, returned:8,  approvalStatus:'Pending'  },
-  { name:'Bandra Roof Site',     region:'Maharashtra', issued:8,  utilised:6,  balance:2, returned:4,  approvalStatus:'Pending'  },
-  { name:'Kurla Junction Tower', region:'Maharashtra', issued:10, utilised:8,  balance:2, returned:6,  approvalStatus:'Pending'  },
-  { name:'Chennai Hub Site',     region:'Tamil Nadu',  issued:14, utilised:12, balance:2, returned:10, approvalStatus:'Yes'      },
-  { name:'Bangalore Central',    region:'Karnataka',   issued:9,  utilised:7,  balance:2, returned:5,  approvalStatus:'Yes'      },
-  { name:'Hyderabad Node',       region:'Telangana',   issued:6,  utilised:4,  balance:2, returned:2,  approvalStatus:'Pending'  },
-  { name:'Kochi Tower A',        region:'Kerala',      issued:8,  utilised:6,  balance:2, returned:4,  approvalStatus:'Rejected' },
-  { name:'Delhi NCR Site',       region:'Delhi',       issued:6,  utilised:6,  balance:0, returned:6,  approvalStatus:'Yes'      },
-];
+// ── STN/SRN Summary — Live from Supabase ────────────────────────────────────────
 
 function ApprovalBadge({ status }: { status: string }) {
   const cfg: Record<string,{color:string;bg:string;border:string;icon:string}> = {
-    'Yes':      { color:'#0D9488', bg:'#F0FDFA', border:'#99F6E4', icon:'✅' },
-    'Pending':  { color:'#D97706', bg:'#FFFBEB', border:'#FDE68A', icon:'⏳' },
-    'Rejected': { color:'#DC2626', bg:'#FEF2F2', border:'#FECACA', icon:'❌' },
+    'pm_approved': { color:'#0D9488', bg:'#F0FDFA', border:'#99F6E4', icon:'✅' },
+    'submitted':   { color:'#D97706', bg:'#FFFBEB', border:'#FDE68A', icon:'⏳' },
+    'pending':     { color:'#6B7280', bg:'#F9FAFB', border:'#E5E7EB', icon:'—'  },
+    'rejected':    { color:'#DC2626', bg:'#FEF2F2', border:'#FECACA', icon:'❌' },
   };
-  const c = cfg[status] || cfg['Pending'];
+  const key = status?.toLowerCase() || 'pending';
+  const cfg2 = cfg[key] || cfg['pending'];
   return (
-    <span style={{ fontSize:11, fontWeight:700, color:c.color, background:c.bg, border:`1px solid ${c.border}`, padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>
-      {c.icon} {status}
+    <span style={{ fontSize:11, fontWeight:700, color:cfg2.color, background:cfg2.bg,
+      border:`1px solid ${cfg2.border}`, padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>
+      {cfg2.icon} {status?.replace(/_/g,' ')||'Pending'}
     </span>
   );
 }
 
 function STNSRNSummary() {
+  const [view, setView] = React.useState<'vendor'|'site'>('vendor');
+  const { allItems }    = useMaterial();
+  const { projects }    = useProjects();
+
+  const pct = (a:number, b:number) => b===0 ? 0 : Math.round((a/b)*100);
+
+  const ProgressBar = ({ value }: { value:number }) => (
+    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+      <div style={{ flex:1, height:6, background:'#E5E7EB', borderRadius:3, overflow:'hidden' }}>
+        <div style={{ width:`${value}%`, height:'100%', borderRadius:3,
+          background: value===100?'#0D9488':value>60?'#D97706':'#DC2626' }} />
+      </div>
+      <span style={{ fontSize:11, fontWeight:600, width:32, textAlign:'right' as const,
+        color: value===100?'#0D9488':value>60?'#D97706':'#DC2626' }}>{value}%</span>
+    </div>
+  );
+
+  const thS: React.CSSProperties = { padding:'10px 12px', fontSize:10, fontWeight:700,
+    textTransform:'uppercase', color:T.primary, textAlign:'left' as const,
+    borderBottom:`2px solid ${T.primaryMid}`, background:T.primaryLight, whiteSpace:'nowrap' as const };
+  const tdS: React.CSSProperties = { padding:'10px 12px', fontSize:12,
+    borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
+  const numBadge = (n:number, color:string, bg:string) => (
+    <span style={{ fontSize:12, fontWeight:700, color, background:bg, padding:'2px 10px', borderRadius:12 }}>{n}</span>
+  );
+
+  const tabBtn = (v: 'vendor'|'site', label: string) => (
+    <button onClick={()=>setView(v)} style={{ padding:'6px 20px', borderRadius:20, fontSize:13,
+      fontWeight:600, cursor:'pointer', border:'none',
+      background: view===v ? T.primary : T.bg, color: view===v ? '#fff' : T.textMuted }}>
+      {label}
+    </button>
+  );
+
+  // Build vendor-wise data from live contexts
+  const vendorData = React.useMemo(() => {
+    const map: Record<string, { vendor:string; projectId:string; site:string; endDate:string;
+      issued:number; utilised:number; pending:number; status:string }[]> = {};
+    (projects as any[]).forEach((proj:any) => {
+      const vendor = proj.vendor || 'Unknown';
+      const projMats = allItems.filter((m:any) => m.projectId === proj.id);
+      if (projMats.length === 0) return;
+      const issued   = projMats.reduce((a:number,m:any)=>a+(m.issuedQty||0),0);
+      const utilised = projMats.reduce((a:number,m:any)=>a+(m.utilisedQty||0),0);
+      const pending  = Math.max(0, issued - utilised);
+      const status   = projMats[0]?.utilisedStatus || 'pending';
+      if (!map[vendor]) map[vendor] = [];
+      map[vendor].push({ vendor, projectId:proj.id, site:proj.site||proj.id,
+        endDate:proj.endDate||'—', issued, utilised, pending, status });
+    });
+    return map;
+  }, [projects, allItems]);
+
+  // Build site-wise data from live contexts
+  const siteData = React.useMemo(() => {
+    return (projects as any[]).map((proj:any) => {
+      const projMats = allItems.filter((m:any) => m.projectId === proj.id);
+      const issued   = projMats.reduce((a:number,m:any)=>a+(m.issuedQty||0),0);
+      const utilised = projMats.reduce((a:number,m:any)=>a+(m.utilisedQty||0),0);
+      const returned = projMats.reduce((a:number,m:any)=>a+(m.returnQty||0),0);
+      const balance  = Math.max(0, issued - utilised);
+      const status   = projMats[0]?.utilisedStatus || 'pending';
+      return { site:proj.site||proj.id, region:proj.region||'—',
+        issued, utilised, returned, balance, status };
+    }).filter((s:any) => s.issued > 0);
+  }, [projects, allItems]);
+
+  if (allItems.length === 0) return (
+    <div style={{ padding:24, textAlign:'center' as const, color:T.textMuted, fontSize:13 }}>
+      No STN/SRN material data available yet.
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ display:'flex', gap:8, marginBottom:16, background:T.bg, padding:4,
+        borderRadius:24, width:'fit-content' }}>
+        {tabBtn('vendor','Vendor-wise')}
+        {tabBtn('site',  'Site-wise'  )}
+      </div>
+
+      {view==='vendor' && (
+        <div style={{ overflowX:'auto' as const }}>
+          <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+            <thead>
+              <tr>
+                {['#','Vendor','Project','PO Delivery','Issued','Utilised','Pending Return','Status','Completion'].map(h=>(
+                  <th key={h} style={h==='#'?{...thS,width:32}:thS}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(vendorData).map(([vendor, projs], i) => {
+                const proj = (projs as any[])[0];
+                const compPct = pct(proj.utilised, proj.issued||1);
+                return (
+                  <tr key={vendor} style={{ background:i%2===0?'#fff':T.bg }}>
+                    <td style={{ ...tdS, color:T.textMuted }}>{i+1}</td>
+                    <td style={tdS}>
+                      <div style={{ fontWeight:600, color:T.text }}>{vendor}</div>
+                      <div style={{ fontSize:11, color:T.textMuted }}>{(projs as any[]).length} project{(projs as any[]).length>1?'s':''}</div>
+                    </td>
+                    <td style={{ ...tdS, color:T.primary, fontWeight:600 }}>{proj.projectId} — {proj.site}</td>
+                    <td style={{ ...tdS, color:T.textMuted }}>{proj.endDate}</td>
+                    <td style={{ ...tdS, textAlign:'center' as const, fontWeight:700 }}>{proj.issued}</td>
+                    <td style={{ ...tdS, textAlign:'center' as const }}>{numBadge(proj.utilised,'#2563EB','#EFF6FF')}</td>
+                    <td style={{ ...tdS, textAlign:'center' as const }}>
+                      {numBadge(proj.pending, proj.pending>0?'#D97706':'#0D9488', proj.pending>0?'#FFFBEB':'#F0FDFA')}
+                    </td>
+                    <td style={tdS}><ApprovalBadge status={proj.status} /></td>
+                    <td style={{ ...tdS, minWidth:130 }}><ProgressBar value={compPct} /></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {view==='site' && (
+        <div style={{ overflowX:'auto' as const }}>
+          <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+            <thead>
+              <tr>
+                {['#','Site Name','Region','Issued','Utilised','Balance','Returned','Status','Progress'].map(h=>(
+                  <th key={h} style={h==='#'?{...thS,width:32}:thS}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {(siteData as any[]).map((s:any, i:number) => (
+                <tr key={s.site} style={{ background:i%2===0?'#fff':T.bg }}>
+                  <td style={{ ...tdS, color:T.textMuted }}>{i+1}</td>
+                  <td style={{ ...tdS, fontWeight:600, color:T.text }}>{s.site}</td>
+                  <td style={tdS}><span style={{ fontSize:11, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10 }}>{s.region}</span></td>
+                  <td style={{ ...tdS, textAlign:'center' as const, fontWeight:700 }}>{s.issued}</td>
+                  <td style={{ ...tdS, textAlign:'center' as const }}>{numBadge(s.utilised,'#2563EB','#EFF6FF')}</td>
+                  <td style={{ ...tdS, textAlign:'center' as const }}>{numBadge(s.balance,s.balance>0?'#D97706':'#0D9488',s.balance>0?'#FFFBEB':'#F0FDFA')}</td>
+                  <td style={{ ...tdS, textAlign:'center' as const }}>{numBadge(s.returned,'#7C3AED','#F5F3FF')}</td>
+                  <td style={tdS}><ApprovalBadge status={s.status} /></td>
+                  <td style={{ ...tdS, minWidth:130 }}><ProgressBar value={pct(s.returned,s.issued||1)} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
   const [view,          setView]         = React.useState<'vendor'|'site'>('vendor');
 
   // Track selected project per vendor
@@ -1040,13 +1153,14 @@ export default function Dashboard() {
           )}
         </div>
 
-        {role === 'super_admin'     && <SuperAdminDashboard   projects={dbProjects as any[]} />}
-        {role === 'region_manager'  && <RegionManagerDashboard projects={dbProjects as any[]} />}
-        {role === 'project_manager' && <ProjectManagerDashboard projects={dbProjects as any[]} pmName={profile?.full_name||''} />}
-        {role === 'site_engineer'   && <SiteEngineerDashboard  projects={dbProjects as any[]} />}
-        {role === 'vendor'          && <VendorDashboard         projects={dbProjects as any[]} />}
+        {loading && <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:300 }}><div className="spinner" style={{ width:32, height:32, borderTopColor:T.primary, borderColor:`${T.primary}30` }} /></div>}
+        {!loading && role === 'super_admin'     && <SuperAdminDashboard   projects={dbProjects as any[]} />}
+        {!loading && role === 'region_manager'  && <RegionManagerDashboard projects={dbProjects as any[]} />}
+        {!loading && role === 'project_manager' && <ProjectManagerDashboard projects={dbProjects as any[]} pmName={profile?.full_name||''} />}
+        {!loading && role === 'site_engineer'   && <SiteEngineerDashboard  projects={dbProjects as any[]} />}
+        {!loading && role === 'vendor'          && <VendorDashboard         projects={dbProjects as any[]} />}
         {role === 'viewer'          && <ViewerDashboard         projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS} />}
-        {role === 'accounting_team' && <AccountingDashboard     projects={dbProjects as any[]} />}
+        {!loading && role === 'accounting_team' && <AccountingDashboard     projects={dbProjects as any[]} />}
       </div>
     </Layout>
   );
