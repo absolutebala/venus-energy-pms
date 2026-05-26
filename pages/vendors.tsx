@@ -12,7 +12,6 @@ import { T, card, btnPrimary, btnSecondary, btnDanger, th, td, inputStyle, badge
 const emptyForm = () => ({ name:'', contact:'', phone:'', email:'', gst:'' });
 
 export default function VendorsPage() {
-  const [vendors, setVendors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { projects } = useProjects();
 
