@@ -78,11 +78,11 @@ export default function VendorsPage() {
     setSaving(true);
     setTimeout(() => {
       if (editVendor) {
-        setVendors(prev => prev.map(v => v.id===editVendor.id ? { ...v, ...form } : v));
+        setRawVendors(prev => prev.map(v => v.id===editVendor.id ? { ...v, ...form } : v));
         setToast({ msg:'Vendor updated successfully!', type:'success' });
       } else {
         const newId = Math.max(...vendors.map(v=>v.id)) + 1;
-        setVendors(prev => [...prev, { id:newId, ...form, projects:0, done:0, poValue:0, active:true, inviteStatus:'not_sent', deactivationReason:'' }]);
+        setRawVendors(prev => [...prev, { id:newId, ...form, projects:0, done:0, poValue:0, active:true, inviteStatus:'not_sent', deactivationReason:'' }]);
         setToast({ msg:`Vendor "${form.name}" created. Send invitation to grant portal access.`, type:'success' });
       }
       setSaving(false); setShowModal(false);
@@ -93,13 +93,13 @@ export default function VendorsPage() {
 
   const confirmDeactivate = () => {
     if (!deactivateReason.trim()) { setToast({ msg:'Please provide a reason for deactivation.', type:'error' }); return; }
-    setVendors(prev => prev.map(v => v.id===deactivateTarget.id ? { ...v, active:false, deactivationReason:deactivateReason.trim() } : v));
+    setRawVendors(prev => prev.map(v => v.id===deactivateTarget.id ? { ...v, active:false, deactivationReason:deactivateReason.trim() } : v));
     setToast({ msg:`${deactivateTarget.name} has been deactivated.`, type:'info' });
     setDeactivateTarget(null); setDeactivateReason('');
   };
 
   const activate = (v: any) => {
-    setVendors(prev => prev.map(x => x.id===v.id ? { ...x, active:true, deactivationReason:'' } : x));
+    setRawVendors(prev => prev.map(x => x.id===v.id ? { ...x, active:true, deactivationReason:'' } : x));
     setToast({ msg:`${v.name} has been activated.`, type:'success' });
   };
 
@@ -113,7 +113,7 @@ export default function VendorsPage() {
         body: JSON.stringify({ email:v.email, role:'vendor', full_name:v.contact }),
       });
       if (res.ok) {
-        setVendors(prev => prev.map(x => x.id===v.id ? { ...x, inviteStatus:'invitation_sent' } : x));
+        setRawVendors(prev => prev.map(x => x.id===v.id ? { ...x, inviteStatus:'invitation_sent' } : x));
         setToast({ msg:`Invitation sent to ${v.email}!`, type:'success' });
       } else {
         const d = await res.json();
