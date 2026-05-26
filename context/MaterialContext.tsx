@@ -60,6 +60,16 @@ export function MaterialProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
+  // Realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('material-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'material_items' },
+        () => { fetchAll(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchAll]);
+
   // Re-fetch on window focus
   useEffect(() => {
     const onFocus = () => fetchAll();
