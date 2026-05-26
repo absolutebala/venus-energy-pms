@@ -954,7 +954,7 @@ export default function Dashboard() {
   const { projects: dbProjects } = useProjects();
   const { getDocStatus } = useWorkDocs();
   const { profile, loading } = useAuth();
-  const role = profile?.role || 'viewer';
+  const role = (!loading && profile?.role) || '';
   const name = profile?.full_name?.split(' ')[0] || 'User';
 
   const greetings: Record<string,string> = {
@@ -1002,7 +1002,7 @@ export default function Dashboard() {
         {!loading && role === 'project_manager' && <ProjectManagerDashboard projects={dbProjects as any[]} pmName={profile?.full_name||''} />}
         {!loading && role === 'site_engineer'   && <SiteEngineerDashboard  projects={dbProjects as any[]} />}
         {!loading && role === 'vendor'          && <VendorDashboard         projects={dbProjects as any[]} />}
-        {role === 'viewer'          && <ViewerDashboard         projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS} />}
+        {!loading && role === 'viewer' && <ViewerDashboard projects={dbProjects as any[]} />}
         {!loading && role === 'accounting_team' && <AccountingDashboard     projects={dbProjects as any[]} />}
       </div>
     </Layout>
