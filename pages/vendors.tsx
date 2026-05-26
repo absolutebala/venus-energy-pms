@@ -121,7 +121,7 @@ export default function VendorsPage() {
     setDeactivateTarget(null); setDeactivateReason('');
   };
 
-  const activate = (v: any) => {
+  const activate = async (v: any) => {
     await supabase.from('vendors').update({ is_active:true, deactivation_reason:'' }).eq('id', v.id); await fetchVendors();
     setToast({ msg:`${v.name} has been activated.`, type:'success' });
   };
