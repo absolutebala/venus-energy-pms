@@ -9,6 +9,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 // ── Shared mock data ──────────────────────────────────────────────
 import { PROJECTS as SEED_DATA } from '@/lib/seedData'; // fallback only for ALL_PROJECTS
 import { useProjects } from '@/context/ProjectContext';
+import { useMaterial } from '@/context/MaterialContext';
 import { useWorkDocs } from '@/context/WorkDocContext';
 const ALL_PROJECTS = SEED_DATA as any[];
 
