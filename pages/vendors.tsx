@@ -113,15 +113,16 @@ export default function VendorsPage() {
 
   const openDeactivate = (v: any) => { setDeactivateTarget(v); setDeactivateReason(''); };
 
-  const confirmDeactivate = () => {
+  const confirmDeactivate = async () => {
     if (!deactivateReason.trim()) { setToast({ msg:'Please provide a reason for deactivation.', type:'error' }); return; }
-    setRawVendors(prev => prev.map(v => v.id===deactivateTarget.id ? { ...v, active:false, deactivationReason:deactivateReason.trim() } : v));
+    await supabase.from('vendors').update({ is_active:false, deactivation_reason:deactivateReason.trim() }).eq('id', deactivateTarget.id);
+    await fetchVendors();
     setToast({ msg:`${deactivateTarget.name} has been deactivated.`, type:'info' });
     setDeactivateTarget(null); setDeactivateReason('');
   };
 
   const activate = (v: any) => {
-    setRawVendors(prev => prev.map(x => x.id===v.id ? { ...x, active:true, deactivationReason:'' } : x));
+    await supabase.from('vendors').update({ is_active:true, deactivation_reason:'' }).eq('id', v.id); await fetchVendors();
     setToast({ msg:`${v.name} has been activated.`, type:'success' });
   };
 
