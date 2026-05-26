@@ -11,6 +11,16 @@ import { T, card, btnPrimary, btnSecondary, btnDanger, th, td, inputStyle, badge
 
 const emptyForm = () => ({ name:'', contact:'', phone:'', email:'', gst:'' });
 
+// ── Field wrapper — defined at module level to prevent remounting ──
+function F({ label, children }: { label:string; children:React.ReactNode }) {
+  return (
+    <div style={{ marginBottom:14 }}>
+      <label style={{ display:'block', fontSize:13, fontWeight:600, color:'#1E293B', marginBottom:5 }}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
 export default function VendorsPage() {
   const [loading, setLoading] = useState(true);
   const { projects } = useProjects();
@@ -136,12 +146,7 @@ export default function VendorsPage() {
     return <span style={{ background:bg, border:`1px solid ${border}`, color, fontSize:11, fontWeight:600, padding:'2px 9px', borderRadius:20 }}>{label}</span>;
   };
 
-  const F = ({ label, children }: { label:string; children:React.ReactNode }) => (
-    <div style={{ marginBottom:14 }}>
-      <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:5 }}>{label}</label>
-      {children}
-    </div>
-  );
+  // F moved to module level
 
   return (
     <Layout>
