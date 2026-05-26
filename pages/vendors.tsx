@@ -84,19 +84,31 @@ export default function VendorsPage() {
   const openEdit = (v: any) => { setForm({ name:v.name, contact:v.contact, phone:v.phone, email:v.email, gst:v.gst }); setEditVendor(v); setShowModal(true); };
 
   const handleSave = async () => {
-    if (!form.name || !form.email) { setToast({ msg:'Vendor name and email are required.', type:'error' }); return; }
+    if (!form.name) { setToast({ msg:'Vendor name is required.', type:'error' }); return; }
     setSaving(true);
-    setTimeout(() => {
+    try {
+      const payload = {
+        name: form.name, contact_person: form.contact,
+        phone: form.phone, email: form.email, gst_number: form.gst,
+      };
       if (editVendor) {
-        setRawVendors(prev => prev.map(v => v.id===editVendor.id ? { ...v, ...form } : v));
+        const { error } = await supabase.from('vendors').update(payload).eq('id', editVendor.id);
+        if (error) throw new Error(error.message);
         setToast({ msg:'Vendor updated successfully!', type:'success' });
       } else {
-        const newId = Math.max(...vendors.map(v=>v.id)) + 1;
-        setRawVendors(prev => [...prev, { id:newId, ...form, projects:0, done:0, poValue:0, active:true, inviteStatus:'not_sent', deactivationReason:'' }]);
-        setToast({ msg:`Vendor "${form.name}" created. Send invitation to grant portal access.`, type:'success' });
+        const { error } = await supabase.from('vendors').insert({
+          ...payload, is_active: true, invite_status: 'not_sent',
+        });
+        if (error) throw new Error(error.message);
+        setToast({ msg:`Vendor "${form.name}" added successfully!`, type:'success' });
       }
-      setSaving(false); setShowModal(false);
-    }, 600);
+      await fetchVendors();
+      setShowModal(false); setForm(emptyForm()); setEditVendor(null);
+    } catch(err: any) {
+      setToast({ msg:'❌ ' + err.message, type:'error' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const openDeactivate = (v: any) => { setDeactivateTarget(v); setDeactivateReason(''); };
