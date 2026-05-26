@@ -1124,7 +1124,7 @@ export default function ProjectDetailPage() {
   );
 
   // Merge: DB project takes priority over local state
-  const project = dbProject ? { ...projects[id as string], ...dbProject } : (id ? projects[id as string] : null);
+  const project = dbProject || null;  // Only use live DB data, no seed fallback
   if (!project) return (
     <Layout>
       <div style={{ ...card, textAlign:'center', padding:60, margin:20 }}>

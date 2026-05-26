@@ -1040,13 +1040,13 @@ export default function Dashboard() {
           )}
         </div>
 
-        {role === 'super_admin'     && <SuperAdminDashboard   projects={dbProjects.length>0 ? dbProjects as any[] : ALL_PROJECTS} />}
-        {role === 'region_manager'  && <RegionManagerDashboard projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS} />}
-        {role === 'project_manager' && <ProjectManagerDashboard projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS as any[]} pmName={profile?.full_name||''} />}
-        {role === 'site_engineer'   && <SiteEngineerDashboard  projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS} />}
-        {role === 'vendor'          && <VendorDashboard         projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS} />}
+        {role === 'super_admin'     && <SuperAdminDashboard   projects={dbProjects as any[]} />}
+        {role === 'region_manager'  && <RegionManagerDashboard projects={dbProjects as any[]} />}
+        {role === 'project_manager' && <ProjectManagerDashboard projects={dbProjects as any[]} pmName={profile?.full_name||''} />}
+        {role === 'site_engineer'   && <SiteEngineerDashboard  projects={dbProjects as any[]} />}
+        {role === 'vendor'          && <VendorDashboard         projects={dbProjects as any[]} />}
         {role === 'viewer'          && <ViewerDashboard         projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS} />}
-        {role === 'accounting_team' && <AccountingDashboard     projects={dbProjects.length>0?dbProjects as any[]:ALL_PROJECTS} />}
+        {role === 'accounting_team' && <AccountingDashboard     projects={dbProjects as any[]} />}
       </div>
     </Layout>
   );

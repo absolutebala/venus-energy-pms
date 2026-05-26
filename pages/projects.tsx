@@ -60,7 +60,7 @@ export default function ProjectsPage() {
   const { profile, can, loading } = useAuth();
   const isAdmin = !loading && (can('projects', 'create') || can('projects', 'delete'));
 
-  const projects = dbProjects.length > 0 ? dbProjects as any[] : MOCK_PROJECTS as any[];
+  const projects = dbProjects as any[];
 
   // Role-based project filtering
   const roleFilteredProjects = React.useMemo(() => {
