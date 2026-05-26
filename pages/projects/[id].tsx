@@ -1064,6 +1064,24 @@ export default function ProjectDetailPage() {
       .finally(() => setSaving(false));
   };
   const [toast,    setToast]    = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const deleteProject = async () => {
+    if (!window.confirm(`⚠️ DELETE PROJECT ${p?.id}?\n\nThis will permanently delete:\n• All invoices\n• All expenses\n• All documents\n• All PO items\n• All PTW records\n• All activity logs\n\nThis CANNOT be undone. Type the project ID to confirm.`)) return;
+    const confirm2 = window.prompt(`Type "${p?.id}" to confirm deletion:`);
+    if (confirm2 !== p?.id) { alert('Project ID did not match. Deletion cancelled.'); return; }
+    setDeleting(true);
+    try {
+      const sb = createClient();
+      const { error } = await sb.from('projects').delete().eq('id', p?.id);
+      if (error) throw new Error(error.message);
+      setToast({ msg:'✅ Project deleted successfully', type:'success' });
+      setTimeout(() => router.push('/projects'), 1500);
+    } catch(err: any) {
+      setToast({ msg:'❌ Delete failed: ' + err.message, type:'error' });
+      setDeleting(false);
+    }
+  };
 
   // Preview modal
   const [previewDoc, setPreviewDoc] = useState<{name:string;url:string;isImage:boolean}|null>(null);
@@ -1253,7 +1271,7 @@ export default function ProjectDetailPage() {
               <div style={{ fontSize:14, color:T.textMuted }}>{p.projectName} · {p.site} · {p.region}</div>
               <div style={{ fontSize:13, color:T.textDim, marginTop:2 }}>PO: {p.poNo} · Indus ID: {p.indusId}</div>
             </div>
-            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+            <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
 
               {/* PM Review actions */}
               {notEditing && canEdit && (p.status==='submitted'||p.status==='under_review') && (
@@ -1261,6 +1279,16 @@ export default function ProjectDetailPage() {
                   <button onClick={()=>updateStatus('pm_approved','Project approved and sent to billing!')} style={{ ...btnPrimary, background:T.success, fontSize:13 }}>✅ Approve</button>
                   <button onClick={()=>setShowReject(true)} style={{ ...btnSecondary, borderColor:T.danger, color:T.danger, fontSize:13 }}>❌ Reject</button>
                 </>
+              )}
+
+              {/* SA-only Delete button */}
+              {role === 'super_admin' && notEditing && (
+                <button onClick={deleteProject} disabled={deleting}
+                  style={{ background:'#FEF2F2', border:'1.5px solid #FECACA', borderRadius:8,
+                    padding:'8px 16px', color:T.danger, cursor:'pointer', fontSize:13,
+                    fontWeight:600, opacity:deleting?0.6:1, display:'flex', alignItems:'center', gap:6 }}>
+                  🗑 {deleting ? 'Deleting…' : 'Delete Project'}
+                </button>
               )}
             </div>
           </div>
