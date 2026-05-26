@@ -59,7 +59,7 @@ export default function VendorsPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     setTimeout(() => {
-      setVendors(prev => prev.filter(v => v.id !== deleteTarget.id));
+      fetchVendors();
       setToast({ msg:`${deleteTarget.name} has been deleted.`, type:'info' });
       setDeleting(false);
       setDeleteTarget(null);
