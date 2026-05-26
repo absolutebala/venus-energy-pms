@@ -1,22 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { createClient } from '@/lib/supabase';
+import { useProjects } from '@/context/ProjectContext';
+const supabase = createClient();
 import Layout from '@/components/Layout';
 import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
 import { T, card, btnPrimary, btnSecondary, btnDanger, th, td, inputStyle, badge } from '@/lib/theme';
 
-const INITIAL_VENDORS = [
-  { id:1, name:'ABC Telecom Services',     contact:'Rajesh Kumar', phone:'9876543210', email:'rajesh@abctelecom.com',   gst:'33AABCA1234B1ZS', projects:12, done:10, poValue:4560000, active:true,  inviteStatus:'active',           deactivationReason:'' },
-  { id:2, name:'XYZ Infra Solutions',      contact:'Priya Sharma', phone:'9876543211', email:'priya@xyzinfra.com',      gst:'29AABCX5678C1ZS', projects:8,  done:5,  poValue:3240000, active:true,  inviteStatus:'active',           deactivationReason:'' },
-  { id:3, name:'TowerTech Pvt Ltd',        contact:'Arun Singh',   phone:'9876543212', email:'arun@towertech.com',      gst:'36AABCT9012D1ZS', projects:6,  done:4,  poValue:2875000, active:true,  inviteStatus:'invitation_sent',  deactivationReason:'' },
-  { id:4, name:'NetConnect Services',      contact:'Deepa Nair',   phone:'9876543213', email:'deepa@netconnect.com',    gst:'32AABCN3456E1ZS', projects:5,  done:2,  poValue:2010000, active:true,  inviteStatus:'active',           deactivationReason:'' },
-  { id:5, name:'BuildRight Constructions', contact:'Vikram Patel',  phone:'9876543214', email:'vikram@buildright.com',   gst:'27AABCB7890F1ZS', projects:4,  done:1,  poValue:1580000, active:false, inviteStatus:'active',           deactivationReason:'Non-performance on last 3 projects. Missed deadlines repeatedly.' },
-  { id:6, name:'PowerSys India',           contact:'Sunita Reddy',  phone:'9876543215', email:'sunita@powersys.com',     gst:'36AABCP1234G1ZS', projects:3,  done:2,  poValue:1350000, active:true,  inviteStatus:'not_sent',         deactivationReason:'' },
-];
+// Vendors loaded from Supabase
 
 const emptyForm = () => ({ name:'', contact:'', phone:'', email:'', gst:'' });
 
 export default function VendorsPage() {
-  const [vendors, setVendors]         = useState(INITIAL_VENDORS);
+  const [vendors, setVendors] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { projects } = useProjects();
+
+  const fetchVendors = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.from('vendors').select('*').order('name');
+    if (data) setVendors(data.map((v:any) => ({
+      id: v.id, name: v.name, contact: v.contact_person||'', phone: v.phone||'',
+      email: v.email||'', gst: v.gst_number||'',
+      active: v.is_active, inviteStatus: v.invite_status||'not_sent',
+      deactivationReason: v.deactivation_reason||'',
+      // Compute from live projects
+      projects: (projects as any[]).filter(p=>p.vendor===v.name).length,
+      done: (projects as any[]).filter(p=>p.vendor===v.name && ['completed','billing_review'].includes(p.status)).length,
+      poValue: (projects as any[]).filter(p=>p.vendor===v.name).reduce((a:number,p:any)=>a+(p.poValue||0),0),
+    })));
+    setLoading(false);
+  }, [projects]);
+
+  useEffect(() => { fetchVendors(); }, [fetchVendors]);
   const [search, setSearch]           = useState('');
   const [focused, setFocused]         = useState(false);
   const [showModal, setShowModal]     = useState(false);
@@ -54,7 +70,7 @@ export default function VendorsPage() {
   const openNew  = () => { setForm(emptyForm()); setEditVendor(null); setShowModal(true); };
   const openEdit = (v: any) => { setForm({ name:v.name, contact:v.contact, phone:v.phone, email:v.email, gst:v.gst }); setEditVendor(v); setShowModal(true); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name || !form.email) { setToast({ msg:'Vendor name and email are required.', type:'error' }); return; }
     setSaving(true);
     setTimeout(() => {
@@ -130,7 +146,7 @@ export default function VendorsPage() {
         {/* Summary */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
           {[
-            { label:'Total Vendors',  value:vendors.length,                   color:T.primary, icon:'🏢' },
+            { label:'Total Vendors',  value:loading?'…':vendors.length,                   color:T.primary, icon:'🏢' },
             { label:'Active',         value:vendors.filter(v=>v.active).length,   color:T.success, icon:'✅' },
             { label:'Invited',        value:vendors.filter(v=>v.inviteStatus==='invitation_sent'||v.inviteStatus==='active').length, color:T.info, icon:'🔗' },
             { label:'Total PO Value', value:`₹${(vendors.reduce((a,v)=>a+v.poValue,0)/10000000).toFixed(2)}Cr`, color:T.warning, icon:'💰' },
