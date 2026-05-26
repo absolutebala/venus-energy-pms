@@ -953,7 +953,7 @@ function AccountingDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
 export default function Dashboard() {
   const { projects: dbProjects } = useProjects();
   const { getDocStatus } = useWorkDocs();
-  const { profile } = useAuth();
+  const { profile, loading } = useAuth();
   const role = profile?.role || 'viewer';
   const name = profile?.full_name?.split(' ')[0] || 'User';
 
