@@ -16,23 +16,27 @@ export default function VendorsPage() {
   const [loading, setLoading] = useState(true);
   const { projects } = useProjects();
 
+  const [rawVendors, setRawVendors] = useState<any[]>([]);
+
   const fetchVendors = useCallback(async () => {
     setLoading(true);
     const { data } = await supabase.from('vendors').select('*').order('name');
-    if (data) setVendors(data.map((v:any) => ({
-      id: v.id, name: v.name, contact: v.contact_person||'', phone: v.phone||'',
-      email: v.email||'', gst: v.gst_number||'',
-      active: v.is_active, inviteStatus: v.invite_status||'not_sent',
-      deactivationReason: v.deactivation_reason||'',
-      // Compute from live projects
-      projects: (projects as any[]).filter(p=>p.vendor===v.name).length,
-      done: (projects as any[]).filter(p=>p.vendor===v.name && ['completed','billing_review'].includes(p.status)).length,
-      poValue: (projects as any[]).filter(p=>p.vendor===v.name).reduce((a:number,p:any)=>a+(p.poValue||0),0),
-    })));
+    if (data) setRawVendors(data);
     setLoading(false);
-  }, [projects]);
+  }, []); // No projects dependency — stable fetch
 
   useEffect(() => { fetchVendors(); }, [fetchVendors]);
+
+  // Compute project stats separately without causing re-fetch
+  const vendors = React.useMemo(() => rawVendors.map((v:any) => ({
+    id: v.id, name: v.name, contact: v.contact_person||'', phone: v.phone||'',
+    email: v.email||'', gst: v.gst_number||'',
+    active: v.is_active, inviteStatus: v.invite_status||'not_sent',
+    deactivationReason: v.deactivation_reason||'',
+    projects: (projects as any[]).filter((p:any)=>p.vendor===v.name).length,
+    done: (projects as any[]).filter((p:any)=>p.vendor===v.name && ['completed','billing_review'].includes(p.status)).length,
+    poValue: (projects as any[]).filter((p:any)=>p.vendor===v.name).reduce((a:number,p:any)=>a+(p.poValue||0),0),
+  })), [rawVendors, projects]);
   const [search, setSearch]           = useState('');
   const [focused, setFocused]         = useState(false);
   const [showModal, setShowModal]     = useState(false);
