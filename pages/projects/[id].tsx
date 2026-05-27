@@ -187,7 +187,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
             <thead>
               <tr>
-                {['#','Description','HSN','UOM','Qty','Rate (₹)','GST %','Amount (₹)',''].map((h,i)=>(
+                {['#','Description','Item Code','UOM','Qty','Rate (₹)','GST %','Amount (₹)',''].map((h,i)=>(
                   <th key={i} style={{ ...thS, textAlign:i>=4&&i<=7?'right' as const:'left' as const }}>{h}</th>
                 ))}
               </tr>
@@ -262,7 +262,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
         <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:14, marginTop:12 }}>
           <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New PO Item</div>
           <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 1fr', gap:10, marginBottom:12 }}>
-            {([['Description *','description','text'],['HSN Code','hsnCode','text'],['UOM','uom','text'],
+            {([['Description *','description','text'],['Item Code','hsnCode','text'],['UOM','uom','text'],
                ['Quantity *','quantity','number'],['Rate (₹) *','rate','number'],['GST %','gstRate','number']] as [string,string,string][]).map(([l,f,t])=>(
               <div key={f}>
                 <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
