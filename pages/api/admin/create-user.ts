@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { createClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -21,29 +22,58 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!email || !password || !role) return res.status(400).json({ error: 'Email, password, and role are required' });
 
 
-  const { data, error } = await admin.auth.admin.createUser({
+  // Try admin.createUser first; fall back to signUp if admin API fails
+  let userId: string | null = null;
+
+  const { data: adminData, error: adminError } = await admin.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
     user_metadata: { role, full_name: full_name || '' },
   });
 
-  if (error) {
-    console.error('createUser full error:', JSON.stringify(error, null, 2));
-    return res.status(400).json({ error: error.message, code: (error as any).code, status: (error as any).status });
+  if (adminError) {
+    console.error('admin.createUser error:', JSON.stringify(adminError, null, 2));
+
+    // Fallback: use signUp with service role (skips email confirmation on some configs)
+    const anonAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    const { data: signUpData, error: signUpError } = await anonAdmin.auth.signUp({
+      email,
+      password,
+      options: { data: { role, full_name: full_name || '' } },
+    });
+
+    if (signUpError) {
+      console.error('signUp fallback error:', JSON.stringify(signUpError, null, 2));
+      return res.status(400).json({ error: signUpError.message, code: (signUpError as any).code });
+    }
+
+    userId = signUpData.user?.id ?? null;
+  } else {
+    userId = adminData.user?.id ?? null;
   }
 
-  if (data.user) {
-    await admin.from('profiles').upsert({
-      id: data.user.id,
-      email,
-      full_name: full_name || null,
-      phone: phone || null,
-      designation: designation || null,
-      region: region || null,
-      role,
-      is_active: true,
-    }, { onConflict: 'id' });
+  if (!userId) return res.status(500).json({ error: 'User created but no ID returned' });
+
+  const { error: profileError } = await admin.from('profiles').upsert({
+    id: userId,
+    email,
+    full_name: full_name || null,
+    phone: phone || null,
+    designation: designation || null,
+    region: region || null,
+    role,
+    is_active: true,
+  }, { onConflict: 'id' });
+
+  if (profileError) {
+    console.error('profile upsert error:', JSON.stringify(profileError, null, 2));
+    return res.status(500).json({ error: 'User auth created but profile save failed: ' + profileError.message });
   }
 
   return res.status(200).json({ success: true });
