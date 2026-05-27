@@ -22,6 +22,63 @@ interface UserRow {
 
 type Modal = 'none' | 'invite' | 'create' | 'edit';
 
+
+// ── Module-level components (outside AdminUsersPage to prevent cursor jump) ──
+
+interface FormFieldProps {
+  label: string; value: string; onChange: (v:string)=>void;
+  type?: string; placeholder?: string; fkey?: string; readOnly?: boolean;
+  focused: string|null; setFocused: (k:string|null)=>void;
+}
+function FormField({ label, value, onChange, type='text', placeholder, fkey='', readOnly=false, focused, setFocused }: FormFieldProps) {
+  return (
+    <div style={{ marginBottom:16 }}>
+      <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>{label}</label>
+      <input type={type} value={value} onChange={e=>onChange(e.target.value)}
+        onFocus={()=>setFocused(fkey)} onBlur={()=>setFocused(null)}
+        placeholder={placeholder} readOnly={readOnly}
+        style={{ ...inputStyle(focused===fkey), ...(readOnly?{background:T.bg,color:T.textMuted,cursor:'not-allowed'}:{}), width:'100%' }} />
+    </div>
+  );
+}
+
+interface RoleSelectProps { value:string; onChange:(r:UserRole)=>void; roles: UserRole[]; }
+function RoleSelect({ value, onChange, roles }: RoleSelectProps) {
+  return (
+    <div style={{ marginBottom:16 }}>
+      <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>Role *</label>
+      <select value={value} onChange={e=>onChange(e.target.value as UserRole)} style={{ ...inputStyle(), width:'100%', appearance:'none' }}>
+        {roles.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+      </select>
+    </div>
+  );
+}
+
+interface ModalOverlayProps { children: React.ReactNode; onClose: ()=>void; }
+function ModalOverlay({ children, onClose }: ModalOverlayProps) {
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.5)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ background:T.surface, borderRadius:16, padding:32, width:'100%', maxWidth:520, boxShadow:'0 20px 60px rgba(0,0,0,0.2)', maxHeight:'90vh', overflowY:'auto' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+interface MsgAlertProps { msg: {type:'success'|'error'; text:string}|null; }
+function MsgAlert({ msg }: MsgAlertProps) {
+  if (!msg) return null;
+  return (
+    <div style={{ padding:'10px 14px', borderRadius:8, fontSize:13, marginBottom:16,
+      background:msg.type==='success'?T.successBg:T.dangerBg,
+      border:`1px solid ${msg.type==='success'?'#BBF7D0':'#FECACA'}`,
+      color:msg.type==='success'?T.success:T.danger }}>
+      {msg.type==='success'?'✅':'⚠️'} {msg.text}
+    </div>
+  );
+}
+
 export default function AdminUsersPage() {
   const { profile } = useAuth();
   const router = useRouter();
@@ -90,9 +147,10 @@ export default function AdminUsersPage() {
   const handleInvite = async () => {
     if (!fEmail || !fRole) { setMsg({ type:'error', text:'Email and role are required.' }); return; }
     setBusy(true);
+    const { data: { session: invSess } } = await supabase.auth.getSession();
     const res = await fetch('/api/admin/invite-user', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json' },
+      headers: { 'Content-Type':'application/json', Authorization: `Bearer ${invSess?.access_token||''}` },
       body: JSON.stringify({ email: fEmail, role: fRole, full_name: fName }),
     });
     const data = await res.json();
@@ -105,9 +163,10 @@ export default function AdminUsersPage() {
     if (!fEmail || !fPassword || !fRole) { setMsg({ type:'error', text:'Email, password, and role are required.' }); return; }
     if (fPassword.length < 8) { setMsg({ type:'error', text:'Password must be at least 8 characters.' }); return; }
     setBusy(true);
+    const { data: { session: crSess } } = await supabase.auth.getSession();
     const res = await fetch('/api/admin/create-user', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json' },
+      headers: { 'Content-Type':'application/json', Authorization: `Bearer ${crSess?.access_token||''}` },
       body: JSON.stringify({ email:fEmail, password:fPassword, full_name:fName, phone:fPhone, designation:fDesig, region:fRegion, role:fRole }),
     });
     const data = await res.json();
@@ -119,9 +178,10 @@ export default function AdminUsersPage() {
   const handleEdit = async () => {
     if (!editUser) return;
     setBusy(true);
+    const { data: { session: edSess } } = await supabase.auth.getSession();
     const res = await fetch('/api/admin/update-user', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json' },
+      headers: { 'Content-Type':'application/json', Authorization: `Bearer ${edSess?.access_token||''}` },
       body: JSON.stringify({ userId: editUser.id, full_name:fName, phone:fPhone, designation:fDesig, region:fRegion, role:fRole, is_active:fActive }),
     });
     const data = await res.json();
@@ -157,35 +217,13 @@ export default function AdminUsersPage() {
     return true;
   });
 
-  const ModalOverlay = ({ children }: { children: React.ReactNode }) => (
-    <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.5)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }} onClick={e => { if (e.target === e.currentTarget) { setModal('none'); resetForm(); } }}>
-      <div style={{ background:T.surface, borderRadius:16, padding:32, width:'100%', maxWidth:520, boxShadow:'0 20px 60px rgba(0,0,0,0.2)', maxHeight:'90vh', overflowY:'auto' }}>
-        {children}
-      </div>
-    </div>
-  );
 
-  const FormField = ({ label, value, onChange, type='text', placeholder, fkey, readOnly=false }: any) => (
-    <div style={{ marginBottom:16 }}>
-      <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>{label}</label>
-      <input type={type} value={value} onChange={e=>onChange(e.target.value)} onFocus={()=>setFocused(fkey)} onBlur={()=>setFocused(null)} placeholder={placeholder} readOnly={readOnly} style={{ ...inputStyle(focused===fkey), ...(readOnly?{background:T.bg,color:T.textMuted,cursor:'not-allowed'}:{}), width:'100%' }} />
-    </div>
-  );
 
-  const RoleSelect = ({ value, onChange }: { value:string; onChange:(r:UserRole)=>void }) => (
-    <div style={{ marginBottom:16 }}>
-      <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>Role *</label>
-      <select value={value} onChange={e=>onChange(e.target.value as UserRole)} style={{ ...inputStyle(), width:'100%', appearance:'none' }}>
-        {ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-      </select>
-    </div>
-  );
 
-  const MsgAlert = () => msg ? (
-    <div style={{ padding:'10px 14px', borderRadius:8, fontSize:13, marginBottom:16, background:msg.type==='success'?T.successBg:T.dangerBg, border:`1px solid ${msg.type==='success'?'#BBF7D0':'#FECACA'}`, color:msg.type==='success'?T.success:T.danger }}>
-      {msg.type==='success'?'✅':'⚠️'} {msg.text}
-    </div>
-  ) : null;
+
+
+
+
 
   return (
     <Layout>
@@ -267,17 +305,17 @@ export default function AdminUsersPage() {
 
       {/* Invite Modal */}
       {modal === 'invite' && (
-        <ModalOverlay>
+        <ModalOverlay onClose={()=>{setModal('none');resetForm();}}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
             <h3 style={{ fontSize:17, fontWeight:700, color:T.text }}>✉️ Invite User by Email</h3>
             <button onClick={()=>{setModal('none');resetForm();}} style={{ background:'none', border:'none', fontSize:18, cursor:'pointer', color:T.textDim }}>✕</button>
           </div>
           <p style={{ fontSize:13, color:T.textMuted, marginBottom:20 }}>An invitation email with a sign-in link will be sent. The user sets their own password.</p>
-          <MsgAlert />
-          <FormField label="Email Address *" value={fEmail} onChange={setFEmail} type="email" placeholder="user@venusenergyindia.com" fkey="ie" />
-          <FormField label="Full Name" value={fName} onChange={setFName} placeholder="Full name (optional)" fkey="in" />
-          <RoleSelect value={fRole} onChange={setFRole} />
-          <FormField label="Region" value={fRegion} onChange={setFRegion} placeholder="e.g. Tamil Nadu" fkey="ir" />
+          <MsgAlert msg={msg} />
+          <FormField label="Email Address *" value={fEmail} onChange={setFEmail} type="email" placeholder="user@venusenergyindia.com" fkey="ie"  focused={focused} setFocused={setFocused}/>
+          <FormField label="Full Name" value={fName} onChange={setFName} placeholder="Full name (optional)" fkey="in"  focused={focused} setFocused={setFocused}/>
+          <RoleSelect value={fRole} onChange={setFRole}  roles={ROLES}/>
+          <FormField label="Region" value={fRegion} onChange={setFRegion} placeholder="e.g. Tamil Nadu" fkey="ir"  focused={focused} setFocused={setFocused}/>
           <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:20 }}>
             <button onClick={()=>{setModal('none');resetForm();}} style={btnSecondary}>Cancel</button>
             <button onClick={handleInvite} disabled={busy} style={{ ...btnPrimary, opacity:busy?0.7:1 }}>
@@ -289,22 +327,22 @@ export default function AdminUsersPage() {
 
       {/* Create Modal */}
       {modal === 'create' && (
-        <ModalOverlay>
+        <ModalOverlay onClose={()=>{setModal('none');resetForm();}}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
             <h3 style={{ fontSize:17, fontWeight:700, color:T.text }}>+ Create User with Password</h3>
             <button onClick={()=>{setModal('none');resetForm();}} style={{ background:'none', border:'none', fontSize:18, cursor:'pointer', color:T.textDim }}>✕</button>
           </div>
           <p style={{ fontSize:13, color:T.textMuted, marginBottom:20 }}>Create a user account and share the temporary password manually.</p>
-          <MsgAlert />
+          <MsgAlert msg={msg} />
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
-            <FormField label="Full Name" value={fName} onChange={setFName} placeholder="Full name" fkey="cn" />
-            <FormField label="Email Address *" value={fEmail} onChange={setFEmail} type="email" placeholder="user@venusenergyindia.com" fkey="ce" />
-            <FormField label="Temporary Password *" value={fPassword} onChange={setFPassword} type="password" placeholder="Min. 8 characters" fkey="cp" />
-            <FormField label="Phone" value={fPhone} onChange={setFPhone} placeholder="+91 98765 43210" fkey="cph" />
-            <FormField label="Designation" value={fDesig} onChange={setFDesig} placeholder="Site Engineer" fkey="cd" />
-            <FormField label="Region" value={fRegion} onChange={setFRegion} placeholder="Tamil Nadu" fkey="cr" />
+            <FormField label="Full Name" value={fName} onChange={setFName} placeholder="Full name" fkey="cn"  focused={focused} setFocused={setFocused}/>
+            <FormField label="Email Address *" value={fEmail} onChange={setFEmail} type="email" placeholder="user@venusenergyindia.com" fkey="ce"  focused={focused} setFocused={setFocused}/>
+            <FormField label="Temporary Password *" value={fPassword} onChange={setFPassword} type="password" placeholder="Min. 8 characters" fkey="cp"  focused={focused} setFocused={setFocused}/>
+            <FormField label="Phone" value={fPhone} onChange={setFPhone} placeholder="+91 98765 43210" fkey="cph"  focused={focused} setFocused={setFocused}/>
+            <FormField label="Designation" value={fDesig} onChange={setFDesig} placeholder="Site Engineer" fkey="cd"  focused={focused} setFocused={setFocused}/>
+            <FormField label="Region" value={fRegion} onChange={setFRegion} placeholder="Tamil Nadu" fkey="cr"  focused={focused} setFocused={setFocused}/>
           </div>
-          <RoleSelect value={fRole} onChange={setFRole} />
+          <RoleSelect value={fRole} onChange={setFRole}  roles={ROLES}/>
           <div style={{ background:T.warningBg, border:`1px solid #FDE68A`, borderRadius:8, padding:'10px 14px', fontSize:12, color:T.warning }}>
             ⚠️ Share the temporary password securely. The user should change it upon first login.
           </div>
@@ -319,20 +357,20 @@ export default function AdminUsersPage() {
 
       {/* Edit Modal */}
       {modal === 'edit' && editUser && (
-        <ModalOverlay>
+        <ModalOverlay onClose={()=>{setModal('none');resetForm();}}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
             <h3 style={{ fontSize:17, fontWeight:700, color:T.text }}>✏️ Edit User</h3>
             <button onClick={()=>{setModal('none');resetForm();}} style={{ background:'none', border:'none', fontSize:18, cursor:'pointer', color:T.textDim }}>✕</button>
           </div>
-          <MsgAlert />
-          <FormField label="Email" value={fEmail} onChange={()=>{}} readOnly fkey="ee" />
+          <MsgAlert msg={msg} />
+          <FormField label="Email" value={fEmail} onChange={()=>{}} readOnly fkey="ee"  focused={focused} setFocused={setFocused}/>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
-            <FormField label="Full Name" value={fName} onChange={setFName} fkey="eName" />
-            <FormField label="Phone" value={fPhone} onChange={setFPhone} fkey="ePhone" />
-            <FormField label="Designation" value={fDesig} onChange={setFDesig} fkey="eDesig" />
-            <FormField label="Region" value={fRegion} onChange={setFRegion} fkey="eRegion" />
+            <FormField label="Full Name" value={fName} onChange={setFName} fkey="eName"  focused={focused} setFocused={setFocused}/>
+            <FormField label="Phone" value={fPhone} onChange={setFPhone} fkey="ePhone"  focused={focused} setFocused={setFocused}/>
+            <FormField label="Designation" value={fDesig} onChange={setFDesig} fkey="eDesig"  focused={focused} setFocused={setFocused}/>
+            <FormField label="Region" value={fRegion} onChange={setFRegion} fkey="eRegion"  focused={focused} setFocused={setFocused}/>
           </div>
-          <RoleSelect value={fRole} onChange={setFRole} />
+          <RoleSelect value={fRole} onChange={setFRole}  roles={ROLES}/>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
             <label style={{ fontSize:13, fontWeight:600, color:T.text }}>Account Status:</label>
             <button onClick={()=>setFActive(a=>!a)} style={{ background:fActive?T.successBg:T.dangerBg, border:`1px solid ${fActive?'#BBF7D0':'#FECACA'}`, borderRadius:20, padding:'4px 14px', fontSize:12, fontWeight:600, color:fActive?T.success:T.danger, cursor:'pointer' }}>
