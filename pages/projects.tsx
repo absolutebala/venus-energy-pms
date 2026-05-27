@@ -76,13 +76,14 @@ export default function ProjectsPage() {
         id: newId, po_no: '', site: '', status: 'not_started', po_value: 0,
       });
       if (error) throw new Error(error.message);
+      await refreshProjects();
       router.push(`/projects/${newId}`);
     } catch(err: any) {
       alert('Failed to create project: ' + err.message);
       setCreating(false);
     }
   };
-  const { projects: dbProjects, loading: projLoading } = useProjects();
+  const { projects: dbProjects, refreshProjects, loading: projLoading } = useProjects();
   const { getDocStatus } = useWorkDocs();
   const { profile, can, loading } = useAuth();
   const isAdmin = !loading && (can('projects', 'create') || can('projects', 'delete'));
