@@ -1319,8 +1319,8 @@ export default function ProjectDetailPage() {
             {sectionTitle('📋','Project Details', 'details', canEditDetails)}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
               {F('Project No',       'id',          'text', undefined, true)}
-              {F('PO Number',        'poNo',        'text', undefined, true)}
-              {F('Indus ID',         'indusId',     'text', undefined, true)}
+              {F('PO Number',        'poNo',        'text', undefined, false)}
+              {F('Indus ID',         'indusId',     'text', undefined, false)}
               {F('Site Name',        'site')}
               {F('Region',           'region',      'text', REGIONS)}
               {F('Job Type',         'type',        'text', TYPES)}
