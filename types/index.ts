@@ -8,7 +8,7 @@ export type UserRole =
   | 'accounting_team';
 
 export const ROLE_LABELS: Record<UserRole, string> = {
-  super_admin:     'Super Admin',
+  super_admin:     'Admin',
   region_manager:  'Region Manager',
   project_manager: 'Project Manager',
   site_engineer:   'Site Engineer',

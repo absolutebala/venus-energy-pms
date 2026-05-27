@@ -7,6 +7,8 @@ import { ROLE_LABELS, UserRole } from '@/types';
 import { createClient } from '@/lib/supabase';
 
 const ROLES: UserRole[] = ['super_admin','region_manager','project_manager','site_engineer','viewer'];
+const ASSIGNABLE_ROLES: UserRole[] = ['region_manager','project_manager','site_engineer','viewer'];
+const ASSIGNABLE_ROLES: UserRole[] = ['region_manager','project_manager','site_engineer','viewer'];
 
 interface UserRow {
   id: string;
@@ -75,6 +77,98 @@ function MsgAlert({ msg }: MsgAlertProps) {
       border:`1px solid ${msg.type==='success'?'#BBF7D0':'#FECACA'}`,
       color:msg.type==='success'?T.success:T.danger }}>
       {msg.type==='success'?'✅':'⚠️'} {msg.text}
+    </div>
+  );
+}
+
+
+interface PasswordFieldProps {
+  label: string; value: string; onChange: (v:string)=>void;
+  placeholder?: string; fkey?: string;
+  focused: string|null; setFocused: (k:string|null)=>void;
+}
+function PasswordField({ label, value, onChange, placeholder, fkey='', focused, setFocused }: PasswordFieldProps) {
+  const [show, setShow] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+
+  const copy = () => {
+    if (!value) return;
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div style={{ marginBottom:16 }}>
+      <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>{label}</label>
+      <div style={{ display:'flex', alignItems:'center', border:`1px solid ${focused===fkey?T.primary:'#E2E8F0'}`, borderRadius:8, background:'#fff', overflow:'hidden' }}>
+        <input
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onFocus={() => setFocused(fkey)}
+          onBlur={() => setFocused(null)}
+          placeholder={placeholder}
+          style={{ flex:1, border:'none', outline:'none', padding:'9px 12px', fontSize:13, color:T.text, background:'transparent' }}
+        />
+        <button type="button" onClick={() => setShow(s => !s)}
+          title={show ? 'Hide password' : 'Show password'}
+          style={{ background:'none', border:'none', padding:'0 8px', cursor:'pointer', fontSize:15, color:T.textMuted, lineHeight:1 }}>
+          {show ? '🙈' : '👁'}
+        </button>
+        <button type="button" onClick={copy}
+          title="Copy password"
+          style={{ background:'none', border:'none', padding:'0 10px 0 4px', cursor:'pointer', fontSize:13, color:copied ? T.success : T.textMuted, fontWeight:600, lineHeight:1 }}>
+          {copied ? '✅' : '📋'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+interface PasswordFieldProps {
+  label: string; value: string; onChange: (v:string)=>void;
+  placeholder?: string; fkey?: string;
+  focused: string|null; setFocused: (k:string|null)=>void;
+}
+function PasswordField({ label, value, onChange, placeholder, fkey='', focused, setFocused }: PasswordFieldProps) {
+  const [show, setShow] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+
+  const copy = () => {
+    if (!value) return;
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div style={{ marginBottom:16 }}>
+      <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>{label}</label>
+      <div style={{ display:'flex', alignItems:'center', border:`1px solid ${focused===fkey?T.primary:'#E2E8F0'}`, borderRadius:8, background:'#fff', overflow:'hidden' }}>
+        <input
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onFocus={() => setFocused(fkey)}
+          onBlur={() => setFocused(null)}
+          placeholder={placeholder}
+          style={{ flex:1, border:'none', outline:'none', padding:'9px 12px', fontSize:13, color:T.text, background:'transparent' }}
+        />
+        <button type="button" onClick={() => setShow(s => !s)}
+          title={show ? 'Hide password' : 'Show password'}
+          style={{ background:'none', border:'none', padding:'0 8px', cursor:'pointer', fontSize:15, color:T.textMuted, lineHeight:1 }}>
+          {show ? '🙈' : '👁'}
+        </button>
+        <button type="button" onClick={copy}
+          title="Copy password"
+          style={{ background:'none', border:'none', padding:'0 10px 0 4px', cursor:'pointer', fontSize:13, color:copied ? T.success : T.textMuted, fontWeight:600, lineHeight:1 }}>
+          {copied ? '✅' : '📋'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -314,7 +408,7 @@ export default function AdminUsersPage() {
           <MsgAlert msg={msg} />
           <FormField label="Email Address *" value={fEmail} onChange={setFEmail} type="email" placeholder="user@venusenergyindia.com" fkey="ie"  focused={focused} setFocused={setFocused}/>
           <FormField label="Full Name" value={fName} onChange={setFName} placeholder="Full name (optional)" fkey="in"  focused={focused} setFocused={setFocused}/>
-          <RoleSelect value={fRole} onChange={setFRole}  roles={ROLES}/>
+          <RoleSelect value={fRole} onChange={setFRole}  roles={ASSIGNABLE_ROLES}/>
           <FormField label="Region" value={fRegion} onChange={setFRegion} placeholder="e.g. Tamil Nadu" fkey="ir"  focused={focused} setFocused={setFocused}/>
           <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:20 }}>
             <button onClick={()=>{setModal('none');resetForm();}} style={btnSecondary}>Cancel</button>
@@ -342,7 +436,7 @@ export default function AdminUsersPage() {
             <FormField label="Designation" value={fDesig} onChange={setFDesig} placeholder="Site Engineer" fkey="cd"  focused={focused} setFocused={setFocused}/>
             <FormField label="Region" value={fRegion} onChange={setFRegion} placeholder="Tamil Nadu" fkey="cr"  focused={focused} setFocused={setFocused}/>
           </div>
-          <RoleSelect value={fRole} onChange={setFRole}  roles={ROLES}/>
+          <RoleSelect value={fRole} onChange={setFRole}  roles={ASSIGNABLE_ROLES}/>
           <div style={{ background:T.warningBg, border:`1px solid #FDE68A`, borderRadius:8, padding:'10px 14px', fontSize:12, color:T.warning }}>
             ⚠️ Share the temporary password securely. The user should change it upon first login.
           </div>
@@ -370,7 +464,7 @@ export default function AdminUsersPage() {
             <FormField label="Designation" value={fDesig} onChange={setFDesig} fkey="eDesig"  focused={focused} setFocused={setFocused}/>
             <FormField label="Region" value={fRegion} onChange={setFRegion} fkey="eRegion"  focused={focused} setFocused={setFocused}/>
           </div>
-          <RoleSelect value={fRole} onChange={setFRole}  roles={ROLES}/>
+          <RoleSelect value={fRole} onChange={setFRole}  roles={ASSIGNABLE_ROLES}/>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
             <label style={{ fontSize:13, fontWeight:600, color:T.text }}>Account Status:</label>
             <button onClick={()=>setFActive(a=>!a)} style={{ background:fActive?T.successBg:T.dangerBg, border:`1px solid ${fActive?'#BBF7D0':'#FECACA'}`, borderRadius:20, padding:'4px 14px', fontSize:12, fontWeight:600, color:fActive?T.success:T.danger, cursor:'pointer' }}>
