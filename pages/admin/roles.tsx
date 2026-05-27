@@ -38,7 +38,7 @@ const PROJECT_SECTIONS: { key: string; label: string; icon: string; desc: string
   { key:'sec_work_documents',   label:'Work Documents',           icon:'📂', desc:'6 document types with thumbnail preview and upload'                     },
   { key:'sec_stn_srn',          label:'STN/SRN Material Tracking',icon:'📦', desc:'Materials issued by Indus, utilisation per item, return qty'            },
   { key:'sec_billing_review',   label:'Billing Review Checklist', icon:'✅', desc:'STN ✓ SRN ✓ PTW ✓ Materials Returned to Indus ✓ — payment release'      },
-  { key:'sec_po_items',  label:'PO Items',                 icon:'📋', desc:'Line items from the Indus PO — Description, HSN, UOM, Qty, Rate, GST, Amount' },
+  { key:'sec_po_items',  label:'PO Items',                 icon:'📋', desc:'Line items from the Indus PO — Description, Item Code, UOM, Qty, Rate, GST, Amount' },
   { key:'sec_ptw_detail',label:'PTW Section',               icon:'🔑', desc:'Permit to Work — Ticket ID, Supervisor Name, From/To Date, status indicator'    },
   { key:'sec_srn_detail', label:'SRN — Utilisation & Return',icon:'📦', desc:'Material utilisation per item, Balance, Returned (vendor), Approved (PM/Admin)'  },
   { key:'sec_stn_srn_summary', label:'STN/SRN Dashboard Summary', icon:'📦', desc:'Vendor-wise and site-wise STN/SRN material utilisation and return summary' },

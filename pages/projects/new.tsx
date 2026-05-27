@@ -321,7 +321,7 @@ export default function NewProjectPage() {
                 <table style={{ width:'100%', borderCollapse:'collapse', minWidth:800 }}>
                   <thead>
                     <tr style={{ background:T.bg }}>
-                      {['#','Item Description *','HSN / SAC','UOM *','Quantity *','Rate (₹) *','GST (%)','Amount (₹)',''].map(h=>(
+                      {['#','Item Description *','Item Code','UOM *','Quantity *','Rate (₹) *','GST (%)','Amount (₹)',''].map(h=>(
                         <th key={h} style={{ padding:'9px 8px', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:0.5, color:T.textMuted, textAlign:'left', borderBottom:`2px solid ${T.border}`, whiteSpace:'nowrap' }}>{h}</th>
                       ))}
                     </tr>
@@ -334,7 +334,7 @@ export default function NewProjectPage() {
                           <input value={item.description} onChange={e=>updateItem(item.id,'description',e.target.value)} placeholder="Item description" style={{ ...inputStyle(), padding:'7px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const }} />
                         </td>
                         <td style={{ padding:'8px', width:80 }}>
-                          <input value={item.hsn} onChange={e=>updateItem(item.id,'hsn',e.target.value)} placeholder="HSN" style={{ ...inputStyle(), padding:'7px 8px', fontSize:12, width:72, boxSizing:'border-box' as const }} />
+                          <input value={item.hsn} onChange={e=>updateItem(item.id,'hsn',e.target.value)} placeholder="Item Code" maxLength={25} style={{ ...inputStyle(), padding:'7px 8px', fontSize:12, width:72, boxSizing:'border-box' as const }} />
                         </td>
                         <td style={{ padding:'8px', width:110 }}>
                           <CreatableSelect value={item.uom} options={uoms} onChange={v=>updateItem(item.id,'uom',v)} onCreateNew={v=>setUoms(p=>[...p,v])} placeholder="UOM" compact />
