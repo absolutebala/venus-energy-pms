@@ -74,6 +74,8 @@ export default function ProjectsPage() {
       // Insert blank project
       const { error } = await sb.from('projects').insert({
         id: newId, status: 'pending', po_value: 0,
+        po_no: '', indus_id: '', site: '', region: '',
+        job_type: '', pm: '', rm: '', vendor: '',
         billed_amount: 0, paid_amount: 0, progress: 0,
       });
       if (error) throw new Error(error.message);
