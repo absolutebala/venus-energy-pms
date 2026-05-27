@@ -1158,7 +1158,22 @@ export default function ProjectDetailPage() {
       .then(() => {
         setToast({ msg:'✅ Saved successfully!', type:'success' });
         setEditingSection(null);
-        logActivity(id as string, `Section updated by ${profile?.full_name||'user'}`, profile?.full_name||'', profile?.role||'').catch(console.error);
+        // Build a meaningful log message showing which fields changed
+        const FIELD_LABELS: Record<string,string> = {
+          poNo:'PO Number', poDate:'PO Date', poValue:'PO Amount',
+          indusId:'Indus ID', site:'Site Name', region:'Region',
+          type:'Job Type', startDate:'Start Date', endDate:'End Date',
+          rm:'Region Manager', pm:'Project Manager', remarks:'Remarks',
+          status:'Status', progress:'Progress', workScope:'Work Scope',
+        };
+        const currentProject = projects[id as string] || {};
+        const changedFields = Object.keys(form)
+          .filter(k => form[k] !== undefined && String(form[k]) !== String((currentProject as any)[k]))
+          .map(k => FIELD_LABELS[k] || k);
+        const logMsg = changedFields.length > 0
+          ? `Updated ${changedFields.join(', ')} — by ${profile?.full_name||'user'}`
+          : `Section saved by ${profile?.full_name||'user'}`;
+        logActivity(id as string, logMsg, profile?.full_name||'', profile?.role||'').catch(console.error);
       })
       .catch((err:any) => {
         console.error('Save error:', err);
