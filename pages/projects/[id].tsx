@@ -35,13 +35,7 @@ const PROJECT_DB: Record<string,any> = {
 };
 
 
-const VENDOR_LIST = [
-  { name:'ABC Telecom Services',     contact:'Rajesh Kumar',  phone:'+91 98765 43210', email:'rajesh@abctelecom.com'  },
-  { name:'XYZ Infra Solutions',      contact:'Priya Sharma',  phone:'+91 98765 43211', email:'priya@xyzinfra.com'     },
-  { name:'TowerTech Pvt Ltd',        contact:'Arun Singh',    phone:'+91 98765 43212', email:'arun@towertech.com'     },
-  { name:'NetConnect Services',      contact:'Deepa Nair',    phone:'+91 98765 43213', email:'deepa@netconnect.com'   },
-  { name:'PowerSys India',           contact:'Sunita Reddy',  phone:'+91 98765 43215', email:'sunita@powersys.com'    },
-  { name:'BuildRight Constructions', contact:'Vikram Patel',  phone:'+91 98765 43214', email:'vikram@buildright.com'  },
+// VENDOR_LIST replaced by Supabase fetch — see vendorList state below
 
 ];
 
@@ -1240,6 +1234,21 @@ export default function ProjectDetailPage() {
       });
   }, []);
 
+  // Fetch vendor list from Supabase
+  const [vendorList, setVendorList] = React.useState<{name:string;contact:string;phone:string;email:string}[]>([]);
+  React.useEffect(() => {
+    const sb = createClient();
+    sb.from('vendors').select('name,contact_person,phone,email').eq('is_active', true).order('name')
+      .then(({ data }) => {
+        if (data) setVendorList(data.map((v:any) => ({
+          name:    v.name    || '',
+          contact: v.contact_person || '',
+          phone:   v.phone   || '',
+          email:   v.email   || '',
+        })));
+      });
+  }, []);
+
 
   // Billing checklist
   const [checklist, setChecklist] = useState({ stn:false, srn:false, ptw:false, materials:false });
@@ -1529,10 +1538,10 @@ export default function ProjectDetailPage() {
                 <CreatableSelect
                   label="Vendor Name *"
                   value={form.vendor||''}
-                  options={VENDOR_LIST.map(v=>v.name)}
+                  options={vendorList.map(v=>v.name)}
                   placeholder="Select or create vendor…"
                   onChange={v => {
-                    const found = VENDOR_LIST.find(vl => vl.name === v);
+                    const found = vendorList.find(vl => vl.name === v);
                     setForm((f:any) => ({
                       ...f,
                       vendor:        v,
