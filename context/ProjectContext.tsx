@@ -36,6 +36,7 @@ function mapRow(row: any): Project {
     billedAmount:  Number(row.billed_amount  ?? row.billedAmount  ?? 0),
     paidAmount:    Number(row.paid_amount    ?? row.paidAmount    ?? 0),
     progress:      Number(row.progress ?? 0),
+    poDate:        row.po_date        ?? row.poDate        ?? '',
     startDate:     row.start_date    ?? row.startDate    ?? '',
     endDate:       row.end_date      ?? row.endDate      ?? '',
     ptwTicketId:   row.ptw_ticket_id  ?? row.ptwTicketId  ?? '',
@@ -62,7 +63,7 @@ const DB_COLUMNS = new Set([
   'id','po_no','indus_id','site','region','type','pm','rm',
   'vendor','vendor_contact','vendor_phone','vendor_email',
   'status','po_value','billed_amount','paid_amount','progress',
-  'start_date','end_date','ptw_ticket_id','ptw_supervisor',
+  'po_date','start_date','end_date','ptw_ticket_id','ptw_supervisor',
   'ptw_date_from','ptw_date_to','work_scope','remarks','safety_photos','site_photos','jmr_document','at_certificate','noc_document','drawing_document','ptw_document',
   'updated_at','updated_by',
 ]);
@@ -73,7 +74,7 @@ function mapToDb(updates: Partial<Project>): Record<string, any> {
     poNo:'po_no', indusId:'indus_id', vendorContact:'vendor_contact',
     vendorPhone:'vendor_phone', vendorEmail:'vendor_email',
     poValue:'po_value', billedAmount:'billed_amount', paidAmount:'paid_amount',
-    startDate:'start_date', endDate:'end_date',
+    poDate:'po_date', startDate:'start_date', endDate:'end_date',
     ptwTicketId:'ptw_ticket_id', ptwSupervisor:'ptw_supervisor',
     ptwDateFrom:'ptw_date_from', ptwDateTo:'ptw_date_to',
     workScope:'work_scope', updatedBy:'updated_by',
@@ -81,7 +82,7 @@ function mapToDb(updates: Partial<Project>): Record<string, any> {
     jmrDocument:'jmr_document', atCertificate:'at_certificate',
     nocDocument:'noc_document', drawingDocument:'drawing_document', ptwDocument:'ptw_document',
   };
-  const DATE_COLS = new Set(['start_date','end_date','ptw_date_from','ptw_date_to']);
+  const DATE_COLS = new Set(['po_date','start_date','end_date','ptw_date_from','ptw_date_to']);
   const db: Record<string, any> = {};
   for (const [key, val] of Object.entries(updates)) {
     const dbKey = camelToSnake[key] || key;
