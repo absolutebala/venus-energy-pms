@@ -84,9 +84,9 @@ const TYPES    = ['Tower Erection','Tower Maintenance','Component Replacement','
 
 const DOC_TYPES = [
   { key:'safety_photos',   label:'Safety Photos',   icon:'📷', accept:'image/*'           },
-  { key:'site_photos',     label:'Site Photos',     icon:'🏗',  accept:'image/*'           },
+  { key:'site_photos',     label:'Site Photos',     icon:'🏗',  accept:'image/*,.pdf'           },
   { key:'jmr_document',   label:'JMR Document',    icon:'📄', accept:'.pdf,.doc,.docx'    },
-  { key:'ac_certificate', label:'AC Certificate',  icon:'🏅', accept:'.pdf,.doc,.docx'    },
+  { key:'at_certificate', label:'AT Certificate',  icon:'🏅', accept:'.pdf,.doc,.docx'    },
   { key:'noc_document',   label:'NOC Document',    icon:'📋', accept:'.pdf,.doc,.docx'    },
   { key:'drawing_document',label:'Drawing Document',icon:'📐', accept:'.pdf,.dwg,.png,.jpg'},
   { key:'ptw_document',   label:'PTW Document',     icon:'🔑', accept:'.pdf,.doc,.docx'    },
@@ -98,7 +98,7 @@ const LEGACY_MOCK_DOCS: Record<string, { name:string; size:string; url:string; i
   safety_photos:    [{ name:'safety_site_01.jpg', size:'1.2 MB', url:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400', isImage:true },{ name:'safety_ppe.jpg', size:'980 KB', url:'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400', isImage:true }],
   site_photos:      [{ name:'site_progress.jpg', size:'2.1 MB', url:'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400', isImage:true }],
   jmr_document:     [{ name:'JMR_VE2025001.pdf', size:'456 KB', url:'', isImage:false }],
-  ac_certificate:   [],
+  at_certificate:   [],
   noc_document:     [],
   drawing_document: [{ name:'AsBuilt_Drawing_v2.pdf', size:'1.8 MB', url:'', isImage:false }],
 };

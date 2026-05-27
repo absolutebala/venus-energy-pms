@@ -37,7 +37,7 @@ const DOC_COLS_P = [
   { key:'safety_photos',    label:'Safety'     },
   { key:'site_photos',      label:'Site Photos' },
   { key:'jmr_document',    label:'JMR'         },
-  { key:'ac_certificate',  label:'AC Cert'     },
+  { key:'at_certificate',  label:'AT Cert'     },
   { key:'noc_document',    label:'NOC'         },
   { key:'drawing_document',label:'Drawing'     },
   { key:'ptw_document',    label:'PTW'         },

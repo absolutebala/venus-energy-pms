@@ -99,7 +99,7 @@ const DOC_COLS = [
   { key:'safety_photos',    label:'Safety'    },
   { key:'site_photos',      label:'Site Photos'},
   { key:'jmr_document',    label:'JMR'        },
-  { key:'ac_certificate',  label:'AC Cert'    },
+  { key:'at_certificate',  label:'AT Cert'    },
   { key:'noc_document',    label:'NOC'        },
   { key:'drawing_document',label:'Drawing'    },
   { key:'ptw_document',    label:'PTW'        },
@@ -901,7 +901,7 @@ function AccountingDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
                   </div>
                   <div style={{ fontSize:12, fontWeight:600, color:T.text, marginBottom:8 }}>📂 Documents</div>
                   <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
-                    {['Safety Photos','Site Photos','JMR','AC Certificate','NOC','Drawing'].map(doc=>(
+                    {['Safety Photos','Site Photos','JMR','AT Certificate','NOC','Drawing'].map(doc=>(
                       <span key={doc} style={{ fontSize:10, background:T.successBg, color:T.success, border:'1px solid #BBF7D0', padding:'2px 8px', borderRadius:10 }}>✓ {doc}</span>
                     ))}
                   </div>
