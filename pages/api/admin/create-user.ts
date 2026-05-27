@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createAdminClient } from '@/lib/supabaseAdmin';
+import { randomUUID } from 'crypto';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -20,45 +21,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!email || !password || !role) return res.status(400).json({ error: 'Email, password, and role are required' });
   if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
-  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const newUserId = randomUUID();
 
-  // Call Supabase auth admin REST API directly (bypasses JS client version issues)
-  const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${SERVICE_KEY}`,
-      'apikey': SERVICE_KEY,
-    },
-    body: JSON.stringify({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { role, full_name: full_name || '' },
-    }),
+  // Use SQL RPC to bypass broken Supabase auth API (unexpected_failure on this project)
+  const { error: rpcError } = await admin.rpc('create_auth_user', {
+    p_id:        newUserId,
+    p_email:     email,
+    p_password:  password,
+    p_full_name: full_name || '',
+    p_role:      role,
   });
 
-  const createData = await createRes.json();
-
-  if (!createRes.ok) {
-    console.error('REST createUser error:', JSON.stringify(createData, null, 2));
-    return res.status(400).json({ error: createData.msg || createData.message || 'Failed to create user' });
+  if (rpcError) {
+    console.error('create_auth_user RPC error:', JSON.stringify(rpcError, null, 2));
+    // Check for duplicate email
+    if (rpcError.message?.includes('duplicate') || rpcError.code === '23505') {
+      return res.status(400).json({ error: 'A user with this email already exists.' });
+    }
+    return res.status(500).json({ error: 'Failed to create user: ' + rpcError.message });
   }
-
-  const newUserId = createData.id;
-  if (!newUserId) return res.status(500).json({ error: 'User created but no ID returned' });
 
   // Save profile
   const { error: profileError } = await admin.from('profiles').upsert({
-    id: newUserId,
+    id:          newUserId,
     email,
-    full_name: full_name || null,
-    phone: phone || null,
+    full_name:   full_name   || null,
+    phone:       phone       || null,
     designation: designation || null,
-    region: region || null,
+    region:      region      || null,
     role,
-    is_active: true,
+    is_active:   true,
   }, { onConflict: 'id' });
 
   if (profileError) {
