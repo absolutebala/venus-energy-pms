@@ -28,7 +28,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     user_metadata: { role, full_name: full_name || '' },
   });
 
-  if (error) return res.status(400).json({ error: error.message });
+  if (error) {
+    console.error('createUser full error:', JSON.stringify(error, null, 2));
+    return res.status(400).json({ error: error.message, code: (error as any).code, status: (error as any).status });
+  }
 
   if (data.user) {
     await admin.from('profiles').upsert({
