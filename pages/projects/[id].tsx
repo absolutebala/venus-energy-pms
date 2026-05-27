@@ -1689,7 +1689,7 @@ export default function ProjectDetailPage() {
                 { key:'ptw',       label:'PTW Done',                desc:'Permit to Work completed'                 },
                 { key:'materials', label:'Materials Returned to Indus', desc:'All materials from STN returned via SRN — MANDATORY', important:true },
               ].map(item=>{
-                const checked = checklist[item.key as keyof typeof checklist
+                const checked = checklist[item.key as keyof typeof checklist];
                 return (
                   <div key={item.key} onClick={()=>isBilling&&setChecklist(c=>({...c,[item.key]:!c[item.key as keyof typeof c]}))}
                     style={{ padding:14, borderRadius:10, border:`2px solid ${checked?item.important?T.primary:T.success:item.important?'#EF4444':T.border}`, background:checked?item.important?T.primaryLight:T.successBg:'#fff', cursor:isBilling?'pointer':'default', transition:'all 0.15s' }}>
