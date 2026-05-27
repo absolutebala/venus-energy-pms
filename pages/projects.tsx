@@ -73,7 +73,7 @@ export default function ProjectsPage() {
       const newId = `VE-${year}-${String(nextNum).padStart(3,'0')}`;
       // Insert blank project
       const { error } = await sb.from('projects').insert({
-        id: newId, po_no: '', site: '', status: 'pending', po_value: 0,
+        id: newId, po_no: '', site: '', status: 'not_started', po_value: 0,
       });
       if (error) throw new Error(error.message);
       router.push(`/projects/${newId}`);
