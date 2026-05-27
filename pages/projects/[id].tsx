@@ -1600,7 +1600,7 @@ export default function ProjectDetailPage() {
           {sectionTitle('📂','Work Documents', 'docs', false)}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
             {DOC_TYPES.map(doc => {
-              const docs = workDocs[doc.key] || [
+              const docs = workDocs[doc.key] || [];
               const uploaded = docs.length > 0;
               return (
                 <div key={doc.key} style={{ border:`1.5px solid ${uploaded?T.success:T.border}`, borderRadius:10, padding:14, background:uploaded?T.successBg:'#fff' }}>
