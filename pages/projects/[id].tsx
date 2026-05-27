@@ -988,6 +988,99 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
   );
 }
 
+
+// ── CreatableDropdown — searchable + creatable select ──────────────────────
+interface CreatableDropdownProps {
+  value: string;
+  onChange: (val: string) => void;
+  options: string[];
+  placeholder?: string;
+  onCreateNew?: (val: string) => void;
+}
+
+function CreatableDropdown({ value, onChange, options, placeholder, onCreateNew }: CreatableDropdownProps) {
+  const [open,   setOpen]   = React.useState(false);
+  const [search, setSearch] = React.useState('');
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handle = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, []);
+
+  const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
+  const showCreate = search.trim() && !options.some(o => o.toLowerCase() === search.toLowerCase());
+
+  const select = (val: string) => {
+    onChange(val);
+    setSearch('');
+    setOpen(false);
+  };
+
+  const create = () => {
+    if (!search.trim()) return;
+    onCreateNew?.(search.trim());
+    select(search.trim());
+  };
+
+  return (
+    <div ref={ref} style={{ position:'relative', width:'100%' }}>
+      <div style={{ display:'flex', alignItems:'center', border:`1px solid ${open?'#0D9488':'#E2E8F0'}`,
+        borderRadius:8, background:'#fff', cursor:'text', overflow:'hidden' }}
+        onClick={() => { setOpen(true); setSearch(''); }}>
+        {(!open && value) ? (
+          <div style={{ padding:'8px 12px', fontSize:13, color:'#1E293B', flex:1 }}>{value}</div>
+        ) : (
+          <input autoFocus={open} value={open ? search : value}
+            onChange={e => { setSearch(e.target.value); setOpen(true); }}
+            onFocus={() => setOpen(true)}
+            placeholder={placeholder || 'Select or type...'}
+            style={{ padding:'8px 12px', fontSize:13, border:'none', outline:'none',
+              width:'100%', background:'transparent', color:'#1E293B' }} />
+        )}
+        <span style={{ padding:'0 10px', color:'#94A3B8', fontSize:12 }}>▾</span>
+      </div>
+
+      {open && (
+        <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:200,
+          background:'#fff', border:'1px solid #E2E8F0', borderRadius:10,
+          boxShadow:'0 8px 24px rgba(0,0,0,0.12)', maxHeight:220, overflowY:'auto' as const }}>
+
+          {filtered.length === 0 && !showCreate && (
+            <div style={{ padding:'12px 14px', fontSize:13, color:'#94A3B8' }}>No options found</div>
+          )}
+
+          {filtered.map(opt => (
+            <div key={opt} onClick={() => select(opt)}
+              style={{ padding:'10px 14px', fontSize:13, cursor:'pointer',
+                background: opt === value ? '#F0FDFA' : '#fff',
+                color: opt === value ? '#0D9488' : '#1E293B',
+                fontWeight: opt === value ? 600 : 400 }}
+              onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background='#F8FAFC'}
+              onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = opt === value ? '#F0FDFA' : '#fff'}>
+              {opt}
+            </div>
+          ))}
+
+          {showCreate && (
+            <div onClick={create}
+              style={{ padding:'10px 14px', fontSize:13, cursor:'pointer',
+                color:'#0D9488', fontWeight:600, borderTop:'1px solid #E2E8F0',
+                display:'flex', alignItems:'center', gap:6 }}
+              onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background='#F0FDFA'}
+              onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background='#fff'}>
+              + Create "{search.trim()}"
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProjectDetailPage() {
   const router  = useRouter();
   const { id }  = router.query;
@@ -1096,7 +1189,30 @@ export default function ProjectDetailPage() {
   // Preview modal
   const [previewDoc, setPreviewDoc] = useState<{name:string;url:string;isImage:boolean}|null>(null);
   // RM and PM lists from Supabase profiles
-  const [rmList, setRmList] = React.useState<string[]>([]);
+  const [rmList,      setRmList]      = React.useState<string[]>([]);
+  const [regionOpts,  setRegionOpts]  = React.useState<string[]>(REGIONS);
+  const [jobTypeOpts, setJobTypeOpts] = React.useState<string[]>(TYPES);
+  const [siteOpts,    setSiteOpts]    = React.useState<string[]>([]);
+
+  // Load lookup options from Supabase
+  React.useEffect(() => {
+    const sb = createClient();
+    sb.from('lookup_options').select('type,value').order('value').then(({ data }) => {
+      if (data) {
+        setRegionOpts(data.filter((d:any)=>d.type==='region').map((d:any)=>d.value));
+        setJobTypeOpts(data.filter((d:any)=>d.type==='job_type').map((d:any)=>d.value));
+        setSiteOpts(data.filter((d:any)=>d.type==='site').map((d:any)=>d.value));
+      }
+    });
+  }, []);
+
+  const addLookupOption = async (type: string, value: string) => {
+    const sb = createClient();
+    await sb.from('lookup_options').insert({ type, value }).select();
+    if (type === 'region')   setRegionOpts(prev  => [...new Set([...prev,  value])].sort());
+    if (type === 'job_type') setJobTypeOpts(prev => [...new Set([...prev,  value])].sort());
+    if (type === 'site')     setSiteOpts(prev    => [...new Set([...prev,  value])].sort());
+  };
   const [pmList, setPmList] = React.useState<string[]>([]);
   React.useEffect(() => {
     const sb = createClient();
@@ -1321,9 +1437,30 @@ export default function ProjectDetailPage() {
               {F('Project No',       'id',          'text', undefined, true)}
               {F('PO Number',        'poNo',        'text', undefined, false)}
               {F('Indus ID',         'indusId',     'text', undefined, false)}
-              {F('Site Name',        'site')}
-              {F('Region',           'region',      'text', REGIONS)}
-              {F('Job Type',         'type',        'text', TYPES)}
+              {editing('details') && canEditDetails ? (
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Site Name</label>
+                  <CreatableDropdown value={(form as any).site||''} onChange={v=>setForm((f:any)=>({...f,site:v}))}
+                    options={siteOpts} placeholder="Select or create site..."
+                    onCreateNew={v=>addLookupOption('site',v)} />
+                </div>
+              ) : F('Site Name', 'site')}
+              {editing('details') && canEditDetails ? (
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Region</label>
+                  <CreatableDropdown value={(form as any).region||''} onChange={v=>setForm((f:any)=>({...f,region:v}))}
+                    options={regionOpts} placeholder="Select or create region..."
+                    onCreateNew={v=>addLookupOption('region',v)} />
+                </div>
+              ) : F('Region', 'region', 'text', REGIONS)}
+              {editing('details') && canEditDetails ? (
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Job Type</label>
+                  <CreatableDropdown value={(form as any).type||''} onChange={v=>setForm((f:any)=>({...f,type:v}))}
+                    options={jobTypeOpts} placeholder="Select or create job type..."
+                    onCreateNew={v=>addLookupOption('job_type',v)} />
+                </div>
+              ) : F('Job Type', 'type', 'text', TYPES)}
               {F('Start Date',       'startDate',   'date')}
               {F('End Date',         'endDate',     'date')}
               {F('Region Manager', 'rm', 'text', rmList.length > 0 ? rmList : undefined)}
