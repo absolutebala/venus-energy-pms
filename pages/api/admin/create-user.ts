@@ -1,17 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const admin = createAdminClient();
-
-  // Accept Bearer token from Authorization header (frontend sends token in header)
+  // Verify caller is super_admin via Bearer token
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
+  const admin = createAdminClient();
   const { data: { user }, error: authErr } = await admin.auth.getUser(token);
   if (authErr || !user) return res.status(401).json({ error: 'Unauthorized' });
 
@@ -20,48 +18,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { email, password, full_name, phone, designation, region, role } = req.body;
   if (!email || !password || !role) return res.status(400).json({ error: 'Email, password, and role are required' });
+  if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-  // Try admin.createUser first; fall back to signUp if admin API fails
-  let userId: string | null = null;
-
-  const { data: adminData, error: adminError } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { role, full_name: full_name || '' },
-  });
-
-  if (adminError) {
-    console.error('admin.createUser error:', JSON.stringify(adminError, null, 2));
-
-    // Fallback: use signUp with service role (skips email confirmation on some configs)
-    const anonAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
-
-    const { data: signUpData, error: signUpError } = await anonAdmin.auth.signUp({
+  // Call Supabase auth admin REST API directly (bypasses JS client version issues)
+  const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SERVICE_KEY}`,
+      'apikey': SERVICE_KEY,
+    },
+    body: JSON.stringify({
       email,
       password,
-      options: { data: { role, full_name: full_name || '' } },
-    });
+      email_confirm: true,
+      user_metadata: { role, full_name: full_name || '' },
+    }),
+  });
 
-    if (signUpError) {
-      console.error('signUp fallback error:', JSON.stringify(signUpError, null, 2));
-      return res.status(400).json({ error: signUpError.message, code: (signUpError as any).code });
-    }
+  const createData = await createRes.json();
 
-    userId = signUpData.user?.id ?? null;
-  } else {
-    userId = adminData.user?.id ?? null;
+  if (!createRes.ok) {
+    console.error('REST createUser error:', JSON.stringify(createData, null, 2));
+    return res.status(400).json({ error: createData.msg || createData.message || 'Failed to create user' });
   }
 
-  if (!userId) return res.status(500).json({ error: 'User created but no ID returned' });
+  const newUserId = createData.id;
+  if (!newUserId) return res.status(500).json({ error: 'User created but no ID returned' });
 
+  // Save profile
   const { error: profileError } = await admin.from('profiles').upsert({
-    id: userId,
+    id: newUserId,
     email,
     full_name: full_name || null,
     phone: phone || null,
@@ -73,7 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (profileError) {
     console.error('profile upsert error:', JSON.stringify(profileError, null, 2));
-    return res.status(500).json({ error: 'User auth created but profile save failed: ' + profileError.message });
+    return res.status(500).json({ error: 'User created but profile save failed: ' + profileError.message });
   }
 
   return res.status(200).json({ success: true });
