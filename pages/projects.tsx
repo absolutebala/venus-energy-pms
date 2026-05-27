@@ -55,6 +55,34 @@ const STN_RETURN_MAP: Record<string,boolean> = {}; /*
 
 export default function ProjectsPage() {
   const router = useRouter();
+  const [creating, setCreating] = React.useState(false);
+
+  const createNewProject = async () => {
+    setCreating(true);
+    try {
+      const sb = createClient();
+      // Generate next project ID
+      const year = new Date().getFullYear();
+      const { data: existing } = await sb.from('projects').select('id').order('id', { ascending: false }).limit(1);
+      let nextNum = 1;
+      if (existing && existing.length > 0) {
+        const lastId = existing[0].id; // e.g. VE-2025-015
+        const parts = lastId.split('-');
+        nextNum = parseInt(parts[parts.length - 1]) + 1;
+      }
+      const newId = `VE-${year}-${String(nextNum).padStart(3,'0')}`;
+      // Insert blank project
+      const { error } = await sb.from('projects').insert({
+        id: newId, status: 'pending', po_value: 0,
+        billed_amount: 0, paid_amount: 0, progress: 0,
+      });
+      if (error) throw new Error(error.message);
+      router.push(`/projects/${newId}`);
+    } catch(err: any) {
+      alert('Failed to create project: ' + err.message);
+      setCreating(false);
+    }
+  };
   const { projects: dbProjects, loading: projLoading } = useProjects();
   const { getDocStatus } = useWorkDocs();
   const { profile, can, loading } = useAuth();
@@ -276,7 +304,7 @@ export default function ProjectsPage() {
           <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)} style={{ ...inputStyle(), width:'auto', marginLeft:'auto' }}>
             {TYPES.map(t=><option key={t}>{t}</option>)}
           </select>
-          <button onClick={()=>router.push('/projects/new')} style={btnPrimary}>+ New Project</button>
+          <button onClick={createNewProject} disabled={creating} style={{ ...btnPrimary, opacity:creating?0.7:1 }}>{creating?'Creating…':'+ New Project'}</button>
         </div>
 
         <div style={card}>
