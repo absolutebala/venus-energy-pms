@@ -12,7 +12,7 @@ export interface Project {
   ptwTicketId: string; ptwSupervisor: string; ptwDateFrom: string; ptwDateTo: string;
   workScope: string; remarks: string;
   safetyPhotos: boolean; sitePhotos: boolean; jmrDocument: boolean;
-  acCertificate: boolean; nocDocument: boolean; drawingDocument: boolean; ptwDocument: boolean;
+  atCertificate: boolean; nocDocument: boolean; drawingDocument: boolean; ptwDocument: boolean;
   createdAt?: string; updatedAt?: string; updatedBy?: string;
 }
 
@@ -47,7 +47,7 @@ function mapRow(row: any): Project {
     safetyPhotos:    Boolean(row.safety_photos),
     sitePhotos:      Boolean(row.site_photos),
     jmrDocument:     Boolean(row.jmr_document),
-    acCertificate:   Boolean(row.ac_certificate),
+    atCertificate:   Boolean(row.at_certificate),
     nocDocument:     Boolean(row.noc_document),
     drawingDocument: Boolean(row.drawing_document),
     ptwDocument:     Boolean(row.ptw_document),
@@ -63,7 +63,7 @@ const DB_COLUMNS = new Set([
   'vendor','vendor_contact','vendor_phone','vendor_email',
   'status','po_value','billed_amount','paid_amount','progress',
   'start_date','end_date','ptw_ticket_id','ptw_supervisor',
-  'ptw_date_from','ptw_date_to','work_scope','remarks','safety_photos','site_photos','jmr_document','ac_certificate','noc_document','drawing_document','ptw_document',
+  'ptw_date_from','ptw_date_to','work_scope','remarks','safety_photos','site_photos','jmr_document','at_certificate','noc_document','drawing_document','ptw_document',
   'updated_at','updated_by',
 ]);
 
@@ -78,7 +78,7 @@ function mapToDb(updates: Partial<Project>): Record<string, any> {
     ptwDateFrom:'ptw_date_from', ptwDateTo:'ptw_date_to',
     workScope:'work_scope', updatedBy:'updated_by',
     safetyPhotos:'safety_photos', sitePhotos:'site_photos',
-    jmrDocument:'jmr_document', acCertificate:'ac_certificate',
+    jmrDocument:'jmr_document', atCertificate:'at_certificate',
     nocDocument:'noc_document', drawingDocument:'drawing_document', ptwDocument:'ptw_document',
   };
   const DATE_COLS = new Set(['start_date','end_date','ptw_date_from','ptw_date_to']);

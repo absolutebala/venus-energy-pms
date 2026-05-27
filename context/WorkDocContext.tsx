@@ -70,7 +70,7 @@ export function WorkDocProvider({ children }: { children: React.ReactNode }) {
   // Returns { safety_photos: true/false, site_photos: true/false, ... }
   const getDocStatus = useCallback((projectId: string) => {
     const projectDocs = docs.filter(d => d.projectId === projectId);
-    const DOC_KEYS = ['safety_photos','site_photos','jmr_document','ac_certificate','noc_document','drawing_document','ptw_document'];
+    const DOC_KEYS = ['safety_photos','site_photos','jmr_document','at_certificate','noc_document','drawing_document','ptw_document'];
     return Object.fromEntries(
       DOC_KEYS.map(key => [key, projectDocs.some(d => d.docType === key)])
     );
