@@ -250,11 +250,25 @@ export default function AdminUsersPage() {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    // Mark inactive in profiles (does not delete Supabase auth user)
-    await supabase.from('profiles').update({ is_active: false }).eq('id', deleteTarget.id);
-    setDeleting(false);
-    setDeleteTarget(null);
-    fetchUsers();
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', Authorization: `Bearer ${session?.access_token||''}` },
+        body: JSON.stringify({ userId: deleteTarget.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsg({ type:'error', text: data.error || 'Failed to delete user.' });
+      } else {
+        await fetchUsers();
+      }
+    } catch(err: any) {
+      setMsg({ type:'error', text: err.message || 'Delete failed.' });
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   const filtered = users.filter(u => {
