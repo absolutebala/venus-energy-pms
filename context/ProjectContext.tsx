@@ -8,7 +8,7 @@ export interface Project {
   region: string; type: string; pm: string; rm: string;
   vendor: string; vendorContact: string; vendorPhone: string; vendorEmail: string;
   status: string; poValue: number; billedAmount: number; paidAmount: number;
-  progress: number; startDate: string; endDate: string;
+  progress: number; poDate: string; startDate: string; endDate: string;
   ptwTicketId: string; ptwSupervisor: string; ptwDateFrom: string; ptwDateTo: string;
   workScope: string; remarks: string;
   safetyPhotos: boolean; sitePhotos: boolean; jmrDocument: boolean;
