@@ -37,8 +37,6 @@ const PROJECT_DB: Record<string,any> = {
 
 // VENDOR_LIST replaced by Supabase fetch — see vendorList state below
 
-];
-
 
 const PO_ITEMS_DB: Record<string,any[]> = {
   'VE-2025-001':[
@@ -65,16 +63,11 @@ const PO_ITEMS_DB: Record<string,any[]> = {
 };
 
 const UOM_OPTIONS = ['Set','Nos','MT','RMT','Cum','Bag','Box','Lot','KG','Mtr'
-];
 const GST_OPTIONS = ['0','5','12','18','28'
-];
 
 const VENDORS = ['ABC Telecom Services','XYZ Infra Solutions','TowerTech Pvt Ltd','NetConnect Services','PowerSys India','BuildRight Constructions'
-];
 const REGIONS  = ['Tamil Nadu','Karnataka','Telangana','Maharashtra','Delhi','Kerala','West Bengal'
-];
 const TYPES    = ['Tower Erection','Tower Maintenance','Component Replacement','Fiber Installation','Civil Works','Power Works'
-];
 
 const DOC_TYPES = [
   { key:'safety_photos',   label:'Safety Photos',   icon:'📷', accept:'image/*'           },
@@ -86,7 +79,6 @@ const DOC_TYPES = [
   { key:'ptw_document',   label:'PTW Document',     icon:'🔑', accept:'.pdf,.doc,.docx'    },
 
 
-];
 
 const LEGACY_MOCK_DOCS: Record<string, { name:string; size:string; url:string; isImage:boolean }[]> = {
   safety_photos:    [{ name:'safety_site_01.jpg', size:'1.2 MB', url:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400', isImage:true },{ name:'safety_ppe.jpg', size:'980 KB', url:'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400', isImage:true }],
@@ -98,7 +90,6 @@ const LEGACY_MOCK_DOCS: Record<string, { name:string; size:string; url:string; i
 };
 
 const STATUS_FLOW = ['pending','in_progress','submitted','under_review','pm_approved','billing_review','completed','delayed'
-];
 const STATUS_LABELS: Record<string,string> = { pending:'Pending', in_progress:'In Progress', submitted:'Submitted', under_review:'Under Review', pm_approved:'PM Approved', billing_review:'Billing Review', completed:'Completed', delayed:'Delayed' };
 const STATUS_COLOR: Record<string,string>  = { pending:'#D97706', in_progress:'#2563EB', submitted:'#7C3AED', under_review:'#7C3AED', pm_approved:'#0D9488', billing_review:'#D97706', completed:'#16A34A', delayed:'#DC2626' };
 
@@ -110,7 +101,6 @@ const BASE_ACTIVITY_LOG = [
   { date:'17/05/2025 10:00 AM', action:'Invoice INV-2025-012 submitted', by:'Finance Team',         role:'Billing' },
   { date:'15/05/2025 09:00 AM', action:'Project created',                by:'Ramesh Kumar',         role:'RM'      },
 
-];
 
 const fmtDate = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } };
 const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
@@ -1612,7 +1602,6 @@ export default function ProjectDetailPage() {
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
             {DOC_TYPES.map(doc => {
               const docs = workDocs[doc.key] || [
-];
               const uploaded = docs.length > 0;
               return (
                 <div key={doc.key} style={{ border:`1.5px solid ${uploaded?T.success:T.border}`, borderRadius:10, padding:14, background:uploaded?T.successBg:'#fff' }}>
@@ -1702,7 +1691,6 @@ export default function ProjectDetailPage() {
                 { key:'materials', label:'Materials Returned to Indus', desc:'All materials from STN returned via SRN — MANDATORY', important:true },
               ].map(item=>{
                 const checked = checklist[item.key as keyof typeof checklist
-];
                 return (
                   <div key={item.key} onClick={()=>isBilling&&setChecklist(c=>({...c,[item.key]:!c[item.key as keyof typeof c]}))}
                     style={{ padding:14, borderRadius:10, border:`2px solid ${checked?item.important?T.primary:T.success:item.important?'#EF4444':T.border}`, background:checked?item.important?T.primaryLight:T.successBg:'#fff', cursor:isBilling?'pointer':'default', transition:'all 0.15s' }}>
