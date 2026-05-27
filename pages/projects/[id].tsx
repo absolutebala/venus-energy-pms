@@ -1036,13 +1036,23 @@ export default function ProjectDetailPage() {
   const [allTransactions, setAllTransactions] = React.useState(PAYMENT_TRANSACTIONS);
   const [srnAllApproved, setSrnAllApproved] = React.useState(false);
   const [editingSection, setEditingSection] = useState<string|null>(null);
+  const [autoEditDone, setAutoEditDone] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const editing    = (s: string) => editingSection === s;
   const notEditing = editingSection === null;
 
   const [form, setForm] = useState<any>({});
-  React.useEffect(() => { if (dbProject) setForm({...dbProject}); }, [dbProject?.id]);
+  React.useEffect(() => {
+    if (dbProject) {
+      setForm({...dbProject});
+      // Auto-enable edit mode for new blank projects (no PO number)
+      if (!autoEditDone && !dbProject.poNo && !dbProject.site) {
+        setEditingSection('details');
+        setAutoEditDone(true);
+      }
+    }
+  }, [dbProject?.id]);
 
   const startEdit  = (s: string) => { setForm({...(id ? projects[id as string] : {})}); setEditingSection(s); };
   const cancelEdit = () => { setForm({...(id ? projects[id as string] : {})}); setEditingSection(null); };
