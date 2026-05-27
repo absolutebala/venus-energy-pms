@@ -1209,9 +1209,9 @@ export default function ProjectDetailPage() {
   const addLookupOption = async (type: string, value: string) => {
     const sb = createClient();
     await sb.from('lookup_options').insert({ type, value }).select();
-    if (type === 'region')   setRegionOpts(prev  => [...new Set([...prev,  value])].sort());
-    if (type === 'job_type') setJobTypeOpts(prev => [...new Set([...prev,  value])].sort());
-    if (type === 'site')     setSiteOpts(prev    => [...new Set([...prev,  value])].sort());
+    if (type === 'region')   setRegionOpts(prev  => Array.from(new Set([...prev,  value])).sort());
+    if (type === 'job_type') setJobTypeOpts(prev => Array.from(new Set([...prev,  value])).sort());
+    if (type === 'site')     setSiteOpts(prev    => Array.from(new Set([...prev,  value])).sort());
   };
   const [pmList, setPmList] = React.useState<string[]>([]);
   React.useEffect(() => {
