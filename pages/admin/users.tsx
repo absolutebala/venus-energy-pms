@@ -81,50 +81,6 @@ function MsgAlert({ msg }: MsgAlertProps) {
 }
 
 
-interface PasswordFieldProps {
-  label: string; value: string; onChange: (v:string)=>void;
-  placeholder?: string; fkey?: string;
-  focused: string|null; setFocused: (k:string|null)=>void;
-}
-function PasswordField({ label, value, onChange, placeholder, fkey='', focused, setFocused }: PasswordFieldProps) {
-  const [show, setShow] = React.useState(false);
-  const [copied, setCopied] = React.useState(false);
-
-  const copy = () => {
-    if (!value) return;
-    navigator.clipboard.writeText(value).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
-  return (
-    <div style={{ marginBottom:16 }}>
-      <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>{label}</label>
-      <div style={{ display:'flex', alignItems:'center', border:`1px solid ${focused===fkey?T.primary:'#E2E8F0'}`, borderRadius:8, background:'#fff', overflow:'hidden' }}>
-        <input
-          type={show ? 'text' : 'password'}
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          onFocus={() => setFocused(fkey)}
-          onBlur={() => setFocused(null)}
-          placeholder={placeholder}
-          style={{ flex:1, border:'none', outline:'none', padding:'9px 12px', fontSize:13, color:T.text, background:'transparent' }}
-        />
-        <button type="button" onClick={() => setShow(s => !s)}
-          title={show ? 'Hide password' : 'Show password'}
-          style={{ background:'none', border:'none', padding:'0 8px', cursor:'pointer', fontSize:15, color:T.textMuted, lineHeight:1 }}>
-          {show ? '🙈' : '👁'}
-        </button>
-        <button type="button" onClick={copy}
-          title="Copy password"
-          style={{ background:'none', border:'none', padding:'0 10px 0 4px', cursor:'pointer', fontSize:13, color:copied ? T.success : T.textMuted, fontWeight:600, lineHeight:1 }}>
-          {copied ? '✅' : '📋'}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 
 interface PasswordFieldProps {
