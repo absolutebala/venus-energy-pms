@@ -78,6 +78,14 @@ function parseItems(text: string): POItem[] {
 }
 
 /* ─── Main handler ────────────────────────────────── */
+// Polyfill browser APIs required by pdf-parse in Node.js serverless
+if (typeof (globalThis as any).DOMMatrix === 'undefined') {
+  (globalThis as any).DOMMatrix = class DOMMatrix { constructor() {} };
+}
+if (typeof (globalThis as any).Path2D === 'undefined') {
+  (globalThis as any).Path2D = class Path2D { constructor() {} };
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
