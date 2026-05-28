@@ -45,49 +45,45 @@ function parseDate(raw: string): string {
 
 function parseItems(text: string): any[] {
   const items: any[] = [];
-  // Split on item boundaries: number + item code pattern (e.g. "2 22-205830-C-00-ZZ")
-  const itemCodePattern = /\b(\d{1,2})\s+([\w]{2,3}-[\w-]{10,})/g;
-  const boundaries: {idx: number, num: number, code: string}[] = [];
-  let bm: RegExpExecArray | null;
-  while ((bm = itemCodePattern.exec(text)) !== null) {
-    const num = parseInt(bm[1]);
-    if (num >= 1 && num <= 50) {
-      boundaries.push({ idx: bm.index, num, code: bm[2] });
-    }
-  }
 
-  for (let i = 0; i < boundaries.length; i++) {
-    const start = boundaries[i].idx;
-    const end   = boundaries[i+1]?.idx ?? text.length;
-    const block = text.slice(start, end);
-    const code  = boundaries[i].code;
+  // Each item in Indus Towers PO ends with "Indus ID : IN-XXXXX" — use as reliable delimiter
+  const blocks = text.split(/Indus ID\s*:\s*IN-\d+/);
+  // Remove last block (it's the footer after last item)
+  const itemBlocks = blocks.slice(0, -1);
 
-    // Extract quantity, UOM, rate, amount from pattern: {qty} {UOM} {rate} INR {amount}
+  for (const block of itemBlocks) {
+    if (!block.trim()) continue;
+
+    // Extract item code: pattern like 22-205830-C-00-ZZ-ZZ051
+    const codeMatch = block.match(/([\w]{2,3}-[\w-]{10,})/);
+    const code = codeMatch?.[1] || '';
+
+    // Extract quantity, UOM, rate, amount
     const rateMatch = block.match(/(\d[\d.]*)\s+(Each|Meter|Nos|Set|Bag|KG|Lot|Box|MT|RMT|Cum|Mtr|KILOME\s*TER|[A-Z]{2,10})\s+([\d,]+\.?\d*)\s+INR\s+([\d,]+\.?\d*)/i);
     if (!rateMatch) continue;
 
     const qty    = parseFloat(rateMatch[1]);
-    const uom    = rateMatch[2].replace(/\s+/,'');
+    const uom    = rateMatch[2].replace(/\s+/g,'');
     const rate   = parseFloat(rateMatch[3].replace(/,/g,''));
     const amount = parseFloat(rateMatch[4].replace(/,/g,''));
 
-    // GST: sum of all SGST/CGST percentages in block
+    // GST rate
     const gstMatches = Array.from(block.matchAll(/[SC]GST\s*-?\s*(\d+)%/gi));
-    const gstRate = gstMatches.reduce((s, gm) => s + parseInt(gm[1]), 0) || 18;
+    const gstRate = gstMatches.reduce((s: number, gm: any) => s + parseInt(gm[1]), 0) || 18;
 
-    // Description: text between SAC/HSN lines and the rate line
-    const sacIdx  = Math.max(block.search(/SAC No\s*:/), block.search(/HSN No\s*:/));
-    const sacEnd  = sacIdx > -1 ? block.indexOf(' ', block.indexOf(':', sacIdx)+2)+1 : 0;
-    const rateIdx = block.search(/\d[\d.]*\s+(Each|Meter|Nos|Set|Bag|KG|Lot|Box|MT|RMT|Cum|Mtr|KILOME|[A-Z]{2,10})\s+[\d,]+/i);
-    const rawDesc = sacEnd > 0 && rateIdx > sacEnd
-      ? block.slice(sacEnd, rateIdx)
-      : block.slice(code.length + 5, rateIdx > 0 ? rateIdx : 80);
+    // Description: text after SAC/HSN line, before rate line
+    const sacIdx  = Math.max(block.search(/SAC No\s*:\s*\S*/), block.search(/HSN No\s*:\s*\S*/));
+    const afterSac = sacIdx > -1 ? block.slice(sacIdx).replace(/^(SAC|HSN) No\s*:\s*\S*\s*/, '').trim() : block;
+    const rateIdx = afterSac.search(/\d[\d.]*\s+(Each|Meter|Nos|Set|Bag|KG|Lot|Box|MT|RMT|Cum|Mtr|KILOME)/i);
+    const rawDesc = rateIdx > 0 ? afterSac.slice(0, rateIdx) : afterSac.slice(0, 100);
+    const description = rawDesc.replace(/\s+/g,' ').trim().slice(0, 100) || code;
 
-    const description = rawDesc.replace(/\s+/g,' ').replace(/HSN No[^:]*:[^\s]*/g,'')
-      .replace(/SAC No[^:]*:[^\s]*/g,'').trim().slice(0, 100) || code;
-
-    items.push({ description, hsn: code, uom, quantity: qty, rate, gst_rate: gstRate, amount });
+    if (code || description) {
+      items.push({ description, hsn: code, uom, quantity: qty, rate, gst_rate: gstRate, amount });
+    }
   }
+
+  console.log(`parseItems: found ${itemBlocks.length} blocks, extracted ${items.length} items`);
   return items;
 }
 
@@ -132,10 +128,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const itemsText  = itemsStart > -1 ? pdfText.slice(itemsStart, itemsEnd > itemsStart ? itemsEnd+50 : pdfText.length) : pdfText;
   const items      = parseItems(itemsText);
 
-  console.log('po_no raw text:', pdfText.slice(pdfText.indexOf('P.O'), pdfText.indexOf('P.O')+50));
-  console.log('items count:', items.length);
-  console.log('items text first 300:', itemsText.slice(0,300));
-  console.log('items text last 300:', itemsText.slice(-300));
+  console.log(`Extracted: po_no=${po_no}, items=${items.length}`);
 
   return res.status(200).json({
     success: true,
