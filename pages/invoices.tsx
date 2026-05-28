@@ -52,8 +52,6 @@ export default function InvoicesPage() {
   const { expenses, loading: expLoading } = useExpenses();
   const [activeTab, setActiveTab] = useState<'invoices'|'expenses'>('invoices');
   const pendingExpenses = expenses.filter((e:any) => e.status === 'pending');
-  const [activeTab, setActiveTab] = useState<'invoices'|'expenses'>('invoices');
-  const pendingExpenses = expenses.filter((e:any) => e.status === 'pending');
   const { projects } = useProjects();
   const canCreate  = !authLoading && can("invoices", "create");
   const canApprove = !authLoading && (profile?.role === 'super_admin' || profile?.role === 'accounting_team');
