@@ -765,7 +765,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
         <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:14, marginTop:12 }}>
           <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New Expense Entry</div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
-            {([['Txn Ref *','txnRef','text','EXP-XXX'],['Date *','expenseDate','date',''],
+            {([['Date *','expenseDate','date',''],
                ['Amount (₹) *','amount','number',''],['Site','site','text',''],
                ['Remarks','remarks','text','']] as [string,string,string,string][]).map(([l,f,t,ph])=>(
               <div key={f}>
