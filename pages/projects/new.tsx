@@ -92,6 +92,7 @@ export default function NewProjectPage() {
   const [site,          setSite]          = useState('');
   const [indusId,       setIndusId]       = useState('');
   const [poDate,        setPoDate]        = useState(new Date().toISOString().split('T')[0]);
+  const [poValue,       setPoValue]       = useState<number>(0);
   const [poNo,          setPoNo]          = useState(`PO-${new Date().toISOString().split('T')[0].replace(/-/g,'').slice(2)}-001`);
   const [projectNo,     setProjectNo]     = useState('');
   const [paymentTerms,  setPaymentTerms]  = useState('30 Days');
@@ -188,7 +189,6 @@ export default function NewProjectPage() {
         body: formData,
       });
       const data = await res.json();
-      if (data.error === 'NO_API_KEY') { setShowNoKeyModal(true); setExtracting(false); return; }
       if (!res.ok) { setToast({ msg: data.error || 'Extraction failed.', type:'error' }); setExtracting(false); return; }
       const d = data.data;
       if (d.project_name)   setProjectName(d.project_name);
@@ -197,8 +197,9 @@ export default function NewProjectPage() {
       if (d.indus_id)       setIndusId(d.indus_id);
       if (d.po_no)          setPoNo(d.po_no);
       if (d.po_date)        setPoDate(d.po_date);
-      if (d.payment_terms)  setPaymentTerms(d.payment_terms);
-      if (d.currency)       setCurrency(d.currency);
+      if (d.region)         setRegion(d.region);
+      if (d.po_value)       setPoValue(d.po_value);
+      if (d.payment_terms)  setPaymentTerms && setPaymentTerms(d.payment_terms);
       if (d.regional_manager) setRegionalManager(d.regional_manager);
       if (d.project_manager)  setProjectManager(d.project_manager);
       if (d.remarks)        setRemarks(d.remarks);
@@ -234,7 +235,7 @@ export default function NewProjectPage() {
           id: poNo || `VE-${Date.now()}`,
           site, indus_id: indusId, po_no: poNo, region,
           job_type: projectType, pm: projectManager, rm: regionalManager,
-          status: 'pending', po_value: 0,
+          status: 'pending', po_value: poValue,
           start_date: null, end_date: null,
         });
         if (error) throw error;
