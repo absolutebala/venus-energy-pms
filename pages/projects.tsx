@@ -77,25 +77,28 @@ export default function ProjectsPage() {
       if (!res.ok) { alert(json.error || 'Extraction failed'); return; }
       const d = json.data;
 
-      // Create new project with extracted details
-      const supabaseAdmin = createClient();
-      const newId = 'VE-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*900)+100);
-      const { error: insertErr } = await supabaseAdmin.from('projects').insert({
-        id:          newId,
-        po_no:       d.po_no       || '',
-        po_date:     d.po_date     || null,
-        po_value:    d.po_value    || 0,
-        indus_id:    d.indus_id    || '',
-        region:      d.region      || '',
-        site:        d.site_name   || d.indus_id || 'TBD',
-        type:        d.project_type|| 'Tower Erection',
-        pm:          '',
-        rm:          '',
-        vendor:      d.vendor_name || '',
-        status:      'not_started',
-        progress:    0,
-        billed_amount: 0,
-        paid_amount:   0,
+      // Create new project — sequential ID same as createNewProject
+      const sb2 = createClient();
+      const year = new Date().getFullYear();
+      const { data: existing } = await sb2.from('projects').select('id').order('id', { ascending:false }).limit(1);
+      let nextNum = 1;
+      if (existing?.length) {
+        const parts = existing[0].id.split('-');
+        nextNum = parseInt(parts[parts.length-1]) + 1;
+      }
+      const newId = `VE-\${year}-\${String(nextNum).padStart(3,'0')}`;
+      const { error: insertErr } = await sb2.from('projects').insert({
+        id:        newId,
+        po_no:     d.po_no     || '',
+        po_date:   d.po_date   || null,
+        po_value:  d.po_value  || 0,
+        indus_id:  d.indus_id  || '',
+        region:    d.region    || '',
+        site:      d.indus_id  || 'TBD',
+        type:      'Tower Erection',
+        pm: '', rm: '', vendor: d.vendor_name || '',
+        status: 'not_started', progress: 0,
+        billed_amount: 0, paid_amount: 0,
       });
       if (insertErr) { alert('Failed to create project: ' + insertErr.message); return; }
 

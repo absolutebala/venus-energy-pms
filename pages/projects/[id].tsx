@@ -118,11 +118,17 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
   const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', rate:'', gstRate:'18' });
   const [editRow,  setEditRow]  = React.useState<any>({});
 
-  // Listen for PO items extracted from PDF upload
+  // Check localStorage for pending PO items (set by projects page Upload PO flow)
   React.useEffect(() => {
-    const handler = async (e: Event) => {
-      const extractedItems = (e as CustomEvent).detail as any[];
-      if (!extractedItems?.length) return;
+    if (!projectId) return;
+    const key = 'pending_po_items_' + projectId;
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    localStorage.removeItem(key);
+    const extractedItems = JSON.parse(raw);
+    if (!extractedItems?.length) return;
+
+    const addAll = async () => {
       let added = 0;
       for (let i = 0; i < extractedItems.length; i++) {
         const item = extractedItems[i];
@@ -145,9 +151,8 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
       }
       setToast({ msg:`✅ ${added} PO items added from PDF`, type:'success' });
     };
-    window.addEventListener('po-items-extracted', handler);
-    return () => window.removeEventListener('po-items-extracted', handler);
-  }, [projectId, addItem]);
+    addAll();
+  }, [projectId]);
 
   const fmt = (n: number) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits:2 });
   const totalAmount = items.reduce((a,i) => a + i.amount, 0);
@@ -1202,22 +1207,6 @@ export default function ProjectDetailPage() {
       if (poUploadRef.current) poUploadRef.current.value = '';
     }
   };
-
-  // Load pending PO items from localStorage (set by projects page PO upload)
-  React.useEffect(() => {
-    if (!id) return;
-    const key = 'pending_po_items_' + id;
-    const pending = localStorage.getItem(key);
-    if (pending) {
-      try {
-        const items = JSON.parse(pending);
-        localStorage.removeItem(key);
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('po-items-extracted', { detail: items }));
-        }, 1500);
-      } catch(e) { console.error('pending items parse error', e); }
-    }
-  }, [id]);
 
   const saveSection = () => {
     setSaving(true);
