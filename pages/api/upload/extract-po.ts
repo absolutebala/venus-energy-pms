@@ -39,7 +39,7 @@ function parseItems(text: string): POItem[] {
   // Split into item blocks: each block starts with "\n{digit(s)} {ITEM-CODE}"
   // Item codes look like: 29-100000-0-00-ZZ-ZZ816
   const blockSplitter = /\n(\d{1,3})\s+([\w-]{15,})\n/g;
-  const matches = [...text.matchAll(blockSplitter)];
+  const matches = Array.from(text.matchAll(blockSplitter));
 
   for (let i = 0; i < matches.length; i++) {
     const m        = matches[i];
@@ -61,7 +61,7 @@ function parseItems(text: string): POItem[] {
     const amount = parseAmount(rateLine[4]);
 
     // GST: look for SGST/CGST percentages — sum them
-    const gstMatches = [...block.matchAll(/[SC]GST\s*-?\s*(\d+)%/gi)];
+    const gstMatches = Array.from(block.matchAll(/[SC]GST\s*-?\s*(\d+)%/gi));
     const gstRate = gstMatches.reduce((sum, gm) => sum + parseInt(gm[1]), 0) || 18;
 
     // Description: text between SAC line and the rate line
