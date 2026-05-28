@@ -8,39 +8,51 @@ export interface Expense {
   expenseType: string; amount: number; paymentMode: string;
   projectId: string; poNo: string; remarks: string;
   createdBy: string; createdAt?: string; updatedAt?: string;
+  status: string;
+  paidTxnRef?: string; paidPaymentMode?: string; paidAt?: string;
 }
 
 function mapRow(row: any): Expense {
   return {
-    id:          row.id            ?? '',
-    txnRef:      row.txn_ref       ?? '',
-    expenseDate: row.expense_date  ?? '',
-    site:        row.site          ?? '',
-    expenseType: row.expense_type  ?? 'Advance',
-    amount:      Number(row.amount ?? 0),
-    paymentMode: row.payment_mode  ?? 'Bank Transfer',
-    projectId:   row.project_id    ?? '',
-    poNo:        row.po_no         ?? '',
-    remarks:     row.remarks       ?? '',
-    createdBy:   row.created_by    ?? '',
-    createdAt:   row.created_at    ?? '',
-    updatedAt:   row.updated_at    ?? '',
+    id:              row.id                ?? '',
+    txnRef:          row.txn_ref           ?? '',
+    expenseDate:     row.expense_date      ?? '',
+    site:            row.site              ?? '',
+    expenseType:     row.expense_type      ?? 'Advance',
+    amount:          Number(row.amount     ?? 0),
+    paymentMode:     row.payment_mode      ?? '',
+    projectId:       row.project_id        ?? '',
+    poNo:            row.po_no             ?? '',
+    remarks:         row.remarks           ?? '',
+    createdBy:       row.created_by        ?? '',
+    createdAt:       row.created_at        ?? '',
+    updatedAt:       row.updated_at        ?? '',
+    status:          row.status            ?? 'pending',
+    paidTxnRef:      row.paid_txn_ref      ?? '',
+    paidPaymentMode: row.paid_payment_mode ?? '',
+    paidAt:          row.paid_at           ?? '',
   };
 }
 
+const VALID_DB_COLS = new Set([
+  'txn_ref','expense_date','site','expense_type','amount',
+  'payment_mode','project_id','po_no','remarks','created_by',
+  'status','paid_txn_ref','paid_payment_mode','paid_at',
+]);
+
+const CAMEL_TO_SNAKE: Record<string,string> = {
+  txnRef:'txn_ref', expenseDate:'expense_date', expenseType:'expense_type',
+  paymentMode:'payment_mode', projectId:'project_id', poNo:'po_no',
+  createdBy:'created_by', paidTxnRef:'paid_txn_ref',
+  paidPaymentMode:'paid_payment_mode', paidAt:'paid_at',
+};
+
 function mapToDb(exp: Partial<Expense>): Record<string, any> {
   const db: Record<string, any> = {};
-  const map: Record<string, string> = {
-    txnRef:'txn_ref', expenseDate:'expense_date', expenseType:'expense_type',
-    paymentMode:'payment_mode', projectId:'project_id', poNo:'po_no',
-    createdBy:'created_by',
-  };
-  const VALID = new Set(['txn_ref','expense_date','site','expense_type','amount',
-    'payment_mode','project_id','po_no','remarks','created_by']);
   for (const [key, val] of Object.entries(exp)) {
-    const dbKey = map[key] || key;
-    if (!VALID.has(dbKey)) continue;
-    db[dbKey] = dbKey === 'expense_date' && val === '' ? null : val;
+    const dbKey = CAMEL_TO_SNAKE[key] || key;
+    if (!VALID_DB_COLS.has(dbKey)) continue;
+    db[dbKey] = (dbKey === 'expense_date' && val === '') ? null : val;
   }
   return db;
 }
@@ -50,6 +62,7 @@ interface ExpenseContextType {
   loading: boolean;
   getByProject: (projectId: string) => Expense[];
   addExpense: (exp: Omit<Expense, 'id'|'createdAt'|'updatedAt'>) => Promise<Expense>;
+  updateExpense: (id: string, updates: Partial<Expense>) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
   refreshExpenses: () => Promise<void>;
 }
@@ -58,6 +71,7 @@ const ExpenseContext = createContext<ExpenseContextType>({
   expenses: [], loading: true,
   getByProject: () => [],
   addExpense: async () => ({} as Expense),
+  updateExpense: async () => {},
   deleteExpense: async () => {},
   refreshExpenses: async () => {},
 });
@@ -68,53 +82,44 @@ export function ExpenseProvider({ children }: { children: React.ReactNode }) {
 
   const fetchExpenses = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('expenses').select('*').order('expense_date', { ascending: false });
-    if (!error) setExpenses((data || []).map(mapRow));
+    const { data } = await supabase.from('expenses').select('*').order('created_at', { ascending: false });
+    setExpenses((data || []).map(mapRow));
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchExpenses(); }, [fetchExpenses]);
-  // Re-fetch when browser tab regains focus (avoids stale data after navigation)
-  useEffect(() => {
-    const onFocus = () => fetchExpenses();
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
-  }, [fetchExpenses]);
 
+  const getByProject = useCallback((projectId: string) =>
+    expenses.filter(e => e.projectId === projectId), [expenses]);
 
-  const getByProject = useCallback(
-    (projectId: string) => expenses.filter(e => e.projectId === projectId),
-    [expenses]
-  );
-
-  const addExpense = useCallback(async (exp: Omit<Expense, 'id'|'createdAt'|'updatedAt'>) => {
-    // Duplicate txnRef check
-    const dup = expenses.find(e => e.txnRef.trim().toLowerCase() === exp.txnRef.trim().toLowerCase());
-    if (dup) throw new Error(`Transaction ref "${exp.txnRef}" already exists`);
-    const payload = mapToDb(exp);
-    const { data, error } = await supabase.from('expenses').insert(payload).select().single();
+  const addExpense = useCallback(async (exp: Omit<Expense,'id'|'createdAt'|'updatedAt'>) => {
+    const db = mapToDb({ ...exp, status: exp.status || 'pending' });
+    const { data, error } = await supabase.from('expenses').insert(db).select().single();
     if (error) throw new Error(error.message);
     const newExp = mapRow(data);
     setExpenses(prev => [newExp, ...prev]);
     return newExp;
-  }, [expenses]);
+  }, []);
+
+  const updateExpense = useCallback(async (id: string, updates: Partial<Expense>) => {
+    const db = mapToDb(updates);
+    const { error } = await supabase.from('expenses').update(db).eq('id', id);
+    if (error) throw new Error(error.message);
+    setExpenses(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+  }, []);
 
   const deleteExpense = useCallback(async (id: string) => {
-    const { error } = await supabase.from('expenses').delete().eq('id', id);
-    if (error) throw new Error(error.message);
+    await supabase.from('expenses').delete().eq('id', id);
     setExpenses(prev => prev.filter(e => e.id !== id));
   }, []);
 
+  const refreshExpenses = useCallback(fetchExpenses, [fetchExpenses]);
+
   return (
-    <ExpenseContext.Provider value={{
-      expenses, loading, getByProject,
-      addExpense, deleteExpense,
-      refreshExpenses: fetchExpenses,
-    }}>
+    <ExpenseContext.Provider value={{ expenses, loading, getByProject, addExpense, updateExpense, deleteExpense, refreshExpenses }}>
       {children}
     </ExpenseContext.Provider>
   );
 }
 
-export const useExpenses = () => useContext(ExpenseContext);
+export function useExpenses() { return useContext(ExpenseContext); }

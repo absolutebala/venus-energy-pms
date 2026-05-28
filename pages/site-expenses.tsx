@@ -4,6 +4,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useExpenses } from '@/context/ExpenseContext';
 import { useProjects } from '@/context/ProjectContext';
+import { createClient } from '@/lib/supabase';
 import { T, card, btnPrimary, inputStyle } from '@/lib/theme';
 import Toast from '@/components/Toast';
 
@@ -14,8 +15,8 @@ const fmtD = (d: string) => {
   catch { return d; }
 };
 
-const EXPENSE_TYPES = ["Advance","Material Purchase","Labour Charge","Transport","Equipment Rental","Miscellaneous"];
-const PAYMENT_MODES = ["Cash","Bank Transfer","Cheque","UPI","DD"];
+const EXPENSE_TYPES  = ["Advance","Material Purchase","Labour Charge","Transport","Equipment Rental","Miscellaneous"];
+const PAYMENT_MODES  = ["NEFT","RTGS","Cheque","Cash","UPI","Others"];
 const TYPE_COLORS: Record<string,string> = {
   "Advance":"#2563EB","Material Purchase":"#7C3AED","Labour Charge":"#D97706",
   "Transport":"#0D9488","Equipment Rental":"#DC2626","Miscellaneous":"#6B7280",
@@ -24,9 +25,10 @@ const TYPE_COLORS: Record<string,string> = {
 export default function SiteExpensesPage() {
   const router = useRouter();
   const { profile, can, loading: authLoading } = useAuth();
-  const { expenses, loading: expLoading, addExpense, deleteExpense } = useExpenses();
+  const { expenses, loading: expLoading, addExpense, updateExpense } = useExpenses();
   const { projects } = useProjects();
-  const canAdd = !authLoading && can("site_expenses", "create");
+  const canAdd    = !authLoading && can("site_expenses", "create");
+  const canManage = !authLoading && can("site_expenses", "edit");
 
   const [selectedVendor,  setSelectedVendor]  = useState("");
   const [selectedProject, setSelectedProject] = useState("");
@@ -35,8 +37,13 @@ export default function SiteExpensesPage() {
   const [saving,          setSaving]          = useState(false);
   const [adding,          setAdding]          = useState(false);
   const [form, setForm] = useState({
-    txnRef:"", expenseDate:"", site:"", expenseType:"Advance", amount:"", paymentMode:"Bank Transfer", remarks:""
+    expenseDate:"", site:"", expenseType:"Advance", amount:"", remarks:""
   });
+
+  // Paid modal state
+  const [paidModal,    setPaidModal]    = useState<any>(null);
+  const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT" });
+  const [paidSaving,   setPaidSaving]   = useState(false);
 
   // Group projects by vendor
   const VENDOR_MAP: Record<string, any[]> = (projects as any[]).reduce((acc:any, p:any) => {
@@ -48,39 +55,69 @@ export default function SiteExpensesPage() {
   const vendorProjects = selectedVendor ? VENDOR_MAP[selectedVendor] || [] : [];
   const selProj        = vendorProjects.find((p:any) => p.id === selectedProject);
 
-  const allExpenses = expenses.filter((e:any) => {
-    if (!search) return true;
-    const s = search.toLowerCase();
-    return e.txnRef?.toLowerCase().includes(s) ||
-           e.projectId?.toLowerCase().includes(s) ||
-           e.expenseType?.toLowerCase().includes(s) ||
-           e.site?.toLowerCase().includes(s);
-  });
+  // Sort: pending first, then by date desc
+  const allExpenses = expenses
+    .filter((e:any) => {
+      if (!search) return true;
+      const s = search.toLowerCase();
+      return e.projectId?.toLowerCase().includes(s) ||
+             e.expenseType?.toLowerCase().includes(s) ||
+             e.site?.toLowerCase().includes(s) ||
+             e.paidTxnRef?.toLowerCase().includes(s);
+    })
+    .sort((a:any, b:any) => {
+      if (a.status === 'pending' && b.status !== 'pending') return -1;
+      if (a.status !== 'pending' && b.status === 'pending') return 1;
+      return new Date(b.expenseDate||b.createdAt||0).getTime() - new Date(a.expenseDate||a.createdAt||0).getTime();
+    });
 
-  const totalAmount = allExpenses.reduce((a:number, e:any) => a + Number(e.amount), 0);
+  const pendingTotal = expenses.filter((e:any) => e.status === 'pending').reduce((a:number,e:any) => a + Number(e.amount), 0);
+  const paidTotal    = expenses.filter((e:any) => e.status === 'paid').reduce((a:number,e:any) => a + Number(e.amount), 0);
 
   const handleAdd = async () => {
-    if (!selectedProject || !form.txnRef || !form.amount || !form.expenseDate) {
-      setToast({ msg:"Please fill all required fields", type:"error" }); return;
+    if (!selectedProject || !form.amount || !form.expenseDate) {
+      setToast({ msg:"Please fill Date, Amount and select a Project", type:"error" }); return;
     }
     setSaving(true);
     try {
       await addExpense({
-        txnRef: form.txnRef, expenseDate: form.expenseDate,
+        txnRef: "", expenseDate: form.expenseDate,
         site: form.site || selProj?.site || "",
         expenseType: form.expenseType, amount: Number(form.amount),
-        paymentMode: form.paymentMode, remarks: form.remarks,
+        paymentMode: "", remarks: form.remarks,
         projectId: selectedProject, poNo: selProj?.poNo || "",
-        createdBy: profile?.full_name || "",
+        createdBy: profile?.full_name || "", status: "pending",
       });
-      setForm({ txnRef:"", expenseDate:"", site:"", expenseType:"Advance", amount:"", paymentMode:"Bank Transfer", remarks:"" });
+      setForm({ expenseDate:"", site:"", expenseType:"Advance", amount:"", remarks:"" });
       setAdding(false);
-      setToast({ msg:"✅ Expense saved", type:"success" });
+      setToast({ msg:"✅ Expense request raised", type:"success" });
     } catch (err:any) {
       setToast({ msg:"❌ " + err.message, type:"error" });
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
+  };
+
+  const handleMarkPaid = async () => {
+    if (!paidForm.txnRef) { setToast({ msg:"TXN Ref is required", type:"error" }); return; }
+    setPaidSaving(true);
+    try {
+      await updateExpense(paidModal.id, {
+        status: 'paid',
+        paidTxnRef: paidForm.txnRef,
+        paidPaymentMode: paidForm.paymentMode,
+        paidAt: new Date().toISOString(),
+      });
+      // Update project paid_amount
+      const proj = (projects as any[]).find((p:any) => p.id === paidModal.projectId);
+      if (proj) {
+        const newPaid = Number(proj.paidAmount || 0) + Number(paidModal.amount);
+        await createClient().from('projects').update({ paid_amount: newPaid }).eq('id', proj.id);
+      }
+      setPaidModal(null);
+      setPaidForm({ txnRef:"", paymentMode:"NEFT" });
+      setToast({ msg:"✅ Marked as Paid — Financial Summary updated", type:"success" });
+    } catch (err:any) {
+      setToast({ msg:"❌ " + err.message, type:"error" });
+    } finally { setPaidSaving(false); }
   };
 
   const thS: React.CSSProperties = { padding:"10px 12px", fontSize:10, fontWeight:700, textTransform:"uppercase",
@@ -92,16 +129,16 @@ export default function SiteExpensesPage() {
       <div className="fade-in">
         <div style={{ fontSize:22, fontWeight:800, color:T.text, marginBottom:4 }}>Expenses</div>
         <div style={{ fontSize:13, color:T.textMuted, marginBottom:20 }}>
-          {expLoading ? "Loading..." : `${expenses.length} records · Total: ${fmt(expenses.reduce((a,e)=>a+e.amount,0))}`}
+          {expLoading ? "Loading..." : `${expenses.length} records`}
         </div>
 
         {/* Summary cards */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
           {[
-            { label:"Total Records",    value: expenses.length,   color:T.primary },
-            { label:"Total Amount",     value: fmt(expenses.reduce((a,e)=>a+e.amount,0)), color:T.danger },
-            { label:"Projects",         value: new Set(expenses.map(e=>e.projectId)).size, color:T.info },
-            { label:"This Month",       value: fmt(expenses.filter(e=>e.expenseDate?.startsWith("2025-05")).reduce((a,e)=>a+e.amount,0)), color:T.success },
+            { label:"Total Records",    value: expenses.length,                                          color:T.primary },
+            { label:"Pending Amount",   value: fmt(pendingTotal),                                        color:T.warning },
+            { label:"Paid Amount",      value: fmt(paidTotal),                                           color:T.success },
+            { label:"Pending Requests", value: expenses.filter((e:any)=>e.status==="pending").length,    color:T.danger  },
           ].map(s => (
             <div key={s.label} style={{ ...card, padding:"14px 16px" }}>
               <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:"uppercase", marginBottom:4 }}>{s.label}</div>
@@ -110,10 +147,10 @@ export default function SiteExpensesPage() {
           ))}
         </div>
 
-        {/* Add Expense */}
+        {/* Raise Expense Request */}
         {canAdd && (
           <div style={{ ...card, marginBottom:16 }}>
-            <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>Add New Expense</div>
+            <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>Raise Expense Request</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:adding?16:0 }}>
               <div>
                 <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Vendor *</label>
@@ -136,14 +173,13 @@ export default function SiteExpensesPage() {
               </div>
             </div>
             {selectedProject && !adding && (
-              <button onClick={()=>setAdding(true)} style={{ ...btnPrimary, fontSize:13, marginTop:12 }}>+ Add Expense</button>
+              <button onClick={()=>setAdding(true)} style={{ ...btnPrimary, fontSize:13, marginTop:12 }}>+ Raise Request</button>
             )}
             {adding && (
               <div style={{ background:T.bg, borderRadius:10, padding:14, border:`1px solid ${T.border}`, marginTop:12 }}>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:12 }}>
-                  {([["Txn Ref *","txnRef","text","EXP-XXX"],["Date *","expenseDate","date",""],
-                     ["Amount (₹) *","amount","number",""],["Site","site","text",selProj?.site||""],
-                     ["Remarks","remarks","text",""]] as [string,string,string,string][]).map(([l,f,t,ph])=>(
+                  {([["Date *","expenseDate","date",""],["Amount (₹) *","amount","number",""],
+                     ["Site","site","text",selProj?.site||""],["Remarks","remarks","text",""]] as [string,string,string,string][]).map(([l,f,t,ph])=>(
                     <div key={f}>
                       <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>{l}</label>
                       <input type={t} value={(form as any)[f]} placeholder={ph}
@@ -157,17 +193,11 @@ export default function SiteExpensesPage() {
                       {EXPENSE_TYPES.map(t=><option key={t}>{t}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>Payment Mode</label>
-                    <select value={form.paymentMode} onChange={e=>setForm(p=>({...p,paymentMode:e.target.value}))} style={{ ...inputStyle(), width:"100%" }}>
-                      {PAYMENT_MODES.map(m=><option key={m}>{m}</option>)}
-                    </select>
-                  </div>
                 </div>
                 <div style={{ display:"flex", gap:10 }}>
-                  <button onClick={handleAdd} disabled={saving||!form.txnRef||!form.amount||!form.expenseDate}
-                    style={{ ...btnPrimary, opacity:saving||!form.txnRef||!form.amount||!form.expenseDate?0.5:1 }}>
-                    {saving?"Saving…":"💾 Save Expense"}
+                  <button onClick={handleAdd} disabled={saving||!form.amount||!form.expenseDate}
+                    style={{ ...btnPrimary, opacity:saving||!form.amount||!form.expenseDate?0.5:1 }}>
+                    {saving?"Saving…":"💾 Raise Request"}
                   </button>
                   <button onClick={()=>setAdding(false)}
                     style={{ background:"#fff", border:`1px solid ${T.border}`, borderRadius:8, padding:"8px 18px", color:T.text, cursor:"pointer", fontSize:13 }}>
@@ -186,36 +216,35 @@ export default function SiteExpensesPage() {
               All Expenses <span style={{ fontSize:12, fontWeight:400, color:T.textMuted, marginLeft:8 }}>{allExpenses.length} records</span>
             </div>
             <input value={search} onChange={e=>setSearch(e.target.value)}
-              placeholder="Search by ref, project, type…"
+              placeholder="Search project, type, ref…"
               style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:"6px 12px", fontSize:13, outline:"none", width:220 }} />
           </div>
           <div style={{ overflowX:"auto" as const }}>
             <table style={{ width:"100%", borderCollapse:"collapse" as const }}>
               <thead>
                 <tr>
-                  {["#","Txn Ref","Date","Project","Site","Expense Type","Amount (₹)","Payment Mode",""].map((h,i)=>(
-                    <th key={i} style={{ ...thS, textAlign:i===6?"right" as const:"left" as const }}>{h}</th>
+                  {["#","Date","Project","Site","Expense Type","Amount (₹)","TXN Ref","Payment Mode","Status",""].map((h,i)=>(
+                    <th key={i} style={{ ...thS, textAlign:i===5?"right" as const:"left" as const }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {expLoading && <tr><td colSpan={9} style={{ padding:30, textAlign:"center" as const, color:T.textMuted }}>Loading expenses...</td></tr>}
+                {expLoading && <tr><td colSpan={10} style={{ padding:30, textAlign:"center" as const, color:T.textMuted }}>Loading...</td></tr>}
                 {!expLoading && allExpenses.length === 0 && (
-                  <tr><td colSpan={9} style={{ padding:30, textAlign:"center" as const, color:T.textDim }}>No expenses found</td></tr>
+                  <tr><td colSpan={10} style={{ padding:30, textAlign:"center" as const, color:T.textDim }}>No expenses found</td></tr>
                 )}
                 {allExpenses.map((e:any, idx:number) => {
                   const proj = (projects as any[]).find(p=>p.id===e.projectId);
+                  const isPending = e.status === 'pending';
                   return (
                     <tr key={e.id}
-                      onClick={()=>e.projectId&&router.push(`/projects/${e.projectId}`)}
-                      style={{ background:idx%2===0?"#fff":T.bg, cursor:"pointer" }}
+                      style={{ background:isPending ? '#FFFBEB' : idx%2===0?"#fff":T.bg, cursor:"pointer" }}
                       onMouseEnter={el=>(el.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
-                      onMouseLeave={el=>(el.currentTarget as HTMLTableRowElement).style.background=idx%2===0?"#fff":T.bg}>
+                      onMouseLeave={el=>(el.currentTarget as HTMLTableRowElement).style.background=isPending?'#FFFBEB':idx%2===0?"#fff":T.bg}>
                       <td style={{ ...tdS, color:T.textMuted, width:36 }}>{idx+1}</td>
-                      <td style={{ ...tdS, fontWeight:600, color:T.primary }}>{e.txnRef}</td>
-                      <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{fmtD(e.expenseDate)}</td>
-                      <td style={tdS}>
-                        <div style={{ fontWeight:600, fontSize:13 }}>{e.projectId}</div>
+                      <td style={{ ...tdS, whiteSpace:"nowrap" as const }}>{fmtD(e.expenseDate)}</td>
+                      <td style={tdS} onClick={()=>e.projectId&&router.push(`/projects/${e.projectId}`)}>
+                        <div style={{ fontWeight:600, fontSize:13, color:T.primary }}>{e.projectId}</div>
                         {proj && <div style={{ fontSize:10, color:T.textMuted }}>{proj.poNo}</div>}
                       </td>
                       <td style={tdS}>{e.site||proj?.site||"—"}</td>
@@ -226,11 +255,25 @@ export default function SiteExpensesPage() {
                         </span>
                       </td>
                       <td style={{ ...tdS, textAlign:"right" as const, fontWeight:700, color:T.primary }}>{fmt(e.amount)}</td>
-                      <td style={tdS}>{e.paymentMode}</td>
-                      <td style={{ ...tdS, width:36 }}>
-                        {canAdd && (
-                          <button onClick={ev=>{ ev.stopPropagation(); deleteExpense(e.id); }}
-                            style={{ background:"none", border:"none", cursor:"pointer", color:T.danger, fontSize:15 }}>🗑</button>
+                      <td style={{ ...tdS, color:T.textMuted }}>{e.paidTxnRef || "—"}</td>
+                      <td style={tdS}>{e.paidPaymentMode || "—"}</td>
+                      <td style={tdS}>
+                        <span style={{ fontSize:11, fontWeight:600, padding:"3px 10px", borderRadius:20,
+                          background: isPending ? '#FEF3C7' : '#D1FAE5',
+                          color: isPending ? '#D97706' : '#059669' }}>
+                          {isPending ? "Pending" : "Paid"}
+                        </span>
+                      </td>
+                      <td style={{ ...tdS, width:80 }}>
+                        {isPending && canManage && (
+                          <button onClick={ev=>{ ev.stopPropagation(); setPaidModal(e); setPaidForm({ txnRef:"", paymentMode:"NEFT" }); }}
+                            style={{ background:T.success, border:"none", borderRadius:6, padding:"5px 12px",
+                              color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap" as const }}>
+                            ✓ Paid
+                          </button>
+                        )}
+                        {!isPending && (
+                          <span style={{ fontSize:11, color:T.textDim }}>{e.paidAt ? fmtD(e.paidAt.split("T")[0]) : ""}</span>
                         )}
                       </td>
                     </tr>
@@ -240,9 +283,9 @@ export default function SiteExpensesPage() {
               {allExpenses.length > 0 && (
                 <tfoot>
                   <tr style={{ background:T.primaryLight, fontWeight:700 }}>
-                    <td colSpan={6} style={{ ...tdS, color:T.primary }}>Total</td>
-                    <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>{fmt(totalAmount)}</td>
-                    <td colSpan={2} style={tdS}></td>
+                    <td colSpan={5} style={{ ...tdS, color:T.primary }}>Total</td>
+                    <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>{fmt(allExpenses.reduce((a:number,e:any)=>a+Number(e.amount),0))}</td>
+                    <td colSpan={4} style={tdS}></td>
                   </tr>
                 </tfoot>
               )}
@@ -250,6 +293,42 @@ export default function SiteExpensesPage() {
           </div>
         </div>
       </div>
+
+      {/* Paid Modal */}
+      {paidModal && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(15,23,42,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <div style={{ background:T.surface, borderRadius:16, padding:28, width:"100%", maxWidth:420, boxShadow:"0 20px 60px rgba(0,0,0,0.18)" }}>
+            <h3 style={{ fontSize:16, fontWeight:700, color:T.text, marginBottom:6 }}>✓ Mark as Paid</h3>
+            <p style={{ fontSize:13, color:T.textMuted, marginBottom:20 }}>
+              {paidModal.expenseType} — {fmt(paidModal.amount)} · Project {paidModal.projectId}
+            </p>
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>TXN Ref *</label>
+              <input value={paidForm.txnRef} onChange={e=>setPaidForm(p=>({...p,txnRef:e.target.value}))}
+                placeholder="e.g. NEFT/2026/001234"
+                style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const }} />
+            </div>
+            <div style={{ marginBottom:20 }}>
+              <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Payment Mode *</label>
+              <select value={paidForm.paymentMode} onChange={e=>setPaidForm(p=>({...p,paymentMode:e.target.value}))}
+                style={{ ...inputStyle(), width:"100%" }}>
+                {PAYMENT_MODES.map(m=><option key={m}>{m}</option>)}
+              </select>
+            </div>
+            <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
+              <button onClick={()=>setPaidModal(null)}
+                style={{ background:T.bg, border:`1px solid ${T.border}`, borderRadius:8, padding:"8px 18px", fontSize:13, cursor:"pointer", color:T.text }}>
+                Cancel
+              </button>
+              <button onClick={handleMarkPaid} disabled={paidSaving || !paidForm.txnRef}
+                style={{ background:T.success, border:"none", borderRadius:8, padding:"8px 18px", fontSize:13, fontWeight:600, color:"#fff", cursor:"pointer", opacity:paidSaving||!paidForm.txnRef?0.7:1 }}>
+                {paidSaving ? "Saving…" : "✓ Confirm Paid"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
     </Layout>
   );
