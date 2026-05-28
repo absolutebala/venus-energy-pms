@@ -86,7 +86,7 @@ export default function ProjectsPage() {
         const parts = existing[0].id.split('-');
         nextNum = parseInt(parts[parts.length-1]) + 1;
       }
-      const newId = `VE-\${year}-\${String(nextNum).padStart(3,'0')}`;
+      const newId = `VE-${year}-${String(nextNum).padStart(3,'0')}`;
       const { error: insertErr } = await sb2.from('projects').insert({
         id:        newId,
         po_no:     d.po_no     || '',
