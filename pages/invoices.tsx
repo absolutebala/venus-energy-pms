@@ -3,14 +3,11 @@ import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useInvoices } from '@/context/InvoiceContext';
-import { useExpenses } from '@/context/ExpenseContext';
 import { useProjects } from '@/context/ProjectContext';
 import { T, card, btnPrimary, btnSecondary } from '@/lib/theme';
 import Toast from '@/components/Toast';
 
 const fmt = (n: number) => "₹" + Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2 });
-const fmtD = (d: string) => { try { return new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}); } catch { return d||"—"; } };
-const TYPE_COLORS: Record<string,string> = { "Advance":"#2563EB","Material Purchase":"#7C3AED","Labour Charge":"#D97706","Transport":"#0D9488","Equipment Rental":"#DC2626","Miscellaneous":"#6B7280" };
 const fmtDate = (d: string) => {
   if (!d) return "—";
   try { return new Date(d).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }); }
@@ -51,9 +48,6 @@ export default function InvoicesPage() {
   const router = useRouter();
   const { profile, can, loading: authLoading } = useAuth();
   const { invoices, loading: invLoading, addInvoice, updateInvoice } = useInvoices();
-  const { expenses, loading: expLoading } = useExpenses();
-  const [activeTab, setActiveTab] = useState<'invoices'|'expenses'>('invoices');
-  const pendingExpenses = expenses.filter((e:any) => e.status === 'pending');
   const { projects } = useProjects();
   const canCreate  = !authLoading && can("invoices", "create");
   const canApprove = !authLoading && (profile?.role === 'super_admin' || profile?.role === 'accounting_team');
@@ -163,73 +157,6 @@ export default function InvoicesPage() {
   return (
     <Layout>
       <div className="fade-in">
-        {/* Tab switcher */}
-        <div style={{ display:"flex", gap:0, marginBottom:20, borderBottom:`2px solid ${T.border}` }}>
-          {([["invoices","📄 Invoices"],["expenses","💸 Expense Requests"]] as [string,string][]).map(([tab,label])=>(
-            <button key={tab} onClick={()=>setActiveTab(tab as any)}
-              style={{ padding:"10px 20px", fontSize:14, fontWeight:activeTab===tab?700:400,
-                color:activeTab===tab?T.primary:T.textMuted, background:"none", border:"none",
-                borderBottom:activeTab===tab?`2px solid ${T.primary}`:"2px solid transparent",
-                cursor:"pointer", marginBottom:-2, transition:"all 0.15s" }}>
-              {label}
-              {tab==="expenses" && pendingExpenses.length > 0 && (
-                <span style={{ marginLeft:6, background:T.danger, color:"#fff", borderRadius:20, padding:"1px 7px", fontSize:11, fontWeight:700 }}>
-                  {pendingExpenses.length}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Expense Requests Tab */}
-        {activeTab === 'expenses' && (
-          <div>
-            <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>
-              Expense Requests <span style={{ fontSize:12, fontWeight:400, color:T.textMuted }}>· {pendingExpenses.length} pending</span>
-            </div>
-            <div style={{ overflowX:"auto" }}>
-              <table style={{ width:"100%", borderCollapse:"collapse" as const }}>
-                <thead>
-                  <tr>
-                    {["#","Date","Project","Site","Type","Amount (₹)","Requested By","Status"].map((h,i)=>(
-                      <th key={i} style={{ padding:"10px 12px", fontSize:10, fontWeight:700, textTransform:"uppercase" as const,
-                        color:T.primary, background:T.primaryLight, textAlign:i===5?"right" as const:"left" as const,
-                        borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:"nowrap" as const }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {expLoading && <tr><td colSpan={8} style={{ padding:30, textAlign:"center" as const }}>Loading...</td></tr>}
-                  {pendingExpenses.length === 0 && !expLoading && (
-                    <tr><td colSpan={8} style={{ padding:30, textAlign:"center" as const, color:T.textDim }}>No pending expense requests</td></tr>
-                  )}
-                  {pendingExpenses.map((e:any, i:number) => (
-                    <tr key={e.id} style={{ background:i%2===0?"#fff":"#FFFBEB" }}>
-                      <td style={{ padding:"10px 12px", fontSize:13, borderBottom:`1px solid ${T.border}`, color:T.textMuted }}>{i+1}</td>
-                      <td style={{ padding:"10px 12px", fontSize:13, borderBottom:`1px solid ${T.border}` }}>{fmtD(e.expenseDate)}</td>
-                      <td style={{ padding:"10px 12px", fontSize:13, borderBottom:`1px solid ${T.border}`, fontWeight:600, color:T.primary }}>{e.projectId}</td>
-                      <td style={{ padding:"10px 12px", fontSize:13, borderBottom:`1px solid ${T.border}` }}>{e.site||"—"}</td>
-                      <td style={{ padding:"10px 12px", fontSize:13, borderBottom:`1px solid ${T.border}` }}>
-                        <span style={{ fontSize:11, fontWeight:600, color:TYPE_COLORS[e.expenseType]||T.textMuted,
-                          background:`${TYPE_COLORS[e.expenseType]||"#6B7280"}18`, padding:"2px 10px", borderRadius:20 }}>
-                          {e.expenseType}
-                        </span>
-                      </td>
-                      <td style={{ padding:"10px 12px", fontSize:13, borderBottom:`1px solid ${T.border}`, textAlign:"right" as const, fontWeight:700, color:T.primary }}>{fmt(e.amount)}</td>
-                      <td style={{ padding:"10px 12px", fontSize:13, borderBottom:`1px solid ${T.border}`, color:T.textMuted }}>{e.createdBy||"—"}</td>
-                      <td style={{ padding:"10px 12px", fontSize:13, borderBottom:`1px solid ${T.border}` }}>
-                        <span style={{ fontSize:11, fontWeight:600, background:"#FEF3C7", color:"#D97706", padding:"3px 10px", borderRadius:20 }}>Pending</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Invoices Tab */}
-        {activeTab === 'invoices' && <div>
         {/* Header */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
           <div>
@@ -424,7 +351,6 @@ export default function InvoicesPage() {
             </table>
           </div>
         </div>
-      </div>}
       </div>
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </Layout>
