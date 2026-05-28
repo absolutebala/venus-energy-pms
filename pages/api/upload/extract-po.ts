@@ -73,6 +73,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const buf = fs.readFileSync(file.filepath);
   const pdfText = extractTextFromPDF(buf);
 
+  console.log('PDF text length:', pdfText.length);
+  console.log('poSection length:', poSection.length);
+  console.log('poSection tail:', poSection.slice(-500));
   if (!pdfText.trim()) {
     return res.status(400).json({ error: 'No text found in PDF. Ensure it is a digital (not scanned) PDF.' });
   }
