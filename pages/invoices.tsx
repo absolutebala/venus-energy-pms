@@ -4,7 +4,6 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useInvoices } from '@/context/InvoiceContext';
 import { useExpenses } from '@/context/ExpenseContext';
-import { useExpenses } from '@/context/ExpenseContext';
 import { useProjects } from '@/context/ProjectContext';
 import { T, card, btnPrimary, btnSecondary } from '@/lib/theme';
 import Toast from '@/components/Toast';
