@@ -132,7 +132,8 @@ ${poSection}`;
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      max_tokens: 4096,
+      temperature: 0,
+      max_tokens: 6000,
       messages: [{ role: 'user', content: prompt }],
     }),
   });
