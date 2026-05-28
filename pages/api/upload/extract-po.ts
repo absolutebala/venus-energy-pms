@@ -97,7 +97,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const buf = fs.readFileSync(file.filepath);
     // Dynamic import avoids bundling issues in Next.js serverless
-    const pdfParse = (await import('pdf-parse')).default;
+    const pdfMod = await import('pdf-parse');
+    const pdfParse = (pdfMod as any).default || pdfMod;
     const parsed = await pdfParse(buf);
     text = parsed.text;
   } catch (err: any) {
