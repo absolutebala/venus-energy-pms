@@ -9,6 +9,8 @@ import { T, card, btnPrimary, btnSecondary } from '@/lib/theme';
 import Toast from '@/components/Toast';
 
 const fmt = (n: number) => "₹" + Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2 });
+const fmtD = (d: string) => { try { return new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}); } catch { return d||"—"; } };
+const TYPE_COLORS: Record<string,string> = { "Advance":"#2563EB","Material Purchase":"#7C3AED","Labour Charge":"#D97706","Transport":"#0D9488","Equipment Rental":"#DC2626","Miscellaneous":"#6B7280" };
 const fmtDate = (d: string) => {
   if (!d) return "—";
   try { return new Date(d).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }); }
