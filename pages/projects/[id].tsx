@@ -1299,7 +1299,7 @@ export default function ProjectDetailPage() {
   const st = STATUS_COLOR[p.status] || '#64748B';
 
   // Edit form state
-  const F = (label:string, key:string, type='text', options?:string[], readOnly=false, sectionCanEdit=editing('details') && canEditDetails) => (
+  const F = (label:string, key:string, type='text', options?:string[], readOnly=false, sectionCanEdit=editing('details') && canEditDetails, maxLen?:number) => (
     <div style={{ marginBottom:14 }}>
       <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>{label}</label>
       {editingSection !== null && !readOnly && sectionCanEdit ? (
@@ -1314,7 +1314,7 @@ export default function ProjectDetailPage() {
           </select>
         ) : (
           <input type={type} value={(form as any)[key]||''} onChange={e=>setForm((f:any)=>({...f,[key]:e.target.value}))}
-            style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
+            maxLength={maxLen} style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
         )
       ) : (
         <div style={{ fontSize:14, fontWeight:600, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>
