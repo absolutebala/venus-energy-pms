@@ -70,8 +70,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Only PDF files are accepted.' });
   }
 
-  const buf = fs.readFileSync(file.filepath);
-  const pdfText = extractTextFromPDF(buf);
+  let buf: Buffer;
+  let pdfText = '';
+  try {
+    buf = fs.readFileSync(file.filepath);
+    console.log('File read, size:', buf.length);
+  } catch (err: any) {
+    console.error('File read error:', err.message);
+    return res.status(500).json({ error: 'Could not read uploaded file: ' + err.message });
+  }
+  try {
+    pdfText = extractTextFromPDF(buf!);
+    console.log('Extracted text length:', pdfText.length);
+  } catch (err: any) {
+    console.error('PDF extraction error:', err.message);
+    return res.status(500).json({ error: 'PDF text extraction failed: ' + err.message });
+  }
 
   if (!pdfText.trim()) {
     return res.status(400).json({ error: 'No text found in PDF. Ensure it is a digital (not scanned) PDF.' });
