@@ -700,7 +700,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
         txnRef: newRow.txnRef, expenseDate: newRow.expenseDate, site: newRow.site,
         expenseType: newRow.expenseType, amount: Number(newRow.amount),
         paymentMode: newRow.paymentMode, remarks: newRow.remarks,
-        projectId, poNo: '', createdBy: profile?.full_name || '',
+        projectId, poNo: '', createdBy: profile?.full_name || '', status: 'pending',
       });
       setNewRow({ txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'Bank Transfer', remarks:'' });
       setAdding(false);
