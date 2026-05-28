@@ -2,22 +2,49 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import formidable from 'formidable';
 import fs from 'fs';
+import zlib from 'zlib';
 
 export const config = { api: { bodyParser: false } };
 
-// Extract text from digital PDF without canvas/DOMMatrix (serverless safe)
-async function extractPDFText(buf: Buffer): Promise<string> {
-  // Use lib file directly to skip test-file loading in main entry
-  const pdfParse = require('pdf-parse/lib/pdf-parse');
+// Pure Node.js text extraction from digital PDFs — no npm packages, no browser APIs
+function extractTextFromPDF(buf: Buffer): string {
+  const raw = buf.toString('latin1');
+  const texts: string[] = [];
 
-  // Custom page renderer — only uses getTextContent(), no canvas needed
-  const pagerender = async (pageData: any) => {
-    const tc = await pageData.getTextContent();
-    return tc.items.map((item: any) => item.str + (item.hasEOL ? '\n' : ' ')).join('');
-  };
+  // Decompress FlateDecode streams and extract text
+  const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+  let m: RegExpExecArray | null;
 
-  const result = await pdfParse(buf, { pagerender });
-  return result.text;
+  while ((m = streamRegex.exec(raw)) !== null) {
+    let content = m[1];
+
+    // Try to decompress if it looks like compressed data
+    if (content.charCodeAt(0) === 0x78) {
+      try {
+        const compressed = Buffer.from(content, 'latin1');
+        content = zlib.inflateSync(compressed).toString('latin1');
+      } catch { /* not compressed or decompress failed, use as-is */ }
+    }
+
+    // Extract text from Tj operator: (text)Tj
+    const tjMatches = content.match(/\(([^)\\]*(?:\\.[^)\\]*)*)\)\s*Tj/g) || [];
+    tjMatches.forEach(t => {
+      const txt = t.replace(/\(([^)\\]*(?:\\.[^)\\]*)*)\)\s*Tj/, '$1')
+        .replace(/\\n/g, ' ').replace(/\\r/g, '').replace(/\\\\/g, '\\')
+        .replace(/\\([\(\)])/g, '$1');
+      if (txt.trim()) texts.push(txt);
+    });
+
+    // Extract text from TJ operator: [(text)...]TJ
+    const tjArrayMatches = content.match(/\[([^\]]*)\]\s*TJ/g) || [];
+    tjArrayMatches.forEach(block => {
+      const parts = block.match(/\(([^)\\]*(?:\\.[^)\\]*)*)\)/g) || [];
+      const joined = parts.map(p => p.slice(1, -1)).join('');
+      if (joined.trim()) texts.push(joined);
+    });
+  }
+
+  return texts.join(' ').replace(/\s+/g, ' ').trim();
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -30,13 +57,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { data: { user }, error: authErr } = await admin.auth.getUser(token);
   if (authErr || !user) return res.status(401).json({ error: 'Unauthorized' });
 
-  // Get OpenAI key from super_admin profile (same as original approach)
   const { data: profile } = await admin
     .from('profiles').select('openai_api_key').eq('role', 'super_admin').single();
   const apiKey = profile?.openai_api_key || process.env.OPENAI_API_KEY;
   if (!apiKey) return res.status(400).json({ error: 'NO_API_KEY', message: 'OpenAI API key not configured.' });
 
-  // Parse uploaded file — PDF only
   const form = formidable({ maxFileSize: 20 * 1024 * 1024 });
   const [, files] = await form.parse(req);
   const file = Array.isArray(files.file) ? files.file[0] : files.file;
@@ -45,22 +70,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Only PDF files are accepted.' });
   }
 
-  // Extract text from PDF
-  let pdfText = '';
-  try {
-    const buf = fs.readFileSync(file.filepath);
-    pdfText = await extractPDFText(buf);
-  } catch (err: any) {
-    console.error('PDF text extraction error:', err);
-    return res.status(400).json({ error: 'Could not read PDF: ' + String(err.message || err) });
-  }
+  const buf = fs.readFileSync(file.filepath);
+  const pdfText = extractTextFromPDF(buf);
 
   if (!pdfText.trim()) {
-    return res.status(400).json({ error: 'No text found in PDF. Make sure it is a digital (not scanned) PDF.' });
+    return res.status(400).json({ error: 'No text found in PDF. Ensure it is a digital (not scanned) PDF.' });
   }
 
-  // Send extracted text to GPT-4o-mini
-  const prompt = `Extract data from this Indus Towers Purchase Order text and return ONLY a valid JSON object with these exact keys (no markdown, no explanation):
+  const prompt = `Extract data from this Indus Towers Purchase Order and return ONLY valid JSON (no markdown):
 {
   "po_no": "",
   "po_date": "YYYY-MM-DD",
@@ -73,15 +90,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     { "description": "", "hsn": "", "uom": "", "quantity": 0, "rate": 0, "gst_rate": 18, "amount": 0 }
   ]
 }
-Rules:
-- po_no: the P.O No value
-- po_date: convert to YYYY-MM-DD
-- indus_id: Indus ID field (e.g. IN-3460945)
+- po_no: P.O No value
+- po_date: Date field as YYYY-MM-DD
+- indus_id: Indus ID (e.g. IN-3460945)
 - project_no: Project No field
-- region: Circle field value
+- region: Circle field
 - po_value: Total Order Value as number
-- items: ALL line items. Use Item Code column for hsn field. gst_rate = SGST% + CGST%
-- Return ONLY the JSON, nothing else.
+- items: ALL line items; use Item Code for hsn; gst_rate = SGST%+CGST%
 
 PO TEXT:
 ${pdfText.slice(0, 12000)}`;
@@ -106,9 +121,8 @@ ${pdfText.slice(0, 12000)}`;
 
   try {
     const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    const extracted = JSON.parse(cleaned);
-    return res.status(200).json({ success: true, data: extracted });
+    return res.status(200).json({ success: true, data: JSON.parse(cleaned) });
   } catch {
-    return res.status(400).json({ error: 'Failed to parse extracted data.' });
+    return res.status(400).json({ error: 'Failed to parse AI response.' });
   }
 }
