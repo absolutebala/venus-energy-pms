@@ -486,11 +486,11 @@ export default function InvoicesPage() {
             </table>
           </div>
         </div>
+        </>
+        )}
       </div>
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
-        />
-        )}
-        )}
     </Layout>
   );
+}
 }
