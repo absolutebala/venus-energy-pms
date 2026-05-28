@@ -77,6 +77,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'No text found in PDF. Ensure it is a digital (not scanned) PDF.' });
   }
 
+  // Only send the PO content section, not T&C pages
+  const poSection = (() => {
+    const start = pdfText.indexOf('PURCHASE ORDER');
+    const end = pdfText.indexOf('ITL') > -1 ? pdfText.indexOf('ITL') : pdfText.length;
+    const section = start > -1 ? pdfText.slice(start, Math.min(start + 15000, end)) : pdfText.slice(0, 15000);
+    return section;
+  })();
+
   const prompt = `Extract data from this Indus Towers Purchase Order and return ONLY valid JSON (no markdown):
 {
   "po_no": "",
@@ -99,14 +107,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 - items: ALL line items; use Item Code for hsn; gst_rate = SGST%+CGST%
 
 PO TEXT:
-${pdfText}`;
+${poSection}`;
 
   const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      max_tokens: 8000,
+      max_tokens: 4096,
       messages: [{ role: 'user', content: prompt }],
     }),
   });
