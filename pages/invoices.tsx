@@ -228,7 +228,6 @@ export default function InvoicesPage() {
             </div>
           </div>
         )}
-        {activeTab === 'invoices' && (
         {/* Tab switcher */}
         <div style={{ display:"flex", gap:0, marginBottom:20, borderBottom:`2px solid ${T.border}` }}>
           {([["invoices","📄 Invoices"],["expenses","💸 Expense Requests"]] as [string,string][]).map(([tab,label])=>(
