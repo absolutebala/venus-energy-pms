@@ -132,7 +132,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const itemsText  = itemsStart > -1 ? pdfText.slice(itemsStart, itemsEnd > itemsStart ? itemsEnd+50 : pdfText.length) : pdfText;
   const items      = parseItems(itemsText);
 
-  console.log(`Extracted: po_no=${po_no}, items=${items.length}`);
+  console.log('po_no raw text:', pdfText.slice(pdfText.indexOf('P.O'), pdfText.indexOf('P.O')+50));
+  console.log('items count:', items.length);
+  console.log('items text first 300:', itemsText.slice(0,300));
+  console.log('items text last 300:', itemsText.slice(-300));
 
   return res.status(200).json({
     success: true,
