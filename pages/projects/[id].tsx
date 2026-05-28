@@ -1203,6 +1203,22 @@ export default function ProjectDetailPage() {
     }
   };
 
+  // Load pending PO items from localStorage (set by projects page PO upload)
+  React.useEffect(() => {
+    if (!id) return;
+    const key = 'pending_po_items_' + id;
+    const pending = localStorage.getItem(key);
+    if (pending) {
+      try {
+        const items = JSON.parse(pending);
+        localStorage.removeItem(key);
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('po-items-extracted', { detail: items }));
+        }, 1500);
+      } catch(e) { console.error('pending items parse error', e); }
+    }
+  }, [id]);
+
   const saveSection = () => {
     setSaving(true);
     // Optimistic local update
@@ -1522,7 +1538,9 @@ export default function ProjectDetailPage() {
                 <input ref={poUploadRef} type="file" accept=".pdf" onChange={handleExtractPO} style={{ display:'none' }} />
                 <button onClick={()=>poUploadRef.current?.click()} disabled={extractingPO}
                   style={{ background:'#7C3AED', border:'none', borderRadius:8, padding:'8px 16px', color:'#fff', fontSize:13, fontWeight:600, cursor:extractingPO?'not-allowed':'pointer', display:'flex', alignItems:'center', gap:6, opacity:extractingPO?0.7:1 }}>
-                  {extractingPO ? '⏳ Extracting…' : '📎 Upload PO to Auto-fill'}
+                  {extractingPO
+                    ? <><div style={{ width:13,height:13,border:'2px solid rgba(255,255,255,0.4)',borderTopColor:'#fff',borderRadius:'50%',animation:'spin 0.7s linear infinite',display:'inline-block' }} />&nbsp;Extracting…</>
+                    : '📎 Upload PO to Auto-fill'}
                 </button>
                 <span style={{ fontSize:11, color:'#6B7280' }}>Upload Indus Towers PO PDF to auto-fill fields + items</span>
               </div>

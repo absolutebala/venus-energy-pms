@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
@@ -55,7 +55,56 @@ const STN_RETURN_MAP: Record<string,boolean> = {}; /*
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const [creating, setCreating] = React.useState(false);
+  const [creating,    setCreating]    = React.useState(false);
+  const [extracting,  setExtracting]  = React.useState(false);
+  const poFileRef = useRef<HTMLInputElement>(null);
+
+  const handlePOUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setExtracting(true);
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload/extract-po', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session?.access_token||''}` },
+        body: formData,
+      });
+      const json = await res.json();
+      if (!res.ok) { alert(json.error || 'Extraction failed'); return; }
+      const d = json.data;
+
+      // Create new project with extracted details
+      const supabaseAdmin = createClient();
+      const newId = 'VE-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*900)+100);
+      const { error: insertErr } = await supabaseAdmin.from('projects').insert({
+        id: newId,
+        po_no:    d.po_no    || '',
+        po_date:  d.po_date  || null,
+        po_value: d.po_value || 0,
+        indus_id: d.indus_id || '',
+        region:   d.region   || '',
+        status:   'not_started',
+        progress: 0,
+      });
+      if (insertErr) { alert('Failed to create project: ' + insertErr.message); return; }
+
+      // Save extracted items to localStorage for project detail page to pick up
+      if (d.items?.length) {
+        localStorage.setItem('pending_po_items_' + newId, JSON.stringify(d.items));
+      }
+
+      router.push('/projects/' + newId);
+    } catch(err: any) {
+      alert('Failed: ' + err.message);
+    } finally {
+      setExtracting(false);
+      if (poFileRef.current) poFileRef.current.value = '';
+    }
+  };
 
   const createNewProject = async () => {
     setCreating(true);
@@ -304,6 +353,13 @@ export default function ProjectsPage() {
           <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)} style={{ ...inputStyle(), width:'auto', marginLeft:'auto' }}>
             {TYPES.map(t=><option key={t}>{t}</option>)}
           </select>
+          <input ref={poFileRef} type="file" accept=".pdf" onChange={handlePOUpload} style={{ display:'none' }} />
+          <button onClick={()=>poFileRef.current?.click()} disabled={extracting}
+            style={{ ...btnSecondary, display:'flex', alignItems:'center', gap:6, opacity:extracting?0.7:1, cursor:extracting?'not-allowed':'pointer' }}>
+            {extracting
+              ? <><div style={{ width:13,height:13,border:'2px solid #CBD5E1',borderTopColor:T.primary,borderRadius:'50%',animation:'spin 0.7s linear infinite' }} />Extracting…</>
+              : '📎 Upload PO'}
+          </button>
           <button onClick={createNewProject} disabled={creating} style={{ ...btnPrimary, opacity:creating?0.7:1 }}>{creating?'Creating…':'+ New Project'}</button>
         </div>
 
