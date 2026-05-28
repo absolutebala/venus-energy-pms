@@ -52,7 +52,6 @@ export default function InvoicesPage() {
   const { expenses, loading: expLoading } = useExpenses();
   const [activeTab, setActiveTab] = useState<'invoices'|'expenses'>('invoices');
   const pendingExpenses = expenses.filter((e:any) => e.status === 'pending');
-  const { expenses, loading: expLoading } = useExpenses();
   const [activeTab, setActiveTab] = useState<'invoices'|'expenses'>('invoices');
   const pendingExpenses = expenses.filter((e:any) => e.status === 'pending');
   const { projects } = useProjects();
