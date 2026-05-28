@@ -90,8 +90,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     { "description": "", "hsn": "", "uom": "", "quantity": 0, "rate": 0, "gst_rate": 18, "amount": 0 }
   ]
 }
-- po_no: P.O No value
-- po_date: Date field as YYYY-MM-DD
+- po_no: the numeric value that appears after "P.O No :" (e.g. 16030397730) — NOT the label text itself
+- po_date: the date value after "Date :" converted to YYYY-MM-DD (e.g. 22-MAY-2026 → 2026-05-22)
 - indus_id: Indus ID (e.g. IN-3460945)
 - project_no: Project No field
 - region: Circle field

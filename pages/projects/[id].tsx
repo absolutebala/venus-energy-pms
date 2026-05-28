@@ -118,6 +118,37 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
   const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', rate:'', gstRate:'18' });
   const [editRow,  setEditRow]  = React.useState<any>({});
 
+  // Listen for PO items extracted from PDF upload
+  React.useEffect(() => {
+    const handler = async (e: Event) => {
+      const extractedItems = (e as CustomEvent).detail as any[];
+      if (!extractedItems?.length) return;
+      let added = 0;
+      for (let i = 0; i < extractedItems.length; i++) {
+        const item = extractedItems[i];
+        const qty = Number(item.quantity) || 1;
+        const rate = Number(item.rate) || 0;
+        try {
+          await addItem({
+            projectId,
+            description: item.description || '',
+            hsnCode:     item.hsn        || '',
+            uom:         item.uom        || 'Nos',
+            quantity:    qty,
+            rate:        rate,
+            gstRate:     Number(item.gst_rate) || 18,
+            amount:      qty * rate,
+            sortOrder:   i + 1,
+          });
+          added++;
+        } catch(err) { console.error('addItem error:', err); }
+      }
+      setToast({ msg:`✅ ${added} PO items added from PDF`, type:'success' });
+    };
+    window.addEventListener('po-items-extracted', handler);
+    return () => window.removeEventListener('po-items-extracted', handler);
+  }, [projectId, addItem]);
+
   const fmt = (n: number) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits:2 });
   const totalAmount = items.reduce((a,i) => a + i.amount, 0);
   const totalGST    = items.reduce((a,i) => a + (i.amount * i.gstRate / 100), 0);
