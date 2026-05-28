@@ -109,6 +109,8 @@ export default function ProjectsPage() {
         localStorage.setItem('pending_po_items_' + newId, JSON.stringify(d.items));
       }
 
+      // Refresh projects list before navigating so project detail page finds it
+      await refreshProjects();
       router.push('/projects/' + newId);
     } catch(err: any) {
       alert('Failed: ' + err.message);
