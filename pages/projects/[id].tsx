@@ -1132,6 +1132,44 @@ export default function ProjectDetailPage() {
 
   const startEdit  = (s: string) => { setForm({...(id ? projects[id as string] : {})}); setEditingSection(s); };
   const cancelEdit = () => { setForm({...(id ? projects[id as string] : {})}); setEditingSection(null); };
+  const handleExtractPO = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setExtractingPO(true);
+    try {
+      const { data: { session } } = await createClient().auth.getSession();
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload/extract-po', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session?.access_token||''}` },
+        body: formData,
+      });
+      const json = await res.json();
+      if (!res.ok) { alert(json.error || 'Extraction failed'); return; }
+      const d = json.data;
+      setForm((f: any) => ({
+        ...f,
+        ...(d.po_no    ? { poNo:    d.po_no    } : {}),
+        ...(d.po_date  ? { poDate:  d.po_date  } : {}),
+        ...(d.po_value ? { poValue: d.po_value } : {}),
+        ...(d.indus_id ? { indusId: d.indus_id } : {}),
+        ...(d.project_no ? { id: f.id } : {}),
+        ...(d.region   ? { region:  d.region   } : {}),
+      }));
+      if (d.items?.length) {
+        // Import items into PO items section via a custom event
+        window.dispatchEvent(new CustomEvent('po-items-extracted', { detail: d.items }));
+      }
+      alert(`✅ Extracted ${d.items?.length || 0} PO items + project details. Review and save.`);
+    } catch(err: any) {
+      alert('Failed to extract PO: ' + err.message);
+    } finally {
+      setExtractingPO(false);
+      if (poUploadRef.current) poUploadRef.current.value = '';
+    }
+  };
+
   const saveSection = () => {
     setSaving(true);
     // Optimistic local update
@@ -1445,7 +1483,17 @@ export default function ProjectDetailPage() {
         {/* ── 1. Project Details + Financial ── */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
           <div style={card}>
-            {sectionTitle('📋','Project Details', 'details', canEditDetails)}
+            {{sectionTitle('📋','Project Details', 'details', canEditDetails)}
+            {editing('details') && canEditDetails && (
+              <div style={{ marginBottom:14, display:'flex', alignItems:'center', gap:10 }}>
+                <input ref={poUploadRef} type="file" accept=".pdf" onChange={handleExtractPO} style={{ display:'none' }} />
+                <button onClick={()=>poUploadRef.current?.click()} disabled={extractingPO}
+                  style={{ background:'#7C3AED', border:'none', borderRadius:8, padding:'8px 16px', color:'#fff', fontSize:13, fontWeight:600, cursor:extractingPO?'not-allowed':'pointer', display:'flex', alignItems:'center', gap:6, opacity:extractingPO?0.7:1 }}>
+                  {extractingPO ? '⏳ Extracting…' : '📎 Upload PO to Auto-fill'}
+                </button>
+                <span style={{ fontSize:11, color:'#6B7280' }}>Upload Indus Towers PO PDF to auto-fill fields + items</span>
+              </div>
+            )}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
               {F('Project No',       'id',          'text', undefined, true)}
               {F('Project ID',       'projectId',   'text', undefined, false, undefined, 25)}
