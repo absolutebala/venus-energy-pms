@@ -291,6 +291,8 @@ export default function InvoicesPage() {
           </div>
         )}
         {activeTab === 'invoices' && (
+        <>
+        <>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
           <div>
             <div style={{ fontSize:22, fontWeight:800, color:T.text }}>Invoices</div>
@@ -486,6 +488,7 @@ export default function InvoicesPage() {
         </div>
       </div>
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+        />
         )}
         )}
     </Layout>
