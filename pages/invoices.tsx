@@ -162,9 +162,6 @@ export default function InvoicesPage() {
   const fmtD = (d: string) => { try { return new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}); } catch { return d||"—"; } };
   const TYPE_COLORS: Record<string,string> = { "Advance":"#2563EB","Material Purchase":"#7C3AED","Labour Charge":"#D97706","Transport":"#0D9488","Equipment Rental":"#DC2626","Miscellaneous":"#6B7280" };
 
-  const fmt  = (v: number) => "₹" + Number(v).toLocaleString("en-IN");
-  const fmtD = (d: string) => { try { return new Date(d).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}); } catch { return d||"—"; } };
-  const TYPE_COLORS: Record<string,string> = { "Advance":"#2563EB","Material Purchase":"#7C3AED","Labour Charge":"#D97706","Transport":"#0D9488","Equipment Rental":"#DC2626","Miscellaneous":"#6B7280" };
 
   return (
     <Layout>
