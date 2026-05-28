@@ -1186,7 +1186,7 @@ export default function ProjectDetailPage() {
         ...(d.po_date  ? { poDate:  d.po_date  } : {}),
         ...(d.po_value ? { poValue: d.po_value } : {}),
         ...(d.indus_id ? { indusId: d.indus_id } : {}),
-        ...(d.project_no ? { id: f.id } : {}),
+        ...(d.project_no ? { projectId: d.project_no } : {}),
         ...(d.region   ? { region:  d.region   } : {}),
       }));
       if (d.items?.length) {

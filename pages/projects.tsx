@@ -89,14 +89,15 @@ export default function ProjectsPage() {
       }
       const newId = `VE-${year}-${String(nextNum).padStart(3,'0')}`;
       const { error: insertErr } = await sb2.from('projects').insert({
-        id:        newId,
-        po_no:     d.po_no     || '',
-        po_date:   d.po_date   || null,
-        po_value:  d.po_value  || 0,
-        indus_id:  d.indus_id  || '',
-        region:    d.region    || '',
-        site:      d.indus_id  || 'TBD',
-        type:      'Tower Erection',
+        id:         newId,
+        project_id: d.project_no  || '',
+        po_no:      d.po_no       || '',
+        po_date:    d.po_date     || null,
+        po_value:   d.po_value    || 0,
+        indus_id:   d.indus_id    || '',
+        region:     d.region      || '',
+        site:       d.indus_id    || 'TBD',
+        type:       'Tower Erection',
         pm: '', rm: '', vendor: d.vendor_name || '',
         status: 'not_started', progress: 0,
         billed_amount: 0, paid_amount: 0,
