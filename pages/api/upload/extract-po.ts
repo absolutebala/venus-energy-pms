@@ -73,9 +73,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const buf = fs.readFileSync(file.filepath);
   const pdfText = extractTextFromPDF(buf);
 
-  console.log('PDF text length:', pdfText.length);
-  console.log('poSection length:', poSection.length);
-  console.log('poSection tail:', poSection.slice(-500));
   if (!pdfText.trim()) {
     return res.status(400).json({ error: 'No text found in PDF. Ensure it is a digital (not scanned) PDF.' });
   }
@@ -90,6 +87,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return pdfText.slice(start, end);
   })();
 
+  console.log('PDF len:', pdfText.length, 'section len:', poSection.length);
+  console.log('tail:', poSection.slice(-400));
   const prompt = `Extract data from this Indus Towers Purchase Order and return ONLY valid JSON (no markdown):
 {
   "po_no": "",
