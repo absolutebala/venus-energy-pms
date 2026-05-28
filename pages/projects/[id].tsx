@@ -673,7 +673,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
   const [saving,  setSaving]  = React.useState(false);
   const [toast,   setToast]   = React.useState<any>(null);
   const [newRow,  setNewRow]  = React.useState({
-    txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'Bank Transfer', remarks:''
+    txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'', remarks:''
   });
 
   const fmt  = (n: number) => '₹' + Number(n).toLocaleString('en-IN');
@@ -693,7 +693,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
   const totalAmount = items.reduce((a, e) => a + e.amount, 0);
 
   const saveNew = async () => {
-    if (!newRow.txnRef || !newRow.expenseDate || !newRow.amount) return;
+    if (!newRow.expenseDate || !newRow.amount) return;
     setSaving(true);
     try {
       await addExpense({
@@ -702,7 +702,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
         paymentMode: newRow.paymentMode, remarks: newRow.remarks,
         projectId, poNo: '', createdBy: profile?.full_name || '', status: 'pending',
       });
-      setNewRow({ txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'Bank Transfer', remarks:'' });
+      setNewRow({ txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'', remarks:'' });
       setAdding(false);
       logExpenseActivity(projectId, `Expense ${newRow.txnRef} added (₹${Number(newRow.amount).toLocaleString('en-IN')})`, profile?.full_name||'', profile?.role||'').catch(console.error);
       setToast({ msg:'✅ Expense saved', type:'success' });
@@ -719,7 +719,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
             <thead>
               <tr>
-                {['#','Txn Ref','Date','Site','Expense Type','Amount (₹)','Payment Mode',''].map((h,i)=>(
+                {['#','Date','Site','Expense Type','Amount (₹)','Status',''].map((h,i)=>(
                   <th key={i} style={{ ...thS, textAlign:i===5?'right' as const:'left' as const }}>{h}</th>
                 ))}
               </tr>
@@ -728,7 +728,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
               {items.map((item, idx) => (
                 <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
                   <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
-                  <td style={{ ...tdS, fontWeight:600, color:T.primary }}>{item.txnRef}</td>
+
                   <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD(item.expenseDate)}</td>
                   <td style={tdS}>{item.site||'—'}</td>
                   <td style={tdS}>
@@ -738,7 +738,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                     </span>
                   </td>
                   <td style={{ ...tdS, textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
-                  <td style={tdS}>{item.paymentMode}</td>
+                  <td style={tdS}><span style={{ fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:20, background:item.status==='paid'?'#D1FAE5':'#FEF3C7', color:item.status==='paid'?'#059669':'#D97706' }}>{item.status==='paid'?'Paid':'Pending'}</span></td>
                   <td style={{ ...tdS, width:36 }}>
                     {canAdd && (
                       <button onClick={()=>deleteExpense(item.id)}
@@ -780,18 +780,12 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                 {['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'].map(t=><option key={t}>{t}</option>)}
               </select>
             </div>
-            <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Payment Mode</label>
-              <select value={newRow.paymentMode} onChange={e=>setNewRow(p=>({...p,paymentMode:e.target.value}))} style={{ ...inpS, cursor:'pointer' }}>
-                {['Cash','Bank Transfer','Cheque','UPI','DD'].map(m=><option key={m}>{m}</option>)}
-              </select>
-            </div>
           </div>
           <div style={{ display:'flex', gap:10 }}>
-            <button onClick={saveNew} disabled={saving||!newRow.txnRef||!newRow.expenseDate||!newRow.amount}
+            <button onClick={saveNew} disabled={saving||!newRow.expenseDate||!newRow.amount}
               style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px',
-                cursor:'pointer', fontSize:13, fontWeight:600, opacity:saving||!newRow.txnRef||!newRow.expenseDate||!newRow.amount?0.5:1 }}>
-              {saving?'Saving…':'💾 Save Expense'}
+                cursor:'pointer', fontSize:13, fontWeight:600, opacity:saving||!newRow.expenseDate||!newRow.amount?0.5:1 }}>
+              {saving?'Saving…':'📤 Request'}
             </button>
             <button onClick={()=>setAdding(false)}
               style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', color:T.text, cursor:'pointer', fontSize:13 }}>
