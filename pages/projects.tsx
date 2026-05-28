@@ -81,14 +81,21 @@ export default function ProjectsPage() {
       const supabaseAdmin = createClient();
       const newId = 'VE-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*900)+100);
       const { error: insertErr } = await supabaseAdmin.from('projects').insert({
-        id: newId,
-        po_no:    d.po_no    || '',
-        po_date:  d.po_date  || null,
-        po_value: d.po_value || 0,
-        indus_id: d.indus_id || '',
-        region:   d.region   || '',
-        status:   'not_started',
-        progress: 0,
+        id:          newId,
+        po_no:       d.po_no       || '',
+        po_date:     d.po_date     || null,
+        po_value:    d.po_value    || 0,
+        indus_id:    d.indus_id    || '',
+        region:      d.region      || '',
+        site:        d.site_name   || d.indus_id || 'TBD',
+        type:        d.project_type|| 'Tower Erection',
+        pm:          '',
+        rm:          '',
+        vendor:      d.vendor_name || '',
+        status:      'not_started',
+        progress:    0,
+        billed_amount: 0,
+        paid_amount:   0,
       });
       if (insertErr) { alert('Failed to create project: ' + insertErr.message); return; }
 
