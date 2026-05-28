@@ -1114,6 +1114,8 @@ export default function ProjectDetailPage() {
   const [editingSection, setEditingSection] = useState<string|null>(null);
   const [autoEditDone, setAutoEditDone] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [extractingPO, setExtractingPO] = React.useState(false);
+  const poUploadRef = React.useRef<HTMLInputElement>(null);
 
   const editing    = (s: string) => editingSection === s;
   const notEditing = editingSection === null;
