@@ -363,7 +363,7 @@ export default function ProjectsPage() {
           <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)} style={{ ...inputStyle(), width:'auto', marginLeft:'auto' }}>
             {TYPES.map(t=><option key={t}>{t}</option>)}
           </select>
-          <input ref={poFileRef} type="file" accept=".pdf" onChange={handlePOUpload} style={{ display:'none' }} />
+          <input ref={poFileRef} type="file" accept=".pdf,application/pdf" onChange={handlePOUpload} style={{ display:'none' }} />
           <button onClick={()=>poFileRef.current?.click()} disabled={extracting}
             style={{ ...btnSecondary, display:'flex', alignItems:'center', gap:6, opacity:extracting?0.7:1, cursor:extracting?'not-allowed':'pointer' }}>
             {extracting
