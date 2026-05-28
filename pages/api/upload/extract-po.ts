@@ -2,8 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import formidable from 'formidable';
 import fs from 'fs';
-// @ts-ignore
-import pdfParse from 'pdf-parse';
+// pdf-parse loaded dynamically to avoid serverless bundle issues
 
 export const config = { api: { bodyParser: false } };
 
@@ -97,10 +96,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let text = '';
   try {
     const buf = fs.readFileSync(file.filepath);
+    // Dynamic import avoids bundling issues in Next.js serverless
+    const pdfParse = (await import('pdf-parse')).default;
     const parsed = await pdfParse(buf);
     text = parsed.text;
   } catch (err: any) {
-    return res.status(400).json({ error: 'Could not read PDF: ' + err.message });
+    console.error('pdf-parse error:', err);
+    return res.status(400).json({ error: 'Could not read PDF: ' + String(err.message || err) });
   }
 
   // ── Extract header fields ──
