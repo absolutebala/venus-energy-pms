@@ -1448,6 +1448,7 @@ export default function ProjectDetailPage() {
             {sectionTitle('📋','Project Details', 'details', canEditDetails)}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
               {F('Project No',       'id',          'text', undefined, true)}
+              {F('Project ID',       'projectId',   'text', undefined, false, 25)}
               {F('PO Number',        'poNo',        'text', undefined, false)}
               {F('PO Date',          'poDate',      'date')}
               {F('PO Amount (₹)',    'poValue',     'number')}
