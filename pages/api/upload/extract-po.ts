@@ -90,12 +90,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     { "description": "", "hsn": "", "uom": "", "quantity": 0, "rate": 0, "gst_rate": 18, "amount": 0 }
   ]
 }
-- po_no: the numeric value that appears after "P.O No :" (e.g. 16030397730) — NOT the label text itself
+- po_no: the PO number after "P.O No :" — a LONG NUMBER like 16030397730, NOT a currency amount. Found near Document Type/Date at top of document
 - po_date: the date value after "Date :" converted to YYYY-MM-DD (e.g. 22-MAY-2026 → 2026-05-22)
 - indus_id: Indus ID (e.g. IN-3460945)
-- project_no: Project No field
+- project_no: value after "Project No :" at the bottom of each line item (e.g. R/RL-8458254)
 - region: Circle field
-- po_value: Total Order Value as number
+- po_value: subtotal EXCLUDING GST — look for "Total Value" row (NOT "Total Order Value" which includes tax). Return as plain number.
 - items: ALL line items; use Item Code for hsn; gst_rate = SGST%+CGST%
 
 PO TEXT:
