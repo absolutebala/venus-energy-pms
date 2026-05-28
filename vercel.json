@@ -4,5 +4,10 @@
       "path": "/api/backup/weekly-export",
       "schedule": "0 2 * * 1"
     }
-  ]
+  ],
+  "functions": {
+    "pages/api/upload/extract-po.ts": {
+      "maxDuration": 60
+    }
+  }
 }

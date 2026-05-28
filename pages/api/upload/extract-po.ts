@@ -79,10 +79,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Only send the PO content section, not T&C pages
   const poSection = (() => {
-    const start = pdfText.indexOf('PURCHASE ORDER');
-    const end = pdfText.indexOf('ITL') > -1 ? pdfText.indexOf('ITL') : pdfText.length;
-    const section = start > -1 ? pdfText.slice(start, Math.min(start + 15000, end)) : pdfText.slice(0, 15000);
-    return section;
+    // Start from PURCHASE ORDER header
+    const start = Math.max(0, pdfText.indexOf('PURCHASE ORDER'));
+    // End right after Total Order Value line — before T&C pages
+    const totalIdx = pdfText.indexOf('Total Order Value');
+    const end = totalIdx > -1 ? Math.min(totalIdx + 200, pdfText.length) : Math.min(start + 15000, pdfText.length);
+    return pdfText.slice(start, end);
   })();
 
   const prompt = `Extract data from this Indus Towers Purchase Order and return ONLY valid JSON (no markdown):
