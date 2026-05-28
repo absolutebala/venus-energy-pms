@@ -62,6 +62,7 @@ export default function ProjectsPage() {
   const handlePOUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') { alert('Only PDF files are accepted.'); return; }
     setExtracting(true);
     try {
       const supabase = createClient();

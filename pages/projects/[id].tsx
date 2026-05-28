@@ -1522,18 +1522,7 @@ export default function ProjectDetailPage() {
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
           <div style={card}>
             {sectionTitle('📋','Project Details', 'details', canEditDetails)}
-            {editing('details') && canEditDetails && (
-              <div style={{ marginBottom:14, display:'flex', alignItems:'center', gap:10 }}>
-                <input ref={poUploadRef} type="file" accept=".pdf" onChange={handleExtractPO} style={{ display:'none' }} />
-                <button onClick={()=>poUploadRef.current?.click()} disabled={extractingPO}
-                  style={{ background:'#7C3AED', border:'none', borderRadius:8, padding:'8px 16px', color:'#fff', fontSize:13, fontWeight:600, cursor:extractingPO?'not-allowed':'pointer', display:'flex', alignItems:'center', gap:6, opacity:extractingPO?0.7:1 }}>
-                  {extractingPO
-                    ? <><div style={{ width:13,height:13,border:'2px solid rgba(255,255,255,0.4)',borderTopColor:'#fff',borderRadius:'50%',animation:'spin 0.7s linear infinite',display:'inline-block' }} />&nbsp;Extracting…</>
-                    : '📎 Upload PO to Auto-fill'}
-                </button>
-                <span style={{ fontSize:11, color:'#6B7280' }}>Upload Indus Towers PO PDF to auto-fill fields + items</span>
-              </div>
-            )}
+
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
               {F('Project No',       'id',          'text', undefined, true)}
               {F('Project ID',       'projectId',   'text', undefined, false, undefined, 25)}
