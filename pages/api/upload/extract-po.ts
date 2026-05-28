@@ -2,88 +2,22 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import formidable from 'formidable';
 import fs from 'fs';
-// pdf-parse loaded dynamically to avoid serverless bundle issues
 
 export const config = { api: { bodyParser: false } };
 
-/* ─── helpers ─────────────────────────────────────── */
-function grab(text: string, pattern: RegExp): string {
-  return (text.match(pattern)?.[1] ?? '').trim();
-}
+// Extract text from digital PDF without canvas/DOMMatrix (serverless safe)
+async function extractPDFText(buf: Buffer): Promise<string> {
+  // Use lib file directly to skip test-file loading in main entry
+  const pdfParse = require('pdf-parse/lib/pdf-parse');
 
-function parseDate(raw: string): string {
-  // "22-MAY-2026 18:27:53" or "17-MAY-26" → YYYY-MM-DD
-  const months: Record<string,string> = { JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12' };
-  const m = raw.match(/(\d{1,2})-([A-Z]{3})-(\d{2,4})/);
-  if (!m) return '';
-  const day  = m[1].padStart(2,'0');
-  const mon  = months[m[2]] || '01';
-  const year = m[3].length === 2 ? '20' + m[3] : m[3];
-  return `${year}-${mon}-${day}`;
-}
+  // Custom page renderer — only uses getTextContent(), no canvas needed
+  const pagerender = async (pageData: any) => {
+    const tc = await pageData.getTextContent();
+    return tc.items.map((item: any) => item.str + (item.hasEOL ? '\n' : ' ')).join('');
+  };
 
-function parseAmount(raw: string): number {
-  return parseFloat(raw.replace(/,/g,'')) || 0;
-}
-
-/* ─── Item parser ─────────────────────────────────── */
-interface POItem {
-  description: string; hsn: string; uom: string;
-  quantity: number; rate: number; gst_rate: number; amount: number;
-}
-
-function parseItems(text: string): POItem[] {
-  const items: POItem[] = [];
-
-  // Split into item blocks: each block starts with "\n{digit(s)} {ITEM-CODE}"
-  // Item codes look like: 29-100000-0-00-ZZ-ZZ816
-  const blockSplitter = /\n(\d{1,3})\s+([\w-]{15,})\n/g;
-  const matches = Array.from(text.matchAll(blockSplitter));
-
-  for (let i = 0; i < matches.length; i++) {
-    const m        = matches[i];
-    const blockStart = m.index! + m[0].length;
-    const blockEnd   = matches[i + 1]?.index ?? text.indexOf('Total Value');
-    const block      = text.slice(blockStart, blockEnd < blockStart ? text.length : blockEnd);
-    const itemCode   = m[2];
-
-    // HSN / SAC
-    const hsn = grab(block, /HSN No\s*:\s*(\S+)/) || grab(block, /SAC No\s*:\s*(\S+)/);
-
-    // Rate line: "{qty} {UOM} {rate} INR {amount} {date}"
-    const rateLine = block.match(/(\d[\d.]*)\s+(Each|Meter|KILOME\s*TER|Nos|Set|KG|Lot|Box|Bag|MT|RMT|Cum|Mtr|[A-Z]+)\s+([\d,]+\.?\d*)\s+INR\s+([\d,]+\.?\d*)/i);
-    if (!rateLine) continue;
-
-    const qty    = parseFloat(rateLine[1]);
-    const uom    = rateLine[2].replace(/\s+/,'').replace('KILOMETER','Kilometer');
-    const rate   = parseAmount(rateLine[3]);
-    const amount = parseAmount(rateLine[4]);
-
-    // GST: look for SGST/CGST percentages — sum them
-    const gstMatches = Array.from(block.matchAll(/[SC]GST\s*-?\s*(\d+)%/gi));
-    const gstRate = gstMatches.reduce((sum, gm) => sum + parseInt(gm[1]), 0) || 18;
-
-    // Description: text between SAC line and the rate line
-    const sacIdx  = block.search(/SAC No\s*:/);
-    const sacEnd  = block.indexOf('\n', sacIdx) + 1;
-    const rateIdx = block.search(/(\d[\d.]*)\s+(Each|Meter|KILOME|Nos|Set|KG|Lot|Box|Bag|MT|RMT|Cum|Mtr)/i);
-    const descRaw = block.slice(sacEnd, rateIdx).replace(/HSN No\s*:[^\n]*/g,'').trim();
-    const description = descRaw.replace(/\n+/g,' ').replace(/\s{2,}/g,' ').trim()
-      || itemCode;
-
-    items.push({ description, hsn: itemCode, uom, quantity: qty, rate, gst_rate: gstRate, amount });
-  }
-
-  return items;
-}
-
-/* ─── Main handler ────────────────────────────────── */
-// Polyfill browser APIs required by pdf-parse in Node.js serverless
-if (typeof (globalThis as any).DOMMatrix === 'undefined') {
-  (globalThis as any).DOMMatrix = class DOMMatrix { constructor() {} };
-}
-if (typeof (globalThis as any).Path2D === 'undefined') {
-  (globalThis as any).Path2D = class Path2D { constructor() {} };
+  const result = await pdfParse(buf, { pagerender });
+  return result.text;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -96,48 +30,85 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { data: { user }, error: authErr } = await admin.auth.getUser(token);
   if (authErr || !user) return res.status(401).json({ error: 'Unauthorized' });
 
+  // Get OpenAI key from super_admin profile (same as original approach)
+  const { data: profile } = await admin
+    .from('profiles').select('openai_api_key').eq('role', 'super_admin').single();
+  const apiKey = profile?.openai_api_key || process.env.OPENAI_API_KEY;
+  if (!apiKey) return res.status(400).json({ error: 'NO_API_KEY', message: 'OpenAI API key not configured.' });
+
+  // Parse uploaded file — PDF only
   const form = formidable({ maxFileSize: 20 * 1024 * 1024 });
   const [, files] = await form.parse(req);
   const file = Array.isArray(files.file) ? files.file[0] : files.file;
   if (!file) return res.status(400).json({ error: 'No file uploaded' });
+  if (!file.mimetype?.includes('pdf')) {
+    return res.status(400).json({ error: 'Only PDF files are accepted.' });
+  }
 
-  let text = '';
+  // Extract text from PDF
+  let pdfText = '';
   try {
     const buf = fs.readFileSync(file.filepath);
-    // Dynamic import avoids bundling issues in Next.js serverless
-    const pdfMod = await import('pdf-parse');
-    const pdfParse = (pdfMod as any).default || pdfMod;
-    const parsed = await pdfParse(buf);
-    text = parsed.text;
+    pdfText = await extractPDFText(buf);
   } catch (err: any) {
-    console.error('pdf-parse error:', err);
+    console.error('PDF text extraction error:', err);
     return res.status(400).json({ error: 'Could not read PDF: ' + String(err.message || err) });
   }
 
-  // ── Extract header fields ──
-  const poNo     = grab(text, /P\.O No\s*\n?\s*:\s*([\d]+)/);
-  const dateRaw  = grab(text, /Date\s*\n?\s*:\s*([\d]{1,2}-[A-Z]{3}-[\d]{2,4}[^\n]*)/);
-  const poDate   = parseDate(dateRaw);
-  const indusId  = grab(text, /Indus ID\s*:\s*(IN-[\d]+)/);
-  const projectNo = grab(text, /Project No\s*:\s*([\w/RL-]+)/);
-  const region   = grab(text, /Circle\s*:\s*(\w[\w\s]*?)(?:\n|Warehouse)/);
-  const totalRaw = grab(text, /Total Order Value\s*[:\s]+([\d,]+\.?\d*)/);
-  const poValue  = parseAmount(totalRaw);
-  const vendor   = grab(text, /Supplier Name\s*\n?\s*:\s*([^\n]+)/);
+  if (!pdfText.trim()) {
+    return res.status(400).json({ error: 'No text found in PDF. Make sure it is a digital (not scanned) PDF.' });
+  }
 
-  // ── Extract items ──
-  const items = parseItems(text);
+  // Send extracted text to GPT-4o-mini
+  const prompt = `Extract data from this Indus Towers Purchase Order text and return ONLY a valid JSON object with these exact keys (no markdown, no explanation):
+{
+  "po_no": "",
+  "po_date": "YYYY-MM-DD",
+  "indus_id": "",
+  "project_no": "",
+  "region": "",
+  "po_value": 0,
+  "vendor_name": "",
+  "items": [
+    { "description": "", "hsn": "", "uom": "", "quantity": 0, "rate": 0, "gst_rate": 18, "amount": 0 }
+  ]
+}
+Rules:
+- po_no: the P.O No value
+- po_date: convert to YYYY-MM-DD
+- indus_id: Indus ID field (e.g. IN-3460945)
+- project_no: Project No field
+- region: Circle field value
+- po_value: Total Order Value as number
+- items: ALL line items. Use Item Code column for hsn field. gst_rate = SGST% + CGST%
+- Return ONLY the JSON, nothing else.
 
-  const data = {
-    po_no: poNo,
-    po_date: poDate,
-    indus_id: indusId,
-    project_no: projectNo,
-    region: region.replace('Karnataka','Karnataka').trim(),
-    po_value: poValue,
-    vendor_name: vendor,
-    items,
-  };
+PO TEXT:
+${pdfText.slice(0, 12000)}`;
 
-  return res.status(200).json({ success: true, data });
+  const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+
+  if (!openaiRes.ok) {
+    const err = await openaiRes.json();
+    return res.status(400).json({ error: err.error?.message || 'OpenAI API error' });
+  }
+
+  const openaiData = await openaiRes.json();
+  const raw = openaiData.choices?.[0]?.message?.content || '{}';
+
+  try {
+    const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const extracted = JSON.parse(cleaned);
+    return res.status(200).json({ success: true, data: extracted });
+  } catch {
+    return res.status(400).json({ error: 'Failed to parse extracted data.' });
+  }
 }
