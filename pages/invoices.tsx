@@ -291,7 +291,6 @@ export default function InvoicesPage() {
           </div>
         )}
         {activeTab === 'invoices' && (
-        {/* Header */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
           <div>
             <div style={{ fontSize:22, fontWeight:800, color:T.text }}>Invoices</div>
