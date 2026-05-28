@@ -92,24 +92,37 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     [invoices]
   );
 
+
+  // Recalculate and update project's billed_amount from all its invoices
+  const updateProjectBilled = useCallback(async (projectId: string, updatedInvoices: Invoice[]) => {
+    const total = updatedInvoices
+      .filter(i => i.projectId === projectId)
+      .reduce((sum, i) => sum + (i.invoiceAmount || 0), 0);
+    await supabase.from('projects').update({ billed_amount: total }).eq('id', projectId);
+  }, []);
+
   const addInvoice = useCallback(async (inv: Omit<Invoice, 'id'|'createdAt'|'updatedAt'>) => {
-    // Check for duplicate invoice number
     const duplicate = invoices.find(i => i.invoiceNo.trim().toLowerCase() === inv.invoiceNo.trim().toLowerCase());
     if (duplicate) throw new Error(`Invoice number "${inv.invoiceNo}" already exists for project ${duplicate.projectId}`);
     const payload = mapToDb(inv);
     const { data, error } = await supabase.from('invoices').insert(payload).select().single();
     if (error) throw new Error(error.message);
     const newInv = mapRow(data);
-    setInvoices(prev => [newInv, ...prev]);
+    const updated = [newInv, ...invoices];
+    setInvoices(updated);
+    await updateProjectBilled(inv.projectId, updated);
     return newInv;
-  }, []);
+  }, [invoices, updateProjectBilled]);
 
   const updateInvoice = useCallback(async (id: string, updates: Partial<Invoice>) => {
     const payload = { ...mapToDb(updates), updated_at: new Date().toISOString() };
     const { error } = await supabase.from('invoices').update(payload).eq('id', id);
     if (error) throw new Error(error.message);
-    setInvoices(prev => prev.map(i => i.id === id ? { ...i, ...mapRow({ ...updates, id }) } : i));
-  }, []);
+    const updated = invoices.map(i => i.id === id ? { ...i, ...updates } : i);
+    setInvoices(updated);
+    const inv = invoices.find(i => i.id === id);
+    if (inv?.projectId) await updateProjectBilled(inv.projectId, updated);
+  }, [invoices, updateProjectBilled]);
 
   const deleteInvoice = useCallback(async (id: string) => {
     const { error } = await supabase.from('invoices').delete().eq('id', id);
