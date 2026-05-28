@@ -1485,7 +1485,7 @@ export default function ProjectDetailPage() {
         {/* ── 1. Project Details + Financial ── */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
           <div style={card}>
-            {{sectionTitle('📋','Project Details', 'details', canEditDetails)}
+            {sectionTitle('📋','Project Details', 'details', canEditDetails)}
             {editing('details') && canEditDetails && (
               <div style={{ marginBottom:14, display:'flex', alignItems:'center', gap:10 }}>
                 <input ref={poUploadRef} type="file" accept=".pdf" onChange={handleExtractPO} style={{ display:'none' }} />
