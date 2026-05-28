@@ -99,14 +99,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 - items: ALL line items; use Item Code for hsn; gst_rate = SGST%+CGST%
 
 PO TEXT:
-${pdfText.slice(0, 12000)}`;
+${pdfText.slice(0, 20000)}`;
 
   const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      max_tokens: 3000,
+      max_tokens: 4096,
       messages: [{ role: 'user', content: prompt }],
     }),
   });
