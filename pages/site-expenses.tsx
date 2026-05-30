@@ -113,7 +113,7 @@ export default function SiteExpensesPage() {
         await createClient().from('projects').update({ paid_amount: newPaid }).eq('id', proj.id);
       }
       setPaidModal(null);
-      setPaidForm({ txnRef:"", paymentMode:"NEFT" });
+      setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"" });
       setToast({ msg:"✅ Marked as Paid — Financial Summary updated", type:"success" });
     } catch (err:any) {
       setToast({ msg:"❌ " + err.message, type:"error" });
@@ -179,7 +179,9 @@ export default function SiteExpensesPage() {
               <div style={{ background:T.bg, borderRadius:10, padding:14, border:`1px solid ${T.border}`, marginTop:12 }}>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:12 }}>
                   {([["Date *","expenseDate","date",""],["Amount (₹) *","amount","number",""],
-                     ["Site","site","text",selProj?.site||""],["Remarks","remarks","text",""]] as [string,string,string,string][]).map(([l,f,t,ph])=>(
+                     ["Site","site","text",selProj?.site||""],["Remarks","remarks","text",""],
+                     ["Bank Account No","bankAccount","text","e.g. 1234567890"],
+                     ["UPI ID","upiId","text","e.g. name@upi"]] as [string,string,string,string][]).map(([l,f,t,ph])=>(
                     <div key={f}>
                       <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>{l}</label>
                       <input type={t} value={(form as any)[f]} placeholder={ph}
@@ -266,7 +268,7 @@ export default function SiteExpensesPage() {
                       </td>
                       <td style={{ ...tdS, width:80 }}>
                         {isPending && canManage && (
-                          <button onClick={ev=>{ ev.stopPropagation(); setPaidModal(e); setPaidForm({ txnRef:"", paymentMode:"NEFT" }); }}
+                          <button onClick={ev=>{ ev.stopPropagation(); setPaidModal(e); setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"" }); }}
                             style={{ background:T.success, border:"none", borderRadius:6, padding:"5px 12px",
                               color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap" as const }}>
                             ✓ Paid
@@ -308,12 +310,24 @@ export default function SiteExpensesPage() {
                 placeholder="e.g. NEFT/2026/001234"
                 style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const }} />
             </div>
-            <div style={{ marginBottom:20 }}>
+            <div style={{ marginBottom:14 }}>
               <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Payment Mode *</label>
               <select value={paidForm.paymentMode} onChange={e=>setPaidForm(p=>({...p,paymentMode:e.target.value}))}
                 style={{ ...inputStyle(), width:"100%" }}>
                 {PAYMENT_MODES.map(m=><option key={m}>{m}</option>)}
               </select>
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>From Account</label>
+              <input value={paidForm.fromAccount} onChange={e=>setPaidForm(p=>({...p,fromAccount:e.target.value}))}
+                placeholder="e.g. Venus Energy HDFC A/C"
+                style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const }} />
+            </div>
+            <div style={{ marginBottom:20 }}>
+              <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>To Account</label>
+              <input value={paidForm.toAccount} onChange={e=>setPaidForm(p=>({...p,toAccount:e.target.value}))}
+                placeholder="e.g. Vendor Bank A/C / UPI ID"
+                style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const }} />
             </div>
             <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
               <button onClick={()=>setPaidModal(null)}
