@@ -951,7 +951,7 @@ function AccountingDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
 
 // ── MAIN DASHBOARD (role router) ─────────────────────────────────
 export default function Dashboard() {
-  const { projects: dbProjects } = useProjects();
+  const { projects: dbProjects, loading: projectsLoading } = useProjects();
   const { getDocStatus } = useWorkDocs();
   const { profile, loading } = useAuth();
   const role = (!loading && profile?.role) || '';
@@ -996,14 +996,14 @@ export default function Dashboard() {
           )}
         </div>
 
-        {loading && <div style={{ display:'flex', justifyContent:'center', alignItems:'center', height:300 }}><div className="spinner" style={{ width:32, height:32, borderTopColor:T.primary, borderColor:`${T.primary}30` }} /></div>}
-        {!loading && role === 'super_admin'     && <SuperAdminDashboard   projects={dbProjects as any[]} />}
-        {!loading && role === 'region_manager'  && <RegionManagerDashboard projects={dbProjects as any[]} />}
-        {!loading && role === 'project_manager' && <ProjectManagerDashboard projects={dbProjects as any[]} pmName={profile?.full_name||''} />}
-        {!loading && role === 'site_engineer'   && <SiteEngineerDashboard  projects={dbProjects as any[]} />}
-        {!loading && role === 'vendor'          && <VendorDashboard         projects={dbProjects as any[]} />}
-        {!loading && role === 'viewer' && <ViewerDashboard projects={dbProjects as any[]} />}
-        {!loading && role === 'accounting_team' && <AccountingDashboard     projects={dbProjects as any[]} />}
+        {(loading || projectsLoading) && <div style={{ display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center', height:300, gap:12 }}><div className="spinner" style={{ width:40, height:40, borderTopColor:T.primary, borderColor:`${T.primary}30` }} /><div style={{ fontSize:13, color:T.textMuted }}>Loading dashboard...</div></div>}
+        {!loading && !projectsLoading && role === 'super_admin'     && <SuperAdminDashboard   projects={dbProjects as any[]} />}
+        {!loading && !projectsLoading && role === 'region_manager'  && <RegionManagerDashboard projects={dbProjects as any[]} />}
+        {!loading && !projectsLoading && role === 'project_manager' && <ProjectManagerDashboard projects={dbProjects as any[]} pmName={profile?.full_name||''} />}
+        {!loading && !projectsLoading && role === 'site_engineer'   && <SiteEngineerDashboard  projects={dbProjects as any[]} />}
+        {!loading && !projectsLoading && role === 'vendor'          && <VendorDashboard         projects={dbProjects as any[]} />}
+        {!loading && !projectsLoading && role === 'viewer' && <ViewerDashboard projects={dbProjects as any[]} />}
+        {!loading && !projectsLoading && role === 'accounting_team' && <AccountingDashboard     projects={dbProjects as any[]} />}
       </div>
     </Layout>
   );
