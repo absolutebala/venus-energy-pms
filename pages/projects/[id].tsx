@@ -1509,7 +1509,7 @@ export default function ProjectDetailPage() {
               )}
 
               {/* SA-only Delete button */}
-              {role === 'super_admin' && notEditing && (
+              {role === 'super_admin' {role === 'super_admin' && notEditing && ({role === 'super_admin' && notEditing && ( (
                 <button onClick={deleteProject} disabled={deleting}
                   style={{ background:'#FEF2F2', border:'1.5px solid #FECACA', borderRadius:8,
                     padding:'8px 16px', color:T.danger, cursor:'pointer', fontSize:13,
