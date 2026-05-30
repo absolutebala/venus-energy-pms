@@ -27,7 +27,7 @@ const WORK_STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
   billing_review: { label:'Billing Review', color:'#D97706', bg:'#FFFBEB' },
   completed:      { label:'Completed',      color:'#16A34A', bg:'#F0FDF4' },
 };
-const STATUSES_FILTER = ['All','In Progress','Aging','Delayed','Completed','Pending','Billing Review'];
+const STATUSES_FILTER = ['All','PO Open','PO Closed'];
 const TYPES = ['All','SMPS Installation','Supply and Service for Tower Strengthening','AC Transportation','Minor','Major','Gate Service','Solar','DISMANLTING','Fence erection','DG REPLACEMENT','Lightening Arrestor','BB Installation','DG Dismantling','Civil','Lithum Ion BB Installation','DG DISMATNLING','New Build','Shelter Dismantling','HPSC','DG CAM','Transportation for Tower Strengthening','TM Service','Transportation Charges for Goods','Shelter Floor Sagging','SP Installation','Cable Replacement Activity','JV for Tower Strengthening','Civil - Earthing Correction activity','dewatering activity','Cable Ladder Installation activity','SRN TRANSPORTATION','SPS & SMPS installation','DG Canopy Rectification','Fuel Filling Charges','DG addition','Survey Charges - UG Cable','UG Cable rectification','Cyclone Preparedness','AC REPLACEMENT','Civil Dismantling Activity','New Build EB Meter Box','Survey charges','BACK FILLING','PU Coating','BB ADDITIONAL','Shelter leakage','Solar panel replacement','Earthing Activity','Solar Reward','POLE INSTALLATION','SPS REPLACEMENT','Zinc Spray for Tower Maintenance','EGB INSTALLATION','Sharing shelter','Cable Tray INSTALLATION','Pole Maintenance','Zinc Spray for Pole Maintenance','Cable Routing LADDER Fallen','COW Tower Dismantling','TCU INSTALLATION','Supply for Tower strengthening','Electrical Activity','DG Installation','Tarpaulin Activity','LA and LA Strip connection activity','Tower Dismantling','LA installation','Survey of COW sites','Survey of Civil','DG RELOCATION','Others'];
 
 // Drafts loaded from Supabase
@@ -227,6 +227,7 @@ export default function ProjectsPage() {
       .then(({ data }) => { if (data) setDrafts(data); });
   }, []);
   const [statusFilter, setStatusFilter] = useState('All');
+  const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc');
   const [typeFilter,   setTypeFilter]   = useState('All');
   const [search,       setSearch]       = useState('');
   const [focused,      setFocused]      = useState(false);
@@ -280,8 +281,8 @@ export default function ProjectsPage() {
   };
   const filtered = roleFilteredProjects.filter(p => {
     const displayStatus = STATUS_DISPLAY[p.status] || p.status;
-    if (statusFilter === 'Aging') return getAgeDays(p.id) > agingThreshold;
-    if (statusFilter !== 'All' && displayStatus !== statusFilter) return false;
+    if (statusFilter === 'PO Open')   return (p as any).poStatus === 'Open';
+    if (statusFilter === 'PO Closed') return (p as any).poStatus === 'Closed';
     if (typeFilter !== 'All' && p.type !== typeFilter) return false;
     if (ageMin !== null && p.aging < ageMin) return false;
     if (ageMax !== null && ageMax < 999 && p.aging > ageMax) return false;
@@ -416,8 +417,8 @@ export default function ProjectsPage() {
             placeholder="Search project, PO number, Indus ID, site, vendor…"
             style={{ ...inputStyle(focused), width:320 }} />
           <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-            {STATUSES_FILTER.map(f=>(
-              <button key={f} onClick={()=>{ setStatusFilter(f); setAgeMin(null); setAgeMax(null); setPage(1); }}
+            {STATUSES_FILTER.filter(f=>f!=='All').map(f=>(
+              <button key={f} onClick={()=>{ setStatusFilter(statusFilter===f?'All':f); setPage(1); }}
                 style={{ padding:'6px 12px', borderRadius:6, border:'1px solid', borderColor:statusFilter===f?T.primary:T.border, background:statusFilter===f?T.primaryLight:'#fff', color:statusFilter===f?T.primary:T.textMuted, fontSize:12, cursor:'pointer', fontWeight:statusFilter===f?600:400 }}>{f}</button>
             ))}
           </div>
@@ -451,7 +452,13 @@ export default function ProjectsPage() {
             <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:1400 }}>
               <thead>
                 <tr>
-                  {['#','PO Number','Project ID','Indus ID','Site / Project','Region','Project Status','PO Status','Delivery Date','Aging'].map((h,i)=>(
+                  <th style={{ padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
+                      color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`,
+                      whiteSpace:'nowrap' as const, background:T.primaryLight, cursor:'pointer' }}
+                    onClick={()=>setSortDir(d=>d==='asc'?'desc':'asc')}>
+                    S.No. {sortDir==='asc'?'↑':'↓'}
+                  </th>
+                  {['PO Number','Project ID','Indus ID','Site / Project','Region','Project Status','PO Status','Delivery Date','Aging'].map((h,i)=>(
                     <th key={i} style={{ padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
                       color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`,
                       whiteSpace:'nowrap' as const, background:T.primaryLight }}>
@@ -464,7 +471,7 @@ export default function ProjectsPage() {
                 {filtered.length === 0 && (
                   <tr><td colSpan={10} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
                 )}
-                {filtered.slice((page-1)*PER_PAGE, page*PER_PAGE).map((p:any, idx:number) => {
+                {[...filtered].sort((a:any,b:any)=>{ const ai=filtered.indexOf(a), bi=filtered.indexOf(b); return sortDir==='asc'?ai-bi:bi-ai; }).slice((page-1)*PER_PAGE, page*PER_PAGE).map((p:any, idx:number) => {
                   const delDate = p.endDate;
                   const delDt   = delDate ? new Date(delDate) : null;
                   const isPast  = delDt && !['completed','not_started'].includes(p.status) ? delDt < new Date() : false;
@@ -476,7 +483,7 @@ export default function ProjectsPage() {
                       onClick={()=>router.push(`/projects/${p.id}`)}
                       onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
                       onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=idx%2===0?'#fff':T.bg}>
-                      <td style={{ padding:'10px 12px', color:T.textMuted, fontSize:12, borderBottom:`1px solid ${T.border}` }}>{(page-1)*PER_PAGE+idx+1}</td>
+                      <td style={{ padding:'10px 12px', color:T.textMuted, fontSize:12, borderBottom:`1px solid ${T.border}` }}>{sortDir==='asc'?(page-1)*PER_PAGE+idx+1:filtered.length-(page-1)*PER_PAGE-idx}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
                         <div style={{ fontWeight:700, color:T.primary, fontSize:13 }}>{p.poNo || '—'}</div>
                         <div style={{ fontSize:10, color:T.textMuted }}>{p.id}</div>
