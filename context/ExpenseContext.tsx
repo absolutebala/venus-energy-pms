@@ -10,6 +10,7 @@ export interface Expense {
   createdBy: string; createdAt?: string; updatedAt?: string;
   status: string;
   paidTxnRef?: string; paidPaymentMode?: string; paidAt?: string;
+  bankAccount?: string; upiId?: string; paidFromAccount?: string; paidToAccount?: string;
 }
 
 function mapRow(row: any): Expense {
@@ -29,6 +30,10 @@ function mapRow(row: any): Expense {
     updatedAt:       row.updated_at        ?? '',
     status:          row.status            ?? 'pending',
     paidTxnRef:      row.paid_txn_ref      ?? '',
+    bankAccount:     row.bank_account      ?? '',
+    upiId:           row.upi_id            ?? '',
+    paidFromAccount: row.paid_from_account ?? '',
+    paidToAccount:   row.paid_to_account   ?? '',
     paidPaymentMode: row.paid_payment_mode ?? '',
     paidAt:          row.paid_at           ?? '',
   };
@@ -45,6 +50,7 @@ const CAMEL_TO_SNAKE: Record<string,string> = {
   paymentMode:'payment_mode', projectId:'project_id', poNo:'po_no',
   createdBy:'created_by', paidTxnRef:'paid_txn_ref',
   paidPaymentMode:'paid_payment_mode', paidAt:'paid_at',
+  bankAccount:'bank_account', upiId:'upi_id', paidFromAccount:'paid_from_account', paidToAccount:'paid_to_account',
 };
 
 function mapToDb(exp: Partial<Expense>): Record<string, any> {
