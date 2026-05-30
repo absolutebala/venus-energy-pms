@@ -388,7 +388,7 @@ export default function ProjectsPage() {
             <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:1400 }}>
               <thead>
                 <tr>
-                  {['#','Project No','Site / Project','Work Status','Delivery Date','Aging',
+                  {['#','Project No','Site / Project','Project Status','Delivery Date','Aging',
                     ...DOC_COLS_P.map(d=>d.label),
                     'STN Return','Last Updated'].map((h,i)=>(
                     <th key={i} style={{ padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
