@@ -1558,21 +1558,6 @@ export default function ProjectDetailPage() {
                     onCreateNew={v=>addLookupOption('job_type',v)} />
                 </div>
               ) : F('Project Name', 'type', 'text', TYPES)}
-              {editing('details') && canEditDetails ? (
-                <div style={{ marginBottom:14, gridColumn:'1/-1' }}>
-                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Project Status</label>
-                  <select value={(form as any).projectStatus||''} onChange={e=>setForm((f:any)=>({...f,projectStatus:e.target.value}))}
-                    style={{ ...inputStyle(), width:'100%' }}>
-                    <option value="">— Select Status —</option>
-                    {PROJECT_STATUS_OPTIONS.map(s=><option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-              ) : (
-                <div style={{ marginBottom:14 }}>
-                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Project Status</label>
-                  <div style={{ fontSize:14, fontWeight:600, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>{(form as any).projectStatus || '—'}</div>
-                </div>
-              )}
               {F('Start Date',       'startDate',   'date')}
               {F('End Date',         'endDate',     'date')}
               {F('Region Manager', 'rm', 'text', rmList.length > 0 ? rmList : undefined)}
