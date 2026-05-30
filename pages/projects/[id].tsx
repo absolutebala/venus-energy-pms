@@ -1482,14 +1482,21 @@ export default function ProjectDetailPage() {
         <div style={{ ...card, marginBottom:20, padding:'20px 24px' }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:12, marginBottom:16 }}>
             <div>
-              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6, flexWrap:'wrap' }}>
                 <Link href="/projects" style={{ color:T.textMuted, textDecoration:'none', fontSize:13 }}>← Projects</Link>
                 <span style={{ color:T.textDim }}>/</span>
                 <h1 style={{ fontSize:20, fontWeight:800, color:T.text, margin:0 }}>{p.id}</h1>
-                <span style={{ background:`${st}18`, color:st, border:`1px solid ${st}40`, padding:'3px 12px', borderRadius:20, fontSize:12, fontWeight:700 }}>{STATUS_LABELS[p.status]||p.status}</span>
+                <select
+                  value={p.projectStatus || ''}
+                  onChange={e => ctxUpdateProject(p.id, { projectStatus: e.target.value } as any, profile?.full_name ?? undefined)}
+                  style={{ background:'#E0F2FE', color:'#0369A1', border:'1px solid #BAE6FD',
+                    padding:'3px 10px', borderRadius:20, fontSize:12, fontWeight:700,
+                    cursor:'pointer', outline:'none' }}>
+                  <option value="">— Set Project Status —</option>
+                  {PROJECT_STATUS_OPTIONS.map((s:string) => <option key={s} value={s}>{s}</option>)}
+                </select>
               </div>
-              <div style={{ fontSize:14, color:T.textMuted }}>{p.projectName} · {p.site} · {p.region}</div>
-              <div style={{ fontSize:13, color:T.textDim, marginTop:2 }}>PO: {p.poNo} · Indus ID: {p.indusId}</div>
+              <div style={{ fontSize:14, color:T.textMuted }}>{p.site} · {p.region}</div>
             </div>
             <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
 
@@ -1512,15 +1519,7 @@ export default function ProjectDetailPage() {
               )}
             </div>
           </div>
-          <div>
-            <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:T.textMuted, marginBottom:5 }}>
-              <span>Overall Progress</span>
-              <span style={{ fontWeight:700, color:p.progress===100?T.success:st }}>{p.progress}%</span>
-            </div>
-            <div style={{ height:8, background:T.border, borderRadius:4 }}>
-              <div style={{ height:'100%', width:`${p.progress}%`, background:p.progress===100?T.success:p.status==='delayed'?T.danger:T.primary, borderRadius:4, transition:'width 0.5s' }} />
-            </div>
-          </div>
+
         </div>
 
         {/* ── 1. Project Details + Financial ── */}
