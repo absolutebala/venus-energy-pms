@@ -78,7 +78,7 @@ const PROJECT_STATUS_OPTIONS = [
 ];
 
 const REGIONS  = ['Tamil Nadu','Karnataka','Telangana','Maharashtra','Delhi','Kerala','West Bengal'];
-const TYPES    = ['Tower Erection','Tower Maintenance','Component Replacement','Fiber Installation','Civil Works','Power Works'];
+const TYPES    = ['SMPS Installation','Supply and Service for Tower Strengthening','AC Transportation','Minor','Major','Gate Service','Solar','DISMANLTING','Fence erection','DG REPLACEMENT','Lightening Arrestor','BB Installation','DG Dismantling','Civil','Lithum Ion BB Installation','DG DISMATNLING','New Build','Shelter Dismantling','HPSC','DG CAM','Transportation for Tower Strengthening','TM Service','Transportation Charges for Goods','Shelter Floor Sagging','SP Installation','Cable Replacement Activity','JV for Tower Strengthening','Civil - Earthing Correction activity','dewatering activity','Cable Ladder Installation activity','SRN TRANSPORTATION','SPS & SMPS installation','DG Canopy Rectification','Fuel Filling Charges','DG addition','Survey Charges - UG Cable','UG Cable rectification','Cyclone Preparedness','AC REPLACEMENT','Civil Dismantling Activity','New Build EB Meter Box','Survey charges','BACK FILLING','PU Coating','BB ADDITIONAL','Shelter leakage','Solar panel replacement','Earthing Activity','Solar Reward','POLE INSTALLATION','SPS REPLACEMENT','Zinc Spray for Tower Maintenance','EGB INSTALLATION','Sharing shelter','Cable Tray INSTALLATION','Pole Maintenance','Zinc Spray for Pole Maintenance','Cable Routing LADDER Fallen','COW Tower Dismantling','TCU INSTALLATION','Supply for Tower strengthening','Electrical Activity','DG Installation','Tarpaulin Activity','LA and LA Strip connection activity','Tower Dismantling','LA installation','Survey of COW sites','Survey of Civil','DG RELOCATION','Others'];
 
 const DOC_TYPES = [
   { key:'safety_photos',   label:'Safety Photos',   icon:'📷', accept:'image/*'           },
@@ -1226,7 +1226,7 @@ export default function ProjectDetailPage() {
         const FIELD_LABELS: Record<string,string> = {
           poNo:'PO Number', poDate:'PO Date', poValue:'PO Amount',
           indusId:'Indus ID', site:'Site Name', region:'Region',
-          type:'Job Type', startDate:'Start Date', endDate:'End Date',
+          type:'Project Name', startDate:'Start Date', endDate:'End Date',
           rm:'Region Manager', pm:'Project Manager', remarks:'Remarks',
           status:'Status', progress:'Progress', workScope:'Work Scope',
         };
@@ -1552,12 +1552,12 @@ export default function ProjectDetailPage() {
               ) : F('Region', 'region', 'text', REGIONS)}
               {editing('details') && canEditDetails ? (
                 <div style={{ marginBottom:14 }}>
-                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Job Type</label>
+                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Project Name</label>
                   <CreatableDropdown value={(form as any).type||''} onChange={v=>setForm((f:any)=>({...f,type:v}))}
                     options={jobTypeOpts} placeholder="Select or create job type..."
                     onCreateNew={v=>addLookupOption('job_type',v)} />
                 </div>
-              ) : F('Job Type', 'type', 'text', TYPES)}
+              ) : F('Project Name', 'type', 'text', TYPES)}
               {editing('details') && canEditDetails ? (
                 <div style={{ marginBottom:14, gridColumn:'1/-1' }}>
                   <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Project Status</label>
