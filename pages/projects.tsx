@@ -370,17 +370,21 @@ export default function ProjectsPage() {
           </div>
         )}
         {/* Summary cards */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-          {[
-            { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value:counts.total,      color:T.primary, icon:'📁', filter:'All'          },
-            { label:'In Progress',    value:counts.inProgress, color:T.info,    icon:'⚡', filter:'In Progress'  },
-            { label:'Aging (60d+)',   value:counts.aging,      color:'#D97706', icon:'⏱',  filter:'Aging'        },
-            { label:'Completed',      value:counts.completed,  color:T.success, icon:'✅', filter:'Completed'    },
-          ].map((s,i)=>(
-            <div key={i} onClick={()=>{ setStatusFilter(statusFilter===s.filter?'All':s.filter); setAgeMin(null); setAgeMax(null); }}
-              style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px', cursor:'pointer', borderColor:statusFilter===s.filter?s.color:T.border, transition:'all 0.15s' }}
-              onMouseEnter={e=>{ const el=e.currentTarget as HTMLDivElement; el.style.transform='translateY(-1px)'; el.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'; }}
-              onMouseLeave={e=>{ const el=e.currentTarget as HTMLDivElement; el.style.transform='translateY(0)'; el.style.boxShadow='0 1px 3px rgba(0,0,0,0.06)'; }}>
+        {(() => {
+          const poOpen   = roleFilteredProjects.filter((p:any)=>(p as any).poStatus==='Open').length;
+          const poClosed = roleFilteredProjects.filter((p:any)=>(p as any).poStatus==='Closed').length;
+          const totalPOValue = roleFilteredProjects.reduce((a:number,p:any)=>a+(p.poValue||0),0);
+          const cards = [
+            { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value: counts.total, color: T.primary, icon:'📁', filter:'All' },
+            { label:'PO Open',   value: poOpen,   color:'#059669', icon:'🟢', filter:'PO Open'   },
+            { label:'PO Closed', value: poClosed, color:'#DC2626', icon:'🔴', filter:'PO Closed' },
+            { label:'Total PO Value', value: `₹${(totalPOValue/100000).toFixed(1)}L`, color:'#7C3AED', icon:'💰', filter:null },
+          ];
+          return cards.map((s,i)=>(
+            <div key={i} onClick={()=>{ if(s.filter){ setStatusFilter(statusFilter===s.filter?'All':s.filter); setPage(1); } }}
+              style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px', cursor:s.filter?'pointer':'default', borderColor:statusFilter===s.filter?s.color:T.border, transition:'all 0.15s' }}
+              onMouseEnter={e=>{ if(s.filter){const el=e.currentTarget as HTMLDivElement; el.style.transform='translateY(-1px)'; el.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';} }}
+              onMouseLeave={e=>{ if(s.filter){const el=e.currentTarget as HTMLDivElement; el.style.transform='translateY(0)'; el.style.boxShadow='0 1px 3px rgba(0,0,0,0.06)';} }}>
               <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:s.color }} />
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                 <div>
@@ -416,12 +420,7 @@ export default function ProjectsPage() {
           <input value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
             placeholder="Search project, PO number, Indus ID, site, vendor…"
             style={{ ...inputStyle(focused), width:320 }} />
-          <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-            {STATUSES_FILTER.filter(f=>f!=='All').map(f=>(
-              <button key={f} onClick={()=>{ setStatusFilter(statusFilter===f?'All':f); setPage(1); }}
-                style={{ padding:'6px 12px', borderRadius:6, border:'1px solid', borderColor:statusFilter===f?T.primary:T.border, background:statusFilter===f?T.primaryLight:'#fff', color:statusFilter===f?T.primary:T.textMuted, fontSize:12, cursor:'pointer', fontWeight:statusFilter===f?600:400 }}>{f}</button>
-            ))}
-          </div>
+
           <select value={typeFilter} onChange={e=>{ setTypeFilter(e.target.value); setPage(1); }} style={{ ...inputStyle(), width:'auto', marginLeft:'auto' }}>
             {TYPES.map(t=><option key={t}>{t}</option>)}
           </select>
