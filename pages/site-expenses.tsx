@@ -42,7 +42,7 @@ export default function SiteExpensesPage() {
 
   // Paid modal state
   const [paidModal,    setPaidModal]    = useState<any>(null);
-  const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT" });
+  const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"" });
   const [paidSaving,   setPaidSaving]   = useState(false);
 
   // Group projects by vendor
