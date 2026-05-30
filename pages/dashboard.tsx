@@ -531,11 +531,6 @@ function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
         </div>
       </div>
 
-      {/* Project Status Table */}
-      <div style={{ ...card, marginBottom:20 }}>
-        <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>📊 Project Status</div>
-        <ProjectStatusTable projects={projects} />
-      </div>
 
       {/* STN/SRN Summary */}
       <div style={{ ...card, marginBottom:20, marginTop:8 }}>
