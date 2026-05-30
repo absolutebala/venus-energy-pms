@@ -56,6 +56,9 @@ const STN_RETURN_MAP: Record<string,boolean> = {}; /*
 export default function ProjectsPage() {
   const router = useRouter();
   const [creating,    setCreating]    = React.useState(false);
+  const [showNewModal, setShowNewModal] = React.useState(false);
+  const [newForm, setNewForm] = React.useState({ projectId:'', poNo:'', poDate:'', indusId:'', site:'', region:'', type:'' });
+  const [newFormErrors, setNewFormErrors] = React.useState<Record<string,string>>({});
   const [extracting,  setExtracting]  = React.useState(false);
   const poFileRef = useRef<HTMLInputElement>(null);
 
@@ -484,6 +487,33 @@ export default function ProjectsPage() {
           </div>
         </div>
       </div>
+      {showNewModal && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ background:'#fff', borderRadius:14, padding:28, width:480, maxWidth:'95vw', boxShadow:'0 8px 40px rgba(0,0,0,0.18)' }}>
+            <div style={{ fontSize:16, fontWeight:700, marginBottom:20 }}>🆕 New Project</div>
+            {([
+              ['Project ID *','projectId','text','e.g. R/RL-8458254'],
+              ['PO Number *','poNo','text','e.g. 16030397730'],
+              ['PO Date *','poDate','date',''],
+              ['Indus ID *','indusId','text','e.g. IN-3460945'],
+              ['Site Name','site','text',''],
+              ['Region','region','text',''],
+            ] as [string,string,string,string][]).map(([label,field,type,ph])=>(
+              <div key={field} style={{ marginBottom:14 }}>
+                <label style={{ display:'block', fontSize:12, fontWeight:600, color:'#6B7280', marginBottom:4, textTransform:'uppercase' as const }}>{label}</label>
+                <input type={type} placeholder={ph} value={(newForm as any)[field]}
+                  onChange={e=>{ setNewForm((f:any)=>({...f,[field]:e.target.value})); setNewFormErrors((er:any)=>({...er,[field]:''})); }}
+                  style={{ width:'100%', padding:'8px 10px', border:`1.5px solid ${(newFormErrors as any)[field]?'#EF4444':'#E5E7EB'}`, borderRadius:7, fontSize:13, outline:'none', boxSizing:'border-box' as const }} />
+                {(newFormErrors as any)[field] && <div style={{ fontSize:11, color:'#EF4444', marginTop:3 }}>{(newFormErrors as any)[field]}</div>}
+              </div>
+            ))}
+            <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:20 }}>
+              <button onClick={()=>setShowNewModal(false)} style={{ padding:'9px 20px', borderRadius:8, border:'1.5px solid #E5E7EB', background:'#fff', cursor:'pointer', fontSize:13 }}>Cancel</button>
+              <button onClick={saveNewProject} disabled={creating} style={{ padding:'9px 20px', borderRadius:8, border:'none', background:'#0D9488', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, opacity:creating?0.7:1 }}>{creating?'Creating…':'Create Project'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
