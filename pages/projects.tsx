@@ -57,6 +57,11 @@ export default function ProjectsPage() {
   const router = useRouter();
   const [creating,    setCreating]    = React.useState(false);
   const [showNewModal, setShowNewModal] = React.useState(false);
+  const [showPoStatusModal, setShowPoStatusModal] = React.useState(false);
+  const [poStatusFile, setPoStatusFile] = React.useState<File|null>(null);
+  const [poStatusResult, setPoStatusResult] = React.useState<any>(null);
+  const [updatingPoStatus, setUpdatingPoStatus] = React.useState(false);
+  const poStatusFileRef = React.useRef<HTMLInputElement>(null);
   const [newForm, setNewForm] = React.useState({ projectId:'', poNo:'', poDate:'', indusId:'', site:'', region:'', type:'' });
   const [newFormErrors, setNewFormErrors] = React.useState<Record<string,string>>({});
   const [extracting,  setExtracting]  = React.useState(false);
@@ -172,6 +177,32 @@ export default function ProjectsPage() {
       setCreating(false);
     }
   };
+  const handlePoStatusUpload = async () => {
+    if (!poStatusFile) return;
+    setUpdatingPoStatus(true);
+    setPoStatusResult(null);
+    try {
+      const sb = createClient();
+      const { data: { session } } = await sb.auth.getSession();
+      const token = session?.access_token;
+      const formData = new FormData();
+      formData.append('file', poStatusFile);
+      const res = await fetch('/api/admin/update-po-status', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed');
+      setPoStatusResult(json);
+      await refreshProjects();
+    } catch (err: any) {
+      setPoStatusResult({ error: err.message });
+    } finally {
+      setUpdatingPoStatus(false);
+    }
+  };
+
   const { projects: dbProjects, refreshProjects, loading: projLoading } = useProjects();
   const { getDocStatus } = useWorkDocs();
   const { profile, can, loading } = useAuth();
@@ -395,6 +426,10 @@ export default function ProjectsPage() {
           </select>
           <input ref={poFileRef} type="file" accept=".pdf,application/pdf" onChange={handlePOUpload} style={{ display:'none' }} />
           {profile?.role === 'super_admin' && <>
+            <button onClick={()=>{ setPoStatusResult(null); setPoStatusFile(null); setShowPoStatusModal(true); }}
+              style={{ ...btnSecondary, display:'flex', alignItems:'center', gap:6 }}>
+              📊 Update PO Status
+            </button>
             <button onClick={()=>poFileRef.current?.click()} disabled={extracting}
               style={{ ...btnSecondary, display:'flex', alignItems:'center', gap:6, opacity:extracting?0.7:1, cursor:extracting?'not-allowed':'pointer' }}>
               {extracting
@@ -489,6 +524,50 @@ export default function ProjectsPage() {
           </div>
         </div>
       </div>
+      {/* ── Update PO Status Modal ── */}
+      {showPoStatusModal && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ background:'#fff', borderRadius:14, padding:28, width:500, maxWidth:'95vw', boxShadow:'0 8px 40px rgba(0,0,0,0.18)' }}>
+            <div style={{ fontSize:16, fontWeight:700, marginBottom:6 }}>📊 Update PO Status in Bulk</div>
+            <div style={{ fontSize:12, color:'#6B7280', marginBottom:20 }}>Upload an Excel with columns: <strong>PO Number</strong> and <strong>PO Status</strong></div>
+
+            <input ref={poStatusFileRef} type="file" accept=".xlsx,.xls,.csv"
+              onChange={e=>{ setPoStatusFile(e.target.files?.[0]||null); setPoStatusResult(null); }}
+              style={{ display:'none' }} />
+
+            <div onClick={()=>poStatusFileRef.current?.click()}
+              style={{ border:'2px dashed #CBD5E1', borderRadius:8, padding:'20px', textAlign:'center', cursor:'pointer', marginBottom:16, background:'#F8FAFC' }}>
+              {poStatusFile
+                ? <div style={{ fontSize:13, color:'#0D9488', fontWeight:600 }}>📄 {poStatusFile.name}</div>
+                : <div style={{ fontSize:13, color:'#9CA3AF' }}>Click to select Excel file (.xlsx, .xls)</div>}
+            </div>
+
+            {poStatusResult && !poStatusResult.error && (
+              <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, padding:14, marginBottom:16 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:'#166534', marginBottom:6 }}>✅ Update Complete</div>
+                <div style={{ fontSize:12, color:'#166534' }}>{poStatusResult.totalProjectsUpdated} projects updated across {poStatusResult.totalPoNumbers} PO numbers</div>
+                {poStatusResult.notFound?.length > 0 && (
+                  <div style={{ fontSize:12, color:'#DC2626', marginTop:6 }}>⚠️ Not found: {poStatusResult.notFound.join(', ')}</div>
+                )}
+              </div>
+            )}
+            {poStatusResult?.error && (
+              <div style={{ background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:8, padding:12, marginBottom:16, fontSize:12, color:'#DC2626' }}>
+                ❌ {poStatusResult.error}
+              </div>
+            )}
+
+            <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+              <button onClick={()=>setShowPoStatusModal(false)} style={{ padding:'9px 20px', borderRadius:8, border:'1.5px solid #E5E7EB', background:'#fff', cursor:'pointer', fontSize:13 }}>Close</button>
+              <button onClick={handlePoStatusUpload} disabled={!poStatusFile||updatingPoStatus}
+                style={{ padding:'9px 20px', borderRadius:8, border:'none', background:'#0D9488', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, opacity:(!poStatusFile||updatingPoStatus)?0.6:1 }}>
+                {updatingPoStatus ? 'Updating…' : 'Upload & Update'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showNewModal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center' }}>
           <div style={{ background:'#fff', borderRadius:14, padding:28, width:480, maxWidth:'95vw', boxShadow:'0 8px 40px rgba(0,0,0,0.18)' }}>
