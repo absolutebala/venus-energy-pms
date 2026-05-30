@@ -412,16 +412,16 @@ export default function ProjectsPage() {
 
         {/* Filters */}
         <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
+          <input value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
             placeholder="Search project, PO number, Indus ID, site, vendor…"
             style={{ ...inputStyle(focused), width:320 }} />
           <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
             {STATUSES_FILTER.map(f=>(
-              <button key={f} onClick={()=>{ setStatusFilter(f); setAgeMin(null); setAgeMax(null); }}
+              <button key={f} onClick={()=>{ setStatusFilter(f); setAgeMin(null); setAgeMax(null); setPage(1); }}
                 style={{ padding:'6px 12px', borderRadius:6, border:'1px solid', borderColor:statusFilter===f?T.primary:T.border, background:statusFilter===f?T.primaryLight:'#fff', color:statusFilter===f?T.primary:T.textMuted, fontSize:12, cursor:'pointer', fontWeight:statusFilter===f?600:400 }}>{f}</button>
             ))}
           </div>
-          <select value={typeFilter} onChange={e=>setTypeFilter(e.target.value)} style={{ ...inputStyle(), width:'auto', marginLeft:'auto' }}>
+          <select value={typeFilter} onChange={e=>{ setTypeFilter(e.target.value); setPage(1); }} style={{ ...inputStyle(), width:'auto', marginLeft:'auto' }}>
             {TYPES.map(t=><option key={t}>{t}</option>)}
           </select>
           <input ref={poFileRef} type="file" accept=".pdf,application/pdf" onChange={handlePOUpload} style={{ display:'none' }} />
@@ -451,9 +451,7 @@ export default function ProjectsPage() {
             <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:1400 }}>
               <thead>
                 <tr>
-                  {['#','Project No','Site / Project','Project Status','Delivery Date','Aging',
-                    ...DOC_COLS_P.map(d=>d.label),
-                    'STN Return','Last Updated'].map((h,i)=>(
+                  {['#','PO Number','Project ID','Indus ID','Site / Project','Region','Project Status','PO Status','Delivery Date','Aging'].map((h,i)=>(
                     <th key={i} style={{ padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
                       color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`,
                       whiteSpace:'nowrap' as const, background:T.primaryLight }}>
@@ -464,17 +462,15 @@ export default function ProjectsPage() {
               </thead>
               <tbody>
                 {filtered.length === 0 && (
-                  <tr><td colSpan={16} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
+                  <tr><td colSpan={10} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
                 )}
-                {filtered.map((p:any, idx:number) => {
-                  const docs    = getDocStatusForProject(p.id) || {};
+                {filtered.slice((page-1)*PER_PAGE, page*PER_PAGE).map((p:any, idx:number) => {
                   const delDate = p.endDate;
                   const delDt   = delDate ? new Date(delDate) : null;
                   const isPast  = delDt && !['completed','not_started'].includes(p.status) ? delDt < new Date() : false;
                   const ageDays = getAgeDays(p.id);
                   const ageColor= ageDays > 90 ? '#DC2626' : ageDays > 60 ? '#D97706' : '#0D9488';
                   const ageBg   = ageDays > 90 ? '#FEF2F2' : ageDays > 60 ? '#FFFBEB' : '#F0FDFA';
-                  const ws = WORK_STATUS_CFG[p.status] || { label: p.status||'—', color:'#6B7280', bg:'#F9FAFB' };
                   return (
                     <tr key={p.id} style={{ background:idx%2===0?'#fff':T.bg, cursor:'pointer' }}
                       onClick={()=>router.push(`/projects/${p.id}`)}
@@ -482,15 +478,21 @@ export default function ProjectsPage() {
                       onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=idx%2===0?'#fff':T.bg}>
                       <td style={{ padding:'10px 12px', color:T.textMuted, fontSize:12, borderBottom:`1px solid ${T.border}` }}>{(page-1)*PER_PAGE+idx+1}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
-                        <div style={{ fontWeight:700, color:T.primary, fontSize:13 }}>{p.id}</div>
-                        {p.poNo && <div style={{ fontSize:10, color:T.textMuted }}>{p.poNo}</div>}
+                        <div style={{ fontWeight:700, color:T.primary, fontSize:13 }}>{p.poNo || '—'}</div>
+                        <div style={{ fontSize:10, color:T.textMuted }}>{p.id}</div>
                       </td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{(p as any).projectId || '—'}</td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{p.indusId || '—'}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
                         <div style={{ fontWeight:600, color:T.text, fontSize:13 }}>{p.site}</div>
                         <div style={{ fontSize:11, color:T.textMuted }}>{p.pm}</div>
                       </td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{p.region || '—'}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
                         <span style={{ fontSize:11, fontWeight:600, color:'#0369A1', background:'#E0F2FE', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{(p as any).projectStatus || '—'}</span>
+                      </td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
+                        <span style={{ fontSize:11, fontWeight:600, color:(p as any).poStatus==='Closed'?'#DC2626':(p as any).poStatus==='Open'?'#059669':'#6B7280', background:(p as any).poStatus==='Closed'?'#FEF2F2':(p as any).poStatus==='Open'?'#D1FAE5':'#F9FAFB', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{(p as any).poStatus || '—'}</span>
                       </td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, whiteSpace:'nowrap' as const }}>
                         {delDt ? <span style={{ fontSize:12, color:isPast?'#DC2626':'#374151', fontWeight:isPast?600:400 }}>
@@ -501,17 +503,6 @@ export default function ProjectsPage() {
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
                         <span style={{ fontSize:12, fontWeight:600, color:ageColor, background:ageBg, padding:'2px 8px', borderRadius:10 }}>{ageDays}d</span>
                       </td>
-                      {DOC_COLS_P.map(d=>(
-                        <td key={d.key} style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, textAlign:'center' as const }}>
-                          <span style={{ fontSize:16 }} title={docs[d.key]?'Completed':'Pending'}>{docs[d.key]?'✅':'⏳'}</span>
-                        </td>
-                      ))}
-                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, textAlign:'center' as const }}>
-                        <span style={{ fontSize:16 }}>{['completed','billing_review'].includes(p.status)?'✅':'⏳'}</span>
-                      </td>
-                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.textMuted, whiteSpace:'nowrap' as const }}>
-                        {new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
-                      </td>
                     </tr>
                   );
                 })}
@@ -519,8 +510,25 @@ export default function ProjectsPage() {
             </table>
           </div>
           </div>
-          <div style={{ padding:'10px 0', borderTop:`1px solid ${T.border}`, fontSize:11, color:T.textDim, marginTop:4 }}>
-            Showing {filtered.length} of {projects.length} projects · PO Number can be shared across multiple projects
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 4px', borderTop:`1px solid ${T.border}`, marginTop:4 }}>
+            <div style={{ fontSize:12, color:T.textMuted }}>
+              Showing {Math.min((page-1)*PER_PAGE+1, filtered.length)}–{Math.min(page*PER_PAGE, filtered.length)} of {filtered.length} projects
+            </div>
+            <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+              <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1}
+                style={{ padding:'5px 12px', borderRadius:6, border:`1px solid ${T.border}`, background:'#fff', cursor:page===1?'not-allowed':'pointer', fontSize:12, color:page===1?T.textDim:T.text, opacity:page===1?0.5:1 }}>← Prev</button>
+              {Array.from({length:Math.min(5,Math.ceil(filtered.length/PER_PAGE))},(_, i)=>{
+                const totalPages = Math.ceil(filtered.length/PER_PAGE);
+                const start = Math.max(1, Math.min(page-2, totalPages-4));
+                const pg = start+i;
+                return pg<=totalPages ? (
+                  <button key={pg} onClick={()=>setPage(pg)}
+                    style={{ padding:'5px 10px', borderRadius:6, border:`1px solid ${pg===page?T.primary:T.border}`, background:pg===page?T.primaryLight:'#fff', cursor:'pointer', fontSize:12, color:pg===page?T.primary:T.text, fontWeight:pg===page?700:400 }}>{pg}</button>
+                ) : null;
+              })}
+              <button onClick={()=>setPage(p=>Math.min(Math.ceil(filtered.length/PER_PAGE),p+1))} disabled={page>=Math.ceil(filtered.length/PER_PAGE)}
+                style={{ padding:'5px 12px', borderRadius:6, border:`1px solid ${T.border}`, background:'#fff', cursor:page>=Math.ceil(filtered.length/PER_PAGE)?'not-allowed':'pointer', fontSize:12, color:page>=Math.ceil(filtered.length/PER_PAGE)?T.textDim:T.text, opacity:page>=Math.ceil(filtered.length/PER_PAGE)?0.5:1 }}>Next →</button>
+            </div>
           </div>
         </div>
       </div>
