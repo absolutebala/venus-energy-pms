@@ -954,9 +954,9 @@ export default function Dashboard() {
   const { projects: dbProjects, loading: projectsLoading } = useProjects();
   const [minLoadDone, setMinLoadDone] = React.useState(false);
   React.useEffect(() => { const t = setTimeout(() => setMinLoadDone(true), 500); return () => clearTimeout(t); }, []);
-  const isLoading = loading || projectsLoading || !minLoadDone;
   const { getDocStatus } = useWorkDocs();
   const { profile, loading } = useAuth();
+  const isLoading = loading || projectsLoading || !minLoadDone;
   const role = (!loading && profile?.role) || '';
   const name = profile?.full_name?.split(' ')[0] || 'User';
 
