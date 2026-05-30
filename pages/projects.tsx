@@ -120,29 +120,52 @@ export default function ProjectsPage() {
     }
   };
 
-  const createNewProject = async () => {
+  const openNewProjectModal = () => {
+    setNewForm({ projectId:'', poNo:'', poDate:'', indusId:'', site:'', region:'', type:'' });
+    setNewFormErrors({});
+    setShowNewModal(true);
+  };
+
+  const saveNewProject = async () => {
+    // Validate mandatory fields
+    const errors: Record<string,string> = {};
+    if (!newForm.projectId.trim()) errors.projectId = 'Required';
+    if (!newForm.poNo.trim())      errors.poNo      = 'Required';
+    if (!newForm.poDate.trim())    errors.poDate    = 'Required';
+    if (!newForm.indusId.trim())   errors.indusId   = 'Required';
+    if (Object.keys(errors).length > 0) { setNewFormErrors(errors); return; }
+
     setCreating(true);
     try {
       const sb = createClient();
-      // Generate next project ID
       const year = new Date().getFullYear();
       const { data: existing } = await sb.from('projects').select('id').order('id', { ascending: false }).limit(1);
       let nextNum = 1;
       if (existing && existing.length > 0) {
-        const lastId = existing[0].id; // e.g. VE-2025-015
+        const lastId = existing[0].id;
         const parts = lastId.split('-');
-        nextNum = parseInt(parts[parts.length - 1]) + 1;
+        const n = parseInt(parts[parts.length - 1]);
+        if (!isNaN(n)) nextNum = n + 1;
       }
       const newId = `VE-${year}-${String(nextNum).padStart(3,'0')}`;
-      // Insert blank project
       const { error } = await sb.from('projects').insert({
-        id: newId, po_no: '', site: '', status: 'not_started', po_value: 0,
+        id: newId,
+        project_id: newForm.projectId.trim(),
+        po_no:      newForm.poNo.trim(),
+        po_date:    newForm.poDate || null,
+        indus_id:   newForm.indusId.trim(),
+        site:       newForm.site.trim() || newForm.indusId.trim(),
+        region:     newForm.region.trim() || '',
+        type:       newForm.type.trim() || '',
+        status: 'not_started', po_value: 0,
       });
       if (error) throw new Error(error.message);
       await refreshProjects();
+      setShowNewModal(false);
       router.push(`/projects/${newId}`);
     } catch(err: any) {
       alert('Failed to create project: ' + err.message);
+    } finally {
       setCreating(false);
     }
   };
@@ -374,7 +397,7 @@ export default function ProjectsPage() {
               ? <><div style={{ width:13,height:13,border:'2px solid #CBD5E1',borderTopColor:T.primary,borderRadius:'50%',animation:'spin 0.7s linear infinite' }} />Extracting…</>
               : '📎 Upload PO'}
           </button>
-          <button onClick={createNewProject} disabled={creating} style={{ ...btnPrimary, opacity:creating?0.7:1 }}>{creating?'Creating…':'+ New Project'}</button>
+          <button onClick={openNewProjectModal} style={{ ...btnPrimary }}>{'+ New Project'}</button>
         </div>
 
         <div style={card}>
