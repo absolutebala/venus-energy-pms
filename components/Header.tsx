@@ -49,7 +49,7 @@ const fmtTime = (d: string) => {
 
 export default function Header() {
   const router = useRouter();
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -322,7 +322,7 @@ export default function Header() {
               Profile Settings
             </Link>
             <div style={{ height: 1, background: T.border }} />
-            <button onClick={() => { setMenuOpen(false); router.push('/login'); }}
+            <button onClick={async () => { setMenuOpen(false); await signOut(); router.push('/login'); }}
               style={{ width: '100%', padding: '10px 14px', fontSize: 13,
                 color: T.danger, background: 'none', border: 'none',
                 cursor: 'pointer', textAlign: 'left' as const }}>
