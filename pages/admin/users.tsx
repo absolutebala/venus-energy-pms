@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase';
 
 const ROLES: UserRole[] = ['super_admin','region_manager','project_manager','site_engineer','viewer'];
 const ASSIGNABLE_ROLES: UserRole[] = ['region_manager','project_manager','site_engineer','viewer'];
+const ADMIN_ASSIGNABLE_ROLES: UserRole[] = ['super_admin','region_manager','project_manager','site_engineer','viewer'];
 
 interface UserRow {
   id: string;
@@ -377,7 +378,7 @@ export default function AdminUsersPage() {
           <MsgAlert msg={msg} />
           <FormField label="Email Address *" value={fEmail} onChange={setFEmail} type="email" placeholder="user@venusenergyindia.com" fkey="ie"  focused={focused} setFocused={setFocused}/>
           <FormField label="Full Name" value={fName} onChange={setFName} placeholder="Full name (optional)" fkey="in"  focused={focused} setFocused={setFocused}/>
-          <RoleSelect value={fRole} onChange={setFRole}  roles={ASSIGNABLE_ROLES}/>
+          <RoleSelect value={fRole} onChange={setFRole}  roles={profile?.role === "super_admin" ? ADMIN_ASSIGNABLE_ROLES : ASSIGNABLE_ROLES}/>
           <FormField label="Region" value={fRegion} onChange={setFRegion} placeholder="e.g. Tamil Nadu" fkey="ir"  focused={focused} setFocused={setFocused}/>
           <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:20 }}>
             <button onClick={()=>{setModal('none');resetForm();}} style={btnSecondary}>Cancel</button>
@@ -405,7 +406,7 @@ export default function AdminUsersPage() {
             <FormField label="Designation" value={fDesig} onChange={setFDesig} placeholder="Site Engineer" fkey="cd"  focused={focused} setFocused={setFocused}/>
             <FormField label="Region" value={fRegion} onChange={setFRegion} placeholder="Tamil Nadu" fkey="cr"  focused={focused} setFocused={setFocused}/>
           </div>
-          <RoleSelect value={fRole} onChange={setFRole}  roles={ASSIGNABLE_ROLES}/>
+          <RoleSelect value={fRole} onChange={setFRole}  roles={profile?.role === "super_admin" ? ADMIN_ASSIGNABLE_ROLES : ASSIGNABLE_ROLES}/>
           <div style={{ background:T.warningBg, border:`1px solid #FDE68A`, borderRadius:8, padding:'10px 14px', fontSize:12, color:T.warning }}>
             ⚠️ Share the temporary password securely. The user should change it upon first login.
           </div>
@@ -433,7 +434,7 @@ export default function AdminUsersPage() {
             <FormField label="Designation" value={fDesig} onChange={setFDesig} fkey="eDesig"  focused={focused} setFocused={setFocused}/>
             <FormField label="Region" value={fRegion} onChange={setFRegion} fkey="eRegion"  focused={focused} setFocused={setFocused}/>
           </div>
-          <RoleSelect value={fRole} onChange={setFRole}  roles={ASSIGNABLE_ROLES}/>
+          <RoleSelect value={fRole} onChange={setFRole}  roles={profile?.role === "super_admin" ? ADMIN_ASSIGNABLE_ROLES : ASSIGNABLE_ROLES}/>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
             <label style={{ fontSize:13, fontWeight:600, color:T.text }}>Account Status:</label>
             <button onClick={()=>setFActive(a=>!a)} style={{ background:fActive?T.successBg:T.dangerBg, border:`1px solid ${fActive?'#BBF7D0':'#FECACA'}`, borderRadius:20, padding:'4px 14px', fontSize:12, fontWeight:600, color:fActive?T.success:T.danger, cursor:'pointer' }}>
