@@ -9,6 +9,8 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveCo
 // ── Shared mock data ──────────────────────────────────────────────
 import { PROJECTS as SEED_DATA } from '@/lib/seedData'; // fallback only for ALL_PROJECTS
 import { useProjects } from '@/context/ProjectContext';
+import { useExpenses } from '@/context/ExpenseContext';
+import { useInvoices } from '@/context/InvoiceContext';
 import { useMaterial } from '@/context/MaterialContext';
 import { useWorkDocs } from '@/context/WorkDocContext';
 const ALL_PROJECTS = SEED_DATA as any[];
@@ -450,6 +452,8 @@ function STNSRNSummary() {
 function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
   const projects = propProjects;
   const router = useRouter();
+  const { expenses } = useExpenses();
+  const { invoices } = useInvoices();
   const STATUS_COLORS: Record<string,string> = {
     'Yet to Start':'#9CA3AF','Work In Progress':'#3B82F6','Work Completed/ Approval Pending':'#10B981',
     'Billing Shared':'#8B5CF6','LL Issues':'#EF4444','Site Issues':'#F97316','CR Pending':'#F59E0B',
@@ -466,8 +470,38 @@ function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
   const pmGroups = projects.reduce((acc:any,p)=>{ acc[p.pm]=(acc[p.pm]||[]); acc[p.pm].push(p); return acc; },{});
   const vendorGroups = projects.reduce((acc:any,p)=>{ if(p.vendor){ acc[p.vendor]=(acc[p.vendor]||[]); acc[p.vendor].push(p); } return acc; },{});
 
+  // Expense metrics
+  const expPending     = expenses.filter((e:any)=>e.status==='pending');
+  const expPaid        = expenses.filter((e:any)=>e.status==='paid');
+  const expPendingAmt  = expPending.reduce((a:number,e:any)=>a+Number(e.amount),0);
+  const expPaidAmt     = expPaid.reduce((a:number,e:any)=>a+Number(e.amount),0);
+  // Invoice metrics
+  const invTotal       = invoices.length;
+  const invDraft       = invoices.filter((i:any)=>i.invoiceStatus==='Draft').length;
+  const invSubmitted   = invoices.filter((i:any)=>i.invoiceStatus==='Submitted').length;
+  const invTotalValue  = invoices.reduce((a:number,i:any)=>a+Number(i.invoiceAmount||0),0);
+
   return (
     <div>
+      {/* ── Expenses & Invoices cards ── */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
+        {[
+          { label:'Pending Expense Requests', value:expPending.length,             color:'#D97706', icon:'📋', sub:`₹${(expPendingAmt/1000).toFixed(1)}K pending` },
+          { label:'Paid Expenses',            value:expPaid.length,                color:T.success, icon:'✅', sub:`₹${(expPaidAmt/1000).toFixed(1)}K paid` },
+          { label:'Total Invoices',           value:invTotal,                      color:T.primary, icon:'🧾', sub:`${invSubmitted} submitted` },
+          { label:'Total Invoice Value',      value:`₹${(invTotalValue/100000).toFixed(1)}L`, color:'#7C3AED', icon:'💰', sub:`${invDraft} drafts` },
+        ].map((s,i)=>(
+          <div key={i} style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px' }}>
+            <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:s.color }} />
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+              <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase' as const, letterSpacing:0.5 }}>{s.label}</div>
+              <div style={{ fontSize:20 }}>{s.icon}</div>
+            </div>
+            <div style={{ fontSize:26, fontWeight:700, color:T.text, marginBottom:4 }}>{s.value}</div>
+            <div style={{ fontSize:11, color:T.textMuted }}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
       {/* ── 3-col summary row ── */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:14, marginBottom:20 }}>
         {/* Status Distribution */}
@@ -830,20 +864,26 @@ function ViewerDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
 function AccountingDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
   const router = useRouter();
   const [selectedProject, setSelectedProject] = useState<string|null>(null);
-  const billingProjects = projects.filter(p=>p.status==='billing_review'||p.status==='completed');
-  const totalBilled     = INVOICES.reduce((a,i)=>a+i.total, 0);
-  const approved        = INVOICES.filter(i=>i.status==='Approved');
-  const pending         = INVOICES.filter(i=>i.status==='Submitted'||i.status==='Under Review');
+  const { expenses } = useExpenses();
+  const { invoices } = useInvoices();
+  const expPending    = expenses.filter((e:any)=>e.status==='pending');
+  const expPaid       = expenses.filter((e:any)=>e.status==='paid');
+  const expPendingAmt = expPending.reduce((a:number,e:any)=>a+Number(e.amount),0);
+  const expPaidAmt    = expPaid.reduce((a:number,e:any)=>a+Number(e.amount),0);
+  const approved      = invoices.filter((i:any)=>i.invoiceStatus==='Approved'||i.paymentStatus==='Paid');
+  const pending       = invoices.filter((i:any)=>i.invoiceStatus==='Submitted');
+  const invTotalValue = invoices.reduce((a:number,i:any)=>a+Number(i.invoiceAmount||0),0);
+  const billingProjects = (projects as any[]).filter((p:any)=>p.status==='billing_review'||p.status==='completed');
 
   const roleColor: Record<string,string> = { Vendor:T.info, PM:T.primary, RM:T.success, Billing:T.warning };
 
   return (
     <div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-        <KpiCard label="Total Invoices"   value={INVOICES.length}         icon="📄" color={T.primary} onClick={()=>router.push('/billing')} />
-        <KpiCard label="Pending Review"   value={pending.length}          icon="⏳" color={T.warning} onClick={()=>router.push('/billing')} />
-        <KpiCard label="Approved"         value={approved.length}         icon="✅" color={T.success} />
-        <KpiCard label="Total Billed"     value={fmt(totalBilled)}        icon="💰" color='#7C3AED'  />
+        <KpiCard label="Pending Expenses"  value={expPending.length}                          icon="📋" color={T.warning} sub={`₹${(expPendingAmt/1000).toFixed(1)}K`} />
+        <KpiCard label="Paid Expenses"     value={expPaid.length}                             icon="✅" color={T.success} sub={`₹${(expPaidAmt/1000).toFixed(1)}K`} />
+        <KpiCard label="Submitted Invoices" value={pending.length}                            icon="🧾" color={T.primary} onClick={()=>router.push('/invoices')} />
+        <KpiCard label="Total Invoice Value" value={`₹${(invTotalValue/100000).toFixed(1)}L`} icon="💰" color='#7C3AED' />
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
