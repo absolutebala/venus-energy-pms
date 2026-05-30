@@ -380,7 +380,7 @@ export default function ProjectsPage() {
             { label:'PO Closed', value: poClosed, color:'#DC2626', icon:'🔴', filter:'PO Closed' },
             { label:'Total PO Value', value: `₹${(totalPOValue/100000).toFixed(1)}L`, color:'#7C3AED', icon:'💰', filter:null },
           ];
-          return cards.map((s,i)=>(
+          return <>{cards.map((s,i)=>(
             <div key={i} onClick={()=>{ if(s.filter){ setStatusFilter(statusFilter===s.filter?'All':s.filter); setPage(1); } }}
               style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px', cursor:s.filter?'pointer':'default', borderColor:statusFilter===s.filter?s.color:T.border, transition:'all 0.15s' }}
               onMouseEnter={e=>{ if(s.filter){const el=e.currentTarget as HTMLDivElement; el.style.transform='translateY(-1px)'; el.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';} }}
