@@ -1271,6 +1271,7 @@ export default function ProjectDetailPage() {
   const [rmList,      setRmList]      = React.useState<string[]>([]);
   const [regionOpts,  setRegionOpts]  = React.useState<string[]>(REGIONS);
   const [jobTypeOpts, setJobTypeOpts] = React.useState<string[]>(TYPES);
+  const [poStatusOpts, setPoStatusOpts] = React.useState<string[]>(['Open','Closed']);
   const [siteOpts,    setSiteOpts]    = React.useState<string[]>([]);
 
   // Load lookup options from Supabase
@@ -1280,6 +1281,7 @@ export default function ProjectDetailPage() {
       if (data) {
         setRegionOpts(data.filter((d:any)=>d.type==='region').map((d:any)=>d.value));
         const dbJobTypes = data.filter((d:any)=>d.type==='job_type').map((d:any)=>d.value); setJobTypeOpts(Array.from(new Set([...TYPES, ...dbJobTypes])));
+        const dbPoStatus = data.filter((d:any)=>d.type==='po_status').map((d:any)=>d.value); setPoStatusOpts(Array.from(new Set(['Open','Closed',...dbPoStatus])));
         setSiteOpts(data.filter((d:any)=>d.type==='site').map((d:any)=>d.value));
       }
     });
@@ -1290,6 +1292,7 @@ export default function ProjectDetailPage() {
     await sb.from('lookup_options').insert({ type, value }).select();
     if (type === 'region')   setRegionOpts(prev  => Array.from(new Set([...prev,  value])).sort());
     if (type === 'job_type') setJobTypeOpts(prev => Array.from(new Set([...prev,  value])).sort());
+    if (type === 'po_status') setPoStatusOpts(prev => Array.from(new Set([...prev, value])).sort());
     if (type === 'site')     setSiteOpts(prev    => Array.from(new Set([...prev,  value])).sort());
   };
   const [pmList, setPmList] = React.useState<string[]>([]);
@@ -1533,6 +1536,22 @@ export default function ProjectDetailPage() {
               {F('PO Number',        'poNo',        'text', undefined, false)}
               {F('PO Date',          'poDate',      'date')}
               {F('PO Amount (₹)',    'poValue',     'number')}
+              {editing('details') && canEditDetails ? (
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>PO Status</label>
+                  <CreatableDropdown
+                    value={(form as any).poStatus||''}
+                    onChange={v=>setForm((f:any)=>({...f,poStatus:v}))}
+                    options={poStatusOpts}
+                    placeholder="Select or create PO status..."
+                    onCreateNew={v=>addLookupOption('po_status',v)} />
+                </div>
+              ) : (
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>PO Status</label>
+                  <div style={{ fontSize:14, fontWeight:600, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>{(form as any).poStatus || '—'}</div>
+                </div>
+              )}
               {F('Indus ID',         'indusId',     'text', undefined, false)}
               {editing('details') && canEditDetails ? (
                 <div style={{ marginBottom:14 }}>
