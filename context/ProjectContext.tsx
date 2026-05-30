@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase';
 const supabase = createClient();
 
 export interface Project {
-  id: string; projectId: string; poNo: string; indusId: string; site: string;
+  id: string; projectId: string; poNo: string; projectStatus: string; indusId: string; site: string;
   region: string; type: string; pm: string; rm: string;
   vendor: string; vendorContact: string; vendorPhone: string; vendorEmail: string;
   status: string; poValue: number; billedAmount: number; paidAmount: number;
@@ -21,6 +21,7 @@ function mapRow(row: any): Project {
   return {
     id:            row.id            ?? '',
     projectId:     row.project_id     ?? row.projectId     ?? '',
+    projectStatus: row.project_status  ?? row.projectStatus ?? '',
     poNo:          row.po_no         ?? row.poNo         ?? '',
     indusId:       row.indus_id      ?? row.indusId      ?? '',
     site:          row.site          ?? '',
@@ -61,7 +62,7 @@ function mapRow(row: any): Project {
 
 // Valid Supabase column names for the projects table
 const DB_COLUMNS = new Set([
-  'id','project_id','po_no','indus_id','site','region','type','pm','rm',
+  'id','project_id','project_status','po_no','indus_id','site','region','type','pm','rm',
   'vendor','vendor_contact','vendor_phone','vendor_email',
   'status','po_value','billed_amount','paid_amount','progress',
   'po_date','start_date','end_date','ptw_ticket_id','ptw_supervisor',
@@ -72,7 +73,7 @@ const DB_COLUMNS = new Set([
 // Map camelCase form updates → Supabase snake_case, filtering unknown columns
 function mapToDb(updates: Partial<Project>): Record<string, any> {
   const camelToSnake: Record<string, string> = {
-    projectId:'project_id', poNo:'po_no', indusId:'indus_id', vendorContact:'vendor_contact',
+    projectId:'project_id', projectStatus:'project_status', poNo:'po_no', indusId:'indus_id', vendorContact:'vendor_contact',
     vendorPhone:'vendor_phone', vendorEmail:'vendor_email',
     poValue:'po_value', billedAmount:'billed_amount', paidAmount:'paid_amount',
     poDate:'po_date', startDate:'start_date', endDate:'end_date',

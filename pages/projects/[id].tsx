@@ -66,6 +66,17 @@ const UOM_OPTIONS = ['Set','Nos','MT','RMT','Cum','Bag','Box','Lot','KG','Mtr'];
 const GST_OPTIONS = ['0','5','12','18','28'];
 
 const VENDORS = ['ABC Telecom Services','XYZ Infra Solutions','TowerTech Pvt Ltd','NetConnect Services','PowerSys India','BuildRight Constructions'];
+const PROJECT_STATUS_OPTIONS = [
+  'Yet to Start','Work In Progress','Work Completed/ Approval Pending',
+  'Billing Shared','LL Issues','Site Issues','CR Pending',
+  'JMS Pending with AE','Site Hold','Fresh to be Return',
+  'SRN BOQ Pending','SRN Document correction Pending','PO Amendment Done',
+  'WC Raised','Invoice Submitted Payment pending',
+  'Invoice Submitted Payment Received','Invoice to be submit/PTW Pending',
+  'Invoice to be submit/SRN Pending','Invoice to be submit/ Approval Pending',
+  'Work Not Done','Allocation Not received','PO Not reflected','Others',
+];
+
 const REGIONS  = ['Tamil Nadu','Karnataka','Telangana','Maharashtra','Delhi','Kerala','West Bengal'];
 const TYPES    = ['Tower Erection','Tower Maintenance','Component Replacement','Fiber Installation','Civil Works','Power Works'];
 
@@ -1548,6 +1559,21 @@ export default function ProjectDetailPage() {
                     onCreateNew={v=>addLookupOption('job_type',v)} />
                 </div>
               ) : F('Job Type', 'type', 'text', TYPES)}
+              {editing('details') && canEditDetails ? (
+                <div style={{ marginBottom:14, gridColumn:'1/-1' }}>
+                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Project Status</label>
+                  <select value={(form as any).projectStatus||''} onChange={e=>setForm((f:any)=>({...f,projectStatus:e.target.value}))}
+                    style={{ ...inputStyle(), width:'100%' }}>
+                    <option value="">— Select Status —</option>
+                    {PROJECT_STATUS_OPTIONS.map(s=><option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              ) : (
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>Project Status</label>
+                  <div style={{ fontSize:14, fontWeight:600, color:T.text, padding:'8px 0', borderBottom:`1px solid ${T.border}` }}>{(form as any).projectStatus || '—'}</div>
+                </div>
+              )}
               {F('Start Date',       'startDate',   'date')}
               {F('End Date',         'endDate',     'date')}
               {F('Region Manager', 'rm', 'text', rmList.length > 0 ? rmList : undefined)}

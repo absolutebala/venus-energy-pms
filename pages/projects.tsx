@@ -427,7 +427,7 @@ export default function ProjectsPage() {
                         <div style={{ fontSize:11, color:T.textMuted }}>{p.pm}</div>
                       </td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
-                        <span style={{ fontSize:11, fontWeight:700, color:ws.color, background:ws.bg, padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{ws.label}</span>
+                        <span style={{ fontSize:11, fontWeight:600, color:'#0369A1', background:'#E0F2FE', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{(p as any).projectStatus || '—'}</span>
                       </td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, whiteSpace:'nowrap' as const }}>
                         {delDt ? <span style={{ fontSize:12, color:isPast?'#DC2626':'#374151', fontWeight:isPast?600:400 }}>
