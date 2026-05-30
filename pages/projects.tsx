@@ -370,34 +370,38 @@ export default function ProjectsPage() {
           </div>
         )}
         {/* Summary cards */}
-        {(() => {
+        {(()=>{
           const poOpen   = roleFilteredProjects.filter((p:any)=>(p as any).poStatus==='Open').length;
           const poClosed = roleFilteredProjects.filter((p:any)=>(p as any).poStatus==='Closed').length;
           const totalPOValue = roleFilteredProjects.reduce((a:number,p:any)=>a+(p.poValue||0),0);
-          const cards = [
-            { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value: counts.total, color: T.primary, icon:'📁', filter:'All' },
-            { label:'PO Open',   value: poOpen,   color:'#059669', icon:'🟢', filter:'PO Open'   },
-            { label:'PO Closed', value: poClosed, color:'#DC2626', icon:'🔴', filter:'PO Closed' },
+          const summaryCards = [
+            { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value: String(counts.total), color: T.primary, icon:'📁', filter:'All' as string|null },
+            { label:'PO Open',        value: String(poOpen),   color:'#059669', icon:'🟢', filter:'PO Open'  as string|null },
+            { label:'PO Closed',      value: String(poClosed), color:'#DC2626', icon:'🔴', filter:'PO Closed' as string|null },
             { label:'Total PO Value', value: `₹${(totalPOValue/100000).toFixed(1)}L`, color:'#7C3AED', icon:'💰', filter:null },
           ];
-          return <>{cards.map((s,i)=>(
-            <div key={i} onClick={()=>{ if(s.filter){ setStatusFilter(statusFilter===s.filter?'All':s.filter); setPage(1); } }}
-              style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px', cursor:s.filter?'pointer':'default', borderColor:statusFilter===s.filter?s.color:T.border, transition:'all 0.15s' }}
-              onMouseEnter={e=>{ if(s.filter){const el=e.currentTarget as HTMLDivElement; el.style.transform='translateY(-1px)'; el.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';} }}
-              onMouseLeave={e=>{ if(s.filter){const el=e.currentTarget as HTMLDivElement; el.style.transform='translateY(0)'; el.style.boxShadow='0 1px 3px rgba(0,0,0,0.06)';} }}>
-              <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:s.color }} />
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <div>
-                  <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase', letterSpacing:0.5, marginBottom:4 }}>{s.label}</div>
-                  <div style={{ fontSize:28, fontWeight:700, color:T.text }}>{s.value}</div>
+          return (
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
+              {summaryCards.map((s,i)=>(
+                <div key={i} onClick={()=>{ if(s.filter){ setStatusFilter(statusFilter===s.filter?'All':s.filter); setPage(1); } }}
+                  style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px', cursor:s.filter?'pointer':'default', borderColor:statusFilter===s.filter?s.color:T.border, transition:'all 0.15s' }}
+                  onMouseEnter={e=>{ if(s.filter){const el=e.currentTarget as HTMLDivElement; el.style.transform='translateY(-1px)'; el.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';} }}
+                  onMouseLeave={e=>{ if(s.filter){const el=e.currentTarget as HTMLDivElement; el.style.transform='translateY(0)'; el.style.boxShadow='0 1px 3px rgba(0,0,0,0.06)';} }}>
+                  <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:s.color }} />
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    <div>
+                      <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase' as const, letterSpacing:0.5, marginBottom:4 }}>{s.label}</div>
+                      <div style={{ fontSize:28, fontWeight:700, color:T.text }}>{s.value}</div>
+                    </div>
+                    <div style={{ fontSize:22 }}>{s.icon}</div>
+                  </div>
                 </div>
-                <div style={{ fontSize:22 }}>{s.icon}</div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          );
+        })()}
 
-        {/* Active filters */}
+                {/* Active filters */}
         {(ageMin !== null || statusFilter !== 'All') && (
           <div style={{ display:'flex', gap:8, marginBottom:12, flexWrap:'wrap' }}>
             {ageMin !== null && (
