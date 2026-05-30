@@ -1279,7 +1279,7 @@ export default function ProjectDetailPage() {
     sb.from('lookup_options').select('type,value').order('value').then(({ data }) => {
       if (data) {
         setRegionOpts(data.filter((d:any)=>d.type==='region').map((d:any)=>d.value));
-        setJobTypeOpts(data.filter((d:any)=>d.type==='job_type').map((d:any)=>d.value));
+        const dbJobTypes = data.filter((d:any)=>d.type==='job_type').map((d:any)=>d.value); setJobTypeOpts(Array.from(new Set([...TYPES, ...dbJobTypes])));
         setSiteOpts(data.filter((d:any)=>d.type==='site').map((d:any)=>d.value));
       }
     });
