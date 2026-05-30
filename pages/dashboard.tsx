@@ -450,16 +450,18 @@ function STNSRNSummary() {
 function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
   const projects = propProjects;
   const router = useRouter();
-  const statusData = [
-    { name:'Not Started',    value: projects.filter(p=>p.status==='not_started').length,     color:'#9CA3AF', status:'not_started'     },
-    { name:'In Progress',    value: projects.filter(p=>p.status==='in_progress').length,    color:'#3B82F6', status:'in_progress'    },
-    { name:'Completed',      value: projects.filter(p=>p.status==='completed').length,       color:'#10B981', status:'completed'       },
-    { name:'Delayed',        value: projects.filter(p=>p.status==='delayed').length,         color:'#EF4444', status:'delayed'         },
-    { name:'Billing Review', value: projects.filter(p=>p.status==='billing_review').length,  color:'#8B5CF6', status:'billing_review'  },
-    { name:'PM Approved',    value: projects.filter(p=>p.status==='pm_approved').length,     color:'#0D9488', status:'pm_approved'     },
-    { name:'On Hold',        value: projects.filter(p=>p.status==='on_hold').length,         color:'#6B7280', status:'on_hold'         },
-    { name:'Not Started',    value: projects.filter(p=>p.status==='not_started').length,     color:'#9CA3AF', status:'not_started'     },
-  ].filter(d=>d.value>0);
+  const STATUS_COLORS: Record<string,string> = {
+    'Yet to Start':'#9CA3AF','Work In Progress':'#3B82F6','Work Completed/ Approval Pending':'#10B981',
+    'Billing Shared':'#8B5CF6','LL Issues':'#EF4444','Site Issues':'#F97316','CR Pending':'#F59E0B',
+    'JMS Pending with AE':'#6366F1','Site Hold':'#DC2626','Fresh to be Return':'#0D9488',
+    'SRN BOQ Pending':'#7C3AED','SRN Document correction Pending':'#DB2777','PO Amendment Done':'#0369A1',
+    'WC Raised':'#065F46','Invoice Submitted Payment pending':'#92400E',
+    'Invoice Submitted Payment Received':'#166534','Invoice to be submit/PTW Pending':'#1D4ED8',
+    'Invoice to be submit/SRN Pending':'#5B21B6','Invoice to be submit/ Approval Pending':'#9D174D',
+    'Work Not Done':'#B91C1C','Allocation Not received':'#78350F','PO Not reflected':'#374151','Others':'#6B7280',
+  };
+  const statusGroups = projects.reduce((acc:any,p:any)=>{ const s=(p as any).projectStatus||'Not Set'; acc[s]=(acc[s]||0)+1; return acc; },{});
+  const statusData = Object.entries(statusGroups).map(([name,value]:any)=>({ name, value, color: STATUS_COLORS[name]||'#6B7280', status: name })).filter((d:any)=>d.value>0).sort((a:any,b:any)=>b.value-a.value);
 
   const pmGroups = projects.reduce((acc:any,p)=>{ acc[p.pm]=(acc[p.pm]||[]); acc[p.pm].push(p); return acc; },{});
   const vendorGroups = projects.reduce((acc:any,p)=>{ if(p.vendor){ acc[p.vendor]=(acc[p.vendor]||[]); acc[p.vendor].push(p); } return acc; },{});
