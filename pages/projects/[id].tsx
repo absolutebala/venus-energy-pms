@@ -684,7 +684,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
   const [saving,  setSaving]  = React.useState(false);
   const [toast,   setToast]   = React.useState<any>(null);
   const [newRow,  setNewRow]  = React.useState({
-    txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'', remarks:''
+    txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'', remarks:'', bankAccount:'', upiId:''
   });
 
   const fmt  = (n: number) => '₹' + Number(n).toLocaleString('en-IN');
@@ -708,12 +708,12 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
     setSaving(true);
     try {
       await addExpense({
-        txnRef: newRow.txnRef, expenseDate: newRow.expenseDate, site: newRow.site,
+        txnRef: newRow.txnRef, expenseDate: newRow.expenseDate, site: newRow.site, bankAccount: (newRow as any).bankAccount || '', upiId: (newRow as any).upiId || '',
         expenseType: newRow.expenseType, amount: Number(newRow.amount),
         paymentMode: newRow.paymentMode, remarks: newRow.remarks,
         projectId, poNo: '', createdBy: profile?.full_name || '', status: 'pending',
       });
-      setNewRow({ txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'', remarks:'' });
+      setNewRow({ txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'', remarks:'', bankAccount:'', upiId:'' });
       setAdding(false);
       logExpenseActivity(projectId, `Expense ${newRow.txnRef} added (₹${Number(newRow.amount).toLocaleString('en-IN')})`, profile?.full_name||'', profile?.role||'').catch(console.error);
       setToast({ msg:'✅ Expense saved', type:'success' });
@@ -778,7 +778,9 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
             {([['Date *','expenseDate','date',''],
                ['Amount (₹) *','amount','number',''],['Site','site','text',''],
-               ['Remarks','remarks','text','']] as [string,string,string,string][]).map(([l,f,t,ph])=>(
+               ['Remarks','remarks','text',''],
+               ['Bank Account No','bankAccount','text','e.g. 1234567890'],
+               ['UPI ID','upiId','text','e.g. name@upi']] as [string,string,string,string][]).map(([l,f,t,ph])=>(
               <div key={f}>
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{l}</label>
                 <input type={t} value={(newRow as any)[f]} placeholder={ph}
