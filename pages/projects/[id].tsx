@@ -1228,7 +1228,7 @@ export default function ProjectDetailPage() {
         const FIELD_LABELS: Record<string,string> = {
           poNo:'PO Number', poDate:'PO Date', poValue:'PO Amount',
           indusId:'Indus ID', site:'Site Name', region:'Region',
-          type:'Project Name', startDate:'Allocation Date', endDate:'Work Allocation Date',
+          type:'Project Name', startDate:'Allocation Date', endDate:'Work Completion Date',
           rm:'Region Manager', pm:'Project Manager', remarks:'Remarks',
           status:'Status', progress:'Progress', workScope:'Work Scope',
         };
@@ -1612,7 +1612,7 @@ export default function ProjectDetailPage() {
                 </div>
               ) : F('Project Name', 'type', 'text', TYPES)}
               {F('Allocation Date',      'startDate',   'date')}
-              {F('Work Allocation Date', 'endDate',     'date')}
+              {F('Work Completion Date', 'endDate',     'date')}
               {F('Region Manager', 'rm', 'text', rmList.length > 0 ? rmList : undefined)}
               {F('Project Manager', 'pm', 'text', pmList.length > 0 ? pmList : undefined)}
             </div>
