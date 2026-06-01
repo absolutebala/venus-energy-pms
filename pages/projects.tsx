@@ -228,6 +228,7 @@ export default function ProjectsPage() {
   }, []);
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc');
+  const [poPopover, setPoPopover] = useState<string|null>(null);
   const [typeFilter,   setTypeFilter]   = useState('All');
   const [search,       setSearch]       = useState('');
   const [focused,      setFocused]      = useState(false);
@@ -449,7 +450,7 @@ export default function ProjectsPage() {
           </div>
           <div style={{ overflowX:'auto' }}>
             <div style={{ overflowX:'auto' as const, borderRadius:10, border:`1px solid ${T.border}` }}>
-            <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:1400 }}>
+            <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:1400 }} onClick={()=>setPoPopover(null)}>
               <thead>
                 <tr>
                   <th style={{ padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
@@ -471,8 +472,6 @@ export default function ProjectsPage() {
                 {filtered.length === 0 && (
                   <tr><td colSpan={11} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
                 )}
-                {// Build PO count map from ALL projects (not just filtered)
-                const poCountMap = (roleFilteredProjects as any[]).reduce((acc:any,p:any)=>{ if(p.poNo){ acc[p.poNo]=(acc[p.poNo]||0)+1; } return acc; },{});
                 [...filtered].sort((a:any,b:any)=>{ const ai=filtered.indexOf(a), bi=filtered.indexOf(b); return sortDir==='asc'?ai-bi:bi-ai; }).slice((page-1)*PER_PAGE, page*PER_PAGE).map((p:any, idx:number) => {
                   const delDate = p.endDate;
                   const delDt   = delDate ? new Date(delDate) : null;
@@ -490,10 +489,30 @@ export default function ProjectsPage() {
                         <div style={{ fontWeight:700, color:T.primary, fontSize:13 }}>{p.poNo || '—'}</div>
                         <div style={{ fontSize:10, color:T.textMuted }}>{p.poDate ? new Date(p.poDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</div>
                       </td>
-                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, textAlign:'center' as const }}>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, textAlign:'center' as const, position:'relative' as const }}
+                        onClick={ev=>{ ev.stopPropagation(); setPoPopover(poPopover===p.poNo?null:p.poNo); }}>
                         {p.poNo && poCountMap[p.poNo] > 1
-                          ? <span style={{ fontSize:12, fontWeight:700, color:'#7C3AED', background:'#F3E8FF', padding:'2px 10px', borderRadius:20 }}>{poCountMap[p.poNo]}</span>
+                          ? <span style={{ fontSize:12, fontWeight:700, color:'#7C3AED', background:'#F3E8FF', padding:'2px 10px', borderRadius:20, cursor:'pointer' }}>{poCountMap[p.poNo]}</span>
                           : <span style={{ fontSize:12, color:T.textDim }}>1</span>}
+                        {poPopover === p.poNo && (
+                          <div style={{ position:'absolute', top:'100%', left:0, zIndex:200, background:'#fff', border:`1px solid ${T.border}`,
+                            borderRadius:10, boxShadow:'0 4px 20px rgba(0,0,0,0.15)', padding:12, minWidth:180, textAlign:'left' as const }}
+                            onClick={ev=>ev.stopPropagation()}>
+                            <div style={{ fontSize:11, fontWeight:700, color:T.textMuted, marginBottom:8, textTransform:'uppercase' as const }}>
+                              Projects for PO {p.poNo}
+                            </div>
+                            {(roleFilteredProjects as any[]).filter((x:any)=>x.poNo===p.poNo).map((x:any)=>(
+                              <div key={x.id} onClick={()=>router.push(`/projects/${x.id}`)}
+                                style={{ padding:'5px 8px', borderRadius:6, cursor:'pointer', fontSize:12, fontWeight:600, color:T.primary,
+                                  marginBottom:2, background: x.id===p.id ? T.primaryLight : 'transparent' }}
+                                onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
+                                onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=x.id===p.id?T.primaryLight:'transparent'}>
+                                {x.id}
+                                {x.id===p.id && <span style={{ fontSize:10, color:T.textMuted, marginLeft:4 }}>(this)</span>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
                         <span style={{ fontSize:12, fontWeight:600, color:ageColor, background:ageBg, padding:'2px 8px', borderRadius:10 }}>{ageDays}d</span>
