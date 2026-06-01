@@ -458,7 +458,7 @@ export default function ProjectsPage() {
                     onClick={()=>setSortDir(d=>d==='asc'?'desc':'asc')}>
                     S.No. {sortDir==='asc'?'↑':'↓'}
                   </th>
-                  {['PO Number','Aging','Project Status','Project ID','Indus ID','Site / Project','PO Status','Delivery Date'].map((h,i)=>(
+                  {['PO Number','Aging','PO Status','Project Name','Project ID','Indus ID','Site Name','Project Status','Delivery Date'].map((h,i)=>(
                     <th key={i} style={{ padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
                       color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`,
                       whiteSpace:'nowrap' as const, background:T.primaryLight }}>
@@ -469,7 +469,7 @@ export default function ProjectsPage() {
               </thead>
               <tbody>
                 {filtered.length === 0 && (
-                  <tr><td colSpan={9} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
+                  <tr><td colSpan={10} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
                 )}
                 {[...filtered].sort((a:any,b:any)=>{ const ai=filtered.indexOf(a), bi=filtered.indexOf(b); return sortDir==='asc'?ai-bi:bi-ai; }).slice((page-1)*PER_PAGE, page*PER_PAGE).map((p:any, idx:number) => {
                   const delDate = p.endDate;
@@ -492,16 +492,14 @@ export default function ProjectsPage() {
                         <span style={{ fontSize:12, fontWeight:600, color:ageColor, background:ageBg, padding:'2px 8px', borderRadius:10 }}>{ageDays}d</span>
                       </td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
-                        <span style={{ fontSize:11, fontWeight:600, color:'#0369A1', background:'#E0F2FE', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{(p as any).projectStatus || '—'}</span>
+                        <span style={{ fontSize:11, fontWeight:600, color:(p as any).poStatus==='Closed'?'#DC2626':(p as any).poStatus==='Open'?'#059669':'#6B7280', background:(p as any).poStatus==='Closed'?'#FEF2F2':(p as any).poStatus==='Open'?'#D1FAE5':'#F9FAFB', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{(p as any).poStatus || '—'}</span>
                       </td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{(p as any).type || '—'}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{(p as any).projectId || '—'}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{p.indusId || '—'}</td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{p.site || '—'}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
-                        <div style={{ fontWeight:600, color:T.text, fontSize:13 }}>{p.site}</div>
-                        <div style={{ fontSize:11, color:T.textMuted }}>{p.pm}</div>
-                      </td>
-                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
-                        <span style={{ fontSize:11, fontWeight:600, color:(p as any).poStatus==='Closed'?'#DC2626':(p as any).poStatus==='Open'?'#059669':'#6B7280', background:(p as any).poStatus==='Closed'?'#FEF2F2':(p as any).poStatus==='Open'?'#D1FAE5':'#F9FAFB', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{(p as any).poStatus || '—'}</span>
+                        <span style={{ fontSize:11, fontWeight:600, color:'#0369A1', background:'#E0F2FE', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{(p as any).projectStatus || '—'}</span>
                       </td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, whiteSpace:'nowrap' as const }}>
                         {delDt ? <span style={{ fontSize:12, color:isPast?'#DC2626':'#374151', fontWeight:isPast?600:400 }}>
