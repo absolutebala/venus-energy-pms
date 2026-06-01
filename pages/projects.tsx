@@ -552,7 +552,7 @@ export default function ProjectsPage() {
                 const start = Math.max(1, Math.min(page-2, totalPages-4));
                 const pg = start+i;
                 return pg<=totalPages ? (
-                  <button key={pg} onClick={()=>setPage(pg); router.push({pathname:router.pathname,query:{...router.query,page:pg}},{},{ shallow:true })}
+                  <button key={pg} onClick={()=>{ setPage(pg); router.push({pathname:router.pathname,query:{...router.query,page:pg}},{},{shallow:true}); }}
                     style={{ padding:'5px 10px', borderRadius:6, border:`1px solid ${pg===page?T.primary:T.border}`, background:pg===page?T.primaryLight:'#fff', cursor:'pointer', fontSize:12, color:pg===page?T.primary:T.text, fontWeight:pg===page?700:400 }}>{pg}</button>
                 ) : null;
               })}
