@@ -491,8 +491,8 @@ export default function ProjectsPage() {
                       </td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, textAlign:'center' as const, position:'relative' as const }}
                         onClick={ev=>{ ev.stopPropagation(); setPoPopover(poPopover===p.poNo?null:p.poNo); }}>
-                        {p.poNo && poCountMap[p.poNo] > 1
-                          ? <span style={{ fontSize:12, fontWeight:700, color:'#7C3AED', background:'#F3E8FF', padding:'2px 10px', borderRadius:20, cursor:'pointer' }}>{poCountMap[p.poNo]}</span>
+                        {p.poNo && poCount(p.poNo) > 1
+                          ? <span style={{ fontSize:12, fontWeight:700, color:'#7C3AED', background:'#F3E8FF', padding:'2px 10px', borderRadius:20, cursor:'pointer' }}>{poCount(p.poNo)}</span>
                           : <span style={{ fontSize:12, color:T.textDim }}>1</span>}
                         {poPopover === p.poNo && (
                           <div style={{ position:'absolute', top:'100%', left:0, zIndex:200, background:'#fff', border:`1px solid ${T.border}`,
@@ -501,7 +501,7 @@ export default function ProjectsPage() {
                             <div style={{ fontSize:11, fontWeight:700, color:T.textMuted, marginBottom:8, textTransform:'uppercase' as const }}>
                               Projects for PO {p.poNo}
                             </div>
-                            {(roleFilteredProjects as any[]).filter((x:any)=>x.poNo===p.poNo).map((x:any)=>(
+                            {projects.filter((p2:any)=>p2.poNo===p.poNo).map((x:any)=>(
                               <div key={x.id} onClick={()=>router.push(`/projects/${x.id}`)}
                                 style={{ padding:'5px 8px', borderRadius:6, cursor:'pointer', fontSize:12, fontWeight:600, color:T.primary,
                                   marginBottom:2, background: x.id===p.id ? T.primaryLight : 'transparent' }}
