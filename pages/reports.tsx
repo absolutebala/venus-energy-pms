@@ -213,11 +213,9 @@ export default function ReportsPage() {
   const totalPending = totalBilled - totalPaid;
 
   const statusData = [
-    { name:'In Progress',   value:projects.filter((p:any)=>p.status==='in_progress').length,   color:'#2563EB' },
-    { name:'Delayed',       value:projects.filter((p:any)=>p.status==='delayed').length,        color:'#DC2626' },
-    { name:'Completed',     value:projects.filter((p:any)=>p.status==='completed').length,      color:'#16A34A' },
-    { name:'Pending',       value:projects.filter((p:any)=>['pending','not_started'].includes(p.status)).length, color:'#D97706' },
-    { name:'Billing Review',value:projects.filter((p:any)=>p.status==='billing_review').length, color:'#7C3AED' },
+    { name:'PO Open',   value:projects.filter((p:any)=>(p as any).poStatus==='Open').length,   color:'#059669' },
+    { name:'PO Closed', value:projects.filter((p:any)=>(p as any).poStatus==='Closed').length, color:'#DC2626' },
+    { name:'Not Set',   value:projects.filter((p:any)=>!(p as any).poStatus).length,           color:'#9CA3AF' },
   ].filter(s=>s.value>0);
 
   const activeProjects = projects.filter((p:any) => p.status !== "completed");
@@ -513,16 +511,16 @@ export default function ReportsPage() {
             {active==='executive' && (
               <div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:16 }}>
-                  <KPI label="Total Projects"    value={projects.length}                                                           color={T.primary} />
-                  <KPI label="Total PO Value"    value={fmtCr(totalPO)}                                                            color={T.text}    />
-                  <KPI label="Delayed Projects"  value={projects.filter((p:any)=>p.status==='delayed').length}                     color={T.danger}  sub="Needs attention" />
-                  <KPI label="On-Time Rate"      value={`${Math.round(projects.filter((p:any)=>p.status!=='delayed').length/(projects.length||1)*100)}%`} color={T.success} />
+                  <KPI label="Total Projects"    value={projects.length}                                                            color={T.primary} />
+                  <KPI label="Total PO Value"    value={fmtCr(totalPO)}                                                             color={T.text}    />
+                  <KPI label="Total Billed"      value={fmt(totalBilled)}                                                           color={T.info}    />
+                  <KPI label="Total Paid"        value={fmt(totalPaid)}                                                             color={T.success} />
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:16 }}>
-                  <KPI label="Total Billed"       value={fmt(totalBilled)}   color={T.info}    />
-                  <KPI label="Total Paid"         value={fmt(totalPaid)}     color={T.success} />
-                  <KPI label="Outstanding"        value={fmt(totalPending)}  color={T.warning} />
-                  <KPI label="No Vendor Assigned" value={projects.filter((p:any)=>!p.vendor).length} color={T.danger} sub="Action required" />
+                  <KPI label="Regions"           value={new Set(projects.map((p:any)=>p.region).filter(Boolean)).size}             color='#7C3AED'   sub="Unique regions" />
+                  <KPI label="Aging (60d+)"      value={projects.filter((p:any)=>getAging(p.startDate,p.status,p.endDate)>60).length} color={T.warning} sub="Projects overdue" />
+                  <KPI label="PO Open"           value={projects.filter((p:any)=>(p as any).poStatus==='Open').length}             color='#059669'   />
+                  <KPI label="PO Closed"         value={projects.filter((p:any)=>(p as any).poStatus==='Closed').length}           color={T.danger}  />
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
                   <div style={card}>
