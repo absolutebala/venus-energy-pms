@@ -472,7 +472,7 @@ export default function ProjectsPage() {
                 {filtered.length === 0 && (
                   <tr><td colSpan={11} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
                 )}
-                [...filtered].sort((a:any,b:any)=>{ const ai=filtered.indexOf(a), bi=filtered.indexOf(b); return sortDir==='asc'?ai-bi:bi-ai; }).slice((page-1)*PER_PAGE, page*PER_PAGE).map((p:any, idx:number) => {
+                {[...filtered].sort((a:any,b:any)=>{ const ai=filtered.indexOf(a), bi=filtered.indexOf(b); return sortDir==='asc'?ai-bi:bi-ai; }).slice((page-1)*PER_PAGE, page*PER_PAGE).map((p:any, idx:number) => {
                   const delDate = p.endDate;
                   const delDt   = delDate ? new Date(delDate) : null;
                   const isPast  = delDt && !['completed','not_started'].includes(p.status) ? delDt < new Date() : false;
