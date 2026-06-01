@@ -132,7 +132,7 @@ export default function ReportsPage() {
     if (colKey === 'poValue' || colKey === 'billedAmt' || colKey === 'paidAmt') return fmt(Number(v));
     if (colKey === 'aging') return `${v}d`;
     if (colKey === 'completionRate') return `${v}%`;
-    if (colKey === 'status' || colKey === 'utilisedStatus') return String(v).replace(/_/g,' ');
+    if (colKey === 'utilisedStatus') return String(v).replace(/_/g,' '); if (colKey === 'status') return row.projectStatus || String(v).replace(/_/g,' ');
     return String(v);
   };
 
