@@ -458,7 +458,7 @@ export default function ProjectsPage() {
                     onClick={()=>setSortDir(d=>d==='asc'?'desc':'asc')}>
                     S.No. {sortDir==='asc'?'↑':'↓'}
                   </th>
-                  {['PO Number','Aging','PO Status','Project Name','Project ID','Indus ID','Site Name','Project Status','Delivery Date'].map((h,i)=>(
+                  {['PO Number','PO Count','Aging','PO Status','Project Name','Project ID','Indus ID','Site Name','Project Status','Delivery Date'].map((h,i)=>(
                     <th key={i} style={{ padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
                       color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`,
                       whiteSpace:'nowrap' as const, background:T.primaryLight }}>
@@ -469,9 +469,11 @@ export default function ProjectsPage() {
               </thead>
               <tbody>
                 {filtered.length === 0 && (
-                  <tr><td colSpan={10} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
+                  <tr><td colSpan={11} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
                 )}
-                {[...filtered].sort((a:any,b:any)=>{ const ai=filtered.indexOf(a), bi=filtered.indexOf(b); return sortDir==='asc'?ai-bi:bi-ai; }).slice((page-1)*PER_PAGE, page*PER_PAGE).map((p:any, idx:number) => {
+                {// Build PO count map from ALL projects (not just filtered)
+                const poCountMap = (roleFilteredProjects as any[]).reduce((acc:any,p:any)=>{ if(p.poNo){ acc[p.poNo]=(acc[p.poNo]||0)+1; } return acc; },{});
+                [...filtered].sort((a:any,b:any)=>{ const ai=filtered.indexOf(a), bi=filtered.indexOf(b); return sortDir==='asc'?ai-bi:bi-ai; }).slice((page-1)*PER_PAGE, page*PER_PAGE).map((p:any, idx:number) => {
                   const delDate = p.endDate;
                   const delDt   = delDate ? new Date(delDate) : null;
                   const isPast  = delDt && !['completed','not_started'].includes(p.status) ? delDt < new Date() : false;
@@ -487,6 +489,11 @@ export default function ProjectsPage() {
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
                         <div style={{ fontWeight:700, color:T.primary, fontSize:13 }}>{p.poNo || '—'}</div>
                         <div style={{ fontSize:10, color:T.textMuted }}>{p.poDate ? new Date(p.poDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</div>
+                      </td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, textAlign:'center' as const }}>
+                        {p.poNo && poCountMap[p.poNo] > 1
+                          ? <span style={{ fontSize:12, fontWeight:700, color:'#7C3AED', background:'#F3E8FF', padding:'2px 10px', borderRadius:20 }}>{poCountMap[p.poNo]}</span>
+                          : <span style={{ fontSize:12, color:T.textDim }}>1</span>}
                       </td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
                         <span style={{ fontSize:12, fontWeight:600, color:ageColor, background:ageBg, padding:'2px 8px', borderRadius:10 }}>{ageDays}d</span>
