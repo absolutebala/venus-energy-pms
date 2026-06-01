@@ -71,7 +71,7 @@ const PROJECT_STATUS_OPTIONS = [
   'Billing Shared','LL Issues','Site Issues','CR Pending',
   'JMS Pending with AE','Site Hold','Fresh to be Return',
   'SRN BOQ Pending','SRN Document correction Pending','PO Amendment Done',
-  'WC Raised','Invoice Submitted Payment pending',
+  'WCC Raised','Invoice Submitted Payment pending',
   'Invoice Submitted Payment Received','Invoice to be submit/PTW Pending',
   'Invoice to be submit/SRN Pending','Invoice to be submit/ Approval Pending',
   'Work Not Done','Allocation Not received','PO Not reflected','Others',
@@ -83,7 +83,7 @@ const TYPES    = ['SMPS Installation','Supply and Service for Tower Strengthenin
 const DOC_TYPES = [
   { key:'safety_photos',   label:'Safety Photos',   icon:'📷', accept:'image/*'           },
   { key:'site_photos',     label:'Site Photos',     icon:'🏗',  accept:'image/*,.pdf'           },
-  { key:'jmr_document',   label:'JMR Document',    icon:'📄', accept:'.pdf,.doc,.docx'    },
+  { key:'jmr_document',   label:'Document Approvals / JMS',    icon:'📄', accept:'.pdf,.doc,.docx'    },
   { key:'at_certificate', label:'AT Certificate',  icon:'🏅', accept:'.pdf,.doc,.docx'    },
   { key:'noc_document',   label:'NOC Document',    icon:'📋', accept:'.pdf,.doc,.docx'    },
   { key:'drawing_document',label:'Drawing Document',icon:'📐', accept:'.pdf,.dwg,.png,.jpg'},
@@ -116,7 +116,7 @@ const fmtDate = (d: string) => { if (!d) return '—'; try { return new Date(d).
 const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
 
 
-// ── PO Items Component ───────────────────────────────────────────────────────
+// ── STN Component ───────────────────────────────────────────────────────
 function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string; editing: boolean; canAdd?: boolean }) {
   const { getByProject, addItem, updateItem, deleteItem, loading } = usePOItems();
   const { logActivity } = useActivity();
@@ -129,7 +129,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
   const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', rate:'', gstRate:'18' });
   const [editRow,  setEditRow]  = React.useState<any>({});
 
-  // Check localStorage for pending PO items (set by projects page Upload PO flow)
+  // Check localStorage for pending STN items (set by projects page Upload PO flow)
   React.useEffect(() => {
     if (!projectId) return;
     const key = 'pending_po_items_' + projectId;
@@ -160,7 +160,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
           added++;
         } catch(err) { console.error('addItem error:', err); }
       }
-      setToast({ msg:`✅ ${added} PO items added from PDF`, type:'success' });
+      setToast({ msg:`✅ ${added} STN items added from PDF`, type:'success' });
     };
     addAll();
   }, [projectId]);
@@ -211,7 +211,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
 
   return (
     <div>
-      {loading && <div style={{ color:T.textMuted, fontSize:13 }}>Loading PO items...</div>}
+      {loading && <div style={{ color:T.textMuted, fontSize:13 }}>Loading STN items...</div>}
       {items.length > 0 && (
         <div style={{ overflowX:'auto' as const }}>
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
@@ -285,7 +285,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
         </div>
       )}
       {!loading && items.length === 0 && (
-        <div style={{ textAlign:'center' as const, padding:'24px 0', color:T.textDim, fontSize:13 }}>No PO items for this project</div>
+        <div style={{ textAlign:'center' as const, padding:'24px 0', color:T.textDim, fontSize:13 }}>No STN items for this project</div>
       )}
 
       {adding && (
@@ -1203,10 +1203,10 @@ export default function ProjectDetailPage() {
         ...(d.region   ? { region:  d.region   } : {}),
       }));
       if (d.items?.length) {
-        // Import items into PO items section via a custom event
+        // Import items into STN items section via a custom event
         window.dispatchEvent(new CustomEvent('po-items-extracted', { detail: d.items }));
       }
-      alert(`✅ Extracted ${d.items?.length || 0} PO items + project details. Review and save.`);
+      alert(`✅ Extracted ${d.items?.length || 0} STN items + project details. Review and save.`);
     } catch(err: any) {
       alert('Failed to extract PO: ' + err.message);
     } finally {
@@ -1251,7 +1251,7 @@ export default function ProjectDetailPage() {
   const [deleting, setDeleting] = useState(false);
 
   const deleteProject = async () => {
-    if (!window.confirm(`⚠️ DELETE PROJECT ${p?.id}?\n\nThis will permanently delete:\n• All invoices\n• All expenses\n• All documents\n• All PO items\n• All PTW records\n• All activity logs\n\nThis CANNOT be undone. Type the project ID to confirm.`)) return;
+    if (!window.confirm(`⚠️ DELETE PROJECT ${p?.id}?\n\nThis will permanently delete:\n• All invoices\n• All expenses\n• All documents\n• All STN items\n• All PTW records\n• All activity logs\n\nThis CANNOT be undone. Type the project ID to confirm.`)) return;
     const confirm2 = window.prompt(`Type "${p?.id}" to confirm deletion:`);
     if (confirm2 !== p?.id) { alert('Project ID did not match. Deletion cancelled.'); return; }
     setDeleting(true);
@@ -1274,6 +1274,7 @@ export default function ProjectDetailPage() {
   const [regionOpts,  setRegionOpts]  = React.useState<string[]>(REGIONS);
   const [jobTypeOpts, setJobTypeOpts] = React.useState<string[]>(TYPES);
   const [poStatusOpts, setPoStatusOpts] = React.useState<string[]>(['Open','Closed']);
+  const [projectStatusOpts, setProjectStatusOpts] = React.useState<string[]>(PROJECT_STATUS_OPTIONS);
   const [siteOpts,    setSiteOpts]    = React.useState<string[]>([]);
 
   // Load lookup options from Supabase
@@ -1284,6 +1285,7 @@ export default function ProjectDetailPage() {
         setRegionOpts(data.filter((d:any)=>d.type==='region').map((d:any)=>d.value));
         const dbJobTypes = data.filter((d:any)=>d.type==='job_type').map((d:any)=>d.value); setJobTypeOpts(Array.from(new Set([...TYPES, ...dbJobTypes])));
         const dbPoStatus = data.filter((d:any)=>d.type==='po_status').map((d:any)=>d.value); setPoStatusOpts(Array.from(new Set(['Open','Closed',...dbPoStatus])));
+        const dbProjStatus = data.filter((d:any)=>d.type==='project_status').map((d:any)=>d.value); setProjectStatusOpts(Array.from(new Set([...PROJECT_STATUS_OPTIONS,...dbProjStatus])));
         setSiteOpts(data.filter((d:any)=>d.type==='site').map((d:any)=>d.value));
       }
     });
@@ -1295,6 +1297,7 @@ export default function ProjectDetailPage() {
     if (type === 'region')   setRegionOpts(prev  => Array.from(new Set([...prev,  value])).sort());
     if (type === 'job_type') setJobTypeOpts(prev => Array.from(new Set([...prev,  value])).sort());
     if (type === 'po_status') setPoStatusOpts(prev => Array.from(new Set([...prev, value])).sort());
+    if (type === 'project_status') setProjectStatusOpts(prev => Array.from(new Set([...prev, value])).sort());
     if (type === 'site')     setSiteOpts(prev    => Array.from(new Set([...prev,  value])).sort());
   };
   const [pmList, setPmList] = React.useState<string[]>([]);
@@ -1523,15 +1526,14 @@ export default function ProjectDetailPage() {
                 <Link href="/projects" style={{ color:T.textMuted, textDecoration:'none', fontSize:13 }}>← Projects</Link>
                 <span style={{ color:T.textDim }}>/</span>
                 <h1 style={{ fontSize:20, fontWeight:800, color:T.text, margin:0 }}>{p.id}</h1>
-                <select
-                  value={p.projectStatus || ''}
-                  onChange={e => ctxUpdateProject(p.id, { projectStatus: e.target.value } as any, profile?.full_name ?? undefined)}
-                  style={{ background:'#E0F2FE', color:'#0369A1', border:'1px solid #BAE6FD',
-                    padding:'3px 10px', borderRadius:20, fontSize:12, fontWeight:700,
-                    cursor:'pointer', outline:'none' }}>
-                  <option value="">— Set Project Status —</option>
-                  {PROJECT_STATUS_OPTIONS.map((s:string) => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <div style={{ minWidth:200 }}>
+                  <CreatableDropdown
+                    value={p.projectStatus || ''}
+                    onChange={v => ctxUpdateProject(p.id, { projectStatus: v } as any, profile?.full_name ?? undefined)}
+                    options={projectStatusOpts}
+                    placeholder="— Set Project Status —"
+                    onCreateNew={v=>addLookupOption('project_status', v)} />
+                </div>
               </div>
               <div style={{ fontSize:14, color:T.textMuted }}>{p.site} · {p.region}</div>
             </div>
@@ -1710,9 +1712,9 @@ export default function ProjectDetailPage() {
         </div>}
 
 
-        {/* ── PO Items ── */}
+        {/* ── STN ── */}
         <div style={{ ...card, marginBottom:16 }}>
-          {sectionTitle('📋','PO Items', 'poitems', canEdit)}
+          {sectionTitle('📋','STN', 'poitems', canEdit)}
           <POItemsSection projectId={p.id} editing={editing('poitems')} canAdd={canEdit} />
         </div>
 
