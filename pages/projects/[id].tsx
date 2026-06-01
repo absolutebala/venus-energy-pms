@@ -190,7 +190,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
         gstRate:Number(newRow.gstRate), amount:amt, sortOrder:items.length+1 });
       setNewRow({ description:'', hsnCode:'', uom:'', quantity:'', rate:'', gstRate:'18' });
       setAdding(false);
-      logActivity(projectId, `PO Item '${newRow.description}' added`, poProfile?.full_name||'', poProfile?.role||'').catch(console.error);
+      logActivity(projectId, `STN Item '${newRow.description}' added`, poProfile?.full_name||'', poProfile?.role||'').catch(console.error);
       setToast({ msg:'✅ PO Item added', type:'success' });
     } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
     finally { setSaving(false); }
@@ -290,7 +290,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
 
       {adding && (
         <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:14, marginTop:12 }}>
-          <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New PO Item</div>
+          <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New Item</div>
           <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 1fr', gap:10, marginBottom:12 }}>
             {([['Description *','description','text'],['Item Code','hsnCode','text'],['UOM','uom','text'],
                ['Quantity *','quantity','number'],['Rate (₹) *','rate','number'],['GST %','gstRate','number']] as [string,string,string][]).map(([l,f,t])=>(
@@ -324,7 +324,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
           <button onClick={()=>setAdding(true)}
             style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8,
               padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
-            + Add PO Item
+            + Add Item
           </button>
         )}
         {items.length > 0 && (
