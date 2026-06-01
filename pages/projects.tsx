@@ -234,7 +234,7 @@ export default function ProjectsPage() {
   const [focused,      setFocused]      = useState(false);
   const [ageMin,       setAgeMin]       = useState<number|null>(null);
   const [ageMax,       setAgeMax]       = useState<number|null>(null);
-  const [page, setPage] = useState(1);
+  const pageFromUrl = parseInt(typeof window!=='undefined'?new URLSearchParams(window.location.search).get('page')||'1':'1');  const [page, setPage] = useState(pageFromUrl);
   const PER_PAGE = 10;
   const [pmFilter,     setPmFilter]     = useState('');
   const [vendorFilter, setVendorFilter] = useState('');
@@ -490,11 +490,11 @@ export default function ProjectsPage() {
                         <div style={{ fontSize:10, color:T.textMuted }}>{p.poDate ? new Date(p.poDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</div>
                       </td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, textAlign:'center' as const, position:'relative' as const }}
-                        onClick={ev=>{ ev.stopPropagation(); setPoPopover(poPopover===p.poNo?null:p.poNo); }}>
+                        onClick={ev=>{ ev.stopPropagation(); setPoPopover(poPopover===p.id?null:p.id); }}>
                         {p.poNo && poCount(p.poNo) > 1
                           ? <span style={{ fontSize:12, fontWeight:700, color:'#7C3AED', background:'#F3E8FF', padding:'2px 10px', borderRadius:20, cursor:'pointer' }}>{poCount(p.poNo)}</span>
                           : <span style={{ fontSize:12, color:T.textDim }}>1</span>}
-                        {poPopover === p.poNo && (
+                        {poPopover === p.id && (
                           <div style={{ position:'absolute', top:'100%', left:0, zIndex:200, background:'#fff', border:`1px solid ${T.border}`,
                             borderRadius:10, boxShadow:'0 4px 20px rgba(0,0,0,0.15)', padding:12, minWidth:180, textAlign:'left' as const }}
                             onClick={ev=>ev.stopPropagation()}>
@@ -545,18 +545,18 @@ export default function ProjectsPage() {
               Showing {Math.min((page-1)*PER_PAGE+1, filtered.length)}–{Math.min(page*PER_PAGE, filtered.length)} of {filtered.length} projects
             </div>
             <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-              <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1}
+              <button onClick={()=>setPage(p=>{ const n=Math.max(1,p-1); router.push({pathname:router.pathname,query:{...router.query,page:n}},{},{shallow:true}); return n; })} disabled={page===1}
                 style={{ padding:'5px 12px', borderRadius:6, border:`1px solid ${T.border}`, background:'#fff', cursor:page===1?'not-allowed':'pointer', fontSize:12, color:page===1?T.textDim:T.text, opacity:page===1?0.5:1 }}>← Prev</button>
               {Array.from({length:Math.min(5,Math.ceil(filtered.length/PER_PAGE))},(_, i)=>{
                 const totalPages = Math.ceil(filtered.length/PER_PAGE);
                 const start = Math.max(1, Math.min(page-2, totalPages-4));
                 const pg = start+i;
                 return pg<=totalPages ? (
-                  <button key={pg} onClick={()=>setPage(pg)}
+                  <button key={pg} onClick={()=>setPage(pg); router.push({pathname:router.pathname,query:{...router.query,page:pg}},{},{ shallow:true })}
                     style={{ padding:'5px 10px', borderRadius:6, border:`1px solid ${pg===page?T.primary:T.border}`, background:pg===page?T.primaryLight:'#fff', cursor:'pointer', fontSize:12, color:pg===page?T.primary:T.text, fontWeight:pg===page?700:400 }}>{pg}</button>
                 ) : null;
               })}
-              <button onClick={()=>setPage(p=>Math.min(Math.ceil(filtered.length/PER_PAGE),p+1))} disabled={page>=Math.ceil(filtered.length/PER_PAGE)}
+              <button onClick={()=>setPage(p=>{ const n=Math.min(Math.ceil(filtered.length/PER_PAGE),p+1); router.push({pathname:router.pathname,query:{...router.query,page:n}},{},{shallow:true}); return n; })} disabled={page>=Math.ceil(filtered.length/PER_PAGE)}
                 style={{ padding:'5px 12px', borderRadius:6, border:`1px solid ${T.border}`, background:'#fff', cursor:page>=Math.ceil(filtered.length/PER_PAGE)?'not-allowed':'pointer', fontSize:12, color:page>=Math.ceil(filtered.length/PER_PAGE)?T.textDim:T.text, opacity:page>=Math.ceil(filtered.length/PER_PAGE)?0.5:1 }}>Next →</button>
             </div>
           </div>
