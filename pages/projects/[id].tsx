@@ -1228,7 +1228,7 @@ export default function ProjectDetailPage() {
         const FIELD_LABELS: Record<string,string> = {
           poNo:'PO Number', poDate:'PO Date', poValue:'PO Amount',
           indusId:'Indus ID', site:'Site Name', region:'Region',
-          type:'Project Name', startDate:'Start Date', endDate:'End Date',
+          type:'Project Name', startDate:'Allocation Date', endDate:'Work Allocation Date',
           rm:'Region Manager', pm:'Project Manager', remarks:'Remarks',
           status:'Status', progress:'Progress', workScope:'Work Scope',
         };
@@ -1385,6 +1385,33 @@ export default function ProjectDetailPage() {
   const st = STATUS_COLOR[p.status] || '#64748B';
 
   // Edit form state
+  // Parse date from pasted Excel text (DD/MM/YYYY, DD-MM-YYYY, DD-MMM-YYYY etc) → YYYY-MM-DD
+  const parsePastedDate = (raw: string): string => {
+    const s = raw.trim();
+    const MONTHS: Record<string,string> = {
+      jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',
+      jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'
+    };
+    // Already YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    // DD/MM/YYYY or DD-MM-YYYY
+    const dmy = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
+    if (dmy) {
+      const [,d,m,y] = dmy;
+      const yr = y.length===2 ? '20'+y : y;
+      return `${yr}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+    }
+    // DD-MMM-YYYY or DD MMM YYYY
+    const dmy2 = s.match(/^(\d{1,2})[-\s]([A-Za-z]{3,9})[-\s](\d{2,4})$/);
+    if (dmy2) {
+      const [,d,mon,y] = dmy2;
+      const m = MONTHS[mon.slice(0,3).toLowerCase()] || '01';
+      const yr = y.length===2 ? '20'+y : y;
+      return `${yr}-${m}-${d.padStart(2,'0')}`;
+    }
+    return '';
+  };
+
   const F = (label:string, key:string, type='text', options?:string[], readOnly=false, sectionCanEdit=editing('details') && canEditDetails, maxLen?:number) => (
     <div style={{ marginBottom:14 }}>
       <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:5, textTransform:'uppercase', letterSpacing:0.3 }}>{label}</label>
@@ -1400,6 +1427,11 @@ export default function ProjectDetailPage() {
           </select>
         ) : (
           <input type={type} value={(form as any)[key]||''} onChange={e=>setForm((f:any)=>({...f,[key]:e.target.value}))}
+            onPaste={type==='date' ? (e:any)=>{
+              const pasted = e.clipboardData?.getData('text') || '';
+              const parsed = parsePastedDate(pasted);
+              if (parsed) { e.preventDefault(); setForm((f:any)=>({...f,[key]:parsed})); }
+            } : undefined}
             maxLength={maxLen} style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
         )
       ) : (
@@ -1579,8 +1611,8 @@ export default function ProjectDetailPage() {
                     onCreateNew={v=>addLookupOption('job_type',v)} />
                 </div>
               ) : F('Project Name', 'type', 'text', TYPES)}
-              {F('Start Date',       'startDate',   'date')}
-              {F('End Date',         'endDate',     'date')}
+              {F('Allocation Date',      'startDate',   'date')}
+              {F('Work Allocation Date', 'endDate',     'date')}
               {F('Region Manager', 'rm', 'text', rmList.length > 0 ? rmList : undefined)}
               {F('Project Manager', 'pm', 'text', pmList.length > 0 ? pmList : undefined)}
             </div>
