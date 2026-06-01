@@ -234,8 +234,11 @@ export default function ProjectsPage() {
   const [focused,      setFocused]      = useState(false);
   const [ageMin,       setAgeMin]       = useState<number|null>(null);
   const [ageMax,       setAgeMax]       = useState<number|null>(null);
-  const [page, setPage] = useState(1);
-  React.useEffect(()=>{ if(!router.isReady) return; const p=parseInt((router.query.page as string)||'1'); if(p>0) setPage(p); },[router.isReady,router.query.page]);
+  const [page, setPage] = useState(()=>{
+    if (typeof window === 'undefined') return 1;
+    const p = parseInt(new URLSearchParams(window.location.search).get('page') || '1');
+    return p > 0 ? p : 1;
+  });
   const PER_PAGE = 10;
   const [pmFilter,     setPmFilter]     = useState('');
   const [vendorFilter, setVendorFilter] = useState('');
