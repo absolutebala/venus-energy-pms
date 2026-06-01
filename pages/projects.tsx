@@ -489,7 +489,7 @@ export default function ProjectsPage() {
                       <td style={{ padding:'10px 12px', color:T.textMuted, fontSize:12, borderBottom:`1px solid ${T.border}` }}>{sortDir==='asc'?(page-1)*PER_PAGE+idx+1:filtered.length-(page-1)*PER_PAGE-idx}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
                         <div style={{ fontWeight:700, color:T.primary, fontSize:13 }}>{p.poNo || '—'}</div>
-                        <div style={{ fontSize:10, color:T.textMuted }}>{p.id}</div>
+                        <div style={{ fontSize:10, color:T.textMuted }}>{p.poDate ? new Date(p.poDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</div>
                       </td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{(p as any).projectId || '—'}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{p.indusId || '—'}</td>
