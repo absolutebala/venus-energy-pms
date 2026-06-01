@@ -271,13 +271,10 @@ export default function ProjectsPage() {
   const getAgeDays = (id: string) => {
     const p = (projects as any[]).find((x:any)=>x.id===id);
     if (!p) return 0;
-    if (p.status === 'not_started') return 0;
-    if (p.status === 'completed') {
-      // Show project duration (start to end) not days till today
-      if (p.startDate && p.endDate) return Math.floor((new Date(p.endDate).getTime() - new Date(p.startDate).getTime()) / 86400000);
-      return 0;
-    }
-    return p.startDate ? Math.floor((new Date().getTime() - new Date(p.startDate).getTime()) / 86400000) : (p.aging||0);
+    // Aging = days since PO date (or start date, or created_at)
+    const ref = p.poDate || p.startDate || p.createdAt;
+    if (!ref) return 0;
+    return Math.floor((new Date().getTime() - new Date(ref).getTime()) / 86400000);
   };
   const filtered = roleFilteredProjects.filter(p => {
     const displayStatus = STATUS_DISPLAY[p.status] || p.status;
@@ -461,7 +458,7 @@ export default function ProjectsPage() {
                     onClick={()=>setSortDir(d=>d==='asc'?'desc':'asc')}>
                     S.No. {sortDir==='asc'?'↑':'↓'}
                   </th>
-                  {['PO Number','Project ID','Indus ID','Site / Project','Region','Project Status','PO Status','Delivery Date','Aging'].map((h,i)=>(
+                  {['PO Number','Aging','Project Status','Project ID','Indus ID','Site / Project','PO Status','Delivery Date'].map((h,i)=>(
                     <th key={i} style={{ padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
                       color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`,
                       whiteSpace:'nowrap' as const, background:T.primaryLight }}>
@@ -472,7 +469,7 @@ export default function ProjectsPage() {
               </thead>
               <tbody>
                 {filtered.length === 0 && (
-                  <tr><td colSpan={10} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
+                  <tr><td colSpan={9} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
                 )}
                 {[...filtered].sort((a:any,b:any)=>{ const ai=filtered.indexOf(a), bi=filtered.indexOf(b); return sortDir==='asc'?ai-bi:bi-ai; }).slice((page-1)*PER_PAGE, page*PER_PAGE).map((p:any, idx:number) => {
                   const delDate = p.endDate;
@@ -491,15 +488,17 @@ export default function ProjectsPage() {
                         <div style={{ fontWeight:700, color:T.primary, fontSize:13 }}>{p.poNo || '—'}</div>
                         <div style={{ fontSize:10, color:T.textMuted }}>{p.poDate ? new Date(p.poDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</div>
                       </td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
+                        <span style={{ fontSize:12, fontWeight:600, color:ageColor, background:ageBg, padding:'2px 8px', borderRadius:10 }}>{ageDays}d</span>
+                      </td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
+                        <span style={{ fontSize:11, fontWeight:600, color:'#0369A1', background:'#E0F2FE', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{(p as any).projectStatus || '—'}</span>
+                      </td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{(p as any).projectId || '—'}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{p.indusId || '—'}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
                         <div style={{ fontWeight:600, color:T.text, fontSize:13 }}>{p.site}</div>
                         <div style={{ fontSize:11, color:T.textMuted }}>{p.pm}</div>
-                      </td>
-                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{p.region || '—'}</td>
-                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
-                        <span style={{ fontSize:11, fontWeight:600, color:'#0369A1', background:'#E0F2FE', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{(p as any).projectStatus || '—'}</span>
                       </td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
                         <span style={{ fontSize:11, fontWeight:600, color:(p as any).poStatus==='Closed'?'#DC2626':(p as any).poStatus==='Open'?'#059669':'#6B7280', background:(p as any).poStatus==='Closed'?'#FEF2F2':(p as any).poStatus==='Open'?'#D1FAE5':'#F9FAFB', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{(p as any).poStatus || '—'}</span>
@@ -509,9 +508,6 @@ export default function ProjectsPage() {
                           {delDt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
                           {isPast && <span style={{ fontSize:10, display:'block', color:'#DC2626' }}>Overdue</span>}
                         </span> : <span style={{ color:T.textDim }}>—</span>}
-                      </td>
-                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
-                        <span style={{ fontSize:12, fontWeight:600, color:ageColor, background:ageBg, padding:'2px 8px', borderRadius:10 }}>{ageDays}d</span>
                       </td>
                     </tr>
                   );
