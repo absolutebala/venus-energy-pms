@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { createClient } from '@/lib/supabase';
 const supabase = createClient();
 import * as XLSX from 'xlsx';
@@ -176,7 +177,16 @@ export default function ReportsPage() {
     }
   };
 
-  const [active,   setActive]   = useState('executive');
+  const router = useRouter();
+  const [active, setActive] = useState(()=>{
+    if (typeof window === 'undefined') return 'executive';
+    const s = new URLSearchParams(window.location.search).get('section');
+    return s || 'executive';
+  });
+  const setActiveWithUrl = (key: string) => {
+    setActive(key);
+    router.push(`/reports?section=${key}`, undefined, { shallow: true });
+  };
   const [region,   setRegion]   = useState('All');
 
   const role = profile?.role || 'viewer';
@@ -487,7 +497,7 @@ export default function ReportsPage() {
           {/* Report list */}
           <div>
             {visibleReports.map(r=>(
-              <div key={r.key} onClick={()=>setActive(r.key)}
+              <div key={r.key} onClick={()=>setActiveWithUrl(r.key)}
                 style={{ padding:'10px 12px', borderRadius:9, marginBottom:6, cursor:'pointer',
                   border:`1.5px solid ${active===r.key?T.primary:T.border}`,
                   background:active===r.key?T.primaryLight:T.surface }}>
