@@ -234,7 +234,8 @@ export default function ProjectsPage() {
   const [focused,      setFocused]      = useState(false);
   const [ageMin,       setAgeMin]       = useState<number|null>(null);
   const [ageMax,       setAgeMax]       = useState<number|null>(null);
-  const pageFromUrl = parseInt(typeof window!=='undefined'?new URLSearchParams(window.location.search).get('page')||'1':'1');  const [page, setPage] = useState(pageFromUrl);
+  const [page, setPage] = useState(1);
+  React.useEffect(()=>{ const p=parseInt((router.query.page as string)||'1'); if(p>0) setPage(p); },[router.query.page]);
   const PER_PAGE = 10;
   const [pmFilter,     setPmFilter]     = useState('');
   const [vendorFilter, setVendorFilter] = useState('');
