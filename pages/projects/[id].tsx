@@ -126,7 +126,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
   const [saving,   setSaving]   = React.useState(false);
   const [editId,   setEditId]   = React.useState<string|null>(null);
   const [toast,    setToast]    = React.useState<any>(null);
-  const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', lotNo:'', serialNo:'', faNo:'', mfgNo:'' });
+  const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', lotNo:'', serialNo:'', faNo:'', mfgNo:'', amount:'' });
   const [editRow,  setEditRow]  = React.useState<any>({});
 
   // Check localStorage for pending STN items (set by projects page Upload PO flow)
@@ -187,9 +187,9 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
     try {
       await addItem({ projectId, description:newRow.description, hsnCode:newRow.hsnCode,
         uom:newRow.uom, quantity:Number(newRow.quantity), rate:0,
-        gstRate:Number(newRow.gstRate), amount:Number(newRow.quantity)*0, sortOrder:items.length+1,
+        gstRate:Number(newRow.gstRate), amount:Number((newRow as any).amount)||0, sortOrder:items.length+1,
         lotNo:(newRow as any).lotNo, serialNo:(newRow as any).serialNo, faNo:(newRow as any).faNo, mfgNo:(newRow as any).mfgNo } as any);
-      setNewRow({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', lotNo:'', serialNo:'', faNo:'', mfgNo:'' });
+      setNewRow({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', lotNo:'', serialNo:'', faNo:'', mfgNo:'', amount:'' });
       setAdding(false);
       logActivity(projectId, `STN Item '${newRow.description}' added`, poProfile?.full_name||'', poProfile?.role||'').catch(console.error);
       setToast({ msg:'✅ PO Item added', type:'success' });
@@ -303,7 +303,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:12 }}>
             {([['Item Code','hsnCode','text'],['Item Description *','description','text'],['UOM','uom','text'],
                ['Qty *','quantity','number'],['Lot No.','lotNo','text'],['Serial No.','serialNo','text'],
-               ['FA. No.','faNo','text'],['MFG. No.','mfgNo','text'],['Tax Rate %','gstRate','number']] as [string,string,string][]).map(([l,f,t])=>(
+               ['FA. No.','faNo','text'],['MFG. No.','mfgNo','text'],['Tax Rate %','gstRate','number'],['Amount','amount','number']] as [string,string,string][]).map(([l,f,t])=>(
               <div key={f}>
                 <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
                 <input type={t} value={(newRow as any)[f]} onChange={e=>setNewRow(p=>({...p,[f]:e.target.value}))} style={inpS} />
