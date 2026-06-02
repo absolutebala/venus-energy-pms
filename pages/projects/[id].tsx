@@ -765,7 +765,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
               {items.map((item, idx) => (
                 <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
                   <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
-                  {editId !== item.id ? (
+                  {editId !== item.id && (
                     <>
                       <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD(item.expenseDate)}</td>
                       <td style={tdS}>{item.site||'—'}</td>
