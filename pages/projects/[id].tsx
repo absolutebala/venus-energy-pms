@@ -775,8 +775,8 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                           {['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'].map(t=><option key={t}>{t}</option>)}
                         </select>
                       </td>
-                      <td style={tdS}><input type="number" value={editRow.amount||''} onChange={e=>setEditRow((p:any)=>({...p,amount:e.target.value}))} style={{ ...inpS, width:'100%' }} /></td>
                       <td style={tdS}><input value={editRow.remarks||''} onChange={e=>setEditRow((p:any)=>({...p,remarks:e.target.value}))} placeholder="Remarks" style={{ ...inpS, width:'100%' }} /></td>
+                      <td style={tdS}><input type="number" value={editRow.amount||''} onChange={e=>setEditRow((p:any)=>({...p,amount:e.target.value}))} style={{ ...inpS, width:'100%' }} /></td>
                       <td style={{ ...tdS, display:'flex', gap:4 }}>
                         <button onClick={saveEdit} disabled={saving} style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✓ Save</button>
                         <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✕</button>
