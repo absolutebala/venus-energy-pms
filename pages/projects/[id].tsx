@@ -126,7 +126,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
   const [saving,   setSaving]   = React.useState(false);
   const [editId,   setEditId]   = React.useState<string|null>(null);
   const [toast,    setToast]    = React.useState<any>(null);
-  const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', rate:'', gstRate:'18' });
+  const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', lotNo:'', serialNo:'', faNo:'', mfgNo:'' });
   const [editRow,  setEditRow]  = React.useState<any>({});
 
   // Check localStorage for pending STN items (set by projects page Upload PO flow)
@@ -186,8 +186,9 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
     setSaving(true);
     try {
       await addItem({ projectId, description:newRow.description, hsnCode:newRow.hsnCode,
-        uom:newRow.uom, quantity:Number(newRow.quantity), rate:Number(newRow.rate),
-        gstRate:Number(newRow.gstRate), amount:amt, sortOrder:items.length+1 });
+        uom:newRow.uom, quantity:Number(newRow.quantity), rate:0,
+        gstRate:Number(newRow.gstRate), amount:Number(newRow.quantity)*0, sortOrder:items.length+1,
+        lotNo:(newRow as any).lotNo, serialNo:(newRow as any).serialNo, faNo:(newRow as any).faNo, mfgNo:(newRow as any).mfgNo } as any);
       setNewRow({ description:'', hsnCode:'', uom:'', quantity:'', rate:'', gstRate:'18' });
       setAdding(false);
       logActivity(projectId, `STN Item '${newRow.description}' added`, poProfile?.full_name||'', poProfile?.role||'').catch(console.error);
@@ -217,8 +218,8 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
             <thead>
               <tr>
-                {['#','Description','Item Code','UOM','Qty','Rate (₹)','GST %','Amount (₹)',''].map((h,i)=>(
-                  <th key={i} style={{ ...thS, textAlign:i>=4&&i<=7?'right' as const:'left' as const }}>{h}</th>
+                {['#','Item Code','Item Description','UOM','Qty','Lot No.','Serial No.','FA. No.','MFG. No.','Tax Rate','Amount (₹)',''].map((h,i)=>(
+                  <th key={i} style={{ ...thS }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -228,13 +229,16 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
                   <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
                   {editId === item.id ? (
                     <>
-                      <td style={tdS}><input value={editRow.description||''} onChange={e=>setEditRow((p:any)=>({...p,description:e.target.value}))} style={inpS} /></td>
                       <td style={tdS}><input value={editRow.hsnCode||''} onChange={e=>setEditRow((p:any)=>({...p,hsnCode:e.target.value}))} style={inpS} /></td>
+                      <td style={tdS}><input value={editRow.description||''} onChange={e=>setEditRow((p:any)=>({...p,description:e.target.value}))} style={inpS} /></td>
                       <td style={tdS}><input value={editRow.uom||''} onChange={e=>setEditRow((p:any)=>({...p,uom:e.target.value}))} style={inpS} /></td>
-                      <td style={tdS}><input type="number" value={editRow.quantity||''} onChange={e=>setEditRow((p:any)=>({...p,quantity:e.target.value}))} style={{...inpS,textAlign:'right' as const}} /></td>
-                      <td style={tdS}><input type="number" value={editRow.rate||''} onChange={e=>setEditRow((p:any)=>({...p,rate:e.target.value}))} style={{...inpS,textAlign:'right' as const}} /></td>
-                      <td style={tdS}><input type="number" value={editRow.gstRate||18} onChange={e=>setEditRow((p:any)=>({...p,gstRate:e.target.value}))} style={{...inpS,textAlign:'right' as const}} /></td>
-                      <td style={{ ...tdS, textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(calcAmount(editRow.quantity,editRow.rate))}</td>
+                      <td style={tdS}><input type="number" value={editRow.quantity||''} onChange={e=>setEditRow((p:any)=>({...p,quantity:e.target.value}))} style={inpS} /></td>
+                      <td style={tdS}><input value={editRow.lotNo||''} onChange={e=>setEditRow((p:any)=>({...p,lotNo:e.target.value}))} style={inpS} /></td>
+                      <td style={tdS}><input value={editRow.serialNo||''} onChange={e=>setEditRow((p:any)=>({...p,serialNo:e.target.value}))} style={inpS} /></td>
+                      <td style={tdS}><input value={editRow.faNo||''} onChange={e=>setEditRow((p:any)=>({...p,faNo:e.target.value}))} style={inpS} /></td>
+                      <td style={tdS}><input value={editRow.mfgNo||''} onChange={e=>setEditRow((p:any)=>({...p,mfgNo:e.target.value}))} style={inpS} /></td>
+                      <td style={tdS}><input type="number" value={editRow.gstRate||18} onChange={e=>setEditRow((p:any)=>({...p,gstRate:e.target.value}))} style={inpS} /></td>
+                      <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{fmt(editRow.amount||0)}</td>
                       <td style={{ ...tdS, display:'flex', gap:4 }}>
                         <button onClick={()=>saveEdit(item.id)} disabled={saving} style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✓</button>
                         <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✕</button>
@@ -242,13 +246,16 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
                     </>
                   ) : (
                     <>
-                      <td style={{ ...tdS, fontWeight:500 }}>{item.description}</td>
                       <td style={{ ...tdS, color:T.textMuted }}>{item.hsnCode||'—'}</td>
+                      <td style={{ ...tdS, fontWeight:500 }}>{item.description}</td>
                       <td style={{ ...tdS, color:T.textMuted }}>{item.uom||'—'}</td>
-                      <td style={{ ...tdS, textAlign:'right' as const }}>{item.quantity.toLocaleString()}</td>
-                      <td style={{ ...tdS, textAlign:'right' as const }}>{fmt(item.rate)}</td>
-                      <td style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>{item.gstRate}%</td>
-                      <td style={{ ...tdS, textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
+                      <td style={{ ...tdS }}>{item.quantity.toLocaleString()}</td>
+                      <td style={{ ...tdS, color:T.textMuted }}>{(item as any).lotNo||'—'}</td>
+                      <td style={{ ...tdS, color:T.textMuted }}>{(item as any).serialNo||'—'}</td>
+                      <td style={{ ...tdS, color:T.textMuted }}>{(item as any).faNo||'—'}</td>
+                      <td style={{ ...tdS, color:T.textMuted }}>{(item as any).mfgNo||'—'}</td>
+                      <td style={{ ...tdS, color:T.textMuted }}>{item.gstRate}%</td>
+                      <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
                       <td style={{ ...tdS, width:64 }}>
                         {canAdd && (
                           <div style={{ display:'flex', gap:4 }}>
@@ -266,17 +273,17 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
             </tbody>
             <tfoot>
               <tr style={{ background:T.primaryLight, fontWeight:700 }}>
-                <td colSpan={7} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>Subtotal excl. GST</td>
+                <td colSpan={10} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>Subtotal excl. GST</td>
                 <td style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>{fmt(totalAmount)}</td>
                 <td style={tdS}></td>
               </tr>
               <tr style={{ background:T.primaryLight, fontWeight:700 }}>
-                <td colSpan={7} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>GST</td>
+                <td colSpan={10} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>GST</td>
                 <td style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>{fmt(totalGST)}</td>
                 <td style={tdS}></td>
               </tr>
               <tr style={{ background:T.primaryLight, fontWeight:800 }}>
-                <td colSpan={7} style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>Grand Total</td>
+                <td colSpan={10} style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>Grand Total</td>
                 <td style={{ ...tdS, textAlign:'right' as const, color:T.primary, fontSize:14 }}>{fmt(totalAmount + totalGST)}</td>
                 <td style={tdS}></td>
               </tr>
@@ -291,9 +298,10 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
       {adding && (
         <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:14, marginTop:12 }}>
           <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New Item</div>
-          <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 1fr', gap:10, marginBottom:12 }}>
-            {([['Description *','description','text'],['Item Code','hsnCode','text'],['UOM','uom','text'],
-               ['Quantity *','quantity','number'],['Rate (₹) *','rate','number'],['GST %','gstRate','number']] as [string,string,string][]).map(([l,f,t])=>(
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:12 }}>
+            {([['Item Code','hsnCode','text'],['Item Description *','description','text'],['UOM','uom','text'],
+               ['Qty *','quantity','number'],['Lot No.','lotNo','text'],['Serial No.','serialNo','text'],
+               ['FA. No.','faNo','text'],['MFG. No.','mfgNo','text'],['Tax Rate %','gstRate','number']] as [string,string,string][]).map(([l,f,t])=>(
               <div key={f}>
                 <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
                 <input type={t} value={(newRow as any)[f]} onChange={e=>setNewRow(p=>({...p,[f]:e.target.value}))} style={inpS} />
