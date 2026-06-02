@@ -22,7 +22,7 @@ const MODULES: { key: string; label: string; icon: string; desc: string; note?: 
   { key:'projects',     label:'Projects',         icon:'📁', desc:'Project list, details, edit, vendor assign, PTW'       },
   { key:'vendors',      label:'Vendors',          icon:'🏢', desc:'Vendor management, invite, activate, deactivate'       },
   { key:'srn_return',   label:'STN / SRN Status', icon:'📦', desc:'Material tracking — Read: all | Edit: SA/RM/PM approve, Vendor submit utilisation', note:'⚠️ Create = recording STN from Indus (future feature). Currently Indus issues STN externally.' },
-  { key:'site_expenses',label:'Site Expenses',    icon:'💰', desc:'Payments to vendors per project | Accounting adds, others view only'                },
+  { key:'sec_expenses',label:'Site Expenses',    icon:'💰', desc:'Payments to vendors per project | Accounting adds, others view only'                },
   { key:'ptw',          label:'PTW Management',   icon:'🔑', desc:'Permit to Work inside project detail | SA/RM/PM can create & edit'                 },
   { key:'invoices', label:'Invoices', icon:'🧾', desc:'Invoice management — create, track and manage project invoices. PO search, financial summary, sortable table' },
   { key:'reports',      label:'Reports',          icon:'📊', desc:'Auto-generated reports — Read only for all roles (no manual create)'               },
