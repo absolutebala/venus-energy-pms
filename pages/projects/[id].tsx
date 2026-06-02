@@ -308,11 +308,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
               </div>
             ))}
           </div>
-          {newRow.quantity && newRow.rate && (
-            <div style={{ fontSize:12, color:T.primary, marginBottom:10, fontWeight:600 }}>
-              Amount: {fmt(calcAmount(newRow.quantity, newRow.rate))} + GST {newRow.gstRate}% = {fmt(calcAmount(newRow.quantity,newRow.rate)*(1+Number(newRow.gstRate)/100))}
-            </div>
-          )}
+
           <div style={{ display:'flex', gap:10 }}>
             <button onClick={saveNew} disabled={saving||!newRow.description||!newRow.quantity||!newRow.rate}
               style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px',
