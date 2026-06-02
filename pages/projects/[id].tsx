@@ -250,10 +250,9 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
                       <td style={{ ...tdS, fontWeight:500 }}>{item.description}</td>
                       <td style={{ ...tdS, color:T.textMuted }}>{item.uom||'—'}</td>
                       <td style={{ ...tdS }}>{item.quantity.toLocaleString()}</td>
-                      <td style={{ ...tdS, color:T.textMuted }}>{(item as any).lotNo||'—'}</td>
+                      <td style={{ ...tdS, color:T.textMuted }}>{(item as any).documentNo||'—'}</td>
+                      <td style={{ ...tdS, color:T.textMuted }}>{(item as any).boqReqNo||'—'}</td>
                       <td style={{ ...tdS, color:T.textMuted }}>{(item as any).serialNo||'—'}</td>
-                      <td style={{ ...tdS, color:T.textMuted }}>{(item as any).faNo||'—'}</td>
-                      <td style={{ ...tdS, color:T.textMuted }}>{(item as any).mfgNo||'—'}</td>
                       <td style={{ ...tdS, color:T.textMuted }}>{item.gstRate}%</td>
                       <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
                       <td style={{ ...tdS, fontWeight:700, color:T.success }}>{fmt(item.amount * (1 + (item.gstRate||0)/100))}</td>
@@ -268,34 +267,8 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
                         )}
                       </td>
                     </>
-                  ) : null}
+                  )}
                 </tr>
-                {editId === item.id && (
-                  <tr key={item.id+'-edit'} style={{ background:T.primaryLight }}>
-                    <td colSpan={7} style={{ padding:'14px', borderBottom:`1px solid ${T.border}` }}>
-                      <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>Edit Expense</div>
-                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
-                        {([['Date *','expenseDate','date'],['Amount (₹) *','amount','number'],['Remarks','remarks','text'],
-                           ['Bank Account No','bankAccount','text'],['UPI ID','upiId','text']] as [string,string,string][]).map(([l,f,t])=>(
-                          <div key={f}>
-                            <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{l}</label>
-                            <input type={t} value={(editRow as any)[f]||''} onChange={e=>setEditRow((p:any)=>({...p,[f]:e.target.value}))} style={{ ...inpS, width:'100%', boxSizing:'border-box' as const }} />
-                          </div>
-                        ))}
-                        <div>
-                          <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Expense Type</label>
-                          <select value={editRow.expenseType||''} onChange={e=>setEditRow((p:any)=>({...p,expenseType:e.target.value}))} style={{ ...inpS, width:'100%' }}>
-                            {['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'].map(t=><option key={t}>{t}</option>)}
-                          </select>
-                        </div>
-                      </div>
-                      <div style={{ display:'flex', gap:10 }}>
-                        <button onClick={saveEdit} disabled={saving} style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13, fontWeight:600 }}>✓ Save</button>
-                        <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13 }}>Cancel</button>
-                      </div>
-                    </td>
-                  </tr>
-                )}
               ))}
             </tbody>
             <tfoot>
