@@ -763,7 +763,8 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
             </thead>
             <tbody>
               {items.map((item, idx) => (
-                <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
+                <React.Fragment key={item.id}>
+                <tr style={{ background:idx%2===0?'#fff':T.bg }}>
                   <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
                   {editId !== item.id && (
                     <>
@@ -819,6 +820,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                     </td>
                   </tr>
                 )}
+                </React.Fragment>
               ))}
             </tbody>
             <tfoot>
