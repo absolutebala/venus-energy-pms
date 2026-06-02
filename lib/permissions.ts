@@ -12,7 +12,7 @@ function perm(can_create:boolean, can_read:boolean, can_edit:boolean, can_delete
 }
 
 function buildFull(): Record<AppModule, Permission> {
-  const modules: AppModule[] = ['dashboard','projects','vendors','srn_return','site_expenses','ptw','reports'];
+  const modules: AppModule[] = ['dashboard','projects','vendors','srn_return','site_expenses','sec_expenses','ptw','reports'];
   return Object.fromEntries(modules.map(m=>[m,{
     module:m,
     can_create: m !== 'srn_return' && m !== 'reports', // no create for STN/SRN or Reports
@@ -31,6 +31,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     vendors:             perm(true, true, true, false),
     srn_return:          perm(false,true, true, false),
     site_expenses:       perm(false,true, false,false),
+    sec_expenses:        perm(false,true, false,false),
     ptw:                 perm(true, true, true, false),
     reports:             perm(false,true, false,false),
     sec_project_details:   perm(false,true, true, false),
@@ -81,6 +82,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     vendors:             perm(false,false,false,false),
     srn_return:          perm(false,true, false,false),
     site_expenses:       perm(false,false,false,false),
+    sec_expenses:        perm(false,false,false,false),
     ptw:                 perm(false,true, false,false),
     reports:             perm(false,false,false,false),
     sec_project_details:   perm(false,true, false,false),
@@ -106,6 +108,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     vendors:             perm(false,true, false,false),
     srn_return:          perm(false,true, false,false),
     site_expenses:       perm(true, true, true, false),
+    sec_expenses:        perm(true, true, true, false),
     ptw:                 perm(false,true, false,false),
     reports:             perm(false,true, false,false),
     sec_project_details:   perm(false,true, false,false),
