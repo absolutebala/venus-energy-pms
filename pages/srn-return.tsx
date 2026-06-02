@@ -21,7 +21,29 @@ const getReturnStatus = (m: any) => {
 
 export default function SRNReturnPage() {
   const { profile, can } = useAuth();
-  const { items: allItems, loading: matLoading } = usePOItems();
+  const { items: allItems, loading: matLoading, updateItem } = usePOItems();
+  const [editId,   setEditId]   = React.useState<string|null>(null);
+  const [editRow,  setEditRow]  = React.useState<any>({});
+  const [saving,   setSaving]   = React.useState(false);
+
+  const saveEdit = async () => {
+    setSaving(true);
+    try {
+      await updateItem(editId!, {
+        hsnCode:    editRow.hsnCode,
+        description: editRow.description,
+        uom:        editRow.uom,
+        quantity:   Number(editRow.quantity),
+        documentNo: editRow.documentNo,
+        boqReqNo:   editRow.boqReqNo,
+        serialNo:   editRow.serialNo,
+        gstRate:    Number(editRow.gstRate),
+        amount:     Number(editRow.amount),
+      } as any);
+      setEditId(null);
+    } catch(err) { console.error(err); }
+    finally { setSaving(false); }
+  };
   const { projects, loading: projLoading } = useProjects();
   const role = profile?.role || 'viewer';
 
@@ -169,7 +191,7 @@ export default function SRNReturnPage() {
                   <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                     <thead>
                       <tr>
-                        {['#','Item Code','Item Description','UOM','Qty','Document No','BOQ Req No','Serial No','Tax Rate','Amount','Total Value'].map((h,i)=>(
+                        {['#','Item Code','Item Description','UOM','Qty','Document No','BOQ Req No','Serial No','Tax Rate','Amount','Total Value',''].map((h,i)=>(
                           <th key={h} style={{ ...thS }}>{h}</th>
                         ))}
                       </tr>
@@ -178,16 +200,43 @@ export default function SRNReturnPage() {
                       {materials.map((m: any, idx: number) => (
                           <tr key={m.id} style={{ background:idx%2===0?'#fff':Theme.bg }}>
                             <td style={{ ...tdS, color:Theme.textMuted }}>{idx+1}</td>
-                            <td style={{ ...tdS, fontWeight:700, color:Theme.primary }}>{m.hsnCode||'—'}</td>
-                            <td style={tdS}>{m.description}</td>
-                            <td style={{ ...tdS, color:Theme.textMuted }}>{m.uom||'—'}</td>
-                            <td style={tdS}>{m.quantity||'—'}</td>
-                            <td style={{ ...tdS, color:Theme.textMuted }}>{m.documentNo||'—'}</td>
-                            <td style={{ ...tdS, color:Theme.textMuted }}>{m.boqReqNo||'—'}</td>
-                            <td style={{ ...tdS, color:Theme.textMuted }}>{m.serialNo||'—'}</td>
-                            <td style={{ ...tdS, color:Theme.textMuted }}>{m.gstRate||0}%</td>
-                            <td style={{ ...tdS, fontWeight:700, color:Theme.primary }}>₹{Number(m.amount||0).toLocaleString('en-IN')}</td>
-                            <td style={{ ...tdS, fontWeight:700, color:Theme.success }}>₹{(Number(m.amount||0)*(1+(Number(m.gstRate||0)/100))).toLocaleString('en-IN')}</td>
+                            {editId === m.id ? (
+                              <>
+                                <td style={tdS}><input value={editRow.hsnCode||''} onChange={e=>setEditRow((p:any)=>({...p,hsnCode:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:'100%' }} /></td>
+                                <td style={tdS}><input value={editRow.description||''} onChange={e=>setEditRow((p:any)=>({...p,description:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:'100%' }} /></td>
+                                <td style={tdS}><input value={editRow.uom||''} onChange={e=>setEditRow((p:any)=>({...p,uom:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:60 }} /></td>
+                                <td style={tdS}><input type="number" value={editRow.quantity||''} onChange={e=>setEditRow((p:any)=>({...p,quantity:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:60 }} /></td>
+                                <td style={tdS}><input value={editRow.documentNo||''} onChange={e=>setEditRow((p:any)=>({...p,documentNo:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:'100%' }} /></td>
+                                <td style={tdS}><input value={editRow.boqReqNo||''} onChange={e=>setEditRow((p:any)=>({...p,boqReqNo:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:'100%' }} /></td>
+                                <td style={tdS}><input value={editRow.serialNo||''} onChange={e=>setEditRow((p:any)=>({...p,serialNo:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:'100%' }} /></td>
+                                <td style={tdS}><input type="number" value={editRow.gstRate||18} onChange={e=>setEditRow((p:any)=>({...p,gstRate:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:50 }} /></td>
+                                <td style={tdS}><input type="number" value={editRow.amount||''} onChange={e=>setEditRow((p:any)=>({...p,amount:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:80 }} /></td>
+                                <td style={{ ...tdS, color:Theme.success, fontWeight:700 }}>₹{(Number(editRow.amount||0)*(1+(Number(editRow.gstRate||0)/100))).toLocaleString('en-IN')}</td>
+                                <td style={{ ...tdS, display:'flex', gap:4 }}>
+                                  <button onClick={saveEdit} disabled={saving} style={{ background:Theme.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✓</button>
+                                  <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${Theme.border}`, borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✕</button>
+                                </td>
+                              </>
+                            ) : (
+                              <>
+                                <td style={{ ...tdS, fontWeight:700, color:Theme.primary }}>{m.hsnCode||'—'}</td>
+                                <td style={tdS}>{m.description}</td>
+                                <td style={{ ...tdS, color:Theme.textMuted }}>{m.uom||'—'}</td>
+                                <td style={tdS}>{m.quantity||'—'}</td>
+                                <td style={{ ...tdS, color:Theme.textMuted }}>{m.documentNo||'—'}</td>
+                                <td style={{ ...tdS, color:Theme.textMuted }}>{m.boqReqNo||'—'}</td>
+                                <td style={{ ...tdS, color:Theme.textMuted }}>{m.serialNo||'—'}</td>
+                                <td style={{ ...tdS, color:Theme.textMuted }}>{m.gstRate||0}%</td>
+                                <td style={{ ...tdS, fontWeight:700, color:Theme.primary }}>₹{Number(m.amount||0).toLocaleString('en-IN')}</td>
+                                <td style={{ ...tdS, fontWeight:700, color:Theme.success }}>₹{(Number(m.amount||0)*(1+(Number(m.gstRate||0)/100))).toLocaleString('en-IN')}</td>
+                                {['super_admin','accounting_team','region_manager','project_manager'].includes(role) && (
+                                  <td style={tdS}>
+                                    <button onClick={()=>{ setEditId(m.id); setEditRow({...m}); }}
+                                      style={{ background:'none', border:`1px solid ${Theme.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12, color:Theme.primary }}>✏️</button>
+                                  </td>
+                                )}
+                              </>
+                            )}
                           </tr>
                       ))}
                     </tbody>
