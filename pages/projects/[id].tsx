@@ -189,7 +189,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
         uom:newRow.uom, quantity:Number(newRow.quantity), rate:0,
         gstRate:Number(newRow.gstRate), amount:Number(newRow.quantity)*0, sortOrder:items.length+1,
         lotNo:(newRow as any).lotNo, serialNo:(newRow as any).serialNo, faNo:(newRow as any).faNo, mfgNo:(newRow as any).mfgNo } as any);
-      setNewRow({ description:'', hsnCode:'', uom:'', quantity:'', rate:'', gstRate:'18' });
+      setNewRow({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', lotNo:'', serialNo:'', faNo:'', mfgNo:'' });
       setAdding(false);
       logActivity(projectId, `STN Item '${newRow.description}' added`, poProfile?.full_name||'', poProfile?.role||'').catch(console.error);
       setToast({ msg:'✅ PO Item added', type:'success' });
