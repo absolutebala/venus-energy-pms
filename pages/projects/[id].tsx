@@ -687,16 +687,33 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
 }
 
 function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boolean }) {
-  const { getByProject, addExpense, deleteExpense, loading } = useExpenses();
+  const { getByProject, addExpense, updateExpense, deleteExpense, loading } = useExpenses();
   const { profile } = useAuth();
   const { logActivity: logExpenseActivity } = useActivity();
+  const isVendorUser = profile?.role === 'vendor';
   const items = getByProject(projectId);
-  const [adding,  setAdding]  = React.useState(false);
-  const [saving,  setSaving]  = React.useState(false);
-  const [toast,   setToast]   = React.useState<any>(null);
-  const [newRow,  setNewRow]  = React.useState({
+  const [adding,   setAdding]   = React.useState(false);
+  const [saving,   setSaving]   = React.useState(false);
+  const [editId,   setEditId]   = React.useState<string|null>(null);
+  const [editRow,  setEditRow]  = React.useState<any>({});
+  const [toast,    setToast]    = React.useState<any>(null);
+  const [newRow,   setNewRow]   = React.useState({
     txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'', remarks:'', bankAccount:'', upiId:''
   });
+
+  const saveEdit = async () => {
+    setSaving(true);
+    try {
+      await updateExpense(editId!, {
+        expenseDate: editRow.expenseDate, site: editRow.site,
+        expenseType: editRow.expenseType, amount: Number(editRow.amount),
+        remarks: editRow.remarks, bankAccount: editRow.bankAccount, upiId: editRow.upiId,
+      });
+      setEditId(null);
+      setToast({ msg:'✅ Expense updated', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(false); }
+  };
 
   const fmt  = (n: number) => '₹' + Number(n).toLocaleString('en-IN');
   const fmtD = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } };
@@ -750,23 +767,48 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
               {items.map((item, idx) => (
                 <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
                   <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
-
-                  <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD(item.expenseDate)}</td>
-                  <td style={tdS}>{item.site||'—'}</td>
-                  <td style={tdS}>
-                    <span style={{ fontSize:11, fontWeight:600, color:TYPE_COLORS[item.expenseType]||T.textMuted,
-                      background:`${TYPE_COLORS[item.expenseType]||T.textMuted}18`, padding:'2px 8px', borderRadius:20, whiteSpace:'nowrap' as const }}>
-                      {item.expenseType}
-                    </span>
-                  </td>
-                  <td style={{ ...tdS, textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
-                  <td style={tdS}><span style={{ fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:20, background:item.status==='paid'?'#D1FAE5':'#FEF3C7', color:item.status==='paid'?'#059669':'#D97706' }}>{item.status==='paid'?'Paid':'Pending'}</span></td>
-                  <td style={{ ...tdS, width:36 }}>
-                    {canAdd && (
-                      <button onClick={()=>deleteExpense(item.id)}
-                        style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:15 }}>🗑</button>
-                    )}
-                  </td>
+                  {editId === item.id ? (
+                    <>
+                      <td style={tdS}><input type="date" value={editRow.expenseDate||''} onChange={e=>setEditRow((p:any)=>({...p,expenseDate:e.target.value}))} style={{ ...inpS, width:'100%' }} /></td>
+                      <td style={tdS}><input value={editRow.site||''} onChange={e=>setEditRow((p:any)=>({...p,site:e.target.value}))} style={{ ...inpS, width:'100%' }} /></td>
+                      <td style={tdS}>
+                        <select value={editRow.expenseType||''} onChange={e=>setEditRow((p:any)=>({...p,expenseType:e.target.value}))} style={{ ...inpS, width:'100%' }}>
+                          {['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'].map(t=><option key={t}>{t}</option>)}
+                        </select>
+                      </td>
+                      <td style={tdS}><input type="number" value={editRow.amount||''} onChange={e=>setEditRow((p:any)=>({...p,amount:e.target.value}))} style={{ ...inpS, width:'100%' }} /></td>
+                      <td style={tdS}><input value={editRow.remarks||''} onChange={e=>setEditRow((p:any)=>({...p,remarks:e.target.value}))} placeholder="Remarks" style={{ ...inpS, width:'100%' }} /></td>
+                      <td style={{ ...tdS, display:'flex', gap:4 }}>
+                        <button onClick={saveEdit} disabled={saving} style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✓ Save</button>
+                        <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✕</button>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD(item.expenseDate)}</td>
+                      <td style={tdS}>{item.site||'—'}</td>
+                      <td style={tdS}>
+                        <span style={{ fontSize:11, fontWeight:600, color:TYPE_COLORS[item.expenseType]||T.textMuted,
+                          background:`${TYPE_COLORS[item.expenseType]||T.textMuted}18`, padding:'2px 8px', borderRadius:20, whiteSpace:'nowrap' as const }}>
+                          {item.expenseType}
+                        </span>
+                      </td>
+                      <td style={{ ...tdS, textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
+                      <td style={tdS}><span style={{ fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:20, background:item.status==='paid'?'#D1FAE5':'#FEF3C7', color:item.status==='paid'?'#059669':'#D97706' }}>{item.status==='paid'?'Paid':'Pending'}</span></td>
+                      <td style={{ ...tdS, width:64 }}>
+                        <div style={{ display:'flex', gap:4 }}>
+                          {isVendorUser && item.status === 'pending' && (
+                            <button onClick={()=>{ setEditId(item.id); setEditRow({...item}); }}
+                              style={{ background:'none', border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12, color:T.primary }}>✏️</button>
+                          )}
+                          {canAdd && item.status !== 'paid' && (
+                            <button onClick={()=>deleteExpense(item.id)}
+                              style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:15 }}>🗑</button>
+                          )}
+                        </div>
+                      </td>
+                    </>
+                  )}
                 </tr>
               ))}
             </tbody>
