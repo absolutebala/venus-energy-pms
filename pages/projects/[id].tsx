@@ -181,8 +181,8 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
   const tdS: React.CSSProperties  = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
 
   const saveNew = async () => {
-    if (!newRow.description || !newRow.quantity || !newRow.rate) return;
-    const amt = calcAmount(newRow.quantity, newRow.rate);
+    if (!newRow.description || !newRow.quantity) return;
+    const amt = 0;
     setSaving(true);
     try {
       await addItem({ projectId, description:newRow.description, hsnCode:newRow.hsnCode,
