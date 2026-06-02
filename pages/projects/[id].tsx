@@ -311,6 +311,11 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
             ))}
           </div>
 
+          {(newRow as any).amount && (
+            <div style={{ fontSize:13, color:T.success, fontWeight:700, marginBottom:10 }}>
+              Total Value (incl. tax): ₹{(Number((newRow as any).amount) * (1 + Number(newRow.gstRate||0)/100)).toLocaleString('en-IN', {minimumFractionDigits:2})}
+            </div>
+          )}
           <div style={{ display:'flex', gap:10 }}>
             <button onClick={saveNew} disabled={saving||!newRow.description||!newRow.quantity}
               style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px',
