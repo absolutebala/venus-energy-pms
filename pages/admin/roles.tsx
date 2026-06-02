@@ -266,7 +266,7 @@ export default function RolesPage() {
                     // Delete existing rows for this role
                     await supabase.from('role_permissions').delete().eq('role', activeRole);
                     // Build module rows (exclude sec_ — handled separately)
-                    const moduleRows = Object.entries(perms[activeRole] || {}).filter(([m]) => !m.startsWith('sec_')).map(([module, perm]: any) => ({
+                    const moduleRows = Object.entries(perms[activeRole] || {}).map(([module, perm]: any) => ({
                       role: activeRole, module,
                       can_create: perm.can_create, can_read: perm.can_read,
                       can_edit: perm.can_edit,     can_delete: perm.can_delete,
