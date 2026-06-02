@@ -218,7 +218,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
             <thead>
               <tr>
-                {['#','Item Code','Item Description','UOM','Qty','Lot No.','Serial No.','FA. No.','MFG. No.','Tax Rate','Amount (₹)',''].map((h,i)=>(
+                {['#','Item Code','Item Description','UOM','Qty','Lot No.','Serial No.','FA. No.','MFG. No.','Tax Rate','Amount (₹)','Total Value (₹)',''].map((h,i)=>(
                   <th key={i} style={{ ...thS }}>{h}</th>
                 ))}
               </tr>
@@ -239,6 +239,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
                       <td style={tdS}><input value={editRow.mfgNo||''} onChange={e=>setEditRow((p:any)=>({...p,mfgNo:e.target.value}))} style={inpS} /></td>
                       <td style={tdS}><input type="number" value={editRow.gstRate||18} onChange={e=>setEditRow((p:any)=>({...p,gstRate:e.target.value}))} style={inpS} /></td>
                       <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{fmt(editRow.amount||0)}</td>
+                      <td style={{ ...tdS, fontWeight:700, color:T.success }}>{fmt((editRow.amount||0) * (1 + (editRow.gstRate||0)/100))}</td>
                       <td style={{ ...tdS, display:'flex', gap:4 }}>
                         <button onClick={()=>saveEdit(item.id)} disabled={saving} style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✓</button>
                         <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✕</button>
@@ -256,6 +257,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
                       <td style={{ ...tdS, color:T.textMuted }}>{(item as any).mfgNo||'—'}</td>
                       <td style={{ ...tdS, color:T.textMuted }}>{item.gstRate}%</td>
                       <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
+                      <td style={{ ...tdS, fontWeight:700, color:T.success }}>{fmt(item.amount * (1 + (item.gstRate||0)/100))}</td>
                       <td style={{ ...tdS, width:64 }}>
                         {canAdd && (
                           <div style={{ display:'flex', gap:4 }}>
@@ -273,17 +275,17 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
             </tbody>
             <tfoot>
               <tr style={{ background:T.primaryLight, fontWeight:700 }}>
-                <td colSpan={10} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>Subtotal excl. GST</td>
+                <td colSpan={11} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>Subtotal excl. GST</td>
                 <td style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>{fmt(totalAmount)}</td>
                 <td style={tdS}></td>
               </tr>
               <tr style={{ background:T.primaryLight, fontWeight:700 }}>
-                <td colSpan={10} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>GST</td>
+                <td colSpan={11} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>GST</td>
                 <td style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>{fmt(totalGST)}</td>
                 <td style={tdS}></td>
               </tr>
               <tr style={{ background:T.primaryLight, fontWeight:800 }}>
-                <td colSpan={10} style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>Grand Total</td>
+                <td colSpan={11} style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>Grand Total</td>
                 <td style={{ ...tdS, textAlign:'right' as const, color:T.primary, fontSize:14 }}>{fmt(totalAmount + totalGST)}</td>
                 <td style={tdS}></td>
               </tr>

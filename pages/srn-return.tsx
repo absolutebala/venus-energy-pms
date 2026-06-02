@@ -169,7 +169,7 @@ export default function SRNReturnPage() {
                   <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                     <thead>
                       <tr>
-                        {['#','Item Code','Item Description','UOM','Qty','Lot No.','Serial No.','FA. No.','MFG. No.','Tax Rate','Amount'].map((h,i)=>(
+                        {['#','Item Code','Item Description','UOM','Qty','Lot No.','Serial No.','FA. No.','MFG. No.','Tax Rate','Amount','Total Value'].map((h,i)=>(
                           <th key={h} style={{ ...thS }}>{h}</th>
                         ))}
                       </tr>
@@ -188,6 +188,7 @@ export default function SRNReturnPage() {
                             <td style={{ ...tdS, color:Theme.textMuted }}>{m.mfgNo||'—'}</td>
                             <td style={{ ...tdS, color:Theme.textMuted }}>{m.gstRate||0}%</td>
                             <td style={{ ...tdS, fontWeight:700, color:Theme.primary }}>₹{Number(m.amount||0).toLocaleString('en-IN')}</td>
+                            <td style={{ ...tdS, fontWeight:700, color:Theme.success }}>₹{(Number(m.amount||0)*(1+(Number(m.gstRate||0)/100))).toLocaleString('en-IN')}</td>
                           </tr>
                       ))}
                     </tbody>
