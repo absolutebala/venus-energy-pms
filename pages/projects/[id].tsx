@@ -757,7 +757,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
             <thead>
               <tr>
-                {['#','Date','Site','Expense Type','Remarks','Amount (₹)','Status',''].map((h,i)=>(
+                {['#','Date','Expense Type','Remarks','Amount (₹)','Status',''].map((h,i)=>(
                   <th key={i} style={thS}>{h}</th>
                 ))}
               </tr>
@@ -769,7 +769,6 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                   {editId === item.id ? (
                     <>
                       <td style={tdS}><input type="date" value={editRow.expenseDate||''} onChange={e=>setEditRow((p:any)=>({...p,expenseDate:e.target.value}))} style={{ ...inpS, width:'100%' }} /></td>
-                      <td style={tdS}><input value={editRow.site||''} onChange={e=>setEditRow((p:any)=>({...p,site:e.target.value}))} style={{ ...inpS, width:'100%' }} /></td>
                       <td style={tdS}>
                         <select value={editRow.expenseType||''} onChange={e=>setEditRow((p:any)=>({...p,expenseType:e.target.value}))} style={{ ...inpS, width:'100%' }}>
                           {['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'].map(t=><option key={t}>{t}</option>)}
@@ -1924,7 +1923,7 @@ export default function ProjectDetailPage() {
 
         {/* ── Expenses ── */}
         {showExpenses && <div style={{ ...card, marginBottom:16 }}>
-          {sectionTitle('💸','Expenses', 'expenses', canAddExpenses)}
+          {sectionTitle('💸','Expenses', 'expenses', false)}
           <ExpensesSection projectId={p.id} canAdd={canAddExpenses} />
         </div>}
 
