@@ -1188,8 +1188,8 @@ export default function ProjectDetailPage() {
   const showActivityLog   = !loading && can('sec_activity_log',     'read');
   const showInvoice       = !loading && can('sec_invoice',            'read');
   const canAddInvoice     = !loading && can('sec_invoice',            'create');
-  const showExpenses      = !loading && can('sec_expenses',         'read');
-  const canAddExpenses    = !loading && can('sec_expenses',         'create');
+  const showExpenses      = !loading && can('site_expenses',         'read');
+  const canAddExpenses    = !loading && can('site_expenses',         'create');
   const canEditVendor     = !loading && can('sec_vendor_assignment', 'edit');
   const canEditPTW        = !loading && can('sec_ptw',              'edit');
 
