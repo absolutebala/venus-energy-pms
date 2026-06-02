@@ -270,6 +270,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
                     </>
                   )}
                 </tr>
+                </React.Fragment>
               ))}
             </tbody>
             <tfoot>
@@ -764,23 +765,31 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
             </thead>
             <tbody>
               {items.map((item, idx) => (
-                <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
+                <React.Fragment key={item.id}>
+                <tr style={{ background:idx%2===0?'#fff':T.bg }}>
                   <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
                   {editId === item.id ? (
-                    <>
-                      <td style={tdS}><input type="date" value={editRow.expenseDate||''} onChange={e=>setEditRow((p:any)=>({...p,expenseDate:e.target.value}))} style={{ ...inpS, width:'100%' }} /></td>
-                      <td style={tdS}>
-                        <select value={editRow.expenseType||''} onChange={e=>setEditRow((p:any)=>({...p,expenseType:e.target.value}))} style={{ ...inpS, width:'100%' }}>
-                          {['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'].map(t=><option key={t}>{t}</option>)}
-                        </select>
-                      </td>
-                      <td style={tdS}><input value={editRow.remarks||''} onChange={e=>setEditRow((p:any)=>({...p,remarks:e.target.value}))} placeholder="Remarks" style={{ ...inpS, width:'100%' }} /></td>
-                      <td style={tdS}><input type="number" value={editRow.amount||''} onChange={e=>setEditRow((p:any)=>({...p,amount:e.target.value}))} style={{ ...inpS, width:'100%' }} /></td>
-                      <td style={{ ...tdS, display:'flex', gap:4 }}>
-                        <button onClick={saveEdit} disabled={saving} style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✓ Save</button>
-                        <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✕</button>
-                      </td>
-                    </>
+                    <td colSpan={6} style={{ padding:'14px', borderBottom:`1px solid ${T.border}` }}>
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
+                        {([['Date *','expenseDate','date'],['Amount (₹) *','amount','number'],['Remarks','remarks','text'],
+                           ['Bank Account No','bankAccount','text'],['UPI ID','upiId','text']] as [string,string,string][]).map(([l,f,t])=>(
+                          <div key={f}>
+                            <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{l}</label>
+                            <input type={t} value={(editRow as any)[f]||''} onChange={e=>setEditRow((p:any)=>({...p,[f]:e.target.value}))} style={{ ...inpS, width:'100%', boxSizing:'border-box' as const }} />
+                          </div>
+                        ))}
+                        <div>
+                          <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Expense Type</label>
+                          <select value={editRow.expenseType||''} onChange={e=>setEditRow((p:any)=>({...p,expenseType:e.target.value}))} style={{ ...inpS, width:'100%' }}>
+                            {['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'].map(t=><option key={t}>{t}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{ display:'flex', gap:10 }}>
+                        <button onClick={saveEdit} disabled={saving} style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13, fontWeight:600 }}>✓ Save</button>
+                        <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13 }}>Cancel</button>
+                      </div>
+                    </td>
                   ) : (
                     <>
                       <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD(item.expenseDate)}</td>
@@ -809,6 +818,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                     </>
                   )}
                 </tr>
+                </React.Fragment>
               ))}
             </tbody>
             <tfoot>
@@ -984,6 +994,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
                     )}
                   </td>
                 </tr>
+                </React.Fragment>
               ))}
             </tbody>
             <tfoot>
