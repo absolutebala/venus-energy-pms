@@ -310,9 +310,9 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
           </div>
 
           <div style={{ display:'flex', gap:10 }}>
-            <button onClick={saveNew} disabled={saving||!newRow.description||!newRow.quantity||!newRow.rate}
+            <button onClick={saveNew} disabled={saving||!newRow.description||!newRow.quantity}
               style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px',
-                cursor:'pointer', fontSize:13, fontWeight:600, opacity:saving||!newRow.description||!newRow.quantity||!newRow.rate?0.5:1 }}>
+                cursor:'pointer', fontSize:13, fontWeight:600, opacity:saving||!newRow.description||!newRow.quantity?0.5:1 }}>
               {saving?'Saving…':'✅ Add Item'}
             </button>
             <button onClick={()=>setAdding(false)}
