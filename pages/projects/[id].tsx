@@ -791,7 +791,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                         </div>
                       </td>
                     </>
-                  ) : null}
+                  )}
                 </tr>
                 {editId === item.id && (
                   <tr key={item.id+'-edit'} style={{ background:T.primaryLight }}>
