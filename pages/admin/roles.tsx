@@ -271,8 +271,9 @@ export default function RolesPage() {
                       can_create: perm.can_create, can_read: perm.can_read,
                       can_edit: perm.can_edit,     can_delete: perm.can_delete,
                     }));
-                    // Build section rows
-                    const sectionRows = Object.entries(sectionPerms[activeRole] || {}).map(([section, perm]: any) => ({
+                    // Build section rows (exclude any module already in moduleRows)
+                    const moduleKeys = new Set(moduleRows.map((r: any) => r.module));
+                    const sectionRows = Object.entries(sectionPerms[activeRole] || {}).filter(([s]) => !moduleKeys.has(s)).map(([section, perm]: any) => ({
                       role: activeRole, module: section,
                       can_create: perm.can_create, can_read: perm.can_read,
                       can_edit: perm.can_edit,     can_delete: perm.can_delete,
