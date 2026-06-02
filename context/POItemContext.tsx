@@ -7,6 +7,7 @@ export interface POItem {
   id: string; projectId: string; description: string; hsnCode: string;
   uom: string; quantity: number; rate: number; gstRate: number;
   amount: number; sortOrder: number;
+  serialNo?: string; documentNo?: string; boqReqNo?: string;
 }
 
 function mapRow(row: any): POItem {
@@ -21,15 +22,18 @@ function mapRow(row: any): POItem {
     gstRate:     Number(row.gst_rate ?? 18),
     amount:      Number(row.amount   ?? 0),
     sortOrder:   Number(row.sort_order ?? 0),
+    serialNo:    row.serial_no    ?? '',
+    documentNo:  row.document_no  ?? '',
+    boqReqNo:    row.boq_req_no   ?? '',
   };
 }
 
 function mapToDb(item: Partial<POItem>): Record<string, any> {
   const db: Record<string, any> = {};
   const map: Record<string, string> = {
-    projectId:'project_id', hsnCode:'hsn_code', gstRate:'gst_rate', sortOrder:'sort_order',
+    projectId:'project_id', hsnCode:'hsn_code', gstRate:'gst_rate', sortOrder:'sort_order', serialNo:'serial_no', documentNo:'document_no', boqReqNo:'boq_req_no',
   };
-  const VALID = new Set(['project_id','description','hsn_code','uom','quantity','rate','gst_rate','amount','sort_order']);
+  const VALID = new Set(['project_id','description','hsn_code','uom','quantity','rate','gst_rate','amount','sort_order','serial_no','document_no','boq_req_no']);
   for (const [key, val] of Object.entries(item)) {
     const dbKey = map[key] || key;
     if (VALID.has(dbKey)) db[dbKey] = val;
