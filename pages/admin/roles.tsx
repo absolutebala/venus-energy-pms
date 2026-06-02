@@ -209,7 +209,10 @@ export default function RolesPage() {
         const sectionMap: any = { ...DEFAULT_SECTION_PERMS[activeRole] };
         data.forEach((row: any) => {
           const p = { can_create:row.can_create, can_read:row.can_read, can_edit:row.can_edit, can_delete:row.can_delete };
-          if (row.module.startsWith('sec_')) {
+          // If module exists in DEFAULT_PERMISSIONS, put in moduleMap; otherwise sectionMap
+          if (DEFAULT_PERMISSIONS[activeRole] && row.module in DEFAULT_PERMISSIONS[activeRole]) {
+            moduleMap[row.module] = p;
+          } else if (row.module.startsWith('sec_')) {
             sectionMap[row.module] = p;
           } else {
             moduleMap[row.module] = p;
