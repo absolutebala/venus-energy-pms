@@ -169,7 +169,7 @@ export default function SRNReturnPage() {
                   <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                     <thead>
                       <tr>
-                        {['#','Item Code','Item Description','UOM','Qty','Lot No.','Serial No.','FA. No.','MFG. No.','Tax Rate','Amount','Total Value'].map((h,i)=>(
+                        {['#','Item Code','Item Description','UOM','Qty','Document No','BOQ Req No','Serial No','Tax Rate','Amount','Total Value'].map((h,i)=>(
                           <th key={h} style={{ ...thS }}>{h}</th>
                         ))}
                       </tr>
@@ -182,10 +182,9 @@ export default function SRNReturnPage() {
                             <td style={tdS}>{m.description}</td>
                             <td style={{ ...tdS, color:Theme.textMuted }}>{m.uom||'—'}</td>
                             <td style={tdS}>{m.quantity||'—'}</td>
-                            <td style={{ ...tdS, color:Theme.textMuted }}>{m.lotNo||'—'}</td>
+                            <td style={{ ...tdS, color:Theme.textMuted }}>{m.documentNo||'—'}</td>
+                            <td style={{ ...tdS, color:Theme.textMuted }}>{m.boqReqNo||'—'}</td>
                             <td style={{ ...tdS, color:Theme.textMuted }}>{m.serialNo||'—'}</td>
-                            <td style={{ ...tdS, color:Theme.textMuted }}>{m.faNo||'—'}</td>
-                            <td style={{ ...tdS, color:Theme.textMuted }}>{m.mfgNo||'—'}</td>
                             <td style={{ ...tdS, color:Theme.textMuted }}>{m.gstRate||0}%</td>
                             <td style={{ ...tdS, fontWeight:700, color:Theme.primary }}>₹{Number(m.amount||0).toLocaleString('en-IN')}</td>
                             <td style={{ ...tdS, fontWeight:700, color:Theme.success }}>₹{(Number(m.amount||0)*(1+(Number(m.gstRate||0)/100))).toLocaleString('en-IN')}</td>

@@ -126,7 +126,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
   const [saving,   setSaving]   = React.useState(false);
   const [editId,   setEditId]   = React.useState<string|null>(null);
   const [toast,    setToast]    = React.useState<any>(null);
-  const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', lotNo:'', serialNo:'', faNo:'', mfgNo:'', amount:'' });
+  const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', serialNo:'', documentNo:'', boqReqNo:'', amount:'' });
   const [editRow,  setEditRow]  = React.useState<any>({});
 
   // Check localStorage for pending STN items (set by projects page Upload PO flow)
@@ -188,8 +188,8 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
       await addItem({ projectId, description:newRow.description, hsnCode:newRow.hsnCode,
         uom:newRow.uom, quantity:Number(newRow.quantity), rate:0,
         gstRate:Number(newRow.gstRate), amount:Number((newRow as any).amount)||0, sortOrder:items.length+1,
-        lotNo:(newRow as any).lotNo, serialNo:(newRow as any).serialNo, faNo:(newRow as any).faNo, mfgNo:(newRow as any).mfgNo } as any);
-      setNewRow({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', lotNo:'', serialNo:'', faNo:'', mfgNo:'', amount:'' });
+        serialNo:(newRow as any).serialNo, documentNo:(newRow as any).documentNo, boqReqNo:(newRow as any).boqReqNo } as any);
+      setNewRow({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', serialNo:'', documentNo:'', boqReqNo:'', amount:'' });
       setAdding(false);
       logActivity(projectId, `STN Item '${newRow.description}' added`, poProfile?.full_name||'', poProfile?.role||'').catch(console.error);
       setToast({ msg:'✅ PO Item added', type:'success' });
@@ -218,7 +218,7 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
             <thead>
               <tr>
-                {['#','Item Code','Item Description','UOM','Qty','Lot No.','Serial No.','FA. No.','MFG. No.','Tax Rate','Amount (₹)','Total Value (₹)',''].map((h,i)=>(
+                {['#','Item Code','Item Description','UOM','Qty','Document No','BOQ Req No','Serial No','Tax Rate','Amount (₹)','Total Value (₹)',''].map((h,i)=>(
                   <th key={i} style={{ ...thS }}>{h}</th>
                 ))}
               </tr>
@@ -233,10 +233,9 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
                       <td style={tdS}><input value={editRow.description||''} onChange={e=>setEditRow((p:any)=>({...p,description:e.target.value}))} style={inpS} /></td>
                       <td style={tdS}><input value={editRow.uom||''} onChange={e=>setEditRow((p:any)=>({...p,uom:e.target.value}))} style={inpS} /></td>
                       <td style={tdS}><input type="number" value={editRow.quantity||''} onChange={e=>setEditRow((p:any)=>({...p,quantity:e.target.value}))} style={inpS} /></td>
-                      <td style={tdS}><input value={editRow.lotNo||''} onChange={e=>setEditRow((p:any)=>({...p,lotNo:e.target.value}))} style={inpS} /></td>
-                      <td style={tdS}><input value={editRow.serialNo||''} onChange={e=>setEditRow((p:any)=>({...p,serialNo:e.target.value}))} style={inpS} /></td>
-                      <td style={tdS}><input value={editRow.faNo||''} onChange={e=>setEditRow((p:any)=>({...p,faNo:e.target.value}))} style={inpS} /></td>
-                      <td style={tdS}><input value={editRow.mfgNo||''} onChange={e=>setEditRow((p:any)=>({...p,mfgNo:e.target.value}))} style={inpS} /></td>
+                      <td style={tdS}><input value={(editRow as any).documentNo||''} onChange={e=>setEditRow((p:any)=>({...p,documentNo:e.target.value}))} style={inpS} /></td>
+                      <td style={tdS}><input value={(editRow as any).boqReqNo||''} onChange={e=>setEditRow((p:any)=>({...p,boqReqNo:e.target.value}))} style={inpS} /></td>
+                      <td style={tdS}><input value={(editRow as any).serialNo||''} onChange={e=>setEditRow((p:any)=>({...p,serialNo:e.target.value}))} style={inpS} /></td>
                       <td style={tdS}><input type="number" value={editRow.gstRate||18} onChange={e=>setEditRow((p:any)=>({...p,gstRate:e.target.value}))} style={inpS} /></td>
                       <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{fmt(editRow.amount||0)}</td>
                       <td style={{ ...tdS, fontWeight:700, color:T.success }}>{fmt((editRow.amount||0) * (1 + (editRow.gstRate||0)/100))}</td>
