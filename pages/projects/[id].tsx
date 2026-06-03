@@ -271,15 +271,10 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
                       ) : <span style={{ fontSize:11, color:T.textMuted }}>—</span>}
                     </td>
                     <td style={{ ...tdS, width:120 }}>
-                      {isVendorRole && (item as any).utilisedStatus==='pending' ? (
+                      {(item as any).utilisedStatus==='pending' || (item as any).utilisedStatus==='pm_rejected' ? (
                         <button onClick={()=>submitUtilisation(item,'submitted')} disabled={submitting===item.id}
-                          style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>
-                          {submitting===item.id?'…':'Submit'}
-                        </button>
-                      ) : isVendorRole && (item as any).utilisedStatus==='pm_rejected' ? (
-                        <button onClick={()=>submitUtilisation(item,'submitted')} disabled={submitting===item.id}
-                          style={{ background:T.warning, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>
-                          {submitting===item.id?'…':'Resubmit'}
+                          style={{ background:(item as any).utilisedStatus==='pm_rejected'?T.warning:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>
+                          {submitting===item.id?'…':(item as any).utilisedStatus==='pm_rejected'?'Resubmit':'Submit'}
                         </button>
                       ) : editing && canAdd ? (
                         <div style={{ display:'flex', gap:4 }}>
