@@ -251,7 +251,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
                     <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
                     <td style={{ ...tdS, fontWeight:700, color:T.success }}>{fmt(item.amount * (1 + (item.gstRate||0)/100))}</td>
                     <td style={{ ...tdS, textAlign:'center' as const }}>
-                      {isVendorRole && (item.utilisedStatus==='pending'||item.utilisedStatus==='pm_rejected') ? (
+                      {(item.utilisedStatus==='pending'||item.utilisedStatus==='pm_rejected') ? (
                         <input type="number" min={0} max={item.quantity}
                           value={utilisedMap[(item as any).id]??((item as any).utilisedQty??'')}
                           onChange={e=>setUtilisedMap(p=>({...p,[(item as any).id]:e.target.value}))}
@@ -1893,7 +1893,6 @@ export default function ProjectDetailPage() {
         {/* ── SRN — Material Utilisation & Return ── */}
         <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('📦','SRN — Material Utilisation & Return', 'srn', ['super_admin','project_manager','region_manager'].includes(role))}
-          <SRNSection projectId={p.id} role={role} onAllApproved={setSrnAllApproved} />
         </div>
 
                 {/* ── 3. Work Documents ── */}
