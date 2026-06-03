@@ -254,6 +254,7 @@ export default function ProjectsPage() {
     if (status && typeof status === 'string') {
       const mapped = STATUS_DISPLAY[status] || status;
       setStatusFilter(mapped);
+      setPage(1);
     }
     if (qMin) setAgeMin(Number(qMin));
     if (qMax) setAgeMax(Number(qMax));
