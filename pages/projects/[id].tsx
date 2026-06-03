@@ -214,8 +214,8 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
           </thead>
           <tbody>
             {items.map((item, idx) => {
-              const badge = STATUS_BADGE[item.utilisedStatus] || STATUS_BADGE.pending;
-              const balance = (item.issuedQty||0) - (item.pmApprovedQty||0);
+              const badge = STATUS_BADGE[(item as any).utilisedStatus] || STATUS_BADGE.pending;
+              const balance = Math.max(0, (item.quantity||0) - ((item as any).pmApprovedQty||(item as any).utilisedQty||0));
               const isSaving = saving === item.id;
               return (
                 <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
