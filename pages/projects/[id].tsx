@@ -200,9 +200,11 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
   };
 
   const submitUtilisation = async (item: any, status: string) => {
+    const qty = utilisedMap[item.id] !== undefined ? Number(utilisedMap[item.id]) : Number(item.utilisedQty ?? 0);
+    if (!qty || qty <= 0) { setToast({ msg:'Please enter utilised quantity', type:'error' }); return; }
+    if (qty > Number(item.quantity)) { setToast({ msg:'Cannot exceed issued qty (' + item.quantity + ')', type:'error' }); return; }
     setSubmitting(item.id);
     try {
-      const qty = utilisedMap[item.id] !== undefined ? Number(utilisedMap[item.id]) : item.utilisedQty;
       await updateItem(item.id, { utilisedQty: qty, utilisedStatus: status } as any);
       setToast({ msg: status === 'submitted' ? '✅ Utilisation submitted' : '✅ Updated', type:'success' });
     } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
