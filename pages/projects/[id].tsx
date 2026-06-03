@@ -587,6 +587,7 @@ const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-dig
 // ── SRN Section Component ─────────────────────────────────────────────────────
 function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role:string; onAllApproved:(v:boolean)=>void }) {
   const { getByProject, updateItem } = usePOItems();
+  const { updateProject: updateProj } = useProjects();
   const { profile } = useAuth();
   const { logActivity: logSRN } = useActivity();
   const allSTNItems = getByProject(projectId);
@@ -626,7 +627,17 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
     setSaving(item.id);
     try {
       await updateItem(item.id, { srnStatus: 'srn_received' } as any);
-      setToast({ msg:'✅ SRN Received', type:'success' });
+      // Check if all items with balance are now received → auto-update project status
+      const updatedItems = items.map((i:any) => i.id === item.id ? { ...i, srnStatus: 'srn_received' } : i);
+      const itemsWithBalance = updatedItems.filter((i:any) => i.utilisedStatus === 'pm_approved' && Math.max(0,(i.quantity||0)-(i.pmApprovedQty||0)) > 0);
+      const allReceived = itemsWithBalance.length > 0 && itemsWithBalance.every((i:any) => i.srnStatus === 'srn_received');
+      if (allReceived) {
+        await updateProj(projectId, { projectStatus: 'WCC Raised' } as any, profile?.full_name ?? undefined);
+        setToast({ msg:'✅ SRN Received — Project status updated to WCC Raised', type:'success' });
+        logSRN(projectId, 'All SRNs received — project status set to WCC Raised', profile?.full_name||'', profile?.role||'').catch(()=>{});
+      } else {
+        setToast({ msg:'✅ SRN Received', type:'success' });
+      }
     } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
     finally { setSaving(null); }
   };
