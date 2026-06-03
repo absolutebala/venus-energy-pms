@@ -116,6 +116,173 @@ const fmtDate = (d: string) => { if (!d) return '—'; try { return new Date(d).
 const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
 
 
+
+// ── SRN Section ─────────────────────────────────────────────────────────────
+function SRNSection({ projectId, role }: { projectId: string; role: string }) {
+  const { getByProject, updateItem } = usePOItems();
+  const items = getByProject(projectId);
+  const [saving, setSaving] = React.useState<string|null>(null);
+  const [returnMap, setReturnMap] = React.useState<Record<string,string>>({});
+  const [toast, setToast] = React.useState<any>(null);
+
+  const isVendor = role === 'vendor';
+  const isPM = ['project_manager','region_manager','super_admin'].includes(role);
+  const isAdmin = ['super_admin','accounting_team'].includes(role);
+
+  const fmt = (n:number) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits:2 });
+
+  const thS: React.CSSProperties = { padding:'8px 10px', fontSize:10, fontWeight:700,
+    textTransform:'uppercase', color:T.primary, background:T.primaryLight,
+    textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const };
+  const tdS: React.CSSProperties = { padding:'9px 10px', fontSize:12,
+    borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
+
+  const pmAction = async (item: any, approve: boolean) => {
+    setSaving(item.id);
+    try {
+      await updateItem(item.id, {
+        utilisedStatus: approve ? 'pm_approved' : 'pm_rejected',
+        pmApprovedQty: approve ? (item.utilisedQty ?? 0) : null,
+      } as any);
+      setToast({ msg: approve ? '✅ Approved' : '❌ Rejected', type: approve ? 'success' : 'error' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(null); }
+  };
+
+  const raiseSRN = async (item: any) => {
+    const qty = Number(returnMap[item.id] ?? 0);
+    if (!qty) return;
+    setSaving(item.id);
+    try {
+      await updateItem(item.id, {
+        returnQty: qty, srnStatus: 'srn_raised',
+        srnDate: new Date().toISOString().split('T')[0],
+      } as any);
+      setToast({ msg:'✅ SRN Raised', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(null); }
+  };
+
+  const markReceived = async (item: any) => {
+    setSaving(item.id);
+    try {
+      await updateItem(item.id, { srnStatus: 'srn_received' } as any);
+      setToast({ msg:'✅ SRN Received', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(null); }
+  };
+
+  const srnItems = items.filter((i:any) => i.utilisedStatus && i.utilisedStatus !== 'pending');
+  if (srnItems.length === 0) return (
+    <div style={{ color:T.textMuted, fontSize:13, padding:'12px 0', textAlign:'center' as const }}>
+      No utilisation submitted yet
+    </div>
+  );
+
+  const STATUS_COLORS: Record<string,{color:string;bg:string;label:string}> = {
+    submitted:    { color:'#2563EB', bg:'#EFF6FF', label:'Submitted' },
+    pm_approved:  { color:'#059669', bg:'#D1FAE5', label:'PM Approved' },
+    pm_rejected:  { color:'#DC2626', bg:'#FEF2F2', label:'Rejected' },
+  };
+  const SRN_COLORS: Record<string,{color:string;bg:string;label:string}> = {
+    pending:      { color:'#9CA3AF', bg:'#F9FAFB', label:'Pending' },
+    srn_raised:   { color:'#D97706', bg:'#FFFBEB', label:'SRN Raised' },
+    srn_received: { color:'#059669', bg:'#D1FAE5', label:'Received' },
+  };
+
+  return (
+    <div>
+      {toast && <div style={{ padding:'8px 14px', borderRadius:8, marginBottom:10, fontSize:13, fontWeight:600,
+        background: toast.type==='success'?'#D1FAE5':'#FEE2E2', color: toast.type==='success'?'#059669':'#DC2626' }}
+        onClick={()=>setToast(null)}>{toast.msg}</div>}
+      <div style={{ overflowX:'auto' as const }}>
+        <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+          <thead>
+            <tr>
+              {['#','Item Code','Description','Issued','Util. Qty','Util. Status','PM Approved','Balance','Return Qty','SRN Status','Action'].map((h,i)=>(
+                <th key={i} style={thS}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {srnItems.map((item:any, idx:number) => {
+              const balance = Math.max(0, (item.quantity||0) - (item.pmApprovedQty ?? item.utilisedQty ?? 0));
+              const statusBadge = STATUS_COLORS[item.utilisedStatus] || STATUS_COLORS.submitted;
+              const srnBadge = SRN_COLORS[item.srnStatus||'pending'] || SRN_COLORS.pending;
+              return (
+                <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
+                  <td style={{ ...tdS, color:T.textMuted }}>{idx+1}</td>
+                  <td style={{ ...tdS, color:T.primary, fontWeight:700 }}>{item.hsnCode||'—'}</td>
+                  <td style={{ ...tdS, maxWidth:200 }}>{item.description}</td>
+                  <td style={{ ...tdS, textAlign:'center' as const }}>{item.quantity||0}</td>
+                  <td style={{ ...tdS, textAlign:'center' as const, fontWeight:600 }}>{item.utilisedQty??'—'}</td>
+                  <td style={tdS}>
+                    <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:20,
+                      color:statusBadge.color, background:statusBadge.bg }}>
+                      {statusBadge.label}
+                    </span>
+                  </td>
+                  <td style={{ ...tdS, textAlign:'center' as const, color:T.success, fontWeight:600 }}>{item.pmApprovedQty??'—'}</td>
+                  <td style={{ ...tdS, textAlign:'center' as const, fontWeight:700,
+                    color: balance>0 ? T.warning : T.success }}>{item.utilisedStatus==='pm_approved'?balance:'—'}</td>
+                  <td style={{ ...tdS, textAlign:'center' as const }}>
+                    {isVendor && item.utilisedStatus==='pm_approved' && balance>0 && item.srnStatus==='pending' ? (
+                      <input type="number" min={0} max={balance}
+                        value={returnMap[item.id]??''}
+                        onChange={e=>setReturnMap(p=>({...p,[item.id]:e.target.value}))}
+                        placeholder="0"
+                        style={{ width:60, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 6px', fontSize:12, textAlign:'center' as const, outline:'none' }} />
+                    ) : <span style={{ fontWeight:600 }}>{item.returnQty??'—'}</span>}
+                  </td>
+                  <td style={tdS}>
+                    <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:20,
+                      color:srnBadge.color, background:srnBadge.bg }}>
+                      {srnBadge.label}
+                    </span>
+                  </td>
+                  <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
+                    {isPM && item.utilisedStatus==='submitted' && (
+                      <div style={{ display:'flex', gap:4 }}>
+                        <button onClick={()=>pmAction(item,true)} disabled={saving===item.id}
+                          style={{ background:T.success, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                          ✓ Approve
+                        </button>
+                        <button onClick={()=>pmAction(item,false)} disabled={saving===item.id}
+                          style={{ background:T.danger, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                          ✗ Reject
+                        </button>
+                      </div>
+                    )}
+                    {isVendor && item.utilisedStatus==='pm_approved' && balance>0 && item.srnStatus==='pending' && (
+                      <button onClick={()=>raiseSRN(item)} disabled={saving===item.id||!returnMap[item.id]}
+                        style={{ background:T.warning, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600,
+                          opacity:!returnMap[item.id]?0.5:1 }}>
+                        {saving===item.id?'…':'📤 Raise SRN'}
+                      </button>
+                    )}
+                    {isAdmin && item.srnStatus==='srn_raised' && (
+                      <button onClick={()=>markReceived(item)} disabled={saving===item.id}
+                        style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                        {saving===item.id?'…':'✅ Mark Received'}
+                      </button>
+                    )}
+                    {item.srnStatus==='srn_received' && (
+                      <span style={{ fontSize:11, color:T.success, fontWeight:700 }}>✓ Complete</span>
+                    )}
+                    {item.utilisedStatus==='pm_approved' && balance===0 && (
+                      <span style={{ fontSize:11, color:T.success, fontWeight:700 }}>✓ No Return Needed</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ── STN Component ───────────────────────────────────────────────────────
 function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }: { projectId: string; editing: boolean; canAdd?: boolean; isVendorRole?: boolean }) {
   const { getByProject, addItem, updateItem, deleteItem, loading } = usePOItems();
@@ -1841,6 +2008,14 @@ export default function ProjectDetailPage() {
           {sectionTitle('📋','STN', 'poitems', role!=='vendor' && canEdit)}
           <POItemsSection projectId={p.id} editing={editing('poitems')} canAdd={canEdit} isVendorRole={role==='vendor'} />
         </div>
+
+        {/* ── SRN ── */}
+        {showSTNSRN && (
+          <div style={{ ...card, marginBottom:16 }}>
+            {sectionTitle('📦','SRN — Store Return Note', 'srndetail', false)}
+            <SRNSection projectId={p.id} role={role} />
+          </div>
+        )}
 
 
         
