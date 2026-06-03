@@ -300,8 +300,8 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
           <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New Item</div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:12 }}>
             {([['Item Code','hsnCode','text'],['Item Description *','description','text'],['UOM','uom','text'],
-               ['Qty *','quantity','number'],['Lot No.','lotNo','text'],['Serial No.','serialNo','text'],
-               ['FA. No.','faNo','text'],['MFG. No.','mfgNo','text'],['Tax Rate %','gstRate','number'],['Amount','amount','number']] as [string,string,string][]).map(([l,f,t])=>(
+               ['Qty *','quantity','number'],['Document No','documentNo','text'],['BOQ Req No','boqReqNo','text'],
+               ['Serial No','serialNo','text'],['Tax Rate %','gstRate','number'],['Amount (Rs)','amount','number']] as [string,string,string][]).map(([l,f,t])=>(
               <div key={f}>
                 <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
                 <input type={t} value={(newRow as any)[f]} onChange={e=>setNewRow(p=>({...p,[f]:e.target.value}))} style={inpS} />
