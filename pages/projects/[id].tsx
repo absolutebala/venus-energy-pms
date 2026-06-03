@@ -225,12 +225,7 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
                   <td style={{ ...tdS, color:T.textMuted }}>{item.uom}</td>
                   <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600 }}>{item.quantity}</td>
                   <td style={{ ...tdS, textAlign:'right' as const }}>
-                    {isVendor && item.utilisedStatus === 'pending' ? (
-                      <input type="number" value={item.utilisedQty??''} min={0} max={item.quantity}
-                        onChange={e=>updateLocal(item.id,{utilisedQty:Number(e.target.value)})}
-                        style={{ width:64, border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 6px',
-                          fontSize:12, textAlign:'right' as const, outline:'none' }} />
-                    ) : <span style={{ fontWeight:600 }}>{item.utilisedQty??'—'}</span>}
+                    <span style={{ fontWeight:600 }}>{(item as any).utilisedQty??'—'}</span>
                   </td>
                   <td style={{ ...tdS }}>
                     <span style={{ fontSize:11, fontWeight:700, color:badge.color, background:badge.bg,
