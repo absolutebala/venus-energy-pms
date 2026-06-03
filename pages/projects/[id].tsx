@@ -230,7 +230,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
             <thead>
               <tr>
-                {['#','Item Code','Item Description','UOM','Qty','Document No','BOQ Req No','Serial No','Tax Rate','Amount (₹)','Total Value (₹)',''].map((h,i)=>(
+                {['#','Item Code','Item Description','UOM','Qty','Document No','BOQ Req No','Serial No','Tax Rate','Amount (₹)','Total Value (₹)','Util. Qty','Status',''].map((h,i)=>(
                   <th key={i} style={{ ...thS }}>{h}</th>
                 ))}
               </tr>
@@ -250,29 +250,37 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
                     <td style={{ ...tdS, color:T.textMuted }}>{item.gstRate}%</td>
                     <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
                     <td style={{ ...tdS, fontWeight:700, color:T.success }}>{fmt(item.amount * (1 + (item.gstRate||0)/100))}</td>
+                    <td style={{ ...tdS, textAlign:'center' as const }}>
+                      {isVendorRole && (item.utilisedStatus==='pending'||item.utilisedStatus==='pm_rejected') ? (
+                        <input type="number" min={0} max={item.quantity}
+                          value={utilisedMap[(item as any).id]??((item as any).utilisedQty??'')}
+                          onChange={e=>setUtilisedMap(p=>({...p,[(item as any).id]:e.target.value}))}
+                          placeholder="0"
+                          style={{ width:60, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 6px', fontSize:12, textAlign:'center' as const, outline:'none' }} />
+                      ) : (
+                        <span style={{ fontSize:12, fontWeight:600, color:T.text }}>{(item as any).utilisedQty??'—'}</span>
+                      )}
+                    </td>
+                    <td style={{ ...tdS }}>
+                      {(item as any).utilisedStatus && (item as any).utilisedStatus !== 'pending' ? (
+                        <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:20,
+                          color:(item as any).utilisedStatus==='pm_approved'?'#059669':(item as any).utilisedStatus==='submitted'?'#2563EB':'#DC2626',
+                          background:(item as any).utilisedStatus==='pm_approved'?'#D1FAE5':(item as any).utilisedStatus==='submitted'?'#EFF6FF':'#FEF2F2' }}>
+                          {(item as any).utilisedStatus==='pm_approved'?'Approved':(item as any).utilisedStatus==='submitted'?'Submitted':'Rejected'}
+                        </span>
+                      ) : <span style={{ fontSize:11, color:T.textMuted }}>—</span>}
+                    </td>
                     <td style={{ ...tdS, width:120 }}>
-                      {isVendorRole ? (
-                        <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                          {(item.utilisedStatus==='pending'||item.utilisedStatus==='pm_rejected') ? (
-                            <>
-                              <input type="number" min={0} max={item.quantity}
-                                value={utilisedMap[item.id]??item.utilisedQty??''}
-                                onChange={e=>setUtilisedMap(p=>({...p,[item.id]:e.target.value}))}
-                                placeholder="Util. Qty"
-                                style={{ width:70, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 6px', fontSize:12, outline:'none' }} />
-                              <button onClick={()=>submitUtilisation(item,'submitted')} disabled={submitting===item.id}
-                                style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>
-                                {submitting===item.id?'…':'Submit'}
-                              </button>
-                            </>
-                          ) : (
-                            <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:20,
-                              color: item.utilisedStatus==='pm_approved'?'#059669':item.utilisedStatus==='submitted'?'#2563EB':'#D97706',
-                              background: item.utilisedStatus==='pm_approved'?'#D1FAE5':item.utilisedStatus==='submitted'?'#EFF6FF':'#FFFBEB' }}>
-                              {item.utilisedStatus==='pm_approved'?'Approved':item.utilisedStatus==='submitted'?'Submitted':'Rejected'}
-                            </span>
-                          )}
-                        </div>
+                      {isVendorRole && (item as any).utilisedStatus==='pending' ? (
+                        <button onClick={()=>submitUtilisation(item,'submitted')} disabled={submitting===item.id}
+                          style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>
+                          {submitting===item.id?'…':'Submit'}
+                        </button>
+                      ) : isVendorRole && (item as any).utilisedStatus==='pm_rejected' ? (
+                        <button onClick={()=>submitUtilisation(item,'submitted')} disabled={submitting===item.id}
+                          style={{ background:T.warning, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>
+                          {submitting===item.id?'…':'Resubmit'}
+                        </button>
                       ) : editing && canAdd ? (
                         <div style={{ display:'flex', gap:4 }}>
                           <button onClick={()=>{ setEditId(editId===item.id?null:item.id); setEditRow({...item}); }}
@@ -320,17 +328,17 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
             </tbody>
             <tfoot>
               <tr style={{ background:T.primaryLight, fontWeight:700 }}>
-                <td colSpan={11} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>Subtotal excl. GST</td>
+                <td colSpan={13} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>Subtotal excl. GST</td>
                 <td style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>{fmt(totalAmount)}</td>
                 <td style={tdS}></td>
               </tr>
               <tr style={{ background:T.primaryLight, fontWeight:700 }}>
-                <td colSpan={11} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>GST</td>
+                <td colSpan={13} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>GST</td>
                 <td style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>{fmt(totalGST)}</td>
                 <td style={tdS}></td>
               </tr>
               <tr style={{ background:T.primaryLight, fontWeight:800 }}>
-                <td colSpan={11} style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>Grand Total</td>
+                <td colSpan={13} style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>Grand Total</td>
                 <td style={{ ...tdS, textAlign:'right' as const, color:T.primary, fontSize:14 }}>{fmt(totalAmount + totalGST)}</td>
                 <td style={tdS}></td>
               </tr>
