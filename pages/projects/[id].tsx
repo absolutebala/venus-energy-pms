@@ -668,8 +668,7 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
     color:T.primary, background:T.primaryLight, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const };
   const tdS: React.CSSProperties = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
 
-  if (loading) return <div style={{ color:T.textMuted, fontSize:13 }}>Loading materials...</div>;
-  if (items.length === 0) return <div style={{ textAlign:'center' as const, padding:'24px 0', color:T.textDim, fontSize:13 }}>No material items for this project</div>;
+  if (items.length === 0) return <div style={{ textAlign:'center' as const, padding:'24px 0', color:T.textDim, fontSize:13 }}>No utilisation submitted yet</div>;
 
   return (
     <div>
