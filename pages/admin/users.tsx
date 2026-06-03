@@ -7,8 +7,8 @@ import { ROLE_LABELS, UserRole } from '@/types';
 import { createClient } from '@/lib/supabase';
 
 const ROLES: UserRole[] = ['super_admin','region_manager','project_manager','site_engineer','viewer'];
-const ASSIGNABLE_ROLES: UserRole[] = ['region_manager','project_manager','site_engineer','viewer'];
-const ADMIN_ASSIGNABLE_ROLES: UserRole[] = ['super_admin','region_manager','project_manager','site_engineer','viewer'];
+const ASSIGNABLE_ROLES: UserRole[] = ['region_manager','project_manager','site_engineer','accounting_team','vendor','viewer'];
+const ADMIN_ASSIGNABLE_ROLES: UserRole[] = ['super_admin','region_manager','project_manager','site_engineer','accounting_team','vendor','viewer'];
 
 interface UserRow {
   id: string;
@@ -150,7 +150,16 @@ export default function AdminUsersPage() {
   const [fPhone, setFPhone]           = useState('');
   const [fDesig, setFDesig]           = useState('');
   const [fRegion, setFRegion]         = useState('');
-  const [fRole, setFRole]             = useState<UserRole>('viewer');
+  const [fRole,    setFRole]    = useState<UserRole>('viewer');
+  const [fVendorId, setFVendorId] = useState('');
+  const [vendorList, setVendorList] = useState<{id:string;name:string}[]>([]);
+
+  React.useEffect(() => {
+    const sb = createClient();
+    sb.from('vendors').select('id,name').order('name').then(({data}) => {
+      if (data) setVendorList(data);
+    });
+  }, []);
   const [fPassword, setFPassword]     = useState('');
   const [fActive, setFActive]         = useState(true);
 
@@ -181,7 +190,7 @@ export default function AdminUsersPage() {
     setFEmail(u.email);
     setFPhone(u.phone || '');
     setFDesig(u.designation || '');
-    setFRegion(u.region || '');
+    setFRegion(u.region || ''); setFVendorId((u as any).vendor_id || '');
     setFRole(u.role);
     setFActive(u.is_active);
     setEditUser(u);
@@ -190,7 +199,7 @@ export default function AdminUsersPage() {
 
   const resetForm = () => {
     setFEmail(''); setFName(''); setFPhone(''); setFDesig('');
-    setFRegion(''); setFRole('viewer'); setFPassword(''); setFActive(true);
+    setFRegion(''); setFRole('viewer'); setFPassword(''); setFActive(true); setFVendorId('');
     setEditUser(null); setMsg(null);
   };
 
@@ -217,7 +226,7 @@ export default function AdminUsersPage() {
     const res = await fetch('/api/admin/create-user', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', Authorization: `Bearer ${crSess?.access_token||''}` },
-      body: JSON.stringify({ email:fEmail, password:fPassword, full_name:fName, phone:fPhone, designation:fDesig, region:fRegion, role:fRole }),
+      body: JSON.stringify({ email:fEmail, password:fPassword, full_name:fName, phone:fPhone, region:fRegion, role:fRole, vendor_id:fRole==='vendor'?fVendorId:null }),
     });
     const data = await res.json();
     setBusy(false);
@@ -232,7 +241,7 @@ export default function AdminUsersPage() {
     const res = await fetch('/api/admin/update-user', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', Authorization: `Bearer ${edSess?.access_token||''}` },
-      body: JSON.stringify({ userId: editUser.id, full_name:fName, phone:fPhone, designation:fDesig, region:fRegion, role:fRole, is_active:fActive }),
+      body: JSON.stringify({ userId: editUser.id, full_name:fName, phone:fPhone, region:fRegion, role:fRole, is_active:fActive, vendor_id:fRole==='vendor'?fVendorId:null }),
     });
     const data = await res.json();
     setBusy(false);
@@ -330,7 +339,7 @@ export default function AdminUsersPage() {
           <div style={{ overflowX:'auto' }}>
             <table style={{ width:'100%' }}>
               <thead>
-                <tr>{['#','Name','Email','Role','Region','Designation','Status','Joined','Actions'].map(h=><th key={h} style={th}>{h}</th>)}</tr>
+                <tr>{['#','Name','Email','Role','Region','Status','Joined','Actions'].map(h=><th key={h} style={th}>{h}</th>)}</tr>
               </thead>
               <tbody>
                 {loading ? (
@@ -346,7 +355,7 @@ export default function AdminUsersPage() {
                     <td style={{ ...td, color:T.primary }}>{u.email}</td>
                     <td style={td}><span style={{ fontSize:11, background:T.primaryLight, color:T.primary, padding:'3px 9px', borderRadius:20, fontWeight:600 }}>{ROLE_LABELS[u.role]}</span></td>
                     <td style={td}>{u.region || '—'}</td>
-                    <td style={td}>{u.designation || '—'}</td>
+
                     <td style={td}><span style={badge(u.is_active?'Active':'Inactive')}>{u.is_active?'Active':'Inactive'}</span></td>
                     <td style={{ ...td, whiteSpace:'nowrap' }}>{new Date(u.created_at).toLocaleDateString('en-IN')}</td>
                     <td style={td}>
@@ -403,10 +412,20 @@ export default function AdminUsersPage() {
             <FormField label="Email Address *" value={fEmail} onChange={setFEmail} type="email" placeholder="user@venusenergyindia.com" fkey="ce"  focused={focused} setFocused={setFocused}/>
             <FormField label="Temporary Password *" value={fPassword} onChange={setFPassword} type="password" placeholder="Min. 8 characters" fkey="cp"  focused={focused} setFocused={setFocused}/>
             <FormField label="Phone" value={fPhone} onChange={setFPhone} placeholder="+91 98765 43210" fkey="cph"  focused={focused} setFocused={setFocused}/>
-            <FormField label="Designation" value={fDesig} onChange={setFDesig} placeholder="Site Engineer" fkey="cd"  focused={focused} setFocused={setFocused}/>
+
             <FormField label="Region" value={fRegion} onChange={setFRegion} placeholder="Tamil Nadu" fkey="cr"  focused={focused} setFocused={setFocused}/>
           </div>
           <RoleSelect value={fRole} onChange={setFRole}  roles={profile?.role === "super_admin" ? ADMIN_ASSIGNABLE_ROLES : ASSIGNABLE_ROLES}/>
+          {fRole === 'vendor' && (
+            <div style={{ marginBottom:12 }}>
+              <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6 }}>VENDOR *</label>
+              <select value={fVendorId} onChange={e=>setFVendorId(e.target.value)}
+                style={{ width:'100%', border:`1px solid ${T.border}`, borderRadius:8, padding:'10px 12px', fontSize:13, outline:'none', background:'#fff' }}>
+                <option value="">— Select Vendor —</option>
+                {vendorList.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}
+              </select>
+            </div>
+          )}
           <div style={{ background:T.warningBg, border:`1px solid #FDE68A`, borderRadius:8, padding:'10px 14px', fontSize:12, color:T.warning }}>
             ⚠️ Share the temporary password securely. The user should change it upon first login.
           </div>
@@ -431,7 +450,7 @@ export default function AdminUsersPage() {
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 16px' }}>
             <FormField label="Full Name" value={fName} onChange={setFName} fkey="eName"  focused={focused} setFocused={setFocused}/>
             <FormField label="Phone" value={fPhone} onChange={setFPhone} fkey="ePhone"  focused={focused} setFocused={setFocused}/>
-            <FormField label="Designation" value={fDesig} onChange={setFDesig} fkey="eDesig"  focused={focused} setFocused={setFocused}/>
+
             <FormField label="Region" value={fRegion} onChange={setFRegion} fkey="eRegion"  focused={focused} setFocused={setFocused}/>
           </div>
           <RoleSelect value={fRole} onChange={setFRole}  roles={profile?.role === "super_admin" ? ADMIN_ASSIGNABLE_ROLES : ASSIGNABLE_ROLES}/>
