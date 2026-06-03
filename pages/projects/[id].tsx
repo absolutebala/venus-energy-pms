@@ -214,7 +214,8 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
     try {
       const amt = calcAmount(editRow.quantity, editRow.rate);
       await updateItem(id, { ...editRow, quantity:Number(editRow.quantity), rate:Number(editRow.rate),
-        gstRate:Number(editRow.gstRate||18), amount:amt });
+        gstRate:Number(editRow.gstRate||18), amount:amt,
+        utilisedQty: editRow.utilisedQty !== undefined && editRow.utilisedQty !== '' ? Number(editRow.utilisedQty) : undefined } as any);
       setEditId(null);
       logActivity(projectId, `PO Item updated`, poProfile?.full_name||'', poProfile?.role||'').catch(console.error);
       setToast({ msg:'✅ PO Item updated', type:'success' });
@@ -298,8 +299,8 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
                             </div>
                           ))}
                         </div>
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr 1fr', gap:10, marginBottom:10 }}>
-                          {([['Document No','documentNo','text'],['BOQ Req No','boqReqNo','text'],['Serial No','serialNo','text'],['Tax Rate %','gstRate','number'],['Amount (₹)','amount','number']] as [string,string,string][]).map(([l,f,t])=>(
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr 1fr 1fr', gap:10, marginBottom:10 }}>
+                          {([['Document No','documentNo','text'],['BOQ Req No','boqReqNo','text'],['Serial No','serialNo','text'],['Tax Rate %','gstRate','number'],['Amount (₹)','amount','number'],['Util. Qty','utilisedQty','number']] as [string,string,string][]).map(([l,f,t])=>(
                             <div key={f}>
                               <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
                               <input type={t} value={(editRow as any)[f]||''} onChange={e=>setEditRow((p:any)=>({...p,[f]:e.target.value}))} style={{ ...inpS, width:'100%', boxSizing:'border-box' as const }} />
