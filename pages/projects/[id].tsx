@@ -118,6 +118,143 @@ const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
 
 
 
+// ── Work Progress Section ────────────────────────────────────────────────────
+function WorkProgressSection({ projectId, role }: { projectId: string; role: string }) {
+  const { getByProject, addItem, updateItem, deleteItem } = useWorkProgress();
+  const { profile } = useAuth();
+  const items = getByProject(projectId);
+  const isVendor = role === 'vendor';
+  const today = new Date().toISOString().split('T')[0];
+  const [adding,  setAdding]  = React.useState(false);
+  const [saving,  setSaving]  = React.useState(false);
+  const [editId,  setEditId]  = React.useState<string|null>(null);
+  const [editRow, setEditRow] = React.useState<any>({});
+  const [toast,   setToast]   = React.useState<any>(null);
+  const [newRow,  setNewRow]  = React.useState({
+    workDate: today, workDescription: '', workStatus: '', totalWorkStatus: '', remarks: ''
+  });
+
+  const thS: React.CSSProperties = { padding:'8px 10px', fontSize:10, fontWeight:700,
+    textTransform:'uppercase', color:T.primary, background:T.primaryLight,
+    textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const };
+  const tdS: React.CSSProperties = { padding:'9px 10px', fontSize:12,
+    borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
+  const inpS: React.CSSProperties = { border:`1px solid ${T.border}`, borderRadius:6,
+    padding:'6px 10px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none' };
+  const labelS: React.CSSProperties = { display:'block', fontSize:10, fontWeight:600,
+    color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const };
+
+  const saveNew = async () => {
+    if (!newRow.workDate || !newRow.workDescription) return;
+    setSaving(true);
+    try {
+      await addItem({ projectId, ...newRow, createdBy: profile?.full_name || '' });
+      setNewRow({ workDate: today, workDescription: '', workStatus: '', totalWorkStatus: '', remarks: '' });
+      setAdding(false);
+      setToast({ msg:'✅ Work progress added', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(false); }
+  };
+
+  const saveEdit = async () => {
+    setSaving(true);
+    try {
+      await updateItem(editId!, editRow);
+      setEditId(null);
+      setToast({ msg:'✅ Updated', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(false); }
+  };
+
+  const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+
+  return (
+    <div>
+      {toast && <div style={{ padding:'8px 14px', borderRadius:8, marginBottom:10, fontSize:13, fontWeight:600,
+        background:toast.type==='success'?'#D1FAE5':'#FEE2E2', color:toast.type==='success'?'#059669':'#DC2626' }}
+        onClick={()=>setToast(null)}>{toast.msg}</div>}
+      {items.length > 0 && (
+        <div style={{ overflowX:'auto' as const, marginBottom:12 }}>
+          <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+            <thead><tr>{['#','Work Date','Work Description','Work Status','Total Work Status','Remarks',''].map((h,i)=>(
+              <th key={i} style={thS}>{h}</th>
+            ))}</tr></thead>
+            <tbody>
+              {items.map((item:any, idx:number) => (
+                <React.Fragment key={item.id}>
+                  <tr style={{ background:idx%2===0?'#fff':T.bg }}>
+                    <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
+                    {editId === item.id ? (
+                      <>
+                        <td style={tdS}><input type="date" value={editRow.workDate||''} onChange={e=>setEditRow((p:any)=>({...p,workDate:e.target.value}))} style={inpS} /></td>
+                        <td style={tdS}><input value={editRow.workDescription||''} onChange={e=>setEditRow((p:any)=>({...p,workDescription:e.target.value}))} style={inpS} /></td>
+                        <td style={tdS}><input value={editRow.workStatus||''} onChange={e=>setEditRow((p:any)=>({...p,workStatus:e.target.value}))} style={inpS} /></td>
+                        <td style={tdS}><input value={editRow.totalWorkStatus||''} onChange={e=>setEditRow((p:any)=>({...p,totalWorkStatus:e.target.value}))} style={inpS} /></td>
+                        <td style={tdS}><input value={editRow.remarks||''} onChange={e=>setEditRow((p:any)=>({...p,remarks:e.target.value}))} style={inpS} /></td>
+                        <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
+                          <button onClick={saveEdit} disabled={saving} style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11, marginRight:4 }}>✓ Save</button>
+                          <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✕</button>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td style={{ ...tdS, whiteSpace:'nowrap' as const, color:T.textMuted }}>{fmtDate(item.workDate)}</td>
+                        <td style={tdS}>{item.workDescription||'—'}</td>
+                        <td style={tdS}>{item.workStatus||'—'}</td>
+                        <td style={tdS}>{item.totalWorkStatus||'—'}</td>
+                        <td style={{ ...tdS, color:T.textMuted }}>{item.remarks||'—'}</td>
+                        <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
+                          {isVendor && (
+                            <div style={{ display:'flex', gap:4 }}>
+                              <button onClick={()=>{ setEditId(item.id); setEditRow({...item}); }}
+                                style={{ background:'none', border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12, color:T.primary }}>✏️</button>
+                              <button onClick={()=>deleteItem(item.id)}
+                                style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:14 }}>🗑</button>
+                            </div>
+                          )}
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {!adding && items.length === 0 && (
+        <div style={{ textAlign:'center' as const, padding:'16px 0', color:T.textDim, fontSize:13 }}>No work progress entries yet</div>
+      )}
+      {adding && (
+        <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:14, marginBottom:12 }}>
+          <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New Work Progress Entry</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr 1fr 1fr', gap:10, marginBottom:10 }}>
+            <div><label style={labelS}>Work Date *</label><input type="date" value={newRow.workDate} onChange={e=>setNewRow(p=>({...p,workDate:e.target.value}))} style={inpS} /></div>
+            <div><label style={labelS}>Work Description *</label><input value={newRow.workDescription} onChange={e=>setNewRow(p=>({...p,workDescription:e.target.value}))} style={inpS} placeholder="Describe work done today" /></div>
+            <div><label style={labelS}>Work Status</label><input value={newRow.workStatus} onChange={e=>setNewRow(p=>({...p,workStatus:e.target.value}))} style={inpS} placeholder="e.g. In Progress" /></div>
+            <div><label style={labelS}>Total Work Status</label><input value={newRow.totalWorkStatus} onChange={e=>setNewRow(p=>({...p,totalWorkStatus:e.target.value}))} style={inpS} placeholder="e.g. 60% complete" /></div>
+          </div>
+          <div style={{ marginBottom:12 }}><label style={labelS}>Remarks</label><input value={newRow.remarks} onChange={e=>setNewRow(p=>({...p,remarks:e.target.value}))} style={inpS} placeholder="Any additional notes" /></div>
+          <div style={{ display:'flex', gap:10 }}>
+            <button onClick={saveNew} disabled={saving||!newRow.workDate||!newRow.workDescription}
+              style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13, fontWeight:600, opacity:saving||!newRow.workDate||!newRow.workDescription?0.5:1 }}>
+              {saving?'Saving…':'✅ Add Entry'}
+            </button>
+            <button onClick={()=>setAdding(false)} style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13 }}>Cancel</button>
+          </div>
+        </div>
+      )}
+      {isVendor && !adding && (
+        <button onClick={()=>setAdding(true)}
+          style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8, padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
+          + Add Work Progress
+        </button>
+      )}
+    </div>
+  );
+}
+
+
 function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }: { projectId: string; editing: boolean; canAdd?: boolean; isVendorRole?: boolean }) {
   const { getByProject, addItem, updateItem, deleteItem, loading } = usePOItems();
   const { logActivity } = useActivity();
