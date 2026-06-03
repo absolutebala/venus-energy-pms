@@ -117,7 +117,7 @@ const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
 
 
 // ── STN Component ───────────────────────────────────────────────────────
-function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string; editing: boolean; canAdd?: boolean }) {
+function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }: { projectId: string; editing: boolean; canAdd?: boolean; isVendorRole?: boolean }) {
   const { getByProject, addItem, updateItem, deleteItem, loading } = usePOItems();
   const { logActivity } = useActivity();
   const { profile: poProfile } = useAuth();
@@ -125,6 +125,8 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
   const [adding,   setAdding]   = React.useState(false);
   const [saving,   setSaving]   = React.useState(false);
   const [editId,   setEditId]   = React.useState<string|null>(null);
+  const [submitting, setSubmitting] = React.useState<string|null>(null);
+  const [utilisedMap, setUtilisedMap] = React.useState<Record<string,string>>({});
   const [toast,    setToast]    = React.useState<any>(null);
   const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', serialNo:'', documentNo:'', boqReqNo:'', amount:'' });
   const [editRow,  setEditRow]  = React.useState<any>({});
@@ -197,6 +199,16 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
     finally { setSaving(false); }
   };
 
+  const submitUtilisation = async (item: any, status: string) => {
+    setSubmitting(item.id);
+    try {
+      const qty = utilisedMap[item.id] !== undefined ? Number(utilisedMap[item.id]) : item.utilisedQty;
+      await updateItem(item.id, { utilisedQty: qty, utilisedStatus: status } as any);
+      setToast({ msg: status === 'submitted' ? '✅ Utilisation submitted' : '✅ Updated', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSubmitting(null); }
+  };
+
   const saveEdit = async (id: string) => {
     setSaving(true);
     try {
@@ -238,15 +250,37 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
                     <td style={{ ...tdS, color:T.textMuted }}>{item.gstRate}%</td>
                     <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
                     <td style={{ ...tdS, fontWeight:700, color:T.success }}>{fmt(item.amount * (1 + (item.gstRate||0)/100))}</td>
-                    <td style={{ ...tdS, width:64 }}>
-                      {canAdd && (
+                    <td style={{ ...tdS, width:120 }}>
+                      {isVendorRole ? (
+                        <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                          {(item.utilisedStatus==='pending'||item.utilisedStatus==='pm_rejected') ? (
+                            <>
+                              <input type="number" min={0} max={item.quantity}
+                                value={utilisedMap[item.id]??item.utilisedQty??''}
+                                onChange={e=>setUtilisedMap(p=>({...p,[item.id]:e.target.value}))}
+                                placeholder="Util. Qty"
+                                style={{ width:70, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 6px', fontSize:12, outline:'none' }} />
+                              <button onClick={()=>submitUtilisation(item,'submitted')} disabled={submitting===item.id}
+                                style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>
+                                {submitting===item.id?'…':'Submit'}
+                              </button>
+                            </>
+                          ) : (
+                            <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:20,
+                              color: item.utilisedStatus==='pm_approved'?'#059669':item.utilisedStatus==='submitted'?'#2563EB':'#D97706',
+                              background: item.utilisedStatus==='pm_approved'?'#D1FAE5':item.utilisedStatus==='submitted'?'#EFF6FF':'#FFFBEB' }}>
+                              {item.utilisedStatus==='pm_approved'?'Approved':item.utilisedStatus==='submitted'?'Submitted':'Rejected'}
+                            </span>
+                          )}
+                        </div>
+                      ) : editing && canAdd ? (
                         <div style={{ display:'flex', gap:4 }}>
                           <button onClick={()=>{ setEditId(editId===item.id?null:item.id); setEditRow({...item}); }}
                             style={{ background: editId===item.id ? T.primary : 'none', color: editId===item.id ? '#fff' : T.primary, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12 }}>✏️</button>
                           <button onClick={()=>deleteItem(item.id)}
                             style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:14 }}>🗑</button>
                         </div>
-                      )}
+                      ) : null}
                     </td>
                   </tr>
                   {editId === item.id && (
@@ -342,7 +376,13 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
       )}
 
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:14 }}>
-        {canAdd && !adding && (
+        {isVendorRole && items.some((i:any)=>i.utilisedStatus==='pending'||i.utilisedStatus==='pm_rejected') && (
+        <button onClick={()=>items.filter((i:any)=>i.utilisedStatus==='pending'||i.utilisedStatus==='pm_rejected').forEach(i=>submitUtilisation(i,'submitted'))}
+          style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:10 }}>
+          📤 Submit All Utilisation
+        </button>
+      )}
+      {canAdd && !adding && (
           <button onClick={()=>setAdding(true)}
             style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8,
               padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
@@ -1790,8 +1830,8 @@ export default function ProjectDetailPage() {
 
         {/* ── STN ── */}
         <div style={{ ...card, marginBottom:16 }}>
-          {sectionTitle('📋','STN', 'poitems', canEdit)}
-          <POItemsSection projectId={p.id} editing={editing('poitems')} canAdd={canEdit} />
+          {sectionTitle('📋','STN', 'poitems', role!=='vendor' && canEdit)}
+          <POItemsSection projectId={p.id} editing={editing('poitems')} canAdd={canEdit} isVendorRole={role==='vendor'} />
         </div>
 
 
