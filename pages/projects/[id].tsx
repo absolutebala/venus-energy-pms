@@ -220,13 +220,13 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
               return (
                 <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
                   <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
-                  <td style={{ ...tdS, fontWeight:600, color:T.primary, whiteSpace:'nowrap' as const }}>{item.code}</td>
+                  <td style={{ ...tdS, fontWeight:600, color:T.primary, whiteSpace:'nowrap' as const }}>{(item as any).hsnCode||"—"}</td>
                   <td style={{ ...tdS }}>{item.description}</td>
                   <td style={{ ...tdS, color:T.textMuted }}>{item.uom}</td>
-                  <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600 }}>{item.issuedQty}</td>
+                  <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600 }}>{item.quantity}</td>
                   <td style={{ ...tdS, textAlign:'right' as const }}>
                     {isVendor && item.utilisedStatus === 'pending' ? (
-                      <input type="number" value={item.utilisedQty??''} min={0} max={item.issuedQty}
+                      <input type="number" value={item.utilisedQty??''} min={0} max={item.quantity}
                         onChange={e=>updateLocal(item.id,{utilisedQty:Number(e.target.value)})}
                         style={{ width:64, border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 6px',
                           fontSize:12, textAlign:'right' as const, outline:'none' }} />
