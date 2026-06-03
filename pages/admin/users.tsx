@@ -190,7 +190,7 @@ export default function AdminUsersPage() {
     setFEmail(u.email);
     setFPhone(u.phone || '');
     setFDesig(u.designation || '');
-    setFRegion(u.region || ''); setFVendorId((u as any).vendor_id || '');
+    setFRegion(u.region || ''); setFVendorId((u as any).vendor_id || ''); setFVendorId((u as any).vendor_id || '');
     setFRole(u.role);
     setFActive(u.is_active);
     setEditUser(u);
@@ -199,7 +199,7 @@ export default function AdminUsersPage() {
 
   const resetForm = () => {
     setFEmail(''); setFName(''); setFPhone(''); setFDesig('');
-    setFRegion(''); setFRole('viewer'); setFPassword(''); setFActive(true); setFVendorId('');
+    setFRegion(''); setFRole('viewer'); setFPassword(''); setFActive(true); setFVendorId(''); setFVendorId('');
     setEditUser(null); setMsg(null);
   };
 
