@@ -593,7 +593,8 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
   const allSTNItems = getByProject(projectId);
   const items = allSTNItems.filter((i:any) => i.utilisedStatus && i.utilisedStatus !== 'pending');
   const [saving,  setSaving]  = React.useState<string|null>(null);
-  const [returnMap, setReturnMap] = React.useState<Record<string,string>>({});
+  const [returnMap,     setReturnMap]     = React.useState<Record<string,string>>({});
+  const [returnDateMap, setReturnDateMap] = React.useState<Record<string,string>>({});
   const [toast,   setToast]   = React.useState<any>(null);
 
   React.useEffect(() => {
@@ -614,10 +615,11 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
 
   const raiseSRN = async (item: any) => {
     const qty = Number(returnMap[item.id] ?? 0);
-    if (!qty) return;
+    const date = returnDateMap[item.id] || new Date().toISOString().split('T')[0];
+    if (!qty) { setToast({ msg:'Please enter return quantity', type:'error' }); return; }
     setSaving(item.id);
     try {
-      await updateItem(item.id, { returnQty: qty, srnStatus: 'srn_raised', srnDate: new Date().toISOString().split('T')[0] } as any);
+      await updateItem(item.id, { returnQty: qty, srnStatus: 'srn_raised', srnDate: date } as any);
       setToast({ msg:'✅ SRN Raised', type:'success' });
     } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
     finally { setSaving(null); }
@@ -685,7 +687,7 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
         <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
           <thead>
             <tr>
-              {['#','Code','Description','UOM','Issued','Utilised','Status','PM Approved','Balance','SRN Date','Actions'].map((h,i)=>(
+              {['#','Code','Description','UOM','Issued','Utilised','Status','PM Approved','Balance','Returned','Return Date','Actions'].map((h,i)=>(
                 <th key={i} style={{ ...thS, textAlign:i>=4&&i<=8?'right' as const:'left' as const }}>{h}</th>
               ))}
             </tr>
@@ -714,6 +716,9 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
                   </td>
                   <td style={{ ...tdS, textAlign:'right' as const, color:balance>0?T.warning:T.success, fontWeight:600 }}>
                     {item.utilisedStatus==='pm_approved'?balance:'—'}
+                  </td>
+                  <td style={{ ...tdS, textAlign:'center' as const, fontWeight:600, color:T.primary }}>
+                    {(item as any).returnQty ?? '—'}
                   </td>
                   <td style={{ ...tdS, color:T.textMuted, fontSize:12 }}>
                     {(item as any).srnDate || '—'}

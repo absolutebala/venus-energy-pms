@@ -39,14 +39,15 @@ export default function SRNReturnPage() {
     finally { setActSaving(null); }
   };
 
+  const [returnDateMap2, setReturnDateMap2] = React.useState<Record<string,string>>({});
   const raiseSRN = async (item: any) => {
     const qty = Number(returnMap[item.id] ?? 0);
+    const date = returnDateMap2[item.id] || new Date().toISOString().split('T')[0];
     if (!qty) return;
     setActSaving(item.id);
     try {
       await updateItem(item.id, {
-        returnQty: qty, srnStatus: 'srn_raised',
-        srnDate: new Date().toISOString().split('T')[0],
+        returnQty: qty, srnStatus: 'srn_raised', srnDate: date,
       } as any);
     } catch(err) { console.error(err); }
     finally { setActSaving(null); }
@@ -232,7 +233,7 @@ export default function SRNReturnPage() {
                   <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                     <thead>
                       <tr>
-                        {['#','Item Code','Item Description','UOM','Qty','Util Qty','Util Status','PM Approved','Balance','Return Qty','SRN Status','SRN Date','Action',''].map((h,i)=>(
+                        {['#','Item Code','Item Description','UOM','Qty','Util Qty','Util Status','PM Approved','Balance','Returned','Return Date','SRN Status','Action',''].map((h,i)=>(
                           <th key={h} style={{ ...thS }}>{h}</th>
                         ))}
                       </tr>
@@ -279,7 +280,7 @@ export default function SRNReturnPage() {
                                   color: m.utilisedStatus==='pm_approved' ? (Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0))>0?'#D97706':'#059669') : Theme.textMuted }}>
                                   {m.utilisedStatus==='pm_approved' ? Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0)) : '—'}
                                 </td>
-                                <td style={{ ...tdS, textAlign:'center' as const }}>{m.returnQty??'—'}</td>
+                                <td style={{ ...tdS, textAlign:'center' as const, fontWeight:600, color:Theme.primary }}>{m.returnQty??'—'}</td>
                                 <td style={tdS}>
                                   {m.srnStatus && m.srnStatus!=='pending' ? (
                                     <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:20,
@@ -301,14 +302,20 @@ export default function SRNReturnPage() {
                                         style={{ background:'#DC2626', color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>✗</button>
                                     </div>
                                   )}
-                                  {isVendor && m.utilisedStatus==='pm_approved' && Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0))>0 && (!m.srnStatus||m.srnStatus==='pending') && (
-                                    <div style={{ display:'flex', gap:4, alignItems:'center' }}>
-                                      <input type="number" min={0} max={Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0))}
-                                        value={returnMap[m.id]??''}
-                                        onChange={e=>setReturnMap(p=>({...p,[m.id]:e.target.value}))}
-                                        placeholder="Qty" style={{ width:50, border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 5px', fontSize:11 }} />
+                                  {(isVendor||isAdmin) && m.utilisedStatus==='pm_approved' && Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0))>0 && (!m.srnStatus||m.srnStatus==='pending') && (
+                                    <div style={{ display:'flex', flexDirection:'column' as const, gap:4 }}>
+                                      <div style={{ display:'flex', gap:4 }}>
+                                        <input type="number" min={0} max={Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0))}
+                                          value={returnMap[m.id]??''}
+                                          onChange={e=>setReturnMap(p=>({...p,[m.id]:e.target.value}))}
+                                          placeholder="Qty" style={{ width:50, border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 5px', fontSize:11 }} />
+                                        <input type="date"
+                                          value={returnDateMap2[m.id]??''}
+                                          onChange={e=>setReturnDateMap2(p=>({...p,[m.id]:e.target.value}))}
+                                          style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 5px', fontSize:11 }} />
+                                      </div>
                                       <button onClick={()=>raiseSRN(m)} disabled={actSaving===m.id||!returnMap[m.id]}
-                                        style={{ background:Theme.primary, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer', opacity:!returnMap[m.id]?0.5:1 }}>SRN</button>
+                                        style={{ background:Theme.primary, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer', opacity:!returnMap[m.id]?0.5:1 }}>📤 Raise SRN</button>
                                     </div>
                                   )}
                                   {isAdmin && m.srnStatus==='srn_raised' && (
