@@ -12,7 +12,7 @@ function perm(can_create:boolean, can_read:boolean, can_edit:boolean, can_delete
 }
 
 function buildFull(): Record<AppModule, Permission> {
-  const modules: AppModule[] = ['dashboard','projects','vendors','srn_return','site_expenses','sec_expenses','ptw','reports'];
+  const modules: AppModule[] = ['dashboard','projects','vendors','srn_return','site_expenses','sec_expenses','sec_work_progress','ptw','reports'];
   return Object.fromEntries(modules.map(m=>[m,{
     module:m,
     can_create: m !== 'srn_return' && m !== 'reports', // no create for STN/SRN or Reports
@@ -41,6 +41,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_work_documents:    perm(false,true, false,false),
     sec_stn_srn:           perm(false,true, true, false),
     sec_billing_review:    perm(false,true, false,false),
+    sec_work_progress:     perm(false,true, false,false),
     sec_activity_log:      perm(false,true, false,false),
     invoices:    perm(false,true, false,false),
     sec_invoice: perm(false,true, false,false),
@@ -67,6 +68,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_work_documents:    perm(false,true, false,false),
     sec_stn_srn:           perm(false,true, true, false),
     sec_billing_review:    perm(false,true, true, false),
+    sec_work_progress:     perm(false,true, false,false),
     sec_activity_log:      perm(false,true, false,false),
     invoices:    perm(false,true, false,false),
     sec_invoice: perm(false,true, false,false),
@@ -93,6 +95,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_work_documents:    perm(false,true, false,false),
     sec_stn_srn:           perm(false,true, false,false),
     sec_billing_review:    perm(false,false,false,false),
+    sec_work_progress:     perm(false,true, false,false),
     sec_activity_log:      perm(false,true, false,false),
     invoices:    perm(false,false,false,false),
     sec_invoice: perm(false,false,false,false),
@@ -119,6 +122,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_work_documents:    perm(false,true, false,false),
     sec_stn_srn:           perm(false,true, false,false),
     sec_billing_review:    perm(false,true, true, false),
+    sec_work_progress:     perm(false,true, false,false),
     sec_activity_log:      perm(false,true, false,false),
     invoices:    perm(true, true, true, true),
     sec_invoice: perm(true, true, true, false),
@@ -145,6 +149,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_work_documents:    perm(true, true, true, false),
     sec_stn_srn:           perm(false,true, true, false),
     sec_billing_review:    perm(false,false,false,false),
+    sec_work_progress:     perm(false,true, false,false),
     sec_activity_log:      perm(false,true, false,false),
     invoices:    perm(false,false,false,false),
     sec_invoice: perm(false,false,false,false),
@@ -171,6 +176,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_work_documents:    perm(false,true, false,false),
     sec_stn_srn:           perm(false,true, false,false),
     sec_billing_review:    perm(false,true, false,false),
+    sec_work_progress:     perm(false,true, false,false),
     sec_activity_log:      perm(false,true, false,false),
     invoices:    perm(false,true, false,false),
     sec_invoice: perm(false,true, false,false),
