@@ -254,6 +254,185 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
                     <td style={{ ...tdS, textAlign:'center' as const }}>
 
 // ── SRN Section Component ─────────────────────────────────────────────────────
+function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { projectId:string; vendorContact:string; canEdit:boolean; canAdd?:boolean }) {
+  const [items,   setItems]   = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [saving,  setSaving]  = React.useState<string|null>(null);
+  const [toast,   setToast]   = React.useState<any>(null);
+
+  React.useEffect(() => {
+    if (!projectId) return;
+    const sb = createClient();
+    sb.from('ptw_items').select('*').eq('project_id', projectId).order('created_at')
+      .then(({ data }) => {
+        if (data) setItems(data.map((r:any) => ({
+          id: r.id, ticketId: r.ticket_id||'', supervisor: r.supervisor||'',
+          dateFrom: r.date_from||'', dateTo: r.date_to||'', isNew: false,
+        })));
+        setLoading(false);
+      });
+  }, [projectId]);
+
+  const addPTW = () => setItems(prev => [...prev, {
+    id: `new-${Date.now()}`, ticketId:'', supervisor: vendorContact||'',
+    dateFrom:'', dateTo:'', isNew: true,
+  }]);
+
+  const removeItem = async (id:string|number) => {
+    if (String(id).startsWith('new-')) {
+      setItems(prev => prev.filter((i:any)=>i.id!==id));
+      return;
+    }
+    if (!window.confirm('Delete this PTW record?')) return;
+    const sb = createClient();
+    await sb.from('ptw_items').delete().eq('id', id);
+    setItems(prev => prev.filter((i:any)=>i.id!==id));
+  };
+
+  const update = (id:string|number, field:string, val:string) =>
+    setItems(prev => prev.map((item:any) => item.id===id ? {...item,[field]:val} : item));
+
+  const saveAllPTW = async () => {
+    setSaving('all');
+    const sb = createClient();
+    for (const item of items) {
+      const payload = {
+        project_id: projectId, ticket_id: item.ticketId, supervisor: item.supervisor,
+        date_from: item.dateFrom||null, date_to: item.dateTo||null,
+      };
+      if (item.isNew) {
+        const { data } = await sb.from('ptw_items').insert(payload).select().single();
+        if (data) setItems(prev => prev.map((i:any) => i.id===item.id ? {
+          ...item, id:data.id, isNew:false
+        } : i));
+      } else {
+        await sb.from('ptw_items').update(payload).eq('id', item.id);
+      }
+    }
+    setToast({ msg:'✅ All PTW records saved', type:'success' });
+    setSaving(null);
+  };
+
+  const savePTW = async (item:any) => {
+    setSaving(item.id);
+    const sb = createClient();
+    const payload = {
+      project_id: projectId, ticket_id: item.ticketId, supervisor: item.supervisor,
+      date_from: item.dateFrom||null, date_to: item.dateTo||null,
+    };
+    if (item.isNew) {
+      const { data, error } = await sb.from('ptw_items').insert(payload).select().single();
+      if (!error && data) {
+        setItems(prev => prev.map((i:any) => i.id===item.id ? {...data, id:data.id,
+          ticketId:data.ticket_id, supervisor:data.supervisor,
+          dateFrom:data.date_from||'', dateTo:data.date_to||'', isNew:false} : i));
+        setToast({ msg:'✅ PTW saved', type:'success' });
+      }
+    } else {
+      const { error } = await sb.from('ptw_items').update(payload).eq('id', item.id);
+      if (!error) setToast({ msg:'✅ PTW updated', type:'success' });
+    }
+    setSaving(null);
+  };
+
+  const getStatus = (from:string, to:string) => {
+    if (!from || !to) return null;
+    const today = new Date(), f = new Date(from), t = new Date(to);
+    if (today < f) return { label:'🕐 Upcoming',  color:'#D97706', bg:'#FFFBEB', border:'#FDE68A' };
+    if (today > t) return { label:'⚠️ Expired',   color:T.danger,  bg:'#FEF2F2', border:'#FECACA' };
+    return          { label:'✅ Active',            color:T.success, bg:T.successBg, border:'#BBF7D0' };
+  };
+
+  const fmtDate = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } };
+const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  const inp = (val:string, field:string, id:number, type='text', ph='') => (
+    <input type={type} value={val} placeholder={ph}
+      onChange={e=>update(id,field,e.target.value)}
+      style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text }} />
+  );
+
+  if (loading) return <div style={{ padding:20, textAlign:'center' as const, color:'#6B7280', fontSize:13 }}>Loading PTW records…</div>;
+
+  if (items.length === 0 && !canEdit) return (
+    <div style={{ textAlign:'center', padding:24, color:'#9CA3AF', fontSize:13 }}>No PTW records yet.</div>
+  );
+
+  return (
+    <div>
+      {items.length > 0 && (
+        <table style={{ width:'100%', borderCollapse:'collapse' as const, marginBottom:14 }}>
+          <thead>
+            <tr style={{ background:T.bg }}>
+              {['#','Ticket ID *','Supervisor Name','From Date *','To Date *','Status',''].map((h,i)=>(
+                <th key={i} style={{ padding:'9px 10px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:'left' as const, borderBottom:`2px solid ${T.border}`, whiteSpace:'nowrap' as const }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item:any, idx:number) => {
+              const status = getStatus(item.dateFrom, item.dateTo);
+              return (
+                <tr key={item.id} style={{ borderBottom:`1px solid ${T.border}` }}>
+                  <td style={{ padding:'10px', color:T.textMuted, fontSize:12, width:32 }}>{idx+1}</td>
+                  <td style={{ padding:'8px 10px', minWidth:160 }}>
+                    {canEdit ? inp(item.ticketId,'ticketId',item.id,'text','PTW-2025-XXXX')
+                    : <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{item.ticketId||'—'}</span>}
+                  </td>
+                  <td style={{ padding:'8px 10px', minWidth:160 }}>
+                    {canEdit ? inp(item.supervisor,'supervisor',item.id,'text','Supervisor name')
+                    : <span style={{ fontSize:13, color:T.text }}>{item.supervisor||'—'}</span>}
+                  </td>
+                  <td style={{ padding:'8px 10px', width:140 }}>
+                    {canEdit ? inp(item.dateFrom,'dateFrom',item.id,'date')
+                    : <span style={{ fontSize:12, color:T.textMuted }}>{fmt(item.dateFrom)}</span>}
+                  </td>
+                  <td style={{ padding:'8px 10px', width:140 }}>
+                    {canEdit ? inp(item.dateTo,'dateTo',item.id,'date')
+                    : <span style={{ fontSize:12, color:T.textMuted }}>{fmt(item.dateTo)}</span>}
+                  </td>
+                  <td style={{ padding:'8px 10px', width:140 }}>
+                    {status ? (
+                      <span style={{ fontSize:11, fontWeight:600, color:status.color, background:status.bg, border:`1px solid ${status.border}`, padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>
+                        {status.label}
+                      </span>
+                    ) : <span style={{ fontSize:12, color:T.textDim }}>—</span>}
+                  </td>
+                  <td style={{ padding:'8px 10px', width:36 }}>
+                    {canEdit && (
+                      <button onClick={()=>removeItem(item.id)}
+                        style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:16, padding:2 }}>🗑</button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+
+      <div style={{ display:'flex', gap:10, alignItems:'center', marginTop:8 }}>
+        {canAdd && <button onClick={addPTW}
+          style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8, padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
+          + Add PTW
+        </button>}
+        {canEdit && items.length > 0 && (
+          <button onClick={saveAllPTW} disabled={!!saving}
+            style={{ background:T.primary, border:'none', borderRadius:8, padding:'8px 18px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:700, opacity:saving?0.7:1 }}>
+            {saving ? 'Saving…' : '💾 Save PTW Records'}
+          </button>
+        )}
+      </div>
+
+      {!canEdit && items.length === 0 && (
+        <div style={{ padding:'10px 14px', borderRadius:8, background:'#FEF2F2', border:'1px solid #FECACA' }}>
+          <span style={{ fontSize:12, fontWeight:600, color:T.danger }}>⚠️ No PTW issued — Required before vendor commences work</span>
+        </div>
+      )}
+    </div>
+  );
+}
+// ── SRN Section Component ─────────────────────────────────────────────────────
+
 function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role:string; onAllApproved:(v:boolean)=>void }) {
   const { getByProject, updateItem } = usePOItems();
   const { profile } = useAuth();
