@@ -180,7 +180,7 @@ export default function SRNReturnPage() {
           const totalItemCount = materials.length;
           const totalQty     = materials.reduce((a:number,m:any)=>a+Number(m.quantity||0),0);
           const totalAmount  = materials.reduce((a:number,m:any)=>a+Number(m.amount||0),0);
-          const allDone      = materials.length > 0;
+          const allDone      = materials.length > 0 && materials.every((m:any)=>m.srnStatus==='srn_received' || (m.utilisedStatus==='pm_approved' && Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0))===0));
 
           return (
             <div key={project.projectId} style={{ ...card, marginBottom:12, padding:0, overflow:'hidden' }}>
@@ -318,12 +318,7 @@ export default function SRNReturnPage() {
                                       style={{ background:'none', border:`1px solid ${Theme.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12, color:Theme.primary }}>✏️</button>
                                   )}
                                 </td>
-                                <td style={tdS}>
-                                  {['super_admin','accounting_team','region_manager','project_manager'].includes(role) && (
-                                    <button onClick={()=>{ setEditId(m.id); setEditRow({...m}); }}
-                                      style={{ background:'none', border:`1px solid ${Theme.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12, color:Theme.primary }}>✏️</button>
-                                  )}
-                                </td>
+
                               </>
                             )}
                           </tr>
