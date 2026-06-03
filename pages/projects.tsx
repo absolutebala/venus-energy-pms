@@ -286,6 +286,7 @@ export default function ProjectsPage() {
     const displayStatus = STATUS_DISPLAY[p.status] || p.status;
     if (statusFilter === 'PO Open')   return (p as any).poStatus === 'Open';
     if (statusFilter === 'PO Closed') return (p as any).poStatus === 'Closed';
+    if (statusFilter === 'Not Set') return !(p as any).projectStatus;
     if (statusFilter !== 'All') return ((p as any).projectStatus || '') === statusFilter;
     if (typeFilter !== 'All' && p.type !== typeFilter) return false;
     if (ageMin !== null && p.aging < ageMin) return false;
