@@ -1883,7 +1883,7 @@ export default function ProjectDetailPage() {
         {showSTNSRN && (
           <div style={{ ...card, marginBottom:16 }}>
             {sectionTitle('📦','SRN — Store Return Note', 'srndetail', false)}
-            <SRNSection projectId={p.id} role={role} />
+            <SRNSection projectId={p.id} role={role} onAllApproved={setSrnAllApproved} />
           </div>
         )}
 
