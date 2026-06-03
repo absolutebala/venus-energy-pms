@@ -271,18 +271,18 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
                       ) : <span style={{ fontSize:11, color:T.textMuted }}>—</span>}
                     </td>
                     <td style={{ ...tdS, width:120 }}>
-                      {(item as any).utilisedStatus==='pending' || (item as any).utilisedStatus==='pm_rejected' ? (
-                        <button onClick={()=>submitUtilisation(item,'submitted')} disabled={submitting===item.id}
-                          style={{ background:(item as any).utilisedStatus==='pm_rejected'?T.warning:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>
-                          {submitting===item.id?'…':(item as any).utilisedStatus==='pm_rejected'?'Resubmit':'Submit'}
-                        </button>
-                      ) : editing && canAdd ? (
+                      {editing && canAdd ? (
                         <div style={{ display:'flex', gap:4 }}>
                           <button onClick={()=>{ setEditId(editId===item.id?null:item.id); setEditRow({...item}); }}
                             style={{ background: editId===item.id ? T.primary : 'none', color: editId===item.id ? '#fff' : T.primary, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12 }}>✏️</button>
                           <button onClick={()=>deleteItem(item.id)}
                             style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:14 }}>🗑</button>
                         </div>
+                      ) : ((item as any).utilisedStatus==='pending' || (item as any).utilisedStatus==='pm_rejected') ? (
+                        <button onClick={()=>submitUtilisation(item,'submitted')} disabled={submitting===item.id}
+                          style={{ background:(item as any).utilisedStatus==='pm_rejected'?T.warning:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>
+                          {submitting===item.id?'…':(item as any).utilisedStatus==='pm_rejected'?'Resubmit':'Submit'}
+                        </button>
                       ) : null}
                     </td>
                   </tr>
