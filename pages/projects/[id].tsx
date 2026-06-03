@@ -756,17 +756,23 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
                         Resubmit
                       </button>
                     )}
-                    {isVendor && (item as any).utilisedStatus==='pm_approved' && balance>0 && (!(item as any).srnStatus || (item as any).srnStatus==='pending') && (
-                      <div style={{ display:'flex', gap:4, alignItems:'center' }}>
-                        <input type="number" min={0} max={balance}
-                          value={returnMap[item.id]??''}
-                          onChange={e=>setReturnMap(p=>({...p,[item.id]:e.target.value}))}
-                          placeholder="Return Qty"
-                          style={{ width:80, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 6px', fontSize:11, outline:'none' }} />
+                    {(isVendor || role==='super_admin') && (item as any).utilisedStatus==='pm_approved' && balance>0 && (!(item as any).srnStatus || (item as any).srnStatus==='pending') && (
+                      <div style={{ display:'flex', flexDirection:'column' as const, gap:4 }}>
+                        <div style={{ display:'flex', gap:4, alignItems:'center' }}>
+                          <input type="number" min={0} max={balance}
+                            value={returnMap[item.id]??''}
+                            onChange={e=>setReturnMap(p=>({...p,[item.id]:e.target.value}))}
+                            placeholder="Return Qty"
+                            style={{ width:70, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 6px', fontSize:11, outline:'none' }} />
+                          <input type="date"
+                            value={returnDateMap[item.id]??''}
+                            onChange={e=>setReturnDateMap(p=>({...p,[item.id]:e.target.value}))}
+                            style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 6px', fontSize:11, outline:'none' }} />
+                        </div>
                         <button onClick={()=>raiseSRN(item)} disabled={saving===item.id||!returnMap[item.id]}
                           style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 8px', fontSize:11, cursor:'pointer',
                             opacity:!returnMap[item.id]?0.5:1 }}>
-                          📤 SRN
+                          {saving===item.id?'…':'📤 Raise SRN'}
                         </button>
                       </div>
                     )}
