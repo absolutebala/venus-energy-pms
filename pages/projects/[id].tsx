@@ -263,11 +263,11 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
                     {item.utilisedStatus==='pm_approved' && (
                       <span style={{ fontSize:11, color:T.success, fontWeight:600 }}>✓ Complete</span>
                     )}
-                    {item.utilisedStatus==='pm_rejected' && isVendor && (
-                      <button onClick={()=>updateLocal(item.id,{utilisedStatus:'pending'})}
+                    {(item as any).utilisedStatus==='pm_rejected' && isVendor && (
+                      <button onClick={()=>submitUtilised(item)}
                         style={{ background:T.warning, color:'#fff', border:'none', borderRadius:6,
                           padding:'4px 10px', fontSize:11, cursor:'pointer' }}>
-                        Revise
+                        Resubmit
                       </button>
                     )}
                   </td>
