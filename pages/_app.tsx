@@ -7,6 +7,7 @@ import { InvoiceProvider } from '@/context/InvoiceContext';
 import { ExpenseProvider } from '@/context/ExpenseContext';
 import { WorkDocProvider } from '@/context/WorkDocContext';
 import { POItemProvider } from '@/context/POItemContext';
+import { WorkProgressProvider } from '@/context/WorkProgressContext';
 import { ActivityProvider } from '@/context/ActivityContext';
 import { MaterialProvider } from '@/context/MaterialContext';
 import '@/styles/globals.css';
@@ -28,6 +29,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <ExpenseProvider>
         <WorkDocProvider>
         <POItemProvider>
+        <WorkProgressProvider>
         <ActivityProvider>
         <MaterialProvider>
         <ErrorBoundary>
@@ -35,6 +37,7 @@ export default function App({ Component, pageProps }: AppProps) {
       </ErrorBoundary>
       </MaterialProvider>
         </ActivityProvider>
+        </WorkProgressProvider>
         </POItemProvider>
         </WorkDocProvider>
         </ExpenseProvider>

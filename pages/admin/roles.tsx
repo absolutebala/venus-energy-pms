@@ -38,6 +38,7 @@ const PROJECT_SECTIONS: { key: string; label: string; icon: string; desc: string
   { key:'sec_stn_srn',          label:'STN / SRN Section',        icon:'📦', desc:'STN items + SRN section — utilisation, PM approval, raise SRN, mark received' },
   { key:'sec_billing_review',   label:'Billing Review Checklist', icon:'✅', desc:'STN ✓ SRN ✓ PTW ✓ Materials Returned to Indus ✓ — payment release'      },
   { key:'sec_invoice',   label:'Invoice Section',          icon:'🧾', desc:'Invoice records per project — Invoice No, Date, BOQ Ref, Amount, GST, Status, Payment Status, Due Date' },
+  { key:'sec_work_progress', label:'Work Progress', icon:'📝', desc:'Daily work log — vendor updates work date, description, status, total work status, remarks' },
   { key:'sec_activity_log',     label:'Activity Log',             icon:'📝', desc:'Full timeline — project creation to billing, all actions by all roles'  },
 ];
 
@@ -57,6 +58,7 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_expenses:          { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
     sec_stn_srn_summary:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_invoice:           { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
+    sec_work_progress:     { can_read:true,  can_create:false,  can_edit:false,  can_delete:false },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   region_manager: {
@@ -73,6 +75,7 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_expenses:          { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_stn_srn_summary:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_invoice:           { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_work_progress:     { can_read:true,  can_create:false,  can_edit:false,  can_delete:false },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   project_manager: {
@@ -89,6 +92,7 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_expenses:          { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_stn_srn_summary:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_invoice:           { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_work_progress:     { can_read:true,  can_create:false,  can_edit:false,  can_delete:false },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   site_engineer: {
@@ -105,6 +109,7 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_expenses:          { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_stn_srn_summary:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_invoice:           { can_read:false, can_create:false, can_edit:false, can_delete:false },
+    sec_work_progress:     { can_read:true,  can_create:false,  can_edit:false,  can_delete:false },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   accounting_team: {
@@ -121,6 +126,7 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_expenses:          { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
     sec_stn_srn_summary:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_invoice:           { can_read:true,  can_create:true,  can_edit:true,  can_delete:true  },
+    sec_work_progress:     { can_read:true,  can_create:true,  can_edit:true,  can_delete:true },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   vendor: {
@@ -153,6 +159,7 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_expenses:          { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_stn_srn_summary:   { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_invoice:           { can_read:true,  can_create:false, can_edit:false, can_delete:false },
+    sec_work_progress:     { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
 };

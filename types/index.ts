@@ -41,6 +41,7 @@ export type AppModule =
   | 'sec_work_documents'
   | 'sec_stn_srn'
   | 'sec_billing_review'
+  | 'sec_work_progress'
   | 'sec_activity_log'
   | 'sec_invoice'
   | 'sec_stn_srn_summary'
@@ -68,6 +69,7 @@ export const MODULE_LABELS: Record<AppModule, string> = {
   sec_billing_review:     'Billing Review Section',
   sec_stn_srn_summary:    'STN/SRN Summary Section',
   sec_invoice:           'Invoice Section',
+  sec_work_progress:    'Work Progress',
   sec_activity_log:       'Activity Log Section',
   sec_expenses:           'Expenses Section',
   sec_po_items:           'PO Items Section',

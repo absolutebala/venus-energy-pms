@@ -10,6 +10,7 @@ import { useExpenses } from '@/context/ExpenseContext';
 import { useWorkDocs } from '@/context/WorkDocContext';
 import { useMaterial } from '@/context/MaterialContext';
 import { usePOItems } from '@/context/POItemContext';
+import { useWorkProgress } from '@/context/WorkProgressContext';
 import { useActivity } from '@/context/ActivityContext';
 import { PROJECTS as SEED_PROJECTS } from '@/lib/seedData'; // fallback only
 import CreatableSelect from '@/components/CreatableSelect';
@@ -1311,6 +1312,7 @@ export default function ProjectDetailPage() {
   const showActivityLog   = !loading && can('sec_activity_log',     'read');
   const showInvoice       = !loading && can('sec_invoice',            'read');
   const canAddInvoice     = !loading && can('sec_invoice',            'create');
+  const showWorkProgress  = !loading && can('sec_work_progress',     'read');
   const showExpenses      = !loading && can('site_expenses',         'read');
   const canAddExpenses    = !loading && can('site_expenses',         'create');
   const canEditVendor     = !loading && can('sec_vendor_assignment', 'edit');
@@ -1904,6 +1906,14 @@ export default function ProjectDetailPage() {
 
 
         
+        {/* ── Work Progress ── */}
+        {showWorkProgress && (
+          <div style={{ ...card, marginBottom:16 }}>
+            {sectionTitle('📝','Work Progress', 'workprogress', false)}
+            <WorkProgressSection projectId={p.id} role={role} />
+          </div>
+        )}
+
         {/* ── PTW — Permit to Work ── */}
         {showPTW && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('🔑','PTW — Permit to Work', 'ptw', canEditPTW)}
