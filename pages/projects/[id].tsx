@@ -685,8 +685,8 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
         <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
           <thead>
             <tr>
-              {['#','Code','Description','UOM','Issued','Utilised','Status','PM Approved','Balance','Actions'].map((h,i)=>(
-                <th key={i} style={{ ...thS, textAlign:i>=4?'right' as const:'left' as const }}>{h}</th>
+              {['#','Code','Description','UOM','Issued','Utilised','Status','PM Approved','Balance','SRN Date','Actions'].map((h,i)=>(
+                <th key={i} style={{ ...thS, textAlign:i>=4&&i<=8?'right' as const:'left' as const }}>{h}</th>
               ))}
             </tr>
           </thead>

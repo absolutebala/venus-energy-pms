@@ -232,7 +232,7 @@ export default function SRNReturnPage() {
                   <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                     <thead>
                       <tr>
-                        {['#','Item Code','Item Description','UOM','Qty','Util Qty','Util Status','PM Approved','Balance','Return Qty','SRN Status','Action',''].map((h,i)=>(
+                        {['#','Item Code','Item Description','UOM','Qty','Util Qty','Util Status','PM Approved','Balance','Return Qty','SRN Status','SRN Date','Action',''].map((h,i)=>(
                           <th key={h} style={{ ...thS }}>{h}</th>
                         ))}
                       </tr>
@@ -288,6 +288,9 @@ export default function SRNReturnPage() {
                                       {m.srnStatus==='srn_received'?'Received':'Raised'}
                                     </span>
                                   ) : <span style={{ fontSize:11, color:Theme.textMuted }}>—</span>}
+                                </td>
+                                <td style={{ ...tdS, color:Theme.textMuted, fontSize:12 }}>
+                                  {m.srnDate || '—'}
                                 </td>
                                 <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
                                   {isPM && m.utilisedStatus==='submitted' && (
