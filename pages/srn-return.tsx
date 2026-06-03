@@ -22,9 +22,43 @@ const getReturnStatus = (m: any) => {
 export default function SRNReturnPage() {
   const { profile, can } = useAuth();
   const { items: allItems, loading: matLoading, updateItem } = usePOItems();
-  const [editId,   setEditId]   = React.useState<string|null>(null);
-  const [editRow,  setEditRow]  = React.useState<any>({});
-  const [saving,   setSaving]   = React.useState(false);
+  const [editId,     setEditId]     = React.useState<string|null>(null);
+  const [editRow,    setEditRow]    = React.useState<any>({});
+  const [saving,     setSaving]     = React.useState(false);
+  const [returnMap,  setReturnMap]  = React.useState<Record<string,string>>({});
+  const [actSaving,  setActSaving]  = React.useState<string|null>(null);
+
+  const pmAction = async (item: any, approve: boolean) => {
+    setActSaving(item.id);
+    try {
+      await updateItem(item.id, {
+        utilisedStatus: approve ? 'pm_approved' : 'pm_rejected',
+        pmApprovedQty: approve ? (item.utilisedQty ?? 0) : null,
+      } as any);
+    } catch(err) { console.error(err); }
+    finally { setActSaving(null); }
+  };
+
+  const raiseSRN = async (item: any) => {
+    const qty = Number(returnMap[item.id] ?? 0);
+    if (!qty) return;
+    setActSaving(item.id);
+    try {
+      await updateItem(item.id, {
+        returnQty: qty, srnStatus: 'srn_raised',
+        srnDate: new Date().toISOString().split('T')[0],
+      } as any);
+    } catch(err) { console.error(err); }
+    finally { setActSaving(null); }
+  };
+
+  const markReceived = async (item: any) => {
+    setActSaving(item.id);
+    try {
+      await updateItem(item.id, { srnStatus: 'srn_received' } as any);
+    } catch(err) { console.error(err); }
+    finally { setActSaving(null); }
+  };
 
   const saveEdit = async () => {
     setSaving(true);
@@ -45,7 +79,10 @@ export default function SRNReturnPage() {
     finally { setSaving(false); }
   };
   const { projects, loading: projLoading } = useProjects();
-  const role = profile?.role || 'viewer';
+  const role    = profile?.role || 'viewer';
+  const isPM    = ['project_manager','super_admin','region_manager'].includes(role);
+  const isVendor = role === 'vendor';
+  const isAdmin  = ['super_admin','accounting_team'].includes(role);
 
   const [search,     setSearch]     = useState('');
   const [expandedId, setExpandedId] = useState<string|null>(null);
@@ -114,10 +151,10 @@ export default function SRNReturnPage() {
         {/* Summary cards */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
           {[
-            { label:'Projects with STN Items', value:grouped.length,  color:Theme.primary },
-            { label:'Total Items',             value:totalItems,      color:Theme.info    },
-            { label:'Projects',                value:totalApproved,   color:Theme.success },
-            { label:'Total STN Items',         value:totalItems,      color:Theme.info    },
+            { label:'Total STN Items',  value:allItems.length,                                                                           color:Theme.primary },
+            { label:'Submitted',        value:allItems.filter((i:any)=>i.utilisedStatus==='submitted').length,                           color:'#2563EB'     },
+            { label:'PM Approved',      value:allItems.filter((i:any)=>i.utilisedStatus==='pm_approved').length,                         color:Theme.success },
+            { label:'SRN Received',     value:allItems.filter((i:any)=>(i as any).srnStatus==='srn_received').length,                   color:'#0D9488'     },
           ].map(s=>(
             <div key={s.label} style={{ ...card, padding:'14px 16px' }}>
               <div style={{ fontSize:11, color:Theme.textMuted, fontWeight:600, textTransform:'uppercase', marginBottom:4 }}>{s.label}</div>
@@ -168,11 +205,15 @@ export default function SRNReturnPage() {
                     )}
                   </div>
                   <div style={{ display:'flex', gap:16, alignItems:'center' }}>
-                    {[['ITEMS',totalItemCount,Theme.text],['TOTAL QTY',totalQty,Theme.info],
-                      ['AMOUNT',totalAmount,Theme.primary]].map(([label,val,color])=>(
+                    {[
+                      ['ITEMS', totalItemCount, Theme.text],
+                      ['SUBMITTED', materials.filter((m:any)=>m.utilisedStatus==='submitted').length, '#2563EB'],
+                      ['APPROVED', materials.filter((m:any)=>m.utilisedStatus==='pm_approved').length, Theme.success],
+                      ['SRN DONE', materials.filter((m:any)=>(m as any).srnStatus==='srn_received').length, '#0D9488'],
+                    ].map(([label,val,color])=>(
                       <div key={label as string} style={{ textAlign:'center' as const }}>
                         <div style={{ fontSize:10, color:Theme.textMuted, marginBottom:2 }}>{label}</div>
-                        <div style={{ fontSize:16, fontWeight:700, color:color as string }}>{typeof val === 'number' && label==='AMOUNT' ? '₹'+Number(val).toLocaleString('en-IN') : fmt(val as number)}</div>
+                        <div style={{ fontSize:16, fontWeight:700, color:color as string }}>{fmt(val as number)}</div>
                       </div>
                     ))}
                     <span style={{ fontSize:11, fontWeight:700,
@@ -191,7 +232,7 @@ export default function SRNReturnPage() {
                   <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                     <thead>
                       <tr>
-                        {['#','Item Code','Item Description','UOM','Qty','Document No','BOQ Req No','Serial No','Tax Rate','Amount','Total Value',''].map((h,i)=>(
+                        {['#','Item Code','Item Description','UOM','Qty','Util Qty','Util Status','PM Approved','Balance','Return Qty','SRN Status','Action',''].map((h,i)=>(
                           <th key={h} style={{ ...thS }}>{h}</th>
                         ))}
                       </tr>
@@ -223,18 +264,66 @@ export default function SRNReturnPage() {
                                 <td style={tdS}>{m.description}</td>
                                 <td style={{ ...tdS, color:Theme.textMuted }}>{m.uom||'—'}</td>
                                 <td style={tdS}>{m.quantity||'—'}</td>
-                                <td style={{ ...tdS, color:Theme.textMuted }}>{m.documentNo||'—'}</td>
-                                <td style={{ ...tdS, color:Theme.textMuted }}>{m.boqReqNo||'—'}</td>
-                                <td style={{ ...tdS, color:Theme.textMuted }}>{m.serialNo||'—'}</td>
-                                <td style={{ ...tdS, color:Theme.textMuted }}>{m.gstRate||0}%</td>
-                                <td style={{ ...tdS, fontWeight:700, color:Theme.primary }}>₹{Number(m.amount||0).toLocaleString('en-IN')}</td>
-                                <td style={{ ...tdS, fontWeight:700, color:Theme.success }}>₹{(Number(m.amount||0)*(1+(Number(m.gstRate||0)/100))).toLocaleString('en-IN')}</td>
-                                {['super_admin','accounting_team','region_manager','project_manager'].includes(role) && (
-                                  <td style={tdS}>
+                                <td style={{ ...tdS, textAlign:'center' as const, fontWeight:600 }}>{m.utilisedQty??'—'}</td>
+                                <td style={tdS}>
+                                  {m.utilisedStatus && m.utilisedStatus!=='pending' ? (
+                                    <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:20,
+                                      color:m.utilisedStatus==='pm_approved'?'#059669':m.utilisedStatus==='submitted'?'#2563EB':'#DC2626',
+                                      background:m.utilisedStatus==='pm_approved'?'#D1FAE5':m.utilisedStatus==='submitted'?'#EFF6FF':'#FEF2F2' }}>
+                                      {m.utilisedStatus==='pm_approved'?'Approved':m.utilisedStatus==='submitted'?'Submitted':'Rejected'}
+                                    </span>
+                                  ) : <span style={{ fontSize:11, color:Theme.textMuted }}>Pending</span>}
+                                </td>
+                                <td style={{ ...tdS, textAlign:'center' as const, color:'#059669', fontWeight:600 }}>{m.pmApprovedQty??'—'}</td>
+                                <td style={{ ...tdS, textAlign:'center' as const, fontWeight:700,
+                                  color: m.utilisedStatus==='pm_approved' ? (Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0))>0?'#D97706':'#059669') : Theme.textMuted }}>
+                                  {m.utilisedStatus==='pm_approved' ? Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0)) : '—'}
+                                </td>
+                                <td style={{ ...tdS, textAlign:'center' as const }}>{m.returnQty??'—'}</td>
+                                <td style={tdS}>
+                                  {m.srnStatus && m.srnStatus!=='pending' ? (
+                                    <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:20,
+                                      color:m.srnStatus==='srn_received'?'#059669':'#D97706',
+                                      background:m.srnStatus==='srn_received'?'#D1FAE5':'#FFFBEB' }}>
+                                      {m.srnStatus==='srn_received'?'Received':'Raised'}
+                                    </span>
+                                  ) : <span style={{ fontSize:11, color:Theme.textMuted }}>—</span>}
+                                </td>
+                                <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
+                                  {isPM && m.utilisedStatus==='submitted' && (
+                                    <div style={{ display:'flex', gap:4 }}>
+                                      <button onClick={()=>pmAction(m,true)} disabled={actSaving===m.id}
+                                        style={{ background:'#059669', color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>✓</button>
+                                      <button onClick={()=>pmAction(m,false)} disabled={actSaving===m.id}
+                                        style={{ background:'#DC2626', color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>✗</button>
+                                    </div>
+                                  )}
+                                  {isVendor && m.utilisedStatus==='pm_approved' && Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0))>0 && (!m.srnStatus||m.srnStatus==='pending') && (
+                                    <div style={{ display:'flex', gap:4, alignItems:'center' }}>
+                                      <input type="number" min={0} max={Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0))}
+                                        value={returnMap[m.id]??''}
+                                        onChange={e=>setReturnMap(p=>({...p,[m.id]:e.target.value}))}
+                                        placeholder="Qty" style={{ width:50, border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 5px', fontSize:11 }} />
+                                      <button onClick={()=>raiseSRN(m)} disabled={actSaving===m.id||!returnMap[m.id]}
+                                        style={{ background:Theme.primary, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer', opacity:!returnMap[m.id]?0.5:1 }}>SRN</button>
+                                    </div>
+                                  )}
+                                  {isAdmin && m.srnStatus==='srn_raised' && (
+                                    <button onClick={()=>markReceived(m)} disabled={actSaving===m.id}
+                                      style={{ background:'#059669', color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>Received</button>
+                                  )}
+                                  {m.srnStatus==='srn_received' && <span style={{ fontSize:11, color:'#059669', fontWeight:700 }}>✓ Done</span>}
+                                  {!isPM && !isVendor && !isAdmin && ['super_admin','accounting_team','region_manager','project_manager'].includes(role) && (
                                     <button onClick={()=>{ setEditId(m.id); setEditRow({...m}); }}
                                       style={{ background:'none', border:`1px solid ${Theme.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12, color:Theme.primary }}>✏️</button>
-                                  </td>
-                                )}
+                                  )}
+                                </td>
+                                <td style={tdS}>
+                                  {['super_admin','accounting_team','region_manager','project_manager'].includes(role) && (
+                                    <button onClick={()=>{ setEditId(m.id); setEditRow({...m}); }}
+                                      style={{ background:'none', border:`1px solid ${Theme.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12, color:Theme.primary }}>✏️</button>
+                                  )}
+                                </td>
                               </>
                             )}
                           </tr>
