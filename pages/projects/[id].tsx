@@ -316,9 +316,9 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
 
   const inpS: React.CSSProperties = { border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px',
     fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text };
-  const thS: React.CSSProperties  = { padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase',
+  const thS: React.CSSProperties  = { padding:'7px 8px', fontSize:9, fontWeight:700, textTransform:'uppercase',
     color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, background:T.primaryLight, whiteSpace:'nowrap' as const };
-  const tdS: React.CSSProperties  = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
+  const tdS: React.CSSProperties  = { padding:'8px 8px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
 
   const saveNew = async () => {
     if (!newRow.description || !newRow.quantity) return;
@@ -371,8 +371,12 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
             <thead>
               <tr>
-                {['#','Item Code','Item Description','UOM','Qty','Document No','BOQ Req No','Serial No','Tax Rate','Amount (₹)','Total Value (₹)','Util. Qty','Status',''].map((h,i)=>(
-                  <th key={i} style={{ ...thS }}>{h}</th>
+                {[
+                  {h:'#',w:28},{h:'Item Code',w:90},{h:'Item Description',w:200},{h:'UOM',w:50},
+                  {h:'Qty',w:45},{h:'Doc No',w:80},{h:'BOQ Req',w:80},{h:'Serial No',w:100},
+                  {h:'Tax',w:45},{h:'Amount',w:80},{h:'Total Value',w:90},{h:'Util Qty',w:80},{h:'Status',w:90},{h:'',w:90}
+                ].map(({h,w},i)=>(
+                  <th key={i} style={{ ...thS, minWidth:w }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -380,17 +384,17 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
               {items.map((item, idx) => (
                 <React.Fragment key={item.id}>
                   <tr style={{ background:idx%2===0?'#fff':T.bg }}>
-                    <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
-                    <td style={{ ...tdS, color:T.textMuted }}>{item.hsnCode||'—'}</td>
-                    <td style={{ ...tdS, fontWeight:500 }}>{item.description}</td>
-                    <td style={{ ...tdS, color:T.textMuted }}>{item.uom||'—'}</td>
-                    <td style={{ ...tdS }}>{item.quantity.toLocaleString()}</td>
-                    <td style={{ ...tdS, color:T.textMuted }}>{(item as any).documentNo||'—'}</td>
-                    <td style={{ ...tdS, color:T.textMuted }}>{(item as any).boqReqNo||'—'}</td>
-                    <td style={{ ...tdS, color:T.textMuted }}>{(item as any).serialNo||'—'}</td>
-                    <td style={{ ...tdS, color:T.textMuted }}>{item.gstRate}%</td>
-                    <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
-                    <td style={{ ...tdS, fontWeight:700, color:T.success }}>{fmt(item.amount * (1 + (item.gstRate||0)/100))}</td>
+                    <td style={{ ...tdS, color:T.textMuted }}>{idx+1}</td>
+                    <td style={{ ...tdS, color:T.primary, fontSize:11 }}>{item.hsnCode||'—'}</td>
+                    <td style={{ ...tdS, fontWeight:500, maxWidth:200 }}>{item.description}</td>
+                    <td style={{ ...tdS, color:T.textMuted, textAlign:'center' as const }}>{item.uom||'—'}</td>
+                    <td style={{ ...tdS, textAlign:'center' as const }}>{item.quantity.toLocaleString()}</td>
+                    <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{(item as any).documentNo||'—'}</td>
+                    <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{(item as any).boqReqNo||'—'}</td>
+                    <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{(item as any).serialNo||'—'}</td>
+                    <td style={{ ...tdS, color:T.textMuted, textAlign:'center' as const }}>{item.gstRate}%</td>
+                    <td style={{ ...tdS, fontWeight:700, color:T.primary, textAlign:'right' as const }}>{fmt(item.amount)}</td>
+                    <td style={{ ...tdS, fontWeight:700, color:T.success, textAlign:'right' as const }}>{fmt(item.amount * (1 + (item.gstRate||0)/100))}</td>
                     <td style={{ ...tdS, textAlign:'center' as const }}>
                       {(item.utilisedStatus==='pending'||item.utilisedStatus==='pm_rejected') ? (
                         <input type="number" min={0} max={item.quantity}
@@ -430,26 +434,26 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
                   {editId === item.id && (
                     <tr style={{ background:T.primaryLight }}>
                       <td colSpan={12} style={{ padding:'14px', borderBottom:`1px solid ${T.border}` }}>
-                        <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>Edit STN Item</div>
-                        <div style={{ display:'grid', gridTemplateColumns:'2fr 3fr 1fr 1fr', gap:10, marginBottom:10 }}>
-                          {([['Item Code','hsnCode','text'],['Item Description','description','text'],['UOM','uom','text'],['Qty','quantity','number']] as [string,string,string][]).map(([l,f,t])=>(
+                        <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:10, paddingBottom:8, borderBottom:`1px solid ${T.primaryMid}` }}>✏️ Edit STN Item</div>
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr 3fr 1fr 1fr 1fr 1fr', gap:8, marginBottom:8 }}>
+                          {([['Item Code','hsnCode','text'],['Item Description *','description','text'],['UOM','uom','text'],['Qty','quantity','number'],['Tax %','gstRate','number'],['Amount (₹)','amount','number']] as [string,string,string][]).map(([l,f,t])=>(
                             <div key={f}>
-                              <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
-                              <input type={t} value={(editRow as any)[f]||''} onChange={e=>setEditRow((p:any)=>({...p,[f]:e.target.value}))} style={{ ...inpS, width:'100%', boxSizing:'border-box' as const }} />
+                              <label style={{ display:'block', fontSize:9, fontWeight:700, color:T.textMuted, marginBottom:2, textTransform:'uppercase' as const }}>{l}</label>
+                              <input type={t} value={(editRow as any)[f]||''} onChange={e=>setEditRow((p:any)=>({...p,[f]:e.target.value}))} style={{ ...inpS, padding:'4px 7px', fontSize:12 }} />
                             </div>
                           ))}
                         </div>
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr 1fr 1fr', gap:10, marginBottom:10 }}>
-                          {([['Document No','documentNo','text'],['BOQ Req No','boqReqNo','text'],['Serial No','serialNo','text'],['Tax Rate %','gstRate','number'],['Amount (₹)','amount','number'],['Util. Qty','utilisedQty','number']] as [string,string,string][]).map(([l,f,t])=>(
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:8, marginBottom:10 }}>
+                          {([['Document No','documentNo','text'],['BOQ Req No','boqReqNo','text'],['Serial No','serialNo','text'],['Util. Qty','utilisedQty','number']] as [string,string,string][]).map(([l,f,t])=>(
                             <div key={f}>
-                              <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
-                              <input type={t} value={(editRow as any)[f]||''} onChange={e=>setEditRow((p:any)=>({...p,[f]:e.target.value}))} style={{ ...inpS, width:'100%', boxSizing:'border-box' as const }} />
+                              <label style={{ display:'block', fontSize:9, fontWeight:700, color:T.textMuted, marginBottom:2, textTransform:'uppercase' as const }}>{l}</label>
+                              <input type={t} value={(editRow as any)[f]||''} onChange={e=>setEditRow((p:any)=>({...p,[f]:e.target.value}))} style={{ ...inpS, padding:'4px 7px', fontSize:12 }} />
                             </div>
                           ))}
                         </div>
-                        {(editRow as any).amount && (
+                        {(editRow as any).amount && Number((editRow as any).amount) > 0 && (
                           <div style={{ fontSize:13, color:T.success, fontWeight:700, marginBottom:10 }}>
-                            Total Value (incl. tax): ₹{(Number((editRow as any).amount) * (1 + Number(editRow.gstRate||0)/100)).toLocaleString('en-IN', {minimumFractionDigits:2})}
+                            Total Value (incl. tax): ₹{(Number((editRow as any).amount||0) * (1 + Number(editRow.gstRate||0)/100)).toLocaleString('en-IN', {minimumFractionDigits:2})}
                           </div>
                         )}
                         <div style={{ display:'flex', gap:10 }}>
@@ -489,10 +493,10 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
       {adding && (
         <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:14, marginTop:12 }}>
           <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New Item</div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:12 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 3fr 1fr', gap:10, marginBottom:12 }}>
             {([['Item Code','hsnCode','text'],['Item Description *','description','text'],['UOM','uom','text'],
-               ['Qty *','quantity','number'],['Document No','documentNo','text'],['BOQ Req No','boqReqNo','text'],
-               ['Serial No','serialNo','text'],['Tax Rate %','gstRate','number'],['Amount (Rs)','amount','number']] as [string,string,string][]).map(([l,f,t])=>(
+               ['Qty *','quantity','number'],['Tax Rate %','gstRate','number'],['Amount (₹)','amount','number'],
+               ['Document No','documentNo','text'],['BOQ Req No','boqReqNo','text'],['Serial No','serialNo','text']] as [string,string,string][]).map(([l,f,t])=>(
               <div key={f}>
                 <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
                 <input type={t} value={(newRow as any)[f]} onChange={e=>setNewRow(p=>({...p,[f]:e.target.value}))} style={inpS} />
@@ -2062,7 +2066,7 @@ export default function ProjectDetailPage() {
                 {/* ── 3. Work Documents ── */}
         {showDocs && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('📂','Work Documents', 'docs', false)}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 3fr 1fr', gap:14 }}>
             {DOC_TYPES.map(doc => {
               const docs = workDocs[doc.key] || [];
               const uploaded = docs.length > 0;
