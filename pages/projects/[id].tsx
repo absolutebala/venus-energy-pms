@@ -225,50 +225,63 @@ function POItemsSection({ projectId, editing, canAdd=true }: { projectId: string
             </thead>
             <tbody>
               {items.map((item, idx) => (
-                <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
-                  <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
-                  {editId === item.id ? (
-                    <>
-                      <td style={tdS}><input value={editRow.hsnCode||''} onChange={e=>setEditRow((p:any)=>({...p,hsnCode:e.target.value}))} style={inpS} /></td>
-                      <td style={tdS}><input value={editRow.description||''} onChange={e=>setEditRow((p:any)=>({...p,description:e.target.value}))} style={inpS} /></td>
-                      <td style={tdS}><input value={editRow.uom||''} onChange={e=>setEditRow((p:any)=>({...p,uom:e.target.value}))} style={inpS} /></td>
-                      <td style={tdS}><input type="number" value={editRow.quantity||''} onChange={e=>setEditRow((p:any)=>({...p,quantity:e.target.value}))} style={inpS} /></td>
-                      <td style={tdS}><input value={(editRow as any).documentNo||''} onChange={e=>setEditRow((p:any)=>({...p,documentNo:e.target.value}))} style={inpS} /></td>
-                      <td style={tdS}><input value={(editRow as any).boqReqNo||''} onChange={e=>setEditRow((p:any)=>({...p,boqReqNo:e.target.value}))} style={inpS} /></td>
-                      <td style={tdS}><input value={(editRow as any).serialNo||''} onChange={e=>setEditRow((p:any)=>({...p,serialNo:e.target.value}))} style={inpS} /></td>
-                      <td style={tdS}><input type="number" value={editRow.gstRate||18} onChange={e=>setEditRow((p:any)=>({...p,gstRate:e.target.value}))} style={inpS} /></td>
-                      <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{fmt(editRow.amount||0)}</td>
-                      <td style={{ ...tdS, fontWeight:700, color:T.success }}>{fmt((editRow.amount||0) * (1 + (editRow.gstRate||0)/100))}</td>
-                      <td style={{ ...tdS, display:'flex', gap:4 }}>
-                        <button onClick={()=>saveEdit(item.id)} disabled={saving} style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✓</button>
-                        <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✕</button>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td style={{ ...tdS, color:T.textMuted }}>{item.hsnCode||'—'}</td>
-                      <td style={{ ...tdS, fontWeight:500 }}>{item.description}</td>
-                      <td style={{ ...tdS, color:T.textMuted }}>{item.uom||'—'}</td>
-                      <td style={{ ...tdS }}>{item.quantity.toLocaleString()}</td>
-                      <td style={{ ...tdS, color:T.textMuted }}>{(item as any).documentNo||'—'}</td>
-                      <td style={{ ...tdS, color:T.textMuted }}>{(item as any).boqReqNo||'—'}</td>
-                      <td style={{ ...tdS, color:T.textMuted }}>{(item as any).serialNo||'—'}</td>
-                      <td style={{ ...tdS, color:T.textMuted }}>{item.gstRate}%</td>
-                      <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
-                      <td style={{ ...tdS, fontWeight:700, color:T.success }}>{fmt(item.amount * (1 + (item.gstRate||0)/100))}</td>
-                      <td style={{ ...tdS, width:64 }}>
-                        {canAdd && (
-                          <div style={{ display:'flex', gap:4 }}>
-                            <button onClick={()=>{ setEditId(item.id); setEditRow({...item}); }}
-                              style={{ background:'none', border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12, color:T.primary }}>✏️</button>
-                            <button onClick={()=>deleteItem(item.id)}
-                              style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:14 }}>🗑</button>
+                <React.Fragment key={item.id}>
+                  <tr style={{ background:idx%2===0?'#fff':T.bg }}>
+                    <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
+                    <td style={{ ...tdS, color:T.textMuted }}>{item.hsnCode||'—'}</td>
+                    <td style={{ ...tdS, fontWeight:500 }}>{item.description}</td>
+                    <td style={{ ...tdS, color:T.textMuted }}>{item.uom||'—'}</td>
+                    <td style={{ ...tdS }}>{item.quantity.toLocaleString()}</td>
+                    <td style={{ ...tdS, color:T.textMuted }}>{(item as any).documentNo||'—'}</td>
+                    <td style={{ ...tdS, color:T.textMuted }}>{(item as any).boqReqNo||'—'}</td>
+                    <td style={{ ...tdS, color:T.textMuted }}>{(item as any).serialNo||'—'}</td>
+                    <td style={{ ...tdS, color:T.textMuted }}>{item.gstRate}%</td>
+                    <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
+                    <td style={{ ...tdS, fontWeight:700, color:T.success }}>{fmt(item.amount * (1 + (item.gstRate||0)/100))}</td>
+                    <td style={{ ...tdS, width:64 }}>
+                      {canAdd && (
+                        <div style={{ display:'flex', gap:4 }}>
+                          <button onClick={()=>{ setEditId(editId===item.id?null:item.id); setEditRow({...item}); }}
+                            style={{ background: editId===item.id ? T.primary : 'none', color: editId===item.id ? '#fff' : T.primary, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12 }}>✏️</button>
+                          <button onClick={()=>deleteItem(item.id)}
+                            style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:14 }}>🗑</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                  {editId === item.id && (
+                    <tr style={{ background:T.primaryLight }}>
+                      <td colSpan={12} style={{ padding:'14px', borderBottom:`1px solid ${T.border}` }}>
+                        <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>Edit STN Item</div>
+                        <div style={{ display:'grid', gridTemplateColumns:'2fr 3fr 1fr 1fr', gap:10, marginBottom:10 }}>
+                          {([['Item Code','hsnCode','text'],['Item Description','description','text'],['UOM','uom','text'],['Qty','quantity','number']] as [string,string,string][]).map(([l,f,t])=>(
+                            <div key={f}>
+                              <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
+                              <input type={t} value={(editRow as any)[f]||''} onChange={e=>setEditRow((p:any)=>({...p,[f]:e.target.value}))} style={{ ...inpS, width:'100%', boxSizing:'border-box' as const }} />
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr 1fr', gap:10, marginBottom:10 }}>
+                          {([['Document No','documentNo','text'],['BOQ Req No','boqReqNo','text'],['Serial No','serialNo','text'],['Tax Rate %','gstRate','number'],['Amount (₹)','amount','number']] as [string,string,string][]).map(([l,f,t])=>(
+                            <div key={f}>
+                              <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
+                              <input type={t} value={(editRow as any)[f]||''} onChange={e=>setEditRow((p:any)=>({...p,[f]:e.target.value}))} style={{ ...inpS, width:'100%', boxSizing:'border-box' as const }} />
+                            </div>
+                          ))}
+                        </div>
+                        {(editRow as any).amount && (
+                          <div style={{ fontSize:13, color:T.success, fontWeight:700, marginBottom:10 }}>
+                            Total Value (incl. tax): ₹{(Number((editRow as any).amount) * (1 + Number(editRow.gstRate||0)/100)).toLocaleString('en-IN', {minimumFractionDigits:2})}
                           </div>
                         )}
+                        <div style={{ display:'flex', gap:10 }}>
+                          <button onClick={()=>saveEdit(item.id)} disabled={saving} style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13, fontWeight:600 }}>✓ Save</button>
+                          <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13 }}>Cancel</button>
+                        </div>
                       </td>
-                    </>
+                    </tr>
                   )}
-                </tr>
+                </React.Fragment>
               ))}
             </tbody>
             <tfoot>
