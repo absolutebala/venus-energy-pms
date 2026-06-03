@@ -769,7 +769,6 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                   {editId !== item.id && (
                     <>
                       <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD(item.expenseDate)}</td>
-                      <td style={tdS}>{item.site||'—'}</td>
                       <td style={tdS}>
                         <span style={{ fontSize:11, fontWeight:600, color:TYPE_COLORS[item.expenseType]||T.textMuted,
                           background:`${TYPE_COLORS[item.expenseType]||T.textMuted}18`, padding:'2px 8px', borderRadius:20, whiteSpace:'nowrap' as const }}>
@@ -799,8 +798,8 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                     <td colSpan={7} style={{ padding:'14px', borderBottom:`1px solid ${T.border}` }}>
                       <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>Edit Expense</div>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
-                        {([['Date *','expenseDate','date'],['Amount (₹) *','amount','number'],['Remarks','remarks','text'],
-                           ['Bank Account No','bankAccount','text'],['UPI ID','upiId','text']] as [string,string,string][]).map(([l,f,t])=>(
+                        {([['Date *','expenseDate','date'],['Amount (₹) *','amount','number'],['Site','site','text'],
+                           ['Remarks','remarks','text'],['Bank Account No','bankAccount','text'],['UPI ID','upiId','text']] as [string,string,string][]).map(([l,f,t])=>(
                           <div key={f}>
                             <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{l}</label>
                             <input type={t} value={(editRow as any)[f]||''} onChange={e=>setEditRow((p:any)=>({...p,[f]:e.target.value}))} style={{ ...inpS, width:'100%', boxSizing:'border-box' as const }} />
