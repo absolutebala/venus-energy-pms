@@ -117,7 +117,6 @@ const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
 
 
 
-
 function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }: { projectId: string; editing: boolean; canAdd?: boolean; isVendorRole?: boolean }) {
   const { getByProject, addItem, updateItem, deleteItem, loading } = usePOItems();
   const { logActivity } = useActivity();
@@ -252,8 +251,164 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
                     <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
                     <td style={{ ...tdS, fontWeight:700, color:T.success }}>{fmt(item.amount * (1 + (item.gstRate||0)/100))}</td>
                     <td style={{ ...tdS, textAlign:'center' as const }}>
+                      {isVendorRole && (item.utilisedStatus==='pending'||item.utilisedStatus==='pm_rejected') ? (
+                        <input type="number" min={0} max={item.quantity}
+                          value={utilisedMap[(item as any).id]??((item as any).utilisedQty??'')}
+                          onChange={e=>setUtilisedMap(p=>({...p,[(item as any).id]:e.target.value}))}
+                          placeholder="0"
+                          style={{ width:60, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 6px', fontSize:12, textAlign:'center' as const, outline:'none' }} />
+                      ) : (
+                        <span style={{ fontSize:12, fontWeight:600, color:T.text }}>{(item as any).utilisedQty??'—'}</span>
+                      )}
+                    </td>
+                    <td style={{ ...tdS }}>
+                      {(item as any).utilisedStatus && (item as any).utilisedStatus !== 'pending' ? (
+                        <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:20,
+                          color:(item as any).utilisedStatus==='pm_approved'?'#059669':(item as any).utilisedStatus==='submitted'?'#2563EB':'#DC2626',
+                          background:(item as any).utilisedStatus==='pm_approved'?'#D1FAE5':(item as any).utilisedStatus==='submitted'?'#EFF6FF':'#FEF2F2' }}>
+                          {(item as any).utilisedStatus==='pm_approved'?'Approved':(item as any).utilisedStatus==='submitted'?'Submitted':'Rejected'}
+                        </span>
+                      ) : <span style={{ fontSize:11, color:T.textMuted }}>—</span>}
+                    </td>
+                    <td style={{ ...tdS, width:120 }}>
+                      {isVendorRole && (item as any).utilisedStatus==='pending' ? (
+                        <button onClick={()=>submitUtilisation(item,'submitted')} disabled={submitting===item.id}
+                          style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>
+                          {submitting===item.id?'…':'Submit'}
+                        </button>
+                      ) : isVendorRole && (item as any).utilisedStatus==='pm_rejected' ? (
+                        <button onClick={()=>submitUtilisation(item,'submitted')} disabled={submitting===item.id}
+                          style={{ background:T.warning, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>
+                          {submitting===item.id?'…':'Resubmit'}
+                        </button>
+                      ) : editing && canAdd ? (
+                        <div style={{ display:'flex', gap:4 }}>
+                          <button onClick={()=>{ setEditId(editId===item.id?null:item.id); setEditRow({...item}); }}
+                            style={{ background: editId===item.id ? T.primary : 'none', color: editId===item.id ? '#fff' : T.primary, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12 }}>✏️</button>
+                          <button onClick={()=>deleteItem(item.id)}
+                            style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:14 }}>🗑</button>
+                        </div>
+                      ) : null}
+                    </td>
+                  </tr>
+                  {editId === item.id && (
+                    <tr style={{ background:T.primaryLight }}>
+                      <td colSpan={12} style={{ padding:'14px', borderBottom:`1px solid ${T.border}` }}>
+                        <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>Edit STN Item</div>
+                        <div style={{ display:'grid', gridTemplateColumns:'2fr 3fr 1fr 1fr', gap:10, marginBottom:10 }}>
+                          {([['Item Code','hsnCode','text'],['Item Description','description','text'],['UOM','uom','text'],['Qty','quantity','number']] as [string,string,string][]).map(([l,f,t])=>(
+                            <div key={f}>
+                              <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
+                              <input type={t} value={(editRow as any)[f]||''} onChange={e=>setEditRow((p:any)=>({...p,[f]:e.target.value}))} style={{ ...inpS, width:'100%', boxSizing:'border-box' as const }} />
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr 1fr', gap:10, marginBottom:10 }}>
+                          {([['Document No','documentNo','text'],['BOQ Req No','boqReqNo','text'],['Serial No','serialNo','text'],['Tax Rate %','gstRate','number'],['Amount (₹)','amount','number']] as [string,string,string][]).map(([l,f,t])=>(
+                            <div key={f}>
+                              <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
+                              <input type={t} value={(editRow as any)[f]||''} onChange={e=>setEditRow((p:any)=>({...p,[f]:e.target.value}))} style={{ ...inpS, width:'100%', boxSizing:'border-box' as const }} />
+                            </div>
+                          ))}
+                        </div>
+                        {(editRow as any).amount && (
+                          <div style={{ fontSize:13, color:T.success, fontWeight:700, marginBottom:10 }}>
+                            Total Value (incl. tax): ₹{(Number((editRow as any).amount) * (1 + Number(editRow.gstRate||0)/100)).toLocaleString('en-IN', {minimumFractionDigits:2})}
+                          </div>
+                        )}
+                        <div style={{ display:'flex', gap:10 }}>
+                          <button onClick={()=>saveEdit(item.id)} disabled={saving} style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13, fontWeight:600 }}>✓ Save</button>
+                          <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13 }}>Cancel</button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr style={{ background:T.primaryLight, fontWeight:700 }}>
+                <td colSpan={13} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>Subtotal excl. GST</td>
+                <td style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>{fmt(totalAmount)}</td>
+                <td style={tdS}></td>
+              </tr>
+              <tr style={{ background:T.primaryLight, fontWeight:700 }}>
+                <td colSpan={13} style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>GST</td>
+                <td style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>{fmt(totalGST)}</td>
+                <td style={tdS}></td>
+              </tr>
+              <tr style={{ background:T.primaryLight, fontWeight:800 }}>
+                <td colSpan={13} style={{ ...tdS, textAlign:'right' as const, color:T.primary }}>Grand Total</td>
+                <td style={{ ...tdS, textAlign:'right' as const, color:T.primary, fontSize:14 }}>{fmt(totalAmount + totalGST)}</td>
+                <td style={tdS}></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+      {!loading && items.length === 0 && (
+        <div style={{ textAlign:'center' as const, padding:'24px 0', color:T.textDim, fontSize:13 }}>No STN items for this project</div>
+      )}
 
-// ── SRN Section Component ─────────────────────────────────────────────────────
+      {adding && (
+        <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:14, marginTop:12 }}>
+          <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New Item</div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:12 }}>
+            {([['Item Code','hsnCode','text'],['Item Description *','description','text'],['UOM','uom','text'],
+               ['Qty *','quantity','number'],['Document No','documentNo','text'],['BOQ Req No','boqReqNo','text'],
+               ['Serial No','serialNo','text'],['Tax Rate %','gstRate','number'],['Amount (Rs)','amount','number']] as [string,string,string][]).map(([l,f,t])=>(
+              <div key={f}>
+                <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
+                <input type={t} value={(newRow as any)[f]} onChange={e=>setNewRow(p=>({...p,[f]:e.target.value}))} style={inpS} />
+              </div>
+            ))}
+          </div>
+
+          {(newRow as any).amount && (
+            <div style={{ fontSize:13, color:T.success, fontWeight:700, marginBottom:10 }}>
+              Total Value (incl. tax): ₹{(Number((newRow as any).amount) * (1 + Number(newRow.gstRate||0)/100)).toLocaleString('en-IN', {minimumFractionDigits:2})}
+            </div>
+          )}
+          <div style={{ display:'flex', gap:10 }}>
+            <button onClick={saveNew} disabled={saving||!newRow.description||!newRow.quantity}
+              style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px',
+                cursor:'pointer', fontSize:13, fontWeight:600, opacity:saving||!newRow.description||!newRow.quantity?0.5:1 }}>
+              {saving?'Saving…':'✅ Add Item'}
+            </button>
+            <button onClick={()=>setAdding(false)}
+              style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', color:T.text, cursor:'pointer', fontSize:13 }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:14 }}>
+        {isVendorRole && items.some((i:any)=>i.utilisedStatus==='pending'||i.utilisedStatus==='pm_rejected') && (
+        <button onClick={()=>items.filter((i:any)=>i.utilisedStatus==='pending'||i.utilisedStatus==='pm_rejected').forEach(i=>submitUtilisation(i,'submitted'))}
+          style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:10 }}>
+          📤 Submit All Utilisation
+        </button>
+      )}
+      {canAdd && !adding && (
+          <button onClick={()=>setAdding(true)}
+            style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8,
+              padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
+            + Add Item
+          </button>
+        )}
+        {items.length > 0 && (
+          <div style={{ marginLeft:'auto', fontSize:13, fontWeight:700, color:T.primary,
+            background:T.primaryLight, padding:'8px 18px', borderRadius:8 }}>
+            Grand Total: {fmt(totalAmount + totalGST)}
+          </div>
+        )}
+      </div>
+      {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
+    </div>
+  );
+}
+
 function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { projectId:string; vendorContact:string; canEdit:boolean; canAdd?:boolean }) {
   const [items,   setItems]   = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -432,13 +587,12 @@ const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-dig
   );
 }
 // ── SRN Section Component ─────────────────────────────────────────────────────
-
 function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role:string; onAllApproved:(v:boolean)=>void }) {
   const { getByProject, updateItem } = usePOItems();
   const { profile } = useAuth();
   const { logActivity: logSRN } = useActivity();
-  const allItems = getByProject(projectId);
-  const items = allItems.filter((i:any) => i.utilisedStatus && i.utilisedStatus !== 'pending');
+  const allSTNItems = getByProject(projectId);
+  const items = allSTNItems.filter((i:any) => i.utilisedStatus && i.utilisedStatus !== 'pending');
   const [saving,  setSaving]  = React.useState<string|null>(null);
   const [returnMap, setReturnMap] = React.useState<Record<string,string>>({});
   const [toast,   setToast]   = React.useState<any>(null);
@@ -453,7 +607,7 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
     setSaving(item.id);
     try {
       await updateItem(item.id, { utilisedQty: item.utilisedQty, utilisedStatus: 'submitted' } as any);
-      logSRN(projectId, `STN ${item.hsnCode||item.description} utilisation submitted`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+      logSRN(projectId, `STN ${(item as any).hsnCode||item.description} utilisation submitted`, profile?.full_name||'', profile?.role||'').catch(()=>{});
       setToast({ msg:'✅ Utilisation submitted for PM approval', type:'success' });
     } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
     finally { setSaving(null); }
@@ -482,9 +636,9 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
   const pmApprove = async (item: any) => {
     setSaving(item.id);
     try {
-      const bal = (item.quantity||0) - (item.utilisedQty||0);
+      const bal = Math.max(0, (item.quantity||0) - (item.utilisedQty||0));
       await updateItem(item.id, { utilisedStatus:'pm_approved', pmApprovedQty: item.utilisedQty||0 } as any);
-      logSRN(projectId, `STN ${item.hsnCode||item.description} PM approved`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+      logSRN(projectId, `STN ${(item as any).hsnCode||item.description} PM approved`, profile?.full_name||'', profile?.role||'').catch(()=>{});
       setToast({ msg:'✅ Approved', type:'success' });
     } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
     finally { setSaving(null); }
@@ -506,15 +660,16 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
     pm_rejected: { color:'#DC2626', bg:'#FEF2F2', label:'Rejected'  },
   };
 
-  const isPM    = ['project_manager','super_admin','region_manager'].includes(role);
+  const isPM     = ['project_manager','super_admin','region_manager'].includes(role);
   const isVendor = role === 'vendor';
+  const isAdmin  = ['super_admin','accounting_team'].includes(role);
 
   const thS: React.CSSProperties = { padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase',
     color:T.primary, background:T.primaryLight, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const };
   const tdS: React.CSSProperties = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
 
-
-  if (items.length === 0) return <div style={{ textAlign:'center' as const, padding:'24px 0', color:T.textDim, fontSize:13 }}>No utilisation submitted yet</div>;
+  if (loading) return <div style={{ color:T.textMuted, fontSize:13 }}>Loading materials...</div>;
+  if (items.length === 0) return <div style={{ textAlign:'center' as const, padding:'24px 0', color:T.textDim, fontSize:13 }}>No material items for this project</div>;
 
   return (
     <div>
@@ -540,7 +695,12 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
                   <td style={{ ...tdS, color:T.textMuted }}>{item.uom}</td>
                   <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600 }}>{item.quantity}</td>
                   <td style={{ ...tdS, textAlign:'right' as const }}>
-                    <span style={{ fontWeight:600 }}>{(item as any).utilisedQty??'—'}</span>
+                    {isVendor && item.utilisedStatus === 'pending' ? (
+                      <input type="number" value={item.utilisedQty??''} min={0} max={item.quantity}
+                        onChange={e=>undefined})}
+                        style={{ width:64, border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 6px',
+                          fontSize:12, textAlign:'right' as const, outline:'none' }} />
+                    ) : <span style={{ fontWeight:600 }}>{item.utilisedQty??'—'}</span>}
                   </td>
                   <td style={{ ...tdS }}>
                     <span style={{ fontSize:11, fontWeight:700, color:badge.color, background:badge.bg,
@@ -579,11 +739,34 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
                       <span style={{ fontSize:11, color:T.success, fontWeight:600 }}>✓ Complete</span>
                     )}
                     {(item as any).utilisedStatus==='pm_rejected' && isVendor && (
-                      <button onClick={()=>submitUtilised(item)}
+                      <button onClick={()=>submitUtilised(item)} disabled={saving===item.id}
                         style={{ background:T.warning, color:'#fff', border:'none', borderRadius:6,
                           padding:'4px 10px', fontSize:11, cursor:'pointer' }}>
                         Resubmit
                       </button>
+                    )}
+                    {isVendor && (item as any).utilisedStatus==='pm_approved' && balance>0 && (!(item as any).srnStatus || (item as any).srnStatus==='pending') && (
+                      <div style={{ display:'flex', gap:4, alignItems:'center' }}>
+                        <input type="number" min={0} max={balance}
+                          value={returnMap[item.id]??''}
+                          onChange={e=>setReturnMap(p=>({...p,[item.id]:e.target.value}))}
+                          placeholder="Return Qty"
+                          style={{ width:80, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 6px', fontSize:11, outline:'none' }} />
+                        <button onClick={()=>raiseSRN(item)} disabled={saving===item.id||!returnMap[item.id]}
+                          style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 8px', fontSize:11, cursor:'pointer',
+                            opacity:!returnMap[item.id]?0.5:1 }}>
+                          📤 SRN
+                        </button>
+                      </div>
+                    )}
+                    {(isAdmin||isPM) && (item as any).srnStatus==='srn_raised' && (
+                      <button onClick={()=>markReceived(item)} disabled={saving===item.id}
+                        style={{ background:T.success, color:'#fff', border:'none', borderRadius:6, padding:'4px 8px', fontSize:11, cursor:'pointer' }}>
+                        ✅ Received
+                      </button>
+                    )}
+                    {(item as any).srnStatus==='srn_received' && (
+                      <span style={{ fontSize:11, color:T.success, fontWeight:700 }}>✓ Complete</span>
                     )}
                   </td>
                 </tr>
@@ -1694,7 +1877,21 @@ export default function ProjectDetailPage() {
           <POItemsSection projectId={p.id} editing={editing('poitems')} canAdd={canEdit} isVendorRole={role==='vendor'} />
         </div>
 
+        {/* ── SRN ── */}
+        {showSTNSRN && (
+          <div style={{ ...card, marginBottom:16 }}>
+            {sectionTitle('📦','SRN — Store Return Note', 'srndetail', false)}
+            <SRNSection projectId={p.id} role={role} onAllApproved={setSrnAllApproved} />
+          </div>
+        )}
 
+        {/* ── SRN ── */}
+        {showSTNSRN && (
+          <div style={{ ...card, marginBottom:16 }}>
+            {sectionTitle('📦','SRN — Store Return Note', 'srndetail', false)}
+            <SRNSection projectId={p.id} role={role} />
+          </div>
+        )}
 
 
         
