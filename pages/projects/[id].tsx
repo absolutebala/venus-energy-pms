@@ -715,6 +715,9 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
                   <td style={{ ...tdS, textAlign:'right' as const, color:balance>0?T.warning:T.success, fontWeight:600 }}>
                     {item.utilisedStatus==='pm_approved'?balance:'—'}
                   </td>
+                  <td style={{ ...tdS, color:T.textMuted, fontSize:12 }}>
+                    {(item as any).srnDate || '—'}
+                  </td>
                   <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
                     {isVendor && item.utilisedStatus==='pending' && (
                       <button onClick={()=>submitUtilised(item)} disabled={isSaving||item.utilisedQty===null}
