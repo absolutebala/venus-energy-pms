@@ -190,7 +190,7 @@ export default function AdminUsersPage() {
     setFEmail(u.email);
     setFPhone(u.phone || '');
     setFDesig(u.designation || '');
-    setFRegion(u.region || ''); setFVendorId((u as any).vendor_id || ''); setFVendorId((u as any).vendor_id || '');
+    setFRegion(u.region || ''); setFVendorId((u as any).vendor_id || '');
     setFRole(u.role);
     setFActive(u.is_active);
     setEditUser(u);
@@ -199,7 +199,7 @@ export default function AdminUsersPage() {
 
   const resetForm = () => {
     setFEmail(''); setFName(''); setFPhone(''); setFDesig('');
-    setFRegion(''); setFRole('viewer'); setFPassword(''); setFActive(true); setFVendorId(''); setFVendorId('');
+    setFRegion(''); setFRole('viewer'); setFPassword(''); setFActive(true); setFVendorId('');
     setEditUser(null); setMsg(null);
   };
 
@@ -454,6 +454,16 @@ export default function AdminUsersPage() {
             <FormField label="Region" value={fRegion} onChange={setFRegion} fkey="eRegion"  focused={focused} setFocused={setFocused}/>
           </div>
           <RoleSelect value={fRole} onChange={setFRole}  roles={profile?.role === "super_admin" ? ADMIN_ASSIGNABLE_ROLES : ASSIGNABLE_ROLES}/>
+          {fRole === 'vendor' && (
+            <div style={{ marginBottom:12 }}>
+              <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6 }}>VENDOR *</label>
+              <select value={fVendorId} onChange={e=>setFVendorId(e.target.value)}
+                style={{ width:'100%', border:`1px solid ${T.border}`, borderRadius:8, padding:'10px 12px', fontSize:13, outline:'none', background:'#fff' }}>
+                <option value="">— Select Vendor —</option>
+                {vendorList.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}
+              </select>
+            </div>
+          )}
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
             <label style={{ fontSize:13, fontWeight:600, color:T.text }}>Account Status:</label>
             <button onClick={()=>setFActive(a=>!a)} style={{ background:fActive?T.successBg:T.dangerBg, border:`1px solid ${fActive?'#BBF7D0':'#FECACA'}`, borderRadius:20, padding:'4px 14px', fontSize:12, fontWeight:600, color:fActive?T.success:T.danger, cursor:'pointer' }}>

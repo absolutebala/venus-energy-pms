@@ -216,7 +216,7 @@ export default function ProjectsPage() {
     const name = profile?.full_name || '';
     if (role === 'project_manager')  return projects.filter((p:any) => p.pm === name);
     if (role === 'region_manager')   return projects.filter((p:any) => p.rm === name);
-    if (role === 'vendor')           return projects.filter((p:any) => p.vendor === name);
+    if (role === 'vendor')           return projects.filter((p:any) => vendorName ? p.vendor === vendorName : p.vendor === name);
     return projects; // super_admin, accounting_team, site_engineer see all
   }, [projects, profile]);
   const getDocStatusForProject = (id: string) => getDocStatus(id);
@@ -243,6 +243,15 @@ export default function ProjectsPage() {
   const [pmFilter,     setPmFilter]     = useState('');
   const [vendorFilter, setVendorFilter] = useState('');
   const [regionFilter, setRegionFilter] = useState('');
+  const [vendorName, setVendorName] = useState('');
+
+  // Fetch vendor name for vendor-role users
+  React.useEffect(() => {
+    if (profile?.role !== 'vendor' || !(profile as any).vendor_id) return;
+    const sb = createClient();
+    sb.from('vendors').select('name').eq('id', (profile as any).vendor_id).single()
+      .then(({ data }) => { if (data?.name) setVendorName(data.name); });
+  }, [profile]);
 
   // Redirect PM
   useEffect(() => {
