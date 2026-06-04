@@ -112,7 +112,6 @@ const DOC_COLS = [
 // STN Return now computed from live MaterialContext data
 
 const WORK_STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
-  not_started:    { label:'Not Started',     color:'#6B7280', bg:'#F9FAFB' },
   in_progress:    { label:'In Progress',    color:'#D97706', bg:'#FFFBEB' },
   completed:      { label:'Completed',      color:'#0D9488', bg:'#F0FDFA' },
   delayed:        { label:'Delayed',        color:'#DC2626', bg:'#FEF2F2' },
