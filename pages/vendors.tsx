@@ -239,7 +239,12 @@ export default function VendorsPage() {
                           ? <button onClick={()=>openDeactivate(v)} style={{ background:'#FEF2F2', border:'none', borderRadius:5, padding:'4px 8px', color:T.danger, cursor:'pointer', fontSize:11, fontWeight:500 }}>Deactivate</button>
                           : <button onClick={()=>activate(v)} style={{ background:T.successBg, border:'none', borderRadius:5, padding:'4px 8px', color:T.success, cursor:'pointer', fontSize:11, fontWeight:500 }}>Activate</button>
                         }
-                        <button onClick={()=>{ if(window.confirm('Delete ' + v.name + '?')){ setDeleteTarget(v); } }} style={{ background:T.dangerBg, border:'none', borderRadius:5, padding:'4px 8px', color:T.danger, cursor:'pointer', fontSize:11, fontWeight:500 }}>🗑</button>
+                        <button onClick={async ()=>{
+                            if (!window.confirm('⚠️ DELETE VENDOR: ' + v.name + '?\n\nThis will permanently remove the vendor record.\n\nThis CANNOT be undone.')) return;
+                            const typed = window.prompt('Type "' + v.name + '" to confirm deletion:');
+                            if (typed !== v.name) { alert('Vendor name did not match. Deletion cancelled.'); return; }
+                            await confirmDelete(v);
+                          }} style={{ background:T.dangerBg, border:'none', borderRadius:5, padding:'4px 8px', color:T.danger, cursor:'pointer', fontSize:11, fontWeight:500 }}>🗑</button>
                       </div>
                     </td>
                   </tr>
