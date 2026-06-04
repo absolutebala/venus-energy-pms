@@ -259,6 +259,7 @@ export default function ProjectsPage() {
     if (qMin) setAgeMin(Number(qMin));
     if (qMax) setAgeMax(Number(qMax));
     if (router.query.pm) setPmFilter(decodeURIComponent(router.query.pm as string));
+    if (router.query.region) setRegionFilter(decodeURIComponent(router.query.region as string));
     if (router.query.vendor) setVendorFilter(decodeURIComponent(router.query.vendor as string));
   }, [router.isReady, router.query]);
 
@@ -292,6 +293,7 @@ export default function ProjectsPage() {
     if (ageMin !== null && p.aging < ageMin) return false;
     if (ageMax !== null && ageMax < 999 && p.aging > ageMax) return false;
     if (pmFilter && (p as any).pm !== pmFilter) return false;
+    if (regionFilter && (p as any).region !== regionFilter) return false;
     if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
     return searchMatch(p);
   });
