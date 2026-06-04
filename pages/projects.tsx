@@ -228,7 +228,7 @@ export default function ProjectsPage() {
     if (role === 'region_manager')   return projects.filter((p:any) => p.rm === name);
     if (role === 'vendor')           return projects.filter((p:any) => vendorName ? p.vendor === vendorName : p.vendor === name);
     return projects; // super_admin, accounting_team, site_engineer see all
-  }, [projects, profile]);
+  }, [projects, profile, vendorName]);
   const getDocStatusForProject = (id: string) => getDocStatus(id);
   const [drafts, setDrafts] = useState<any[]>([]);
   useEffect(() => {
