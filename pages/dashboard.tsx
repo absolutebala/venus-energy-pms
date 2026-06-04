@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
+import { createClient } from '@/lib/supabase';
 import { T, card, badge } from '@/lib/theme';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
