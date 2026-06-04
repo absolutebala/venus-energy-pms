@@ -240,7 +240,7 @@ export default function SiteExpensesPage() {
             <table style={{ width:"100%", borderCollapse:"collapse" as const }}>
               <thead>
                 <tr>
-                  {["#","Date","Project","Remarks","Expense Type","Amount (₹)","TXN Ref","Payment Mode","Status",""].map((h,i)=>(
+                  {["#","Date","Project","Remarks","Expense Type","Amount (₹)","TXN Ref","Payment Mode","Txn Date","Status",""].map((h,i)=>(
                     <th key={i} style={{ ...thS, textAlign:i===5?"right" as const:"left" as const }}>{h}</th>
                   ))}
                 </tr>
@@ -274,6 +274,7 @@ export default function SiteExpensesPage() {
                       <td style={{ ...tdS, textAlign:"right" as const, fontWeight:700, color:T.primary }}>{fmt(e.amount)}</td>
                       <td style={{ ...tdS, color:T.textMuted }}>{e.paidTxnRef || "—"}</td>
                       <td style={tdS}>{e.paidPaymentMode || "—"}</td>
+                      <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{(e as any).txnDate || "—"}</td>
                       <td style={tdS}>
                         <span style={{ fontSize:11, fontWeight:600, padding:"3px 10px", borderRadius:20,
                           background: isPending ? '#FEF3C7' : '#D1FAE5',
