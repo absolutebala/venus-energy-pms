@@ -211,6 +211,16 @@ export default function ProjectsPage() {
   const projects = dbProjects as any[];
 
   // Role-based project filtering
+  const [vendorName, setVendorName] = useState('');
+
+  // Fetch vendor name for vendor-role users
+  React.useEffect(() => {
+    if (profile?.role !== 'vendor' || !(profile as any).vendor_id) return;
+    const sb = createClient();
+    sb.from('vendors').select('name').eq('id', (profile as any).vendor_id).single()
+      .then(({ data }) => { if (data?.name) setVendorName(data.name); });
+  }, [profile]);
+
   const roleFilteredProjects = React.useMemo(() => {
     const role = profile?.role;
     const name = profile?.full_name || '';
@@ -243,15 +253,6 @@ export default function ProjectsPage() {
   const [pmFilter,     setPmFilter]     = useState('');
   const [vendorFilter, setVendorFilter] = useState('');
   const [regionFilter, setRegionFilter] = useState('');
-  const [vendorName, setVendorName] = useState('');
-
-  // Fetch vendor name for vendor-role users
-  React.useEffect(() => {
-    if (profile?.role !== 'vendor' || !(profile as any).vendor_id) return;
-    const sb = createClient();
-    sb.from('vendors').select('name').eq('id', (profile as any).vendor_id).single()
-      .then(({ data }) => { if (data?.name) setVendorName(data.name); });
-  }, [profile]);
 
   // Redirect PM
   useEffect(() => {
