@@ -50,7 +50,7 @@ const CAMEL_TO_SNAKE: Record<string,string> = {
   txnRef:'txn_ref', expenseDate:'expense_date', expenseType:'expense_type',
   paymentMode:'payment_mode', projectId:'project_id', poNo:'po_no',
   createdBy:'created_by', paidTxnRef:'paid_txn_ref',
-  paidPaymentMode:'paid_payment_mode', paidAt:'paid_at', txnDate:'txn_date', txnDate:'txn_date',
+  paidPaymentMode:'paid_payment_mode', paidAt:'paid_at', txnDate:'txn_date',
   bankAccount:'bank_account', upiId:'upi_id', paidFromAccount:'paid_from_account', paidToAccount:'paid_to_account',
 };
 
