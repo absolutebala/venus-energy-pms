@@ -169,7 +169,7 @@ export default function VendorsPage() {
           {[
             { label:'Total Vendors',  value:loading?'…':vendors.length,                   color:T.primary, icon:'🏢' },
             { label:'Active',         value:vendors.filter(v=>v.active).length,   color:T.success, icon:'✅' },
-            { label:'Invited',        value:vendors.filter(v=>v.inviteStatus==='invitation_sent'||v.inviteStatus==='active').length, color:T.info, icon:'🔗' },
+
             { label:'Total PO Value', value:`₹${(vendors.reduce((a,v)=>a+v.poValue,0)/10000000).toFixed(2)}Cr`, color:T.warning, icon:'💰' },
           ].map((s,i)=>(
             <div key={i} style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px' }}>
@@ -188,7 +188,7 @@ export default function VendorsPage() {
         <div style={card}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
             <input value={search} onChange={e=>setSearch(e.target.value)} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} placeholder="Search vendor, contact, email, GST…" style={{ ...inputStyle(focused), width:260 }} />
-            <button onClick={openNew} style={btnPrimary}>+ Add Vendor</button>
+
           </div>
 
           <div style={{ overflowX:'auto' }}>
@@ -222,14 +222,7 @@ export default function VendorsPage() {
                         <span style={{ fontSize:11, fontWeight:600, color:v.active?T.success:T.danger, background:v.active?T.successBg:'#FEF2F2', padding:'3px 10px', borderRadius:20, display:'inline-block' }}>
                           {v.active ? 'Active' : 'Deactivated'}
                         </span>
-                        {v.active && (v.inviteStatus === 'not_sent' || v.inviteStatus === 'invitation_sent') && (
-                          <button
-                            onClick={() => sendInvite(v)}
-                            disabled={sendingInvite === v.id}
-                            style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:5, padding:'3px 8px', color:T.primary, cursor:'pointer', fontSize:10, fontWeight:600 }}>
-                            {sendingInvite===v.id ? '…' : v.inviteStatus==='invitation_sent' ? '↩ Resend Invite' : '✉ Send Invite'}
-                          </button>
-                        )}
+
                       </div>
                     </td>
                     <td style={td}>
@@ -273,7 +266,7 @@ export default function VendorsPage() {
             </div>
             {!editVendor && (
               <div style={{ background:T.infoBg, border:`1px solid #BFDBFE`, borderRadius:8, padding:'10px 14px', marginBottom:14, fontSize:12, color:T.info }}>
-                ℹ️ After creating the vendor, use "Send Invite" to grant them portal access. They will receive a setup email.
+                ℹ️ Vendor credentials are created from User Management.
               </div>
             )}
             <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:8 }}>
