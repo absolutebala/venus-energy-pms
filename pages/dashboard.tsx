@@ -112,6 +112,7 @@ const DOC_COLS = [
 // STN Return now computed from live MaterialContext data
 
 const WORK_STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
+  not_started:    { label:'Not Started',     color:'#6B7280', bg:'#F9FAFB' },
   in_progress:    { label:'In Progress',    color:'#D97706', bg:'#FFFBEB' },
   completed:      { label:'Completed',      color:'#0D9488', bg:'#F0FDFA' },
   delayed:        { label:'Delayed',        color:'#DC2626', bg:'#FEF2F2' },
@@ -797,8 +798,8 @@ function VendorDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
       </div>
 
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-        <KpiCard label="My Projects"    value={myProjects.length}                                      icon="📁" color={T.primary} onClick={()=>router.push('/vendor/projects')} />
-        <KpiCard label="Docs Pending"   value={docsPending}                                            icon="📂" color={T.warning} onClick={()=>router.push('/vendor/projects')} />
+        <KpiCard label="My Projects"    value={myProjects.length}                                      icon="📁" color={T.primary} onClick={()=>router.push('/projects')} />
+        <KpiCard label="Docs Pending"   value={docsPending}                                            icon="📂" color={T.warning} onClick={()=>router.push('/projects')} />
         <KpiCard label="Submitted"      value={submitted}                                              icon="📤" color={T.info}    />
         <KpiCard label="Completed"      value={myProjects.filter(p=>p.status==='completed').length}    icon="✅" color={T.success} />
       </div>
@@ -818,20 +819,20 @@ function VendorDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
             const stColor: Record<string,string> = { in_progress:'#2563EB', delayed:'#DC2626', billing_review:'#7C3AED', completed:'#16A34A', pending:'#D97706', submitted:'#0D9488' };
             const c = stColor[p.status]||T.textDim;
             return (
-              <div key={i} onClick={()=>router.push(`/vendor/projects/${p.id}`)}
+              <div key={i} onClick={()=>router.push(`/projects/${p.id}`)}
                 style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px', background:T.bg, borderRadius:10, cursor:'pointer', border:`1px solid ${T.border}` }}
                 onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'}
                 onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.boxShadow='none'}>
                 <div>
-                  <div style={{ fontSize:12, fontWeight:700, color:T.primary }}>{p.id}</div>
+                  <div style={{ fontSize:12, fontWeight:700, color:T.primary }}>{(p as any).poNo || p.id}</div>
                   <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{p.projectName}</div>
                   <div style={{ fontSize:11, color:T.textMuted }}>{p.site} · {p.type}</div>
                 </div>
                 <div style={{ textAlign:'right' }}>
                   <span style={{ background:`${c}18`, color:c, border:`1px solid ${c}40`, padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:700 }}>
-                    {STATUS_DISPLAY[p.status]||p.status}
+                    {STATUS_DISPLAY[p.status]||(p.status==='not_started'?'Not Started':p.status)}
                   </span>
-                  <div style={{ fontSize:11, color:T.textMuted, marginTop:6 }}>Progress: {p.progress}%</div>
+                  <div style={{ fontSize:11, color:T.textMuted, marginTop:4 }}>{(p as any).site} · {(p as any).region}</div>
                 </div>
               </div>
             );

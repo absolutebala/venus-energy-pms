@@ -311,7 +311,7 @@ export default function ProjectsPage() {
   });
 
   const counts = {
-    total: projects.length,
+    total: roleFilteredProjects.length,
     inProgress: roleFilteredProjects.filter((p:any)=>p.status==='in_progress').length,
     aging: roleFilteredProjects.filter((p:any)=>!['completed','not_started'].includes(p.status)&&getAgeDays(p.id)>agingThreshold).length,
     completed: roleFilteredProjects.filter((p:any)=>p.status==='completed').length,
