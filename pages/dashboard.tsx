@@ -771,8 +771,15 @@ function SiteEngineerDashboard({ projects }: { projects: typeof ALL_PROJECTS }) 
 // ── 5. VENDOR DASHBOARD ──────────────────────────────────────────
 function VendorDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
   const router = useRouter();
-  const myVendorName = 'ABC Telecom Services';
-  const myProjects   = projects.filter(p=>p.vendor===myVendorName);
+  const { profile } = useAuth();
+  const [myVendorName, setMyVendorName] = React.useState('');
+  React.useEffect(() => {
+    if (!(profile as any)?.vendor_id) return;
+    const sb = createClient();
+    sb.from('vendors').select('name').eq('id',(profile as any).vendor_id).single()
+      .then(({data})=>{ if(data?.name) setMyVendorName(data.name); });
+  }, [profile]);
+  const myProjects = projects.filter((p:any)=>myVendorName ? p.vendor===myVendorName : false);
   const docsPending  = myProjects.filter(p=>['in_progress','pending'].includes(p.status)).length;
   const submitted    = myProjects.filter(p=>p.status==='submitted').length;
 
