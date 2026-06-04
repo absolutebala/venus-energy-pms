@@ -65,15 +65,21 @@ export default function VendorsPage() {
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [deleting, setDeleting]         = useState(false);
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    setTimeout(() => {
-      fetchVendors();
+    try {
+      const sb = createClient();
+      const { error } = await sb.from('vendors').delete().eq('id', deleteTarget.id);
+      if (error) throw error;
+      await fetchVendors();
       setToast({ msg:`${deleteTarget.name} has been deleted.`, type:'info' });
+    } catch(err:any) {
+      setToast({ msg:'Error: ' + (err as any).message, type:'error' });
+    } finally {
       setDeleting(false);
       setDeleteTarget(null);
-    }, 500);
+    }
   };
 
   const filtered = vendors.filter(v =>
