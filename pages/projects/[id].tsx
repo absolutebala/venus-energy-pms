@@ -1032,6 +1032,9 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                       </td>
                       <td style={{ ...tdS, fontSize:12, color:T.textMuted }}>{item.remarks||'—'}</td>
                       <td style={{ ...tdS, textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
+                      <td style={{ ...tdS, fontSize:12, color:T.textMuted }}>{(item as any).paidTxnRef||'—'}</td>
+                      <td style={{ ...tdS, fontSize:12, color:T.textMuted }}>{(item as any).paidPaymentMode||'—'}</td>
+                      <td style={{ ...tdS, fontSize:12, color:T.textMuted, whiteSpace:'nowrap' as const }}>{(item as any).txnDate||'—'}</td>
                       <td style={tdS}><span style={{ fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:20, background:item.status==='paid'?'#D1FAE5':'#FEF3C7', color:item.status==='paid'?'#059669':'#D97706' }}>{item.status==='paid'?'Paid':'Pending'}</span></td>
                       <td style={{ ...tdS, width:64 }}>
                         <div style={{ display:'flex', gap:4 }}>
