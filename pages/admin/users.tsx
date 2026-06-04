@@ -353,7 +353,7 @@ export default function AdminUsersPage() {
                     <td style={{ ...td, color:T.textDim }}>{i+1}</td>
                     <td style={{ ...td, color:T.text, fontWeight:600 }}>{u.full_name || '—'}</td>
                     <td style={{ ...td, color:T.primary }}>{u.email}</td>
-                    <td style={td}><span style={{ fontSize:11, background:T.primaryLight, color:T.primary, padding:'3px 9px', borderRadius:20, fontWeight:600 }}>{ROLE_LABELS[u.role]}</span></td>
+                    <td style={td}><span style={{ fontSize:11, background:T.primaryLight, color:T.primary, padding:'3px 9px', borderRadius:20, fontWeight:600 }}>{ROLE_LABELS[u.role]}</span>{u.role==='vendor' && (u as any).vendor_id && (<div style={{ fontSize:10, color:T.textMuted, marginTop:3 }}>{vendorList.find(v=>v.id===(u as any).vendor_id)?.name||''}</div>)}</td>
                     <td style={td}>{u.region || '—'}</td>
 
                     <td style={td}><span style={badge(u.is_active?'Active':'Inactive')}>{u.is_active?'Active':'Inactive'}</span></td>
