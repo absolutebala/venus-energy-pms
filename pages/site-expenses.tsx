@@ -15,7 +15,6 @@ const fmtD = (d: string) => {
   catch { return d; }
 };
 
-const EXPENSE_TYPES  = ["Advance","Material Purchase","Labour Charge","Transport","Equipment Rental","Miscellaneous"];
 const PAYMENT_MODES  = ["NEFT","RTGS","Cheque","Cash","UPI","Others"];
 const TYPE_COLORS: Record<string,string> = {
   "Advance":"#2563EB","Material Purchase":"#7C3AED","Labour Charge":"#D97706",
@@ -43,7 +42,20 @@ export default function SiteExpensesPage() {
   // Paid modal state
   const [paidModal,    setPaidModal]    = useState<any>(null);
   const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] });
-  const [fromAccounts, setFromAccounts] = useState<string[]>([]);
+  const [fromAccounts,  setFromAccounts]  = useState<string[]>([]);
+  const [expenseTypes,  setExpenseTypes]  = useState<string[]>(['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous']);
+
+  React.useEffect(() => {
+    const sb = createClient();
+    sb.from('lookup_options').select('value').eq('type','expense_type').order('value')
+      .then(({data}) => { if (data && data.length > 0) setExpenseTypes(data.map((r:any)=>r.value)); });
+  }, []);
+  const addExpenseType = async (val: string) => {
+    const sb = createClient();
+    await sb.from('lookup_options').insert({ type:'expense_type', value: val });
+    setExpenseTypes(prev => [...prev, val].sort());
+    return val;
+  };
 
   React.useEffect(() => {
     const sb = createClient();
@@ -206,8 +218,9 @@ export default function SiteExpensesPage() {
                   ))}
                   <div>
                     <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>Expense Type</label>
-                    <select value={form.expenseType} onChange={e=>setForm(p=>({...p,expenseType:e.target.value}))} style={{ ...inputStyle(), width:"100%" }}>
-                      {EXPENSE_TYPES.map(t=><option key={t}>{t}</option>)}
+                    <select value={form.expenseType} onChange={async e=>{ if(e.target.value==='__new__'){ const v=window.prompt('Enter new expense type:'); if(v&&v.trim()){ await addExpenseType(v.trim()); setForm(p=>({...p,expenseType:v.trim()})); } } else setForm(p=>({...p,expenseType:e.target.value})); }} style={{ ...inputStyle(), width:"100%" }}>
+                      {expenseTypes.map(t=><option key={t}>{t}</option>)}
+                      <option value="__new__">+ Add New Type...</option>
                     </select>
                   </div>
                 </div>

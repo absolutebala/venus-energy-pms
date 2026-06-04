@@ -1065,8 +1065,9 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                         ))}
                         <div>
                           <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Expense Type</label>
-                          <select value={editRow.expenseType||''} onChange={e=>setEditRow((p:any)=>({...p,expenseType:e.target.value}))} style={{ ...inpS, width:'100%' }}>
-                            {['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'].map(t=><option key={t}>{t}</option>)}
+                          <select value={editRow.expenseType||''} onChange={async e=>{ if(e.target.value==='__new__'){ const v=window.prompt('Enter new expense type:'); if(v&&v.trim()){ await addExpenseType(v.trim()); setEditRow((p:any)=>({...p,expenseType:v.trim()})); } } else setEditRow((p:any)=>({...p,expenseType:e.target.value})); }} style={{ ...inpS, width:'100%' }}>
+                            {expenseTypes.map(t=><option key={t}>{t}</option>)}
+                            <option value="__new__">+ Add New Type...</option>
                           </select>
                         </div>
                       </div>
@@ -1110,8 +1111,9 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
             ))}
             <div>
               <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Expense Type</label>
-              <select value={newRow.expenseType} onChange={e=>setNewRow(p=>({...p,expenseType:e.target.value}))} style={{ ...inpS, cursor:'pointer' }}>
-                {['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'].map(t=><option key={t}>{t}</option>)}
+              <select value={newRow.expenseType} onChange={async e=>{ if(e.target.value==='__new__'){ const v=window.prompt('Enter new expense type:'); if(v&&v.trim()){ await addExpenseType(v.trim()); setNewRow(p=>({...p,expenseType:v.trim()})); } } else setNewRow(p=>({...p,expenseType:e.target.value})); }} style={{ ...inpS, cursor:'pointer' }}>
+                {expenseTypes.map(t=><option key={t}>{t}</option>)}
+                <option value="__new__">+ Add New Type...</option>
               </select>
             </div>
           </div>
