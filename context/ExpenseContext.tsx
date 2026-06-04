@@ -9,7 +9,7 @@ export interface Expense {
   projectId: string; poNo: string; remarks: string;
   createdBy: string; createdAt?: string; updatedAt?: string;
   status: string;
-  paidTxnRef?: string; paidPaymentMode?: string; paidAt?: string; txnDate?: string; txnDate?: string;
+  paidTxnRef?: string; paidPaymentMode?: string; paidAt?: string; txnDate?: string;
   bankAccount?: string; upiId?: string; paidFromAccount?: string; paidToAccount?: string;
 }
 
