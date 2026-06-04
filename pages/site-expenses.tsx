@@ -240,7 +240,7 @@ export default function SiteExpensesPage() {
             <table style={{ width:"100%", borderCollapse:"collapse" as const }}>
               <thead>
                 <tr>
-                  {["#","Date","Project","Remarks","Expense Type","Amount (₹)","TXN Ref","Payment Mode","Txn Date","Status",""].map((h,i)=>(
+                  {["#","Req. Date","Project","Remarks","Expense Type","Amount (₹)","TXN Ref","Payment Mode","Txn Date","Status",""].map((h,i)=>(
                     <th key={i} style={{ ...thS, textAlign:i===5?"right" as const:"left" as const }}>{h}</th>
                   ))}
                 </tr>

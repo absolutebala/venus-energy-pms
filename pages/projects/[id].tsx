@@ -1011,7 +1011,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
             <thead>
               <tr>
-                {['#','Date','Expense Type','Remarks','Amount (₹)','TXN Ref','Payment Mode','Txn Date','Status',''].map((h,i)=>(
+                {['#','Req. Date','Expense Type','Remarks','Amount (₹)','TXN Ref','Payment Mode','Txn Date','Status',''].map((h,i)=>(
                   <th key={i} style={thS}>{h}</th>
                 ))}
               </tr>
