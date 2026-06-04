@@ -287,7 +287,7 @@ export default function SiteExpensesPage() {
                           <button onClick={ev=>{ ev.stopPropagation(); setPaidModal(e); setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] }); }}
                             style={{ background:T.success, border:"none", borderRadius:6, padding:"5px 12px",
                               color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap" as const }}>
-                            ✓ Paid
+                            💳 Make Payment
                           </button>
                         )}
                         {!isPending && (
