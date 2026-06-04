@@ -65,15 +65,16 @@ export default function VendorsPage() {
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [deleting, setDeleting]         = useState(false);
 
-  const confirmDelete = async () => {
-    if (!deleteTarget) return;
+  const confirmDelete = async (vendor?: any) => {
+    const target = vendor || deleteTarget;
+    if (!target) return;
     setDeleting(true);
     try {
       const sb = createClient();
-      const { error } = await sb.from('vendors').delete().eq('id', deleteTarget.id);
+      const { error } = await sb.from('vendors').delete().eq('id', target.id);
       if (error) throw error;
       await fetchVendors();
-      setToast({ msg:`${deleteTarget.name} has been deleted.`, type:'info' });
+      setToast({ msg:`${target.name} has been deleted.`, type:'info' });
     } catch(err:any) {
       setToast({ msg:'Error: ' + (err as any).message, type:'error' });
     } finally {
@@ -238,7 +239,7 @@ export default function VendorsPage() {
                           ? <button onClick={()=>openDeactivate(v)} style={{ background:'#FEF2F2', border:'none', borderRadius:5, padding:'4px 8px', color:T.danger, cursor:'pointer', fontSize:11, fontWeight:500 }}>Deactivate</button>
                           : <button onClick={()=>activate(v)} style={{ background:T.successBg, border:'none', borderRadius:5, padding:'4px 8px', color:T.success, cursor:'pointer', fontSize:11, fontWeight:500 }}>Activate</button>
                         }
-                        <button onClick={()=>setDeleteTarget(v)} style={{ background:T.dangerBg, border:'none', borderRadius:5, padding:'4px 8px', color:T.danger, cursor:'pointer', fontSize:11, fontWeight:500 }}>🗑</button>
+                        <button onClick={()=>{ if(window.confirm('Delete ' + v.name + '?')){ setDeleteTarget(v); } }} style={{ background:T.dangerBg, border:'none', borderRadius:5, padding:'4px 8px', color:T.danger, cursor:'pointer', fontSize:11, fontWeight:500 }}>🗑</button>
                       </div>
                     </td>
                   </tr>
