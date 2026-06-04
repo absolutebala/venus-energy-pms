@@ -465,6 +465,10 @@ function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
     'Work Not Done':'#B91C1C','Allocation Not received':'#78350F','PO Not reflected':'#374151','Others':'#6B7280',
   };
   const statusGroups = projects.reduce((acc:any,p:any)=>{ const s=(p as any).projectStatus||'Not Set'; acc[s]=(acc[s]||0)+1; return acc; },{});
+  const REGION_COLORS = ['#2563EB','#059669','#D97706','#7C3AED','#DC2626','#0891B2','#65A30D','#DB2777'];
+  const regionGroups = projects.reduce((acc:any,p:any)=>{ const r=p.region||'Not Set'; acc[r]=(acc[r]||0)+1; return acc; },{});
+  const regionData = Object.entries(regionGroups).map(([name,value]:any,i:number)=>({ name, value, color:REGION_COLORS[i%REGION_COLORS.length] })).filter((d:any)=>d.value>0).sort((a:any,b:any)=>b.value-a.value);
+
   const statusData = Object.entries(statusGroups).map(([name,value]:any)=>({ name, value, color: STATUS_COLORS[name]||'#6B7280', status: name })).filter((d:any)=>d.value>0).sort((a:any,b:any)=>b.value-a.value);
 
   const pmGroups = projects.reduce((acc:any,p)=>{ acc[p.pm]=(acc[p.pm]||[]); acc[p.pm].push(p); return acc; },{});
@@ -503,7 +507,7 @@ function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
         ))}
       </div>
       {/* ── 3-col summary row ── */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:14, marginBottom:20 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:14, marginBottom:20 }}>
         {/* Status Distribution */}
         <div style={card}>
           <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Status Distribution</div>
@@ -517,6 +521,28 @@ function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
           </div>
           {statusData.map((d:any,i:number)=>(
             <div key={i} onClick={()=>router.push(`/projects?status=${d.status}`)}
+              style={{ display:'flex', alignItems:'center', gap:8, marginBottom:7, cursor:'pointer', padding:'3px 5px', borderRadius:5 }}
+              onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}
+              onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='transparent'}>
+              <div style={{ width:8, height:8, borderRadius:2, background:d.color, flexShrink:0 }} />
+              <span style={{ fontSize:12, color:T.textMuted, flex:1 }}>{d.name}</span>
+              <span style={{ fontSize:12, fontWeight:700, color:T.text }}>{d.value}</span>
+            </div>
+          ))}
+        </div>
+        {/* Region Distribution */}
+        <div style={card}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Region Distribution</div>
+          <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
+            <ResponsiveContainer width={110} height={110}>
+              <PieChart><Pie data={regionData} cx='50%' cy='50%' innerRadius={28} outerRadius={50} dataKey='value' paddingAngle={3}
+                onClick={(e:any)=>router.push('/projects?region=' + encodeURIComponent(e.name))}>
+                {regionData.map((d:any,i:number)=><Cell key={i} fill={d.color} cursor='pointer' />)}
+              </Pie><Tooltip contentStyle={{ fontSize:12 }} /></PieChart>
+            </ResponsiveContainer>
+          </div>
+          {regionData.map((d:any,i:number)=>(
+            <div key={i} onClick={()=>router.push('/projects?region=' + encodeURIComponent(d.name))}
               style={{ display:'flex', alignItems:'center', gap:8, marginBottom:7, cursor:'pointer', padding:'3px 5px', borderRadius:5 }}
               onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}
               onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='transparent'}>
@@ -812,6 +838,10 @@ function VendorDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
 // ── 6. VIEWER DASHBOARD ──────────────────────────────────────────
 function ViewerDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
   const router = useRouter();
+  const REGION_COLORS = ['#2563EB','#059669','#D97706','#7C3AED','#DC2626','#0891B2','#65A30D','#DB2777'];
+  const regionGroups = projects.reduce((acc:any,p:any)=>{ const r=p.region||'Not Set'; acc[r]=(acc[r]||0)+1; return acc; },{});
+  const regionData = Object.entries(regionGroups).map(([name,value]:any,i:number)=>({ name, value, color:REGION_COLORS[i%REGION_COLORS.length] })).filter((d:any)=>d.value>0).sort((a:any,b:any)=>b.value-a.value);
+
   const statusData = [
     { name:'In Progress', value:projects.filter(p=>p.status==='in_progress').length,  color:'#2563EB' },
     { name:'Delayed',     value:projects.filter(p=>p.status==='delayed').length,       color:'#DC2626' },
