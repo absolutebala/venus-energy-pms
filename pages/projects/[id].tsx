@@ -966,6 +966,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
     return val;
   };
 
+
   const saveEdit = async () => {
     setSaving(true);
     try {
