@@ -27,7 +27,8 @@ const SA_NAV: NavItem[] = [
 ];
 
 const VENDOR_NAV: NavItem[] = [
-  { href:'/projects', label:'My Projects', icon:<FolderOpen {...iconProps} />, module:'projects' },
+  { href:'/dashboard', label:'Dashboard',    icon:<LayoutDashboard {...iconProps} />, module:'dashboard' },
+  { href:'/projects',  label:'My Projects', icon:<FolderOpen {...iconProps} />,      module:'projects'  },
 ];
 
 const PM_NAV: NavItem[] = [
