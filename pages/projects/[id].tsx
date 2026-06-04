@@ -953,6 +953,18 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
   const [newRow,   setNewRow]   = React.useState({
     txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'', remarks:'', bankAccount:'', upiId:''
   });
+  const [expenseTypes, setExpenseTypes] = React.useState<string[]>(['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous']);
+  React.useEffect(() => {
+    const sb = createClient();
+    sb.from('lookup_options').select('value').eq('type','expense_type').order('value')
+      .then(({data}) => { if (data && data.length > 0) setExpenseTypes(data.map((r:any)=>r.value)); });
+  }, []);
+  const addExpenseType = async (val: string) => {
+    const sb = createClient();
+    await sb.from('lookup_options').insert({ type:'expense_type', value: val });
+    setExpenseTypes(prev => [...prev, val].sort());
+    return val;
+  };
 
   const saveEdit = async () => {
     setSaving(true);
