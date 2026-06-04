@@ -242,6 +242,7 @@ export default function ProjectsPage() {
   const PER_PAGE = 10;
   const [pmFilter,     setPmFilter]     = useState('');
   const [vendorFilter, setVendorFilter] = useState('');
+  const [regionFilter, setRegionFilter] = useState('');
 
   // Redirect PM
   useEffect(() => {
@@ -293,6 +294,7 @@ export default function ProjectsPage() {
     if (ageMin !== null && p.aging < ageMin) return false;
     if (ageMax !== null && ageMax < 999 && p.aging > ageMax) return false;
     if (pmFilter && (p as any).pm !== pmFilter) return false;
+    if (regionFilter && (p as any).region !== regionFilter) return false;
     if (regionFilter && (p as any).region !== regionFilter) return false;
     if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
     return searchMatch(p);
