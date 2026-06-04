@@ -42,7 +42,7 @@ export default function SiteExpensesPage() {
 
   // Paid modal state
   const [paidModal,    setPaidModal]    = useState<any>(null);
-  const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"" });
+  const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] });
   const [fromAccounts, setFromAccounts] = useState<string[]>([]);
 
   React.useEffect(() => {
@@ -118,6 +118,7 @@ export default function SiteExpensesPage() {
         status: 'paid',
         paidTxnRef: paidForm.txnRef,
         paidPaymentMode: paidForm.paymentMode,
+        txnDate: paidForm.txnDate,
         paidAt: new Date().toISOString(),
       });
       // Update project paid_amount
@@ -127,7 +128,7 @@ export default function SiteExpensesPage() {
         await createClient().from('projects').update({ paid_amount: newPaid }).eq('id', proj.id);
       }
       setPaidModal(null);
-      setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"" });
+      setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] });
       setToast({ msg:"✅ Marked as Paid — Financial Summary updated", type:"success" });
     } catch (err:any) {
       setToast({ msg:"❌ " + err.message, type:"error" });
@@ -282,7 +283,7 @@ export default function SiteExpensesPage() {
                       </td>
                       <td style={{ ...tdS, width:80 }}>
                         {isPending && canManage && (
-                          <button onClick={ev=>{ ev.stopPropagation(); setPaidModal(e); setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"" }); }}
+                          <button onClick={ev=>{ ev.stopPropagation(); setPaidModal(e); setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] }); }}
                             style={{ background:T.success, border:"none", borderRadius:6, padding:"5px 12px",
                               color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap" as const }}>
                             ✓ Paid

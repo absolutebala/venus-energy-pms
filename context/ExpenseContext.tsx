@@ -9,7 +9,7 @@ export interface Expense {
   projectId: string; poNo: string; remarks: string;
   createdBy: string; createdAt?: string; updatedAt?: string;
   status: string;
-  paidTxnRef?: string; paidPaymentMode?: string; paidAt?: string;
+  paidTxnRef?: string; paidPaymentMode?: string; paidAt?: string; txnDate?: string; txnDate?: string;
   bankAccount?: string; upiId?: string; paidFromAccount?: string; paidToAccount?: string;
 }
 
@@ -36,20 +36,22 @@ function mapRow(row: any): Expense {
     paidToAccount:   row.paid_to_account   ?? '',
     paidPaymentMode: row.paid_payment_mode ?? '',
     paidAt:          row.paid_at           ?? '',
+    txnDate:         row.txn_date          ?? '',
+    txnDate:         row.txn_date          ?? '',
   };
 }
 
 const VALID_DB_COLS = new Set([
   'txn_ref','expense_date','site','expense_type','amount',
   'payment_mode','project_id','po_no','remarks','created_by',
-  'status','paid_txn_ref','paid_payment_mode','paid_at',
+  'status','paid_txn_ref','paid_payment_mode','paid_at','txn_date','txn_date',
 ]);
 
 const CAMEL_TO_SNAKE: Record<string,string> = {
   txnRef:'txn_ref', expenseDate:'expense_date', expenseType:'expense_type',
   paymentMode:'payment_mode', projectId:'project_id', poNo:'po_no',
   createdBy:'created_by', paidTxnRef:'paid_txn_ref',
-  paidPaymentMode:'paid_payment_mode', paidAt:'paid_at',
+  paidPaymentMode:'paid_payment_mode', paidAt:'paid_at', txnDate:'txn_date', txnDate:'txn_date',
   bankAccount:'bank_account', upiId:'upi_id', paidFromAccount:'paid_from_account', paidToAccount:'paid_to_account',
 };
 
