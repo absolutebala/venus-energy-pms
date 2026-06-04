@@ -43,6 +43,20 @@ export default function SiteExpensesPage() {
   // Paid modal state
   const [paidModal,    setPaidModal]    = useState<any>(null);
   const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"" });
+  const [fromAccounts, setFromAccounts] = useState<string[]>([]);
+
+  React.useEffect(() => {
+    const sb = createClient();
+    sb.from('lookup_options').select('value').eq('type','from_account').order('value')
+      .then(({data}) => { if (data) setFromAccounts(data.map((r:any)=>r.value)); });
+  }, []);
+
+  const addFromAccount = async (val: string) => {
+    const sb = createClient();
+    await sb.from('lookup_options').insert({ type:'from_account', value: val });
+    setFromAccounts(prev => [...prev, val].sort());
+    setPaidForm(p => ({...p, fromAccount: val}));
+  };
   const [paidSaving,   setPaidSaving]   = useState(false);
 
   // Group projects by vendor
@@ -319,9 +333,12 @@ export default function SiteExpensesPage() {
             </div>
             <div style={{ marginBottom:14 }}>
               <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>From Account</label>
-              <input value={paidForm.fromAccount} onChange={e=>setPaidForm(p=>({...p,fromAccount:e.target.value}))}
-                placeholder="e.g. Venus Energy HDFC A/C"
-                style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const }} />
+              <select value={paidForm.fromAccount} onChange={e=>{ if(e.target.value==='__new__'){ const v=window.prompt('Enter new account name:'); if(v&&v.trim()) addFromAccount(v.trim()); } else setPaidForm(p=>({...p,fromAccount:e.target.value})); }}
+                style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const, appearance:'none' }}>
+                <option value="">— Select Account —</option>
+                {fromAccounts.map(a=><option key={a} value={a}>{a}</option>)}
+                <option value="__new__">+ Add New Account...</option>
+              </select>
             </div>
             <div style={{ marginBottom:20 }}>
               <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>To Account</label>
