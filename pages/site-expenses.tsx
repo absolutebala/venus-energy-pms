@@ -320,6 +320,11 @@ export default function SiteExpensesPage() {
               {paidModal.expenseType} — {fmt(paidModal.amount)} · Project {paidModal.projectId}
             </p>
             <div style={{ marginBottom:14 }}>
+              <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Transaction Date</label>
+              <input type="date" value={paidForm.txnDate} onChange={e=>setPaidForm(p=>({...p,txnDate:e.target.value}))}
+                style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const }} />
+            </div>
+            <div style={{ marginBottom:14 }}>
               <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>TXN Ref *</label>
               <input value={paidForm.txnRef} onChange={e=>setPaidForm(p=>({...p,txnRef:e.target.value}))}
                 placeholder="e.g. NEFT/2026/001234"
