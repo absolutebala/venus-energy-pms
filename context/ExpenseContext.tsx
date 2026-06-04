@@ -37,7 +37,6 @@ function mapRow(row: any): Expense {
     paidPaymentMode: row.paid_payment_mode ?? '',
     paidAt:          row.paid_at           ?? '',
     txnDate:         row.txn_date          ?? '',
-    txnDate:         row.txn_date          ?? '',
   };
 }
 
