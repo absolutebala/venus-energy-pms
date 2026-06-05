@@ -576,18 +576,18 @@ export default function ProjectsPage() {
               Showing {Math.min((page-1)*PER_PAGE+1, filtered.length)}–{Math.min(page*PER_PAGE, filtered.length)} of {filtered.length} projects
             </div>
             <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-              <button onClick={()=>setPage(p=>{ const n=Math.max(1,p-1); router.push(`/projects?page=${n}`, undefined, {shallow:true}); return n; })} disabled={page===1}
+              <button onClick={()=>setPage(p=>{ const n=Math.max(1,p-1); router.replace(`/projects?page=${n}`, undefined, {shallow:true}); return n; })} disabled={page===1}
                 style={{ padding:'5px 12px', borderRadius:6, border:`1px solid ${T.border}`, background:'#fff', cursor:page===1?'not-allowed':'pointer', fontSize:12, color:page===1?T.textDim:T.text, opacity:page===1?0.5:1 }}>← Prev</button>
               {Array.from({length:Math.min(5,Math.ceil(filtered.length/PER_PAGE))},(_, i)=>{
                 const totalPages = Math.ceil(filtered.length/PER_PAGE);
                 const start = Math.max(1, Math.min(page-2, totalPages-4));
                 const pg = start+i;
                 return pg<=totalPages ? (
-                  <button key={pg} onClick={()=>{ setPage(pg); router.push(`/projects?page=${pg}`, undefined, {shallow:true}); }}
+                  <button key={pg} onClick={()=>{ setPage(pg); router.replace(`/projects?page=${pg}`, undefined, {shallow:true}); }}
                     style={{ padding:'5px 10px', borderRadius:6, border:`1px solid ${pg===page?T.primary:T.border}`, background:pg===page?T.primaryLight:'#fff', cursor:'pointer', fontSize:12, color:pg===page?T.primary:T.text, fontWeight:pg===page?700:400 }}>{pg}</button>
                 ) : null;
               })}
-              <button onClick={()=>setPage(p=>{ const n=Math.min(Math.ceil(filtered.length/PER_PAGE),p+1); router.push(`/projects?page=${n}`, undefined, {shallow:true}); return n; })} disabled={page>=Math.ceil(filtered.length/PER_PAGE)}
+              <button onClick={()=>setPage(p=>{ const n=Math.min(Math.ceil(filtered.length/PER_PAGE),p+1); router.replace(`/projects?page=${n}`, undefined, {shallow:true}); return n; })} disabled={page>=Math.ceil(filtered.length/PER_PAGE)}
                 style={{ padding:'5px 12px', borderRadius:6, border:`1px solid ${T.border}`, background:'#fff', cursor:page>=Math.ceil(filtered.length/PER_PAGE)?'not-allowed':'pointer', fontSize:12, color:page>=Math.ceil(filtered.length/PER_PAGE)?T.textDim:T.text, opacity:page>=Math.ceil(filtered.length/PER_PAGE)?0.5:1 }}>Next →</button>
             </div>
           </div>
