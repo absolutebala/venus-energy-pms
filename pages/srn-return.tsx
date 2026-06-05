@@ -309,7 +309,6 @@ export default function SRNReturnPage() {
                                     </span>
                                   ) : <span style={{ fontSize:11, color:Theme.textMuted }}>—</span>}
                                 </td>
-                                </td>
                                 <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
                                   {isPM && m.utilisedStatus==='submitted' && (
                                     <div style={{ display:'flex', gap:4 }}>
