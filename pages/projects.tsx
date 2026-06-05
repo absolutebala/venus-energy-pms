@@ -163,13 +163,13 @@ export default function ProjectsPage() {
     try {
       const sb = createClient();
       const year = new Date().getFullYear();
-      const { data: existing } = await sb.from('projects').select('id').order('id', { ascending: false }).limit(1);
+      const { data: existing } = await sb.from('projects').select('id').like('id', `VE-${year}-%`);
       let nextNum = 1;
       if (existing && existing.length > 0) {
-        const lastId = existing[0].id;
-        const parts = lastId.split('-');
-        const n = parseInt(parts[parts.length - 1]);
-        if (!isNaN(n)) nextNum = n + 1;
+        const nums = existing
+          .map((r: any) => parseInt(r.id.split('-')[2]))
+          .filter((n: number) => !isNaN(n));
+        if (nums.length > 0) nextNum = Math.max(...nums) + 1;
       }
       const newId = `VE-${year}-${String(nextNum).padStart(3,'0')}`;
       const { error } = await sb.from('projects').insert({
