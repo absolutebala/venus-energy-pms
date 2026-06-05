@@ -471,7 +471,7 @@ export default function ProjectsPage() {
 
         {/* Filters */}
         {(() => {
-          const hasFilter = !!(search || projectStatusFilter || vendorFilter || pmFilter || regionFilter);
+          const hasFilter = !!(search || projectStatusFilter || vendorFilter || pmFilter || regionFilter || typeFilter !== 'All Types');
           const _dis = (key: string) => { const m: Record<string,string> = {search,projectStatusFilter,vendorFilter,pmFilter,regionFilter}; return hasFilter && !m[key]; };
           const disStyle = { opacity:0.4, pointerEvents:'none' as const };
           return (
