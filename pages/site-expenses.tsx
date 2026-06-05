@@ -210,10 +210,10 @@ export default function SiteExpensesPage() {
           ))}
           {datePreset==='custom' && (
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <input type="date" value={customFrom} onChange={e=>setCustomFrom(e.target.value)}
+              <input type="date" value={customFrom} max={new Date().toISOString().split("T")[0]} onChange={e=>setCustomFrom(e.target.value)}
                 style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', fontSize:12, outline:'none' }} />
               <span style={{ fontSize:12, color:T.textMuted }}>to</span>
-              <input type="date" value={customTo} onChange={e=>setCustomTo(e.target.value)}
+              <input type="date" value={customTo} max={new Date().toISOString().split("T")[0]} onChange={e=>setCustomTo(e.target.value)}
                 style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', fontSize:12, outline:'none' }} />
             </div>
           )}
