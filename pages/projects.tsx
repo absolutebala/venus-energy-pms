@@ -475,59 +475,28 @@ export default function ProjectsPage() {
             placeholder="Search project, PO number, Indus ID, site, vendor…"
             style={{ ...inputStyle(focused), width:320 }} />
 
-          <div style={{ position:'relative' as const }}>
-            <button onClick={()=>setShowFilters(f=>!f)}
-              style={{ ...inputStyle(), display:'flex', alignItems:'center', gap:6, cursor:'pointer', background:showFilters?T.primaryLight:'#fff',
-                borderColor:activeFilterCount>0?T.primary:T.border, color:activeFilterCount>0?T.primary:T.textMuted, fontWeight:activeFilterCount>0?600:400 }}>
-              🔽 Filters {activeFilterCount>0 && <span style={{ background:T.primary, color:'#fff', borderRadius:10, padding:'1px 7px', fontSize:11 }}>{activeFilterCount}</span>}
+          <select value={projectStatusFilter} onChange={e=>{setProjectStatusFilter(e.target.value);setPage(1);}} style={{ ...inputStyle(), minWidth:140 }}>
+            <option value="">All Statuses</option>
+            {uniqueProjectStatuses.map(s=><option key={s} value={s}>{s}</option>)}
+          </select>
+          <select value={vendorFilter} onChange={e=>{setVendorFilter(e.target.value);setPage(1);}} style={{ ...inputStyle(), minWidth:140 }}>
+            <option value="">All Vendors</option>
+            {filterVendors.map(v=><option key={v} value={v}>{v}</option>)}
+          </select>
+          <select value={pmFilter} onChange={e=>{setPmFilter(e.target.value);setPage(1);}} style={{ ...inputStyle(), minWidth:120 }}>
+            <option value="">All PMs</option>
+            {filterPMs.map(pm=><option key={pm} value={pm}>{pm}</option>)}
+          </select>
+          <select value={regionFilter} onChange={e=>{setRegionFilter(e.target.value);setPage(1);}} style={{ ...inputStyle(), minWidth:120 }}>
+            <option value="">All Regions</option>
+            {Array.from(new Set(roleFilteredProjects.map((p:any)=>p.region||'').filter(Boolean))).sort().map(r=><option key={r} value={r}>{r}</option>)}
+          </select>
+          {activeFilterCount > 0 && (
+            <button onClick={()=>{setProjectStatusFilter('');setVendorFilter('');setPmFilter('');setRegionFilter('');setPage(1);}}
+              style={{ ...inputStyle(), color:T.danger, borderColor:'#FECACA', background:T.dangerBg, cursor:'pointer', fontWeight:600, whiteSpace:'nowrap' as const }}>
+              ✕ Clear
             </button>
-            {showFilters && (
-              <div style={{ position:'absolute' as const, top:'110%', left:0, zIndex:100, background:'#fff', border:`1px solid ${T.border}`,
-                borderRadius:12, boxShadow:'0 4px 24px rgba(0,0,0,0.12)', padding:16, minWidth:360 }}>
-                <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>Filter Projects</div>
-                <div style={{ display:'grid', gap:12 }}>
-                  <div>
-                    <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Project Status</label>
-                    <select value={projectStatusFilter} onChange={e=>{setProjectStatusFilter(e.target.value);setPage(1);}}
-                      style={{ ...inputStyle(), width:'100%' }}>
-                      <option value="">All Statuses</option>
-                      {uniqueProjectStatuses.map(s=><option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Vendor</label>
-                    <select value={vendorFilter} onChange={e=>{setVendorFilter(e.target.value);setPage(1);}}
-                      style={{ ...inputStyle(), width:'100%' }}>
-                      <option value="">All Vendors</option>
-                      {filterVendors.map(v=><option key={v} value={v}>{v}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Project Manager</label>
-                    <select value={pmFilter} onChange={e=>{setPmFilter(e.target.value);setPage(1);}}
-                      style={{ ...inputStyle(), width:'100%' }}>
-                      <option value="">All PMs</option>
-                      {filterPMs.map(pm=><option key={pm} value={pm}>{pm}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Region</label>
-                    <select value={regionFilter} onChange={e=>{setRegionFilter(e.target.value);setPage(1);}}
-                      style={{ ...inputStyle(), width:'100%' }}>
-                      <option value="">All Regions</option>
-                      {Array.from(new Set(roleFilteredProjects.map((p:any)=>p.region||'').filter(Boolean))).sort().map(r=><option key={r} value={r}>{r}</option>)}
-                    </select>
-                  </div>
-                </div>
-                {activeFilterCount > 0 && (
-                  <button onClick={()=>{setProjectStatusFilter('');setVendorFilter('');setPmFilter('');setRegionFilter('');setPage(1);}}
-                    style={{ marginTop:12, width:'100%', background:T.dangerBg, border:`1px solid #FECACA`, borderRadius:8, padding:'7px', color:T.danger, cursor:'pointer', fontSize:12, fontWeight:600 }}>
-                    ✕ Clear All Filters
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+          )}
 
           <select value={typeFilter} onChange={e=>{ setTypeFilter(e.target.value); setPage(1); }} style={{ ...inputStyle(), width:'auto', marginLeft:'auto' }}>
             {TYPES.map(t=><option key={t}>{t}</option>)}
