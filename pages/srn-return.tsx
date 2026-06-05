@@ -1,126 +1,74 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Layout from '@/components/Layout';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { usePOItems } from '@/context/POItemContext';
 import { useProjects } from '@/context/ProjectContext';
+import { createClient } from '@/lib/supabase';
 import { T as Theme, card } from '@/lib/theme';
 
-const fmt = (n: number) => Number(n).toLocaleString('en-IN');
-
-const getBalance = (m: any) => Math.max(0, (m.issuedQty??0) - (m.pmApprovedQty||m.utilisedQty||0));
-
-const getReturnStatus = (m: any) => {
-  const bal = getBalance(m);
-  if (bal === 0) return { label:'Not Applicable',    color:'#9CA3AF', bg:'#F9FAFB' };
-  const ret = m.returnQty??0;
-  if (ret >= bal) return { label:'Fully Returned',   color:'#0D9488', bg:'#F0FDFA' };
-  if (ret > 0)    return { label:'Partially Returned',color:'#D97706', bg:'#FFFBEB' };
-  return               { label:'Pending Return',     color:'#DC2626', bg:'#FEF2F2' };
-};
-
 export default function SRNReturnPage() {
-  const { profile, can } = useAuth();
-  const { items: allItems, loading: matLoading, updateItem } = usePOItems();
-  const [editId,     setEditId]     = React.useState<string|null>(null);
-  const [editRow,    setEditRow]    = React.useState<any>({});
-  const [saving,     setSaving]     = React.useState(false);
-  const [returnMap,  setReturnMap]  = React.useState<Record<string,string>>({});
-  const [actSaving,  setActSaving]  = React.useState<string|null>(null);
-
-  const pmAction = async (item: any, approve: boolean) => {
-    setActSaving(item.id);
-    try {
-      await updateItem(item.id, {
-        utilisedStatus: approve ? 'pm_approved' : 'pm_rejected',
-        pmApprovedQty: approve ? (item.utilisedQty ?? 0) : null,
-      } as any);
-    } catch(err) { console.error(err); }
-    finally { setActSaving(null); }
-  };
-
-  const [returnDateMap2, setReturnDateMap2] = React.useState<Record<string,string>>({});
-  const raiseSRN = async (item: any) => {
-    const qty = Number(returnMap[item.id] ?? 0);
-    const date = returnDateMap2[item.id] || new Date().toISOString().split('T')[0];
-    if (!qty) return;
-    setActSaving(item.id);
-    try {
-      await updateItem(item.id, {
-        returnQty: qty, srnStatus: 'srn_raised', srnDate: date,
-      } as any);
-    } catch(err) { console.error(err); }
-    finally { setActSaving(null); }
-  };
-
-  const markReceived = async (item: any) => {
-    setActSaving(item.id);
-    try {
-      await updateItem(item.id, { srnStatus: 'srn_received' } as any);
-    } catch(err) { console.error(err); }
-    finally { setActSaving(null); }
-  };
-
-  const saveEdit = async () => {
-    setSaving(true);
-    try {
-      await updateItem(editId!, {
-        hsnCode:    editRow.hsnCode,
-        description: editRow.description,
-        uom:        editRow.uom,
-        quantity:   Number(editRow.quantity),
-        documentNo: editRow.documentNo,
-        boqReqNo:   editRow.boqReqNo,
-        serialNo:   editRow.serialNo,
-        gstRate:    Number(editRow.gstRate),
-        amount:     Number(editRow.amount),
-      } as any);
-      setEditId(null);
-    } catch(err) { console.error(err); }
-    finally { setSaving(false); }
-  };
+  const { profile } = useAuth();
   const { projects, loading: projLoading } = useProjects();
-  const role    = profile?.role || 'viewer';
-  const isPM    = ['project_manager','super_admin','region_manager'].includes(role);
-  const isVendor = role === 'vendor';
-  const isAdmin  = ['super_admin','accounting_team'].includes(role);
+  const sb = createClient();
 
+  const [items,      setItems]      = useState<any[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [saving,     setSaving]     = useState<string|null>(null);
   const [search,     setSearch]     = useState('');
   const [kpiFilter,  setKpiFilter]  = useState<string|null>(null);
   const [expandedId, setExpandedId] = useState<string|null>(null);
 
+  const role    = profile?.role || 'viewer';
+  const isPM    = ['project_manager','super_admin','region_manager'].includes(role);
   const showVendor = ['super_admin','region_manager','project_manager'].includes(role);
 
-  // Group materials by projectId
+  const fetchItems = useCallback(async () => {
+    setLoading(true);
+    const { data } = await sb.from('srn').select('*').order('project_id').order('sort_order').order('created_at');
+    setItems(data || []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchItems(); }, [fetchItems]);
+
+  const markReceived = async (item: any, received: boolean) => {
+    setSaving(item.id);
+    try {
+      const { error } = await sb.from('srn').update({ received }).eq('id', item.id);
+      if (error) throw new Error(error.message);
+      setItems(prev => prev.map((i:any) => i.id === item.id ? { ...i, received } : i));
+    } catch(err) { console.error(err); }
+    finally { setSaving(null); }
+  };
+
+  // Group by project
   const grouped = useMemo(() => {
     const map: Record<string, any[]> = {};
-    for (const item of allItems) {
-      if (!map[item.projectId]) map[item.projectId] = [];
-      map[item.projectId].push(item);
+    for (const item of items) {
+      if (!map[item.project_id]) map[item.project_id] = [];
+      map[item.project_id].push(item);
     }
-    return Object.entries(map).map(([projectId, stnItems]) => {
+    return Object.entries(map).map(([projectId, srnItems]) => {
       const proj = (projects as any[]).find(p => p.id === projectId);
       return {
         projectId,
-        projectName: proj?.site || projectId,
-        poNo:   proj?.poNo  || '—',
+        projectName: proj?.site || proj?.projectName || projectId,
+        poNo:   proj?.poNo   || '—',
         vendor: proj?.vendor || '—',
-        pm:     proj?.pm    || '—',
-        stnItems,
+        pm:     proj?.pm     || '—',
+        srnItems,
       };
     });
-  }, [allItems, projects]);
+  }, [items, projects]);
 
   const kpiFiltered = kpiFilter ? grouped.map(p => ({
     ...p,
-    stnItems: p.stnItems.filter((i:any) => {
-      if (kpiFilter === 'submitted')    return i.utilisedStatus === 'submitted';
-      if (kpiFilter === 'pm_approved')  return i.utilisedStatus === 'pm_approved';
-      if (kpiFilter === 'srn_pending')  return i.srnStatus === 'srn_raised';
-      if (kpiFilter === 'srn_received') return i.srnStatus === 'srn_received';
+    srnItems: p.srnItems.filter((i:any) => {
+      if (kpiFilter === 'received')     return i.received === true;
+      if (kpiFilter === 'not_received') return i.received === false;
       return true;
     })
-  })).filter((p:any) => p.stnItems.length > 0) : grouped;
+  })).filter((p:any) => p.srnItems.length > 0) : grouped;
 
   const filtered = kpiFiltered.filter(p => {
     if (!search) return true;
@@ -131,29 +79,25 @@ export default function SRNReturnPage() {
            p.vendor.toLowerCase().includes(s);
   });
 
-  const totalItems    = allItems.length;
-  const totalApproved = grouped.length;
-  const totalPending  = 0;
-
   const thS: React.CSSProperties = {
     padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase',
     color:Theme.primary, background:Theme.primaryLight, textAlign:'left' as const,
     borderBottom:`2px solid ${Theme.primaryMid}`, whiteSpace:'nowrap' as const,
   };
   const tdS: React.CSSProperties = {
-    padding:'10px 12px', fontSize:13, borderBottom:`1px solid ${Theme.border}`, verticalAlign:'middle' as const,
+    padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${Theme.border}`, verticalAlign:'middle' as const,
   };
 
-  const loading = matLoading || projLoading;
+  const isLoading = loading || projLoading;
 
   return (
     <Layout>
       <div className="fade-in">
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
           <div>
-            <div style={{ fontSize:22, fontWeight:800, color:Theme.text }}>STN / SRN Status</div>
+            <div style={{ fontSize:22, fontWeight:800, color:Theme.text }}>SRN Status</div>
             <div style={{ fontSize:13, color:Theme.textMuted, marginTop:2 }}>
-              {loading ? 'Loading...' : `${grouped.length} projects · ${totalItems} material items`}
+              {isLoading ? 'Loading...' : `${grouped.length} projects · ${items.length} SRN items`}
             </div>
           </div>
           <input value={search} onChange={e=>setSearch(e.target.value)}
@@ -162,16 +106,15 @@ export default function SRNReturnPage() {
         </div>
 
         {/* Summary cards */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:14, marginBottom:20 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:20 }}>
           {[
-            { label:'Total STN Items',  value:allItems.length,                                                                            color:Theme.primary,  filter:null             },
-            { label:'Submitted',        value:allItems.filter((i:any)=>i.utilisedStatus==='submitted').length,                            color:'#2563EB',      filter:'submitted'      },
-            { label:'PM Approved',      value:allItems.filter((i:any)=>i.utilisedStatus==='pm_approved').length,                          color:Theme.success,  filter:'pm_approved'    },
-            { label:'SRN Pending',      value:allItems.filter((i:any)=>(i as any).srnStatus==='srn_raised').length,                       color:'#D97706',      filter:'srn_pending'    },
-            { label:'SRN Received',     value:allItems.filter((i:any)=>(i as any).srnStatus==='srn_received').length,                     color:'#0D9488',      filter:'srn_received'   },
+            { label:'Total SRN Items',  value:items.length,                                  color:Theme.primary, filter:null            },
+            { label:'Received',         value:items.filter((i:any)=>i.received===true).length,  color:'#0D9488',    filter:'received'      },
+            { label:'Pending',          value:items.filter((i:any)=>!i.received).length,        color:'#D97706',    filter:'not_received'  },
           ].map(s=>(
             <div key={s.label} onClick={()=>setKpiFilter(kpiFilter===s.filter?null:s.filter)}
-              style={{ ...card, padding:'14px 16px', cursor:'pointer', borderColor:kpiFilter===s.filter?s.color:Theme.border,
+              style={{ ...card, padding:'14px 16px', cursor:'pointer',
+                borderColor:kpiFilter===s.filter?s.color:Theme.border,
                 boxShadow:kpiFilter===s.filter?`0 0 0 2px ${s.color}30`:'none', transition:'all 0.15s' }}>
               <div style={{ fontSize:11, color:kpiFilter===s.filter?s.color:Theme.textMuted, fontWeight:600, textTransform:'uppercase' as const, marginBottom:4 }}>{s.label}</div>
               <div style={{ fontSize:22, fontWeight:800, color:s.color }}>{s.value}</div>
@@ -180,24 +123,19 @@ export default function SRNReturnPage() {
           ))}
         </div>
 
-        <div style={{ background:Theme.primaryLight, border:`1px solid ${Theme.primaryMid}`, borderRadius:10,
-          padding:'10px 16px', marginBottom:16, fontSize:12, color:Theme.primary }}>
-          📦 Materials issued from Indus via STN — vendor submits utilisation → PM approves → excess returned via SRN
-        </div>
+        {isLoading && <div style={{ ...card, textAlign:'center', padding:40, color:Theme.textMuted }}>Loading SRN data...</div>}
 
-        {loading && <div style={{ ...card, textAlign:'center', padding:40, color:Theme.textMuted }}>Loading STN/SRN data...</div>}
-
-        {!loading && filtered.length === 0 && (
-          <div style={{ ...card, textAlign:'center', padding:40, color:Theme.textDim }}>No STN/SRN records found</div>
+        {!isLoading && filtered.length === 0 && (
+          <div style={{ ...card, textAlign:'center', padding:40, color:Theme.textMuted }}>
+            {items.length === 0 ? 'No SRN items added yet. Add them from the project detail page.' : 'No records match your search.'}
+          </div>
         )}
 
-        {!loading && filtered.map((project: any) => {
-          const isExpanded   = expandedId === project.projectId;
-          const materials    = project.stnItems || [];
-          const totalItemCount = materials.length;
-          const totalQty     = materials.reduce((a:number,m:any)=>a+Number(m.quantity||0),0);
-          const totalAmount  = materials.reduce((a:number,m:any)=>a+Number(m.amount||0),0);
-          const allDone      = materials.length > 0 && materials.every((m:any)=>m.srnStatus==='srn_received' || (m.utilisedStatus==='pm_approved' && Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0))===0));
+        {!isLoading && filtered.map((project: any) => {
+          const isExpanded  = expandedId === project.projectId;
+          const srnItems    = project.srnItems || [];
+          const totalReceived = srnItems.filter((i:any)=>i.received===true).length;
+          const allDone     = srnItems.length > 0 && srnItems.every((i:any)=>i.received===true);
 
           return (
             <div key={project.projectId} style={{ ...card, marginBottom:12, padding:0, overflow:'hidden' }}>
@@ -223,19 +161,18 @@ export default function SRNReturnPage() {
                   </div>
                   <div style={{ display:'flex', gap:16, alignItems:'center' }}>
                     {[
-                      ['ITEMS', totalItemCount, Theme.text],
-                      ['SUBMITTED', materials.filter((m:any)=>m.utilisedStatus==='submitted').length, '#2563EB'],
-                      ['APPROVED', materials.filter((m:any)=>m.utilisedStatus==='pm_approved').length, Theme.success],
-                      ['SRN DONE', materials.filter((m:any)=>(m as any).srnStatus==='srn_received').length, '#0D9488'],
+                      ['ITEMS',    srnItems.length,  Theme.text],
+                      ['RECEIVED', totalReceived,    '#0D9488'],
+                      ['PENDING',  srnItems.length - totalReceived, '#D97706'],
                     ].map(([label,val,color])=>(
                       <div key={label as string} style={{ textAlign:'center' as const }}>
                         <div style={{ fontSize:10, color:Theme.textMuted, marginBottom:2 }}>{label}</div>
-                        <div style={{ fontSize:16, fontWeight:700, color:color as string }}>{fmt(val as number)}</div>
+                        <div style={{ fontSize:16, fontWeight:700, color:color as string }}>{val as number}</div>
                       </div>
                     ))}
                     <span style={{ fontSize:11, fontWeight:700,
-                      color:allDone?Theme.success:Theme.warning,
-                      background:allDone?Theme.successBg:'#FFFBEB',
+                      color:allDone?'#0D9488':'#D97706',
+                      background:allDone?'#F0FDFA':'#FFFBEB',
                       padding:'4px 12px', borderRadius:20 }}>
                       {allDone ? '✅ All Done' : '⏳ Pending'}
                     </span>
@@ -249,105 +186,52 @@ export default function SRNReturnPage() {
                   <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                     <thead>
                       <tr>
-                        {['#','Item Code','Item Description','UOM','Qty','Util Qty','Util Status','PM Approved','Balance','Returned','Return Date','SRN Status','Action',''].map((h,i)=>(
-                          <th key={h} style={{ ...thS }}>{h}</th>
+                        {['#','Description','HSN','UOM','Qty','Rate','GST%','Amount','Serial No','Doc No','BOQ Req','Return Qty','Return Date','Received','Action'].map((h,i)=>(
+                          <th key={i} style={{ ...thS, textAlign:i>=4&&i<=7?'right' as const:'left' as const }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {materials.map((m: any, idx: number) => (
-                          <tr key={m.id} style={{ background:idx%2===0?'#fff':Theme.bg }}>
-                            <td style={{ ...tdS, color:Theme.textMuted }}>{idx+1}</td>
-                            {editId === m.id ? (
-                              <>
-                                <td style={tdS}><input value={editRow.hsnCode||''} onChange={e=>setEditRow((p:any)=>({...p,hsnCode:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:'100%' }} /></td>
-                                <td style={tdS}><input value={editRow.description||''} onChange={e=>setEditRow((p:any)=>({...p,description:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:'100%' }} /></td>
-                                <td style={tdS}><input value={editRow.uom||''} onChange={e=>setEditRow((p:any)=>({...p,uom:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:60 }} /></td>
-                                <td style={tdS}><input type="number" value={editRow.quantity||''} onChange={e=>setEditRow((p:any)=>({...p,quantity:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:60 }} /></td>
-                                <td style={tdS}><input value={editRow.documentNo||''} onChange={e=>setEditRow((p:any)=>({...p,documentNo:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:'100%' }} /></td>
-                                <td style={tdS}><input value={editRow.boqReqNo||''} onChange={e=>setEditRow((p:any)=>({...p,boqReqNo:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:'100%' }} /></td>
-                                <td style={tdS}><input value={editRow.serialNo||''} onChange={e=>setEditRow((p:any)=>({...p,serialNo:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:'100%' }} /></td>
-                                <td style={tdS}><input type="number" value={editRow.gstRate||18} onChange={e=>setEditRow((p:any)=>({...p,gstRate:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:50 }} /></td>
-                                <td style={tdS}><input type="number" value={editRow.amount||''} onChange={e=>setEditRow((p:any)=>({...p,amount:e.target.value}))} style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 6px', fontSize:12, width:80 }} /></td>
-                                <td style={{ ...tdS, color:Theme.success, fontWeight:700 }}>₹{(Number(editRow.amount||0)*(1+(Number(editRow.gstRate||0)/100))).toLocaleString('en-IN')}</td>
-                                <td style={{ ...tdS, display:'flex', gap:4 }}>
-                                  <button onClick={saveEdit} disabled={saving} style={{ background:Theme.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✓</button>
-                                  <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${Theme.border}`, borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11 }}>✕</button>
-                                </td>
-                              </>
-                            ) : (
-                              <>
-                                <td style={{ ...tdS, fontWeight:700, color:Theme.primary }}>{m.hsnCode||'—'}</td>
-                                <td style={tdS}>{m.description}</td>
-                                <td style={{ ...tdS, color:Theme.textMuted }}>{m.uom||'—'}</td>
-                                <td style={tdS}>{m.quantity||'—'}</td>
-                                <td style={{ ...tdS, textAlign:'center' as const, fontWeight:600 }}>{m.utilisedQty??'—'}</td>
-                                <td style={tdS}>
-                                  {m.utilisedStatus && m.utilisedStatus!=='pending' ? (
-                                    <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:20,
-                                      color:m.utilisedStatus==='pm_approved'?'#059669':m.utilisedStatus==='submitted'?'#2563EB':'#DC2626',
-                                      background:m.utilisedStatus==='pm_approved'?'#D1FAE5':m.utilisedStatus==='submitted'?'#EFF6FF':'#FEF2F2' }}>
-                                      {m.utilisedStatus==='pm_approved'?'Approved':m.utilisedStatus==='submitted'?'Submitted':'Rejected'}
-                                    </span>
-                                  ) : <span style={{ fontSize:11, color:Theme.textMuted }}>Pending</span>}
-                                </td>
-                                <td style={{ ...tdS, textAlign:'center' as const, color:'#059669', fontWeight:600 }}>{m.pmApprovedQty??'—'}</td>
-                                <td style={{ ...tdS, textAlign:'center' as const, fontWeight:700,
-                                  color: m.utilisedStatus==='pm_approved' ? (Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0))>0?'#D97706':'#059669') : Theme.textMuted }}>
-                                  {m.utilisedStatus==='pm_approved' ? Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0)) : '—'}
-                                </td>
-                                <td style={{ ...tdS, textAlign:'center' as const, fontWeight:600, color:Theme.primary }}>{m.returnQty??'—'}</td>
-                                <td style={{ ...tdS, color:Theme.textMuted, fontSize:12, whiteSpace:'nowrap' as const }}>
-                                  {m.srnDate ? new Date(m.srnDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}
-                                </td>
-                                <td style={tdS}>
-                                  {m.srnStatus && m.srnStatus!=='pending' ? (
-                                    <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:20,
-                                      color:m.srnStatus==='srn_received'?'#059669':'#D97706',
-                                      background:m.srnStatus==='srn_received'?'#D1FAE5':'#FFFBEB' }}>
-                                      {m.srnStatus==='srn_received'?'Received':'Raised'}
-                                    </span>
-                                  ) : <span style={{ fontSize:11, color:Theme.textMuted }}>—</span>}
-                                </td>
-                                <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
-                                  {isPM && m.utilisedStatus==='submitted' && (
-                                    <div style={{ display:'flex', gap:4 }}>
-                                      <button onClick={()=>pmAction(m,true)} disabled={actSaving===m.id}
-                                        style={{ background:'#059669', color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>✓</button>
-                                      <button onClick={()=>pmAction(m,false)} disabled={actSaving===m.id}
-                                        style={{ background:'#DC2626', color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>✗</button>
-                                    </div>
-                                  )}
-                                  {(isVendor||isAdmin) && m.utilisedStatus==='pm_approved' && Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0))>0 && (!m.srnStatus||m.srnStatus==='pending') && (
-                                    <div style={{ display:'flex', flexDirection:'column' as const, gap:4 }}>
-                                      <div style={{ display:'flex', gap:4 }}>
-                                        <input type="number" min={0} max={Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0))}
-                                          value={returnMap[m.id]??''}
-                                          onChange={e=>setReturnMap(p=>({...p,[m.id]:e.target.value}))}
-                                          placeholder="Qty" style={{ width:50, border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 5px', fontSize:11 }} />
-                                        <input type="date"
-                                          value={returnDateMap2[m.id]??''}
-                                          onChange={e=>setReturnDateMap2(p=>({...p,[m.id]:e.target.value}))}
-                                          style={{ border:`1px solid ${Theme.border}`, borderRadius:4, padding:'3px 5px', fontSize:11 }} />
-                                      </div>
-                                      <button onClick={()=>raiseSRN(m)} disabled={actSaving===m.id||!returnMap[m.id]}
-                                        style={{ background:Theme.primary, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer', opacity:!returnMap[m.id]?0.5:1 }}>📤 Raise SRN</button>
-                                    </div>
-                                  )}
-                                  {isAdmin && m.srnStatus==='srn_raised' && (
-                                    <button onClick={()=>markReceived(m)} disabled={actSaving===m.id}
-                                      style={{ background:'#059669', color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>Received</button>
-                                  )}
-                                  {m.srnStatus==='srn_received' && <span style={{ fontSize:11, color:'#059669', fontWeight:700 }}>✓ Done</span>}
-                                  {!isPM && !isVendor && !isAdmin && ['super_admin','accounting_team','region_manager','project_manager'].includes(role) && (
-                                    <button onClick={()=>{ setEditId(m.id); setEditRow({...m}); }}
-                                      style={{ background:'none', border:`1px solid ${Theme.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12, color:Theme.primary }}>✏️</button>
-                                  )}
-                                </td>
-
-                              </>
+                      {srnItems.map((m: any, idx: number) => (
+                        <tr key={m.id} style={{ background:idx%2===0?'#fff':Theme.bg }}>
+                          <td style={{ ...tdS, color:Theme.textMuted }}>{idx+1}</td>
+                          <td style={{ ...tdS, fontWeight:600 }}>{m.description}</td>
+                          <td style={{ ...tdS, color:Theme.textMuted }}>{m.hsn_code||'—'}</td>
+                          <td style={{ ...tdS, color:Theme.textMuted }}>{m.uom||'—'}</td>
+                          <td style={{ ...tdS, textAlign:'right' as const }}>{m.quantity||'—'}</td>
+                          <td style={{ ...tdS, textAlign:'right' as const }}>{m.rate||'—'}</td>
+                          <td style={{ ...tdS, textAlign:'right' as const }}>{m.gst_rate}%</td>
+                          <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600 }}>{Number(m.amount||0).toLocaleString('en-IN')}</td>
+                          <td style={{ ...tdS, color:Theme.textMuted }}>{m.serial_no||'—'}</td>
+                          <td style={{ ...tdS, color:Theme.textMuted }}>{m.document_no||'—'}</td>
+                          <td style={{ ...tdS, color:Theme.textMuted }}>{m.boq_req_no||'—'}</td>
+                          <td style={{ ...tdS, fontWeight:600, color:Theme.primary }}>{m.return_qty||'—'}</td>
+                          <td style={{ ...tdS, color:Theme.textMuted, whiteSpace:'nowrap' as const }}>
+                            {m.return_date ? new Date(m.return_date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}
+                          </td>
+                          <td style={{ ...tdS }}>
+                            {m.received
+                              ? <span style={{ fontSize:11, fontWeight:700, color:'#0D9488', background:'#F0FDFA', padding:'2px 10px', borderRadius:20 }}>✓ Yes</span>
+                              : <span style={{ fontSize:11, fontWeight:700, color:'#DC2626', background:'#FEF2F2', padding:'2px 10px', borderRadius:20 }}>✗ No</span>}
+                          </td>
+                          <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
+                            {isPM && !m.received && (
+                              <div style={{ display:'flex', gap:4 }}>
+                                <button onClick={()=>markReceived(m, true)} disabled={saving===m.id}
+                                  style={{ background:'#0D9488', color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                                  ✓ Yes
+                                </button>
+                                <button onClick={()=>markReceived(m, false)} disabled={saving===m.id}
+                                  style={{ background:'#DC2626', color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                                  ✗ No
+                                </button>
+                              </div>
                             )}
-                          </tr>
+                            {m.received && (
+                              <span style={{ fontSize:11, color:'#0D9488', fontWeight:700 }}>✓ Done</span>
+                            )}
+                          </td>
+                        </tr>
                       ))}
                     </tbody>
                   </table>
