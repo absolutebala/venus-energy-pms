@@ -475,7 +475,7 @@ export default function ProjectsPage() {
           const _dis = (key: string) => { const m: Record<string,string> = {search,projectStatusFilter,vendorFilter,pmFilter,regionFilter}; return hasFilter && !m[key]; };
           const disStyle = { opacity:0.4, pointerEvents:'none' as const };
           return (
-          <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr auto', gap:8, marginBottom:16, alignItems:'center' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 1fr auto', gap:8, marginBottom:16, alignItems:'center' }}>
             <input value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
               placeholder="Project name, PO no, Indus ID, site…"
               style={{ ...inputStyle(focused), ...(hasFilter && !search ? disStyle : {}) }} />
@@ -499,8 +499,12 @@ export default function ProjectsPage() {
               <option value="">All Regions</option>
               {Array.from(new Set(roleFilteredProjects.map((p:any)=>p.region||'').filter(Boolean))).sort().map(r=><option key={r} value={r}>{r}</option>)}
             </select>
+            <select value={typeFilter} onChange={e=>{ setTypeFilter(e.target.value); setPage(1); }}
+              style={{ ...inputStyle(), ...(hasFilter && typeFilter==='All' ? disStyle : {}) }} disabled={!!(hasFilter && typeFilter==='All')}>
+              {TYPES.map(t=><option key={t}>{t}</option>)}
+            </select>
             {hasFilter ? (
-              <button onClick={()=>{setSearch('');setProjectStatusFilter('');setVendorFilter('');setPmFilter('');setRegionFilter('');setPage(1);}}
+              <button onClick={()=>{setSearch('');setProjectStatusFilter('');setVendorFilter('');setPmFilter('');setRegionFilter('');setTypeFilter('All');setPage(1);}}
                 style={{ background:T.dangerBg, border:`1px solid #FECACA`, borderRadius:8, padding:'8px 14px', color:T.danger, cursor:'pointer', fontSize:12, fontWeight:700, whiteSpace:'nowrap' as const }}>
                 ✕ Clear
               </button>
@@ -510,9 +514,6 @@ export default function ProjectsPage() {
         })()}
 
         <div style={{ display:'flex', gap:8, marginBottom:16, alignItems:'center', justifyContent:'flex-end' }}>
-          <select value={typeFilter} onChange={e=>{ setTypeFilter(e.target.value); setPage(1); }} style={{ ...inputStyle(), width:'auto' }}>
-            {TYPES.map(t=><option key={t}>{t}</option>)}
-          </select>
           <input ref={poFileRef} type="file" accept=".pdf,application/pdf" onChange={handlePOUpload} style={{ display:'none' }} />
           {profile?.role === 'super_admin' && <>
             <button onClick={()=>{ setPoStatusResult(null); setPoStatusFile(null); setShowPoStatusModal(true); }}
