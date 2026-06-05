@@ -8,6 +8,7 @@ import { useProjects } from '@/context/ProjectContext';
 import { createClient } from '@/lib/supabase';
 import { useWorkDocs } from '@/context/WorkDocContext';
 import { MOCK_PROJECTS } from '@/lib/projectData';
+import * as XLSX from 'xlsx';
 
 const fmt = (v: number) => `₹${(v / 100000).toFixed(2)}L`;
 
@@ -351,6 +352,50 @@ export default function ProjectsPage() {
   // Check if a PO number has multiple project records
   const poCount = (poNo: string) => projects.filter(p=>p.poNo===poNo).length;
 
+
+  // ── Export filtered projects to Excel ──────────────────────────────────────
+  const exportToExcel = () => {
+    const rows = filtered.map((p: any, idx: number) => ({
+      'S.No.':           idx + 1,
+      'PO Number':       p.poNo || '',
+      'PO Date':         p.poDate ? new Date(p.poDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '',
+      'PO Count':        projects.filter((p2: any) => p2.poNo === p.poNo).length,
+      'Aging (Days)':    getAgeDays(p.id),
+      'PO Status':       p.poStatus || '',
+      'Job Type':        p.type || '',
+      'Project ID':      p.projectId || '',
+      'Indus ID':        p.indusId || '',
+      'Site Name':       p.site || '',
+      'Project Status':  p.projectStatus || '',
+      'Delivery Date':   p.endDate ? new Date(p.endDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+
+    // Column widths
+    ws['!cols'] = [
+      { wch: 6 },   // S.No.
+      { wch: 16 },  // PO Number
+      { wch: 14 },  // PO Date
+      { wch: 9 },   // PO Count
+      { wch: 12 },  // Aging
+      { wch: 12 },  // PO Status
+      { wch: 18 },  // Job Type
+      { wch: 16 },  // Project ID
+      { wch: 14 },  // Indus ID
+      { wch: 22 },  // Site Name
+      { wch: 18 },  // Project Status
+      { wch: 14 },  // Delivery Date
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Projects');
+
+    const label = statusFilter === 'All' && ageMin === null ? 'All_Projects' : 'Filtered_Projects';
+    const date  = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `Venus_Energy_${label}_${date}.xlsx`);
+  };
+
   return (
     <Layout>
       <div className="fade-in">
@@ -532,8 +577,19 @@ export default function ProjectsPage() {
 
         <div style={card}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-            <div style={{ fontSize:14, fontWeight:600, color:T.text }}>
-              {statusFilter==='All'&&ageMin===null?'All Projects':`Filtered Projects`} · {filtered.length} records
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <div style={{ fontSize:14, fontWeight:600, color:T.text }}>
+                {statusFilter==='All'&&ageMin===null?'All Projects':`Filtered Projects`} · {filtered.length} records
+              </div>
+              {['super_admin','rm','pm'].includes(user?.role) && filtered.length > 0 && (
+                <button
+                  onClick={exportToExcel}
+                  title="Export to Excel"
+                  style={{ display:'flex', alignItems:'center', gap:5, padding:'4px 10px', fontSize:12, fontWeight:600,
+                    color:'#166534', background:'#DCFCE7', border:'1px solid #86EFAC', borderRadius:7, cursor:'pointer' }}>
+                  📥 Excel
+                </button>
+              )}
             </div>
           </div>
           <div style={{ overflowX:'auto' }}>
