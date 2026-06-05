@@ -28,7 +28,7 @@ const WORK_STATUS_CFG: Record<string,{label:string;color:string;bg:string}> = {
   completed:      { label:'Completed',      color:'#16A34A', bg:'#F0FDF4' },
 };
 const STATUSES_FILTER = ['All','PO Open','PO Closed'];
-const TYPES = ['All','SMPS Installation','Supply and Service for Tower Strengthening','AC Transportation','Minor','Major','Gate Service','Solar','DISMANLTING','Fence erection','DG REPLACEMENT','Lightening Arrestor','BB Installation','DG Dismantling','Civil','Lithum Ion BB Installation','DG DISMATNLING','New Build','Shelter Dismantling','HPSC','DG CAM','Transportation for Tower Strengthening','TM Service','Transportation Charges for Goods','Shelter Floor Sagging','SP Installation','Cable Replacement Activity','JV for Tower Strengthening','Civil - Earthing Correction activity','dewatering activity','Cable Ladder Installation activity','SRN TRANSPORTATION','SPS & SMPS installation','DG Canopy Rectification','Fuel Filling Charges','DG addition','Survey Charges - UG Cable','UG Cable rectification','Cyclone Preparedness','AC REPLACEMENT','Civil Dismantling Activity','New Build EB Meter Box','Survey charges','BACK FILLING','PU Coating','BB ADDITIONAL','Shelter leakage','Solar panel replacement','Earthing Activity','Solar Reward','POLE INSTALLATION','SPS REPLACEMENT','Zinc Spray for Tower Maintenance','EGB INSTALLATION','Sharing shelter','Cable Tray INSTALLATION','Pole Maintenance','Zinc Spray for Pole Maintenance','Cable Routing LADDER Fallen','COW Tower Dismantling','TCU INSTALLATION','Supply for Tower strengthening','Electrical Activity','DG Installation','Tarpaulin Activity','LA and LA Strip connection activity','Tower Dismantling','LA installation','Survey of COW sites','Survey of Civil','DG RELOCATION','Others'];
+const TYPES = ['All Types','SMPS Installation','Supply and Service for Tower Strengthening','AC Transportation','Minor','Major','Gate Service','Solar','DISMANLTING','Fence erection','DG REPLACEMENT','Lightening Arrestor','BB Installation','DG Dismantling','Civil','Lithum Ion BB Installation','DG DISMATNLING','New Build','Shelter Dismantling','HPSC','DG CAM','Transportation for Tower Strengthening','TM Service','Transportation Charges for Goods','Shelter Floor Sagging','SP Installation','Cable Replacement Activity','JV for Tower Strengthening','Civil - Earthing Correction activity','dewatering activity','Cable Ladder Installation activity','SRN TRANSPORTATION','SPS & SMPS installation','DG Canopy Rectification','Fuel Filling Charges','DG addition','Survey Charges - UG Cable','UG Cable rectification','Cyclone Preparedness','AC REPLACEMENT','Civil Dismantling Activity','New Build EB Meter Box','Survey charges','BACK FILLING','PU Coating','BB ADDITIONAL','Shelter leakage','Solar panel replacement','Earthing Activity','Solar Reward','POLE INSTALLATION','SPS REPLACEMENT','Zinc Spray for Tower Maintenance','EGB INSTALLATION','Sharing shelter','Cable Tray INSTALLATION','Pole Maintenance','Zinc Spray for Pole Maintenance','Cable Routing LADDER Fallen','COW Tower Dismantling','TCU INSTALLATION','Supply for Tower strengthening','Electrical Activity','DG Installation','Tarpaulin Activity','LA and LA Strip connection activity','Tower Dismantling','LA installation','Survey of COW sites','Survey of Civil','DG RELOCATION','Others'];
 
 // Drafts loaded from Supabase
 
@@ -239,7 +239,7 @@ export default function ProjectsPage() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc');
   const [poPopover, setPoPopover] = useState<string|null>(null);
-  const [typeFilter,   setTypeFilter]   = useState('All');
+  const [typeFilter,   setTypeFilter]   = useState('All Types');
   const [search,       setSearch]       = useState('');
   const [focused,      setFocused]      = useState(false);
   const [ageMin,       setAgeMin]       = useState<number|null>(null);
@@ -324,7 +324,7 @@ export default function ProjectsPage() {
     if (statusFilter === 'PO Closed') return (p as any).poStatus === 'Closed';
     if (statusFilter === 'Not Set') return !(p as any).projectStatus;
     if (statusFilter !== 'All') return ((p as any).projectStatus || '') === statusFilter;
-    if (typeFilter !== 'All' && p.type !== typeFilter) return false;
+    if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
     if (ageMin !== null && p.aging < ageMin) return false;
     if (ageMax !== null && ageMax < 999 && p.aging > ageMax) return false;
     if (pmFilter && (p as any).pm !== pmFilter) return false;
@@ -504,7 +504,7 @@ export default function ProjectsPage() {
               {TYPES.map(t=><option key={t}>{t}</option>)}
             </select>
             {hasFilter ? (
-              <button onClick={()=>{setSearch('');setProjectStatusFilter('');setVendorFilter('');setPmFilter('');setRegionFilter('');setTypeFilter('All');setPage(1);}}
+              <button onClick={()=>{setSearch('');setProjectStatusFilter('');setVendorFilter('');setPmFilter('');setRegionFilter('');setTypeFilter('All Types');setPage(1);}}
                 style={{ background:T.dangerBg, border:`1px solid #FECACA`, borderRadius:8, padding:'8px 14px', color:T.danger, cursor:'pointer', fontSize:12, fontWeight:700, whiteSpace:'nowrap' as const }}>
                 ✕ Clear
               </button>
