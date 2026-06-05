@@ -260,6 +260,15 @@ export default function ProjectsPage() {
   }, [profile?.role]);
 
   useEffect(() => {
+    // Restore page from sessionStorage when coming back from project detail
+    const savedPage = sessionStorage.getItem('projectsPage');
+    if (savedPage && !router.query.page) {
+      sessionStorage.removeItem('projectsPage');
+      setPage(Number(savedPage));
+    }
+  }, []);
+
+  useEffect(() => {
     if (!router.isReady) return;
     const { status, ageMin: qMin, ageMax: qMax } = router.query;
     if (status && typeof status === 'string') {
@@ -503,7 +512,7 @@ export default function ProjectsPage() {
                   const ageBg   = ageDays > 90 ? '#FEF2F2' : ageDays > 60 ? '#FFFBEB' : '#F0FDFA';
                   return (
                     <tr key={p.id} style={{ background:idx%2===0?'#fff':T.bg, cursor:'pointer' }}
-                      onClick={()=>router.push(`/projects/${p.id}`)}
+                      onClick={()=>{ sessionStorage.setItem('projectsPage', String(page)); router.push(`/projects/${p.id}`); }}
                       onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
                       onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=idx%2===0?'#fff':T.bg}>
                       <td style={{ padding:'10px 12px', color:T.textMuted, fontSize:12, borderBottom:`1px solid ${T.border}` }}>{sortDir==='asc'?(page-1)*PER_PAGE+idx+1:filtered.length-(page-1)*PER_PAGE-idx}</td>
