@@ -87,6 +87,27 @@ export default function SiteExpensesPage() {
   // Sort: pending first, then by date desc
   const allExpenses = expenses
     .filter((e:any) => {
+      // Date filter
+      if (datePreset !== 'all') {
+        const today = new Date(); today.setHours(0,0,0,0);
+        const todayStr = today.toISOString().split('T')[0];
+        const inRange = (d: string, from: Date, to: Date) => {
+          if (!d) return false;
+          const dt = new Date(d); dt.setHours(0,0,0,0);
+          return dt >= from && dt <= to;
+        };
+        const startOfWeek = new Date(today); startOfWeek.setDate(today.getDate() - today.getDay());
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const startOfLastMonth = new Date(today.getFullYear(), today.getMonth()-1, 1);
+        const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+        const last7 = new Date(today); last7.setDate(today.getDate()-6);
+        if (datePreset==='today'     && e.expenseDate !== todayStr) return false;
+        if (datePreset==='week'      && !inRange(e.expenseDate, startOfWeek, today)) return false;
+        if (datePreset==='last7'     && !inRange(e.expenseDate, last7, today)) return false;
+        if (datePreset==='month'     && !inRange(e.expenseDate, startOfMonth, today)) return false;
+        if (datePreset==='lastmonth' && !inRange(e.expenseDate, startOfLastMonth, endOfLastMonth)) return false;
+        if (datePreset==='custom' && customFrom && customTo && !inRange(e.expenseDate, new Date(customFrom), new Date(customTo))) return false;
+      }
       if (!search) return true;
       const s = search.toLowerCase();
       return e.projectId?.toLowerCase().includes(s) ||
