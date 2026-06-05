@@ -86,6 +86,7 @@ export default function SRNReturnPage() {
   const isAdmin  = ['super_admin','accounting_team'].includes(role);
 
   const [search,     setSearch]     = useState('');
+  const [kpiFilter,  setKpiFilter]  = useState<string|null>(null);
   const [expandedId, setExpandedId] = useState<string|null>(null);
 
   const showVendor = ['super_admin','region_manager','project_manager'].includes(role);
