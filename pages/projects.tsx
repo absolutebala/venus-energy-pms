@@ -144,7 +144,22 @@ export default function ProjectsPage() {
     if (!newForm.indusId.trim())   errors.indusId   = 'Required';
     if (Object.keys(errors).length > 0) { setNewFormErrors(errors); return; }
 
+    // Check for duplicate project_id before inserting
     setCreating(true);
+    try {
+      const sbCheck = createClient();
+      const { data: dupCheck } = await sbCheck
+        .from('projects')
+        .select('id')
+        .eq('project_id', newForm.projectId.trim())
+        .maybeSingle();
+      if (dupCheck) {
+        setNewFormErrors({ projectId: 'Project ID already exists' });
+        setCreating(false);
+        return;
+      }
+    } catch(_) {}
+
     try {
       const sb = createClient();
       const year = new Date().getFullYear();
