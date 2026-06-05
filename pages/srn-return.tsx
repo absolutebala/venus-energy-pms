@@ -297,6 +297,9 @@ export default function SRNReturnPage() {
                                   {m.utilisedStatus==='pm_approved' ? Math.max(0,(m.quantity||0)-(m.pmApprovedQty||0)) : '—'}
                                 </td>
                                 <td style={{ ...tdS, textAlign:'center' as const, fontWeight:600, color:Theme.primary }}>{m.returnQty??'—'}</td>
+                                <td style={{ ...tdS, color:Theme.textMuted, fontSize:12, whiteSpace:'nowrap' as const }}>
+                                  {m.srnDate ? new Date(m.srnDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}
+                                </td>
                                 <td style={tdS}>
                                   {m.srnStatus && m.srnStatus!=='pending' ? (
                                     <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:20,
@@ -306,8 +309,6 @@ export default function SRNReturnPage() {
                                     </span>
                                   ) : <span style={{ fontSize:11, color:Theme.textMuted }}>—</span>}
                                 </td>
-                                <td style={{ ...tdS, color:Theme.textMuted, fontSize:12 }}>
-                                  {m.srnDate || '—'}
                                 </td>
                                 <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
                                   {isPM && m.utilisedStatus==='submitted' && (
