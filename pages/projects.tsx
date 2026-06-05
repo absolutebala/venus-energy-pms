@@ -336,7 +336,7 @@ export default function ProjectsPage() {
   });
 
   const uniqueProjectStatuses = React.useMemo(() =>
-    [...new Set(roleFilteredProjects.map((p:any)=>p.projectStatus||'').filter(Boolean))].sort()
+    Array.from(new Set(roleFilteredProjects.map((p:any)=>p.projectStatus||'').filter(Boolean))).sort()
   , [roleFilteredProjects]);
 
   const activeFilterCount = [projectStatusFilter, vendorFilter, pmFilter, regionFilter].filter(Boolean).length;
@@ -515,7 +515,7 @@ export default function ProjectsPage() {
                     <select value={regionFilter} onChange={e=>{setRegionFilter(e.target.value);setPage(1);}}
                       style={{ ...inputStyle(), width:'100%' }}>
                       <option value="">All Regions</option>
-                      {[...new Set(roleFilteredProjects.map((p:any)=>p.region||'').filter(Boolean))].sort().map(r=><option key={r} value={r}>{r}</option>)}
+                      {Array.from(new Set(roleFilteredProjects.map((p:any)=>p.region||'').filter(Boolean))).sort().map(r=><option key={r} value={r}>{r}</option>)}
                     </select>
                   </div>
                 </div>
