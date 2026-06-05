@@ -726,18 +726,17 @@ const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-dig
     </div>
   );
 }
-// ── SRN Section Component ─────────────────────────────────────────────────────
+// ── STN Section Component ─────────────────────────────────────────────────────
 function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role:string; onAllApproved:(v:boolean)=>void }) {
   const { getByProject, updateItem } = usePOItems();
-  const { updateProject: updateProj } = useProjects();
   const { profile } = useAuth();
-  const { logActivity: logSRN } = useActivity();
+  const { logActivity: logSTN } = useActivity();
   const allSTNItems = getByProject(projectId);
   const items = allSTNItems.filter((i:any) => i.utilisedStatus && i.utilisedStatus !== 'pending');
-  const [saving,  setSaving]  = React.useState<string|null>(null);
+  const [saving,        setSaving]        = React.useState<string|null>(null);
   const [returnMap,     setReturnMap]     = React.useState<Record<string,string>>({});
   const [returnDateMap, setReturnDateMap] = React.useState<Record<string,string>>({});
-  const [toast,   setToast]   = React.useState<any>(null);
+  const [toast,         setToast]         = React.useState<any>(null);
 
   React.useEffect(() => {
     const allApproved = items.length > 0 && items.every((i:any) => i.utilisedStatus === 'pm_approved');
@@ -749,39 +748,8 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
     setSaving(item.id);
     try {
       await updateItem(item.id, { utilisedQty: item.utilisedQty, utilisedStatus: 'submitted' } as any);
-      logSRN(projectId, `STN ${(item as any).hsnCode||item.description} utilisation submitted`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+      logSTN(projectId, `STN ${(item as any).hsnCode||item.description} utilisation submitted`, profile?.full_name||'', profile?.role||'').catch(()=>{});
       setToast({ msg:'✅ Utilisation submitted for PM approval', type:'success' });
-    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
-    finally { setSaving(null); }
-  };
-
-  const raiseSRN = async (item: any) => {
-    const qty = Number(returnMap[item.id] ?? 0);
-    const date = returnDateMap[item.id] || new Date().toISOString().split('T')[0];
-    if (!qty) { setToast({ msg:'Please enter return quantity', type:'error' }); return; }
-    setSaving(item.id);
-    try {
-      await updateItem(item.id, { returnQty: qty, srnStatus: 'srn_raised', srnDate: date } as any);
-      setToast({ msg:'✅ SRN Raised', type:'success' });
-    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
-    finally { setSaving(null); }
-  };
-
-  const markReceived = async (item: any) => {
-    setSaving(item.id);
-    try {
-      await updateItem(item.id, { srnStatus: 'srn_received' } as any);
-      // Check if all items with balance are now received → auto-update project status
-      const updatedItems = items.map((i:any) => i.id === item.id ? { ...i, srnStatus: 'srn_received' } : i);
-      const itemsWithBalance = updatedItems.filter((i:any) => i.utilisedStatus === 'pm_approved' && Math.max(0,(i.quantity||0)-(i.pmApprovedQty||0)) > 0);
-      const allReceived = itemsWithBalance.length > 0 && itemsWithBalance.every((i:any) => i.srnStatus === 'srn_received');
-      if (allReceived) {
-        await updateProj(projectId, { projectStatus: 'WCC Raised' } as any, profile?.full_name ?? undefined);
-        setToast({ msg:'✅ SRN Received — Project status updated to WCC Raised', type:'success' });
-        logSRN(projectId, 'All SRNs received — project status set to WCC Raised', profile?.full_name||'', profile?.role||'').catch(()=>{});
-      } else {
-        setToast({ msg:'✅ SRN Received', type:'success' });
-      }
     } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
     finally { setSaving(null); }
   };
@@ -789,9 +757,8 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
   const pmApprove = async (item: any) => {
     setSaving(item.id);
     try {
-      const bal = Math.max(0, (item.quantity||0) - (item.utilisedQty||0));
       await updateItem(item.id, { utilisedStatus:'pm_approved', pmApprovedQty: item.utilisedQty||0 } as any);
-      logSRN(projectId, `STN ${(item as any).hsnCode||item.description} PM approved`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+      logSTN(projectId, `STN ${(item as any).hsnCode||item.description} PM approved`, profile?.full_name||'', profile?.role||'').catch(()=>{});
       setToast({ msg:'✅ Approved', type:'success' });
     } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
     finally { setSaving(null); }
@@ -806,6 +773,29 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
     finally { setSaving(null); }
   };
 
+  const saveReturn = async (item: any) => {
+    const qty = Number(returnMap[item.id] ?? 0);
+    const date = returnDateMap[item.id] || new Date().toISOString().split('T')[0];
+    if (!qty) { setToast({ msg:'Please enter return quantity', type:'error' }); return; }
+    setSaving(item.id);
+    try {
+      await updateItem(item.id, { returnQty: qty, srnDate: date } as any);
+      logSTN(projectId, `STN ${(item as any).hsnCode||item.description} return qty entered`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+      setToast({ msg:'✅ Return details saved', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(null); }
+  };
+
+  const pmMarkReturnReceived = async (item: any, received: boolean) => {
+    setSaving(item.id);
+    try {
+      await updateItem(item.id, { returnReceived: received } as any);
+      logSTN(projectId, `STN ${(item as any).hsnCode||item.description} return marked ${received?'Received':'Not Received'}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+      setToast({ msg: received ? '✅ Marked as Received' : '❌ Marked as Not Received', type: received ? 'success' : 'info' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(null); }
+  };
+
   const STATUS_BADGE: Record<string,{color:string;bg:string;label:string}> = {
     pending:     { color:'#6B7280', bg:'#F9FAFB', label:'Pending'   },
     submitted:   { color:'#2563EB', bg:'#EFF6FF', label:'Submitted' },
@@ -815,7 +805,6 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
 
   const isPM     = ['project_manager','super_admin','region_manager'].includes(role);
   const isVendor = role === 'vendor';
-  const isAdmin  = ['super_admin','accounting_team'].includes(role);
 
   const thS: React.CSSProperties = { padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase',
     color:T.primary, background:T.primaryLight, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const };
@@ -829,8 +818,8 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
         <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
           <thead>
             <tr>
-              {['#','Code','Description','UOM','Issued','Utilised','Status','PM Approved','Balance','Returned','Return Date','Actions'].map((h,i)=>(
-                <th key={i} style={{ ...thS, textAlign:i>=4&&i<=8?'right' as const:'left' as const }}>{h}</th>
+              {['#','Code','Description','UOM','Issued','Utilised','Status','PM Approved','Balance','Return Qty','Return Date','Return Received','Actions'].map((h,i)=>(
+                <th key={i} style={{ ...thS, textAlign:i>=4&&i<=9?'right' as const:'left' as const }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -839,10 +828,12 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
               const badge = STATUS_BADGE[(item as any).utilisedStatus] || STATUS_BADGE.pending;
               const balance = Math.max(0, (item.quantity||0) - ((item as any).pmApprovedQty||(item as any).utilisedQty||0));
               const isSaving = saving === item.id;
+              const hasReturn = (item as any).returnQty > 0;
+              const returnReceived = (item as any).returnReceived;
               return (
                 <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
                   <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
-                  <td style={{ ...tdS, fontWeight:600, color:T.primary, whiteSpace:'nowrap' as const }}>{(item as any).hsnCode||"—"}</td>
+                  <td style={{ ...tdS, fontWeight:600, color:T.primary, whiteSpace:'nowrap' as const }}>{(item as any).hsnCode||'—'}</td>
                   <td style={{ ...tdS }}>{item.description}</td>
                   <td style={{ ...tdS, color:T.textMuted }}>{item.uom}</td>
                   <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600 }}>{item.quantity}</td>
@@ -859,11 +850,17 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
                   <td style={{ ...tdS, textAlign:'right' as const, color:balance>0?T.warning:T.success, fontWeight:600 }}>
                     {item.utilisedStatus==='pm_approved'?balance:'—'}
                   </td>
-                  <td style={{ ...tdS, textAlign:'center' as const, fontWeight:600, color:T.primary }}>
-                    {(item as any).returnQty ?? '—'}
+                  <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600, color:T.primary }}>
+                    {hasReturn ? (item as any).returnQty : '—'}
                   </td>
                   <td style={{ ...tdS, color:T.textMuted, fontSize:12 }}>
-                    {(item as any).srnDate || '—'}
+                    {(item as any).srnDate ? new Date((item as any).srnDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}
+                  </td>
+                  <td style={{ ...tdS }}>
+                    {!hasReturn ? <span style={{ color:T.textDim, fontSize:11 }}>—</span>
+                    : returnReceived === true  ? <span style={{ fontSize:11, fontWeight:700, color:'#0D9488', background:'#F0FDFA', padding:'2px 10px', borderRadius:20 }}>✓ Yes</span>
+                    : returnReceived === false ? <span style={{ fontSize:11, fontWeight:700, color:'#DC2626', background:'#FEF2F2', padding:'2px 10px', borderRadius:20 }}>✗ No</span>
+                    : <span style={{ color:T.textDim, fontSize:11 }}>Pending</span>}
                   </td>
                   <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
                     {isVendor && item.utilisedStatus==='pending' && (
@@ -888,44 +885,46 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
                         </button>
                       </div>
                     )}
-                    {item.utilisedStatus==='pm_approved' && (
-                      <span style={{ fontSize:11, color:T.success, fontWeight:600 }}>✓ Complete</span>
-                    )}
-                    {(item as any).utilisedStatus==='pm_rejected' && isVendor && (
-                      <button onClick={()=>submitUtilised(item)} disabled={saving===item.id}
-                        style={{ background:T.warning, color:'#fff', border:'none', borderRadius:6,
-                          padding:'4px 10px', fontSize:11, cursor:'pointer' }}>
-                        Resubmit
-                      </button>
-                    )}
-                    {(isVendor || role==='super_admin') && (item as any).utilisedStatus==='pm_approved' && balance>0 && (!(item as any).srnStatus || (item as any).srnStatus==='pending') && (
+                    {(isVendor || role==='super_admin') && item.utilisedStatus==='pm_approved' && balance>0 && !hasReturn && (
                       <div style={{ display:'flex', flexDirection:'column' as const, gap:4 }}>
                         <div style={{ display:'flex', gap:4, alignItems:'center' }}>
                           <input type="number" min={0} max={balance}
                             value={returnMap[item.id]??''}
                             onChange={e=>setReturnMap(p=>({...p,[item.id]:e.target.value}))}
                             placeholder="Return Qty"
-                            style={{ width:70, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 6px', fontSize:11, outline:'none' }} />
+                            style={{ width:75, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 6px', fontSize:11, outline:'none' }} />
                           <input type="date"
                             value={returnDateMap[item.id]??''}
                             onChange={e=>setReturnDateMap(p=>({...p,[item.id]:e.target.value}))}
                             style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 6px', fontSize:11, outline:'none' }} />
                         </div>
-                        <button onClick={()=>raiseSRN(item)} disabled={saving===item.id||!returnMap[item.id]}
+                        <button onClick={()=>saveReturn(item)} disabled={isSaving||!returnMap[item.id]}
                           style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 8px', fontSize:11, cursor:'pointer',
                             opacity:!returnMap[item.id]?0.5:1 }}>
-                          {saving===item.id?'…':'📤 Raise SRN'}
+                          {isSaving?'…':'📦 Save Return'}
                         </button>
                       </div>
                     )}
-                    {(isAdmin||isPM) && (item as any).srnStatus==='srn_raised' && (
-                      <button onClick={()=>markReceived(item)} disabled={saving===item.id}
-                        style={{ background:T.success, color:'#fff', border:'none', borderRadius:6, padding:'4px 8px', fontSize:11, cursor:'pointer' }}>
-                        ✅ Received
-                      </button>
+                    {isPM && hasReturn && returnReceived === undefined && (
+                      <div style={{ display:'flex', gap:4 }}>
+                        <button onClick={()=>pmMarkReturnReceived(item, true)} disabled={isSaving}
+                          style={{ background:'#0D9488', color:'#fff', border:'none', borderRadius:6,
+                            padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                          ✓ Yes
+                        </button>
+                        <button onClick={()=>pmMarkReturnReceived(item, false)} disabled={isSaving}
+                          style={{ background:'#DC2626', color:'#fff', border:'none', borderRadius:6,
+                            padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                          ✗ No
+                        </button>
+                      </div>
                     )}
-                    {(item as any).srnStatus==='srn_received' && (
-                      <span style={{ fontSize:11, color:T.success, fontWeight:700 }}>✓ Complete</span>
+                    {isVendor && (item as any).utilisedStatus==='pm_rejected' && (
+                      <button onClick={()=>submitUtilised(item)} disabled={isSaving}
+                        style={{ background:T.warning, color:'#fff', border:'none', borderRadius:6,
+                          padding:'4px 10px', fontSize:11, cursor:'pointer' }}>
+                        Resubmit
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -934,6 +933,260 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
           </tbody>
         </table>
       </div>
+      {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
+    </div>
+  );
+}
+
+// ── Independent SRN Section Component ────────────────────────────────────────
+function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; role:string; onAllReceived:(v:boolean)=>void }) {
+  const { profile } = useAuth();
+  const { updateProject: updateProj } = useProjects();
+  const { logActivity: logSRNAct } = useActivity();
+  const sb = createClient();
+
+  const [items,   setItems]   = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [saving,  setSaving]  = React.useState<string|null>(null);
+  const [adding,  setAdding]  = React.useState(false);
+  const [toast,   setToast]   = React.useState<any>(null);
+  const [newRow,  setNewRow]  = React.useState({
+    description:'', hsn_code:'', uom:'', quantity:'', rate:'', gst_rate:'18', amount:'',
+    serial_no:'', document_no:'', boq_req_no:'', return_qty:'', return_date:'',
+  });
+
+  const fetchItems = React.useCallback(async () => {
+    setLoading(true);
+    const { data } = await sb.from('srn').select('*').eq('project_id', projectId).order('sort_order').order('created_at');
+    setItems(data || []);
+    setLoading(false);
+  }, [projectId]);
+
+  React.useEffect(() => { fetchItems(); }, [fetchItems]);
+
+  React.useEffect(() => {
+    const allReceived = items.length > 0 && items.every((i:any) => i.received === true);
+    onAllReceived(allReceived);
+  }, [items, onAllReceived]);
+
+  const isPM   = ['project_manager','super_admin','region_manager'].includes(role);
+  const canAdd = ['super_admin','vendor'].includes(role);
+
+  const addItem = async () => {
+    if (!newRow.description.trim()) { setToast({ msg:'Description is required', type:'error' }); return; }
+    setSaving('new');
+    try {
+      const payload = {
+        project_id:  projectId,
+        description: newRow.description.trim(),
+        hsn_code:    newRow.hsn_code.trim(),
+        uom:         newRow.uom.trim(),
+        quantity:    Number(newRow.quantity)||0,
+        rate:        Number(newRow.rate)||0,
+        gst_rate:    Number(newRow.gst_rate)||0,
+        amount:      Number(newRow.amount)||0,
+        serial_no:   newRow.serial_no.trim(),
+        document_no: newRow.document_no.trim(),
+        boq_req_no:  newRow.boq_req_no.trim(),
+        return_qty:  Number(newRow.return_qty)||0,
+        return_date: newRow.return_date || null,
+        received:    false,
+        sort_order:  items.length + 1,
+      };
+      const { error } = await sb.from('srn').insert(payload);
+      if (error) throw new Error(error.message);
+      logSRNAct(projectId, `SRN item added: ${newRow.description}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+      setNewRow({ description:'', hsn_code:'', uom:'', quantity:'', rate:'', gst_rate:'18', amount:'', serial_no:'', document_no:'', boq_req_no:'', return_qty:'', return_date:'' });
+      setAdding(false);
+      setToast({ msg:'✅ SRN item added', type:'success' });
+      await fetchItems();
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(null); }
+  };
+
+  const markReceived = async (item: any, received: boolean) => {
+    setSaving(item.id);
+    try {
+      const { error } = await sb.from('srn').update({ received }).eq('id', item.id);
+      if (error) throw new Error(error.message);
+      const updatedItems = items.map((i:any) => i.id === item.id ? { ...i, received } : i);
+      setItems(updatedItems);
+      const allDone = updatedItems.length > 0 && updatedItems.every((i:any) => i.received === true);
+      if (allDone && received) {
+        await updateProj(projectId, { projectStatus: 'WCC Raised' } as any, profile?.full_name ?? undefined);
+        setToast({ msg:'✅ All SRN items received — Project status set to WCC Raised', type:'success' });
+        logSRNAct(projectId, 'All SRN items received — project status set to WCC Raised', profile?.full_name||'', profile?.role||'').catch(()=>{});
+      } else {
+        setToast({ msg: received ? '✅ Marked as Received' : '❌ Marked as Not Received', type: received ? 'success' : 'info' });
+      }
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(null); }
+  };
+
+  const deleteItem = async (id: string) => {
+    if (!window.confirm('Delete this SRN item?')) return;
+    setSaving(id);
+    try {
+      const { error } = await sb.from('srn').delete().eq('id', id);
+      if (error) throw new Error(error.message);
+      setItems(prev => prev.filter((i:any) => i.id !== id));
+      setToast({ msg:'Deleted', type:'info' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(null); }
+  };
+
+  const thS: React.CSSProperties = { padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase',
+    color:T.primary, background:T.primaryLight, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const };
+  const tdS: React.CSSProperties = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
+  const inp: React.CSSProperties = { border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%', background:'#fff' };
+
+  return (
+    <div>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+        <div style={{ fontSize:12, color:T.textMuted }}>{items.length} item{items.length!==1?'s':''}</div>
+        {canAdd && (
+          <button onClick={()=>setAdding(true)}
+            style={{ background:T.primary, color:'#fff', border:'none', borderRadius:7, padding:'5px 14px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+            + Add SRN Item
+          </button>
+        )}
+      </div>
+
+      {adding && (
+        <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:16, marginBottom:16 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:T.primary, marginBottom:12 }}>New SRN Item</div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:10 }}>
+            <div style={{ gridColumn:'1/3' }}>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Description *</div>
+              <input style={inp} value={newRow.description} onChange={e=>setNewRow(p=>({...p,description:e.target.value}))} placeholder="Material description" />
+            </div>
+            <div>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>HSN Code</div>
+              <input style={inp} value={newRow.hsn_code} onChange={e=>setNewRow(p=>({...p,hsn_code:e.target.value}))} placeholder="HSN" />
+            </div>
+            <div>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>UOM</div>
+              <input style={inp} value={newRow.uom} onChange={e=>setNewRow(p=>({...p,uom:e.target.value}))} placeholder="Nos/Mtrs..." />
+            </div>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:10 }}>
+            <div>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Quantity</div>
+              <input style={inp} type="number" value={newRow.quantity} onChange={e=>setNewRow(p=>({...p,quantity:e.target.value}))} placeholder="0" />
+            </div>
+            <div>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Rate</div>
+              <input style={inp} type="number" value={newRow.rate} onChange={e=>setNewRow(p=>({...p,rate:e.target.value}))} placeholder="0" />
+            </div>
+            <div>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>GST %</div>
+              <input style={inp} type="number" value={newRow.gst_rate} onChange={e=>setNewRow(p=>({...p,gst_rate:e.target.value}))} placeholder="18" />
+            </div>
+            <div>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Amount</div>
+              <input style={inp} type="number" value={newRow.amount} onChange={e=>setNewRow(p=>({...p,amount:e.target.value}))} placeholder="0" />
+            </div>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:10 }}>
+            <div>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Serial No</div>
+              <input style={inp} value={newRow.serial_no} onChange={e=>setNewRow(p=>({...p,serial_no:e.target.value}))} placeholder="Serial No" />
+            </div>
+            <div>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Document No</div>
+              <input style={inp} value={newRow.document_no} onChange={e=>setNewRow(p=>({...p,document_no:e.target.value}))} placeholder="Doc No" />
+            </div>
+            <div>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>BOQ Req No</div>
+              <input style={inp} value={newRow.boq_req_no} onChange={e=>setNewRow(p=>({...p,boq_req_no:e.target.value}))} placeholder="BOQ Req No" />
+            </div>
+            <div>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Return Qty</div>
+              <input style={inp} type="number" value={newRow.return_qty} onChange={e=>setNewRow(p=>({...p,return_qty:e.target.value}))} placeholder="0" />
+            </div>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:14 }}>
+            <div>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Return Date</div>
+              <input style={inp} type="date" value={newRow.return_date} onChange={e=>setNewRow(p=>({...p,return_date:e.target.value}))} />
+            </div>
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={addItem} disabled={saving==='new'}
+              style={{ background:T.primary, color:'#fff', border:'none', borderRadius:7, padding:'6px 18px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+              {saving==='new'?'Saving…':'Save SRN Item'}
+            </button>
+            <button onClick={()=>setAdding(false)}
+              style={{ background:'#fff', color:T.textMuted, border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 18px', fontSize:12, cursor:'pointer' }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ textAlign:'center' as const, padding:'24px 0', color:T.textDim, fontSize:13 }}>Loading…</div>
+      ) : items.length === 0 ? (
+        <div style={{ textAlign:'center' as const, padding:'24px 0', color:T.textDim, fontSize:13 }}>No SRN items added yet</div>
+      ) : (
+        <div style={{ overflowX:'auto' as const }}>
+          <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+            <thead>
+              <tr>
+                {['#','Description','HSN','UOM','Qty','Rate','GST%','Amount','Serial No','Doc No','BOQ Req','Return Qty','Return Date','Received','Actions'].map((h,i)=>(
+                  <th key={i} style={{ ...thS, textAlign:i>=4&&i<=7?'right' as const:'left' as const }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item:any, idx:number) => (
+                <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
+                  <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
+                  <td style={{ ...tdS, fontWeight:600 }}>{item.description}</td>
+                  <td style={{ ...tdS, color:T.textMuted }}>{item.hsn_code||'—'}</td>
+                  <td style={{ ...tdS, color:T.textMuted }}>{item.uom||'—'}</td>
+                  <td style={{ ...tdS, textAlign:'right' as const }}>{item.quantity}</td>
+                  <td style={{ ...tdS, textAlign:'right' as const }}>{item.rate}</td>
+                  <td style={{ ...tdS, textAlign:'right' as const }}>{item.gst_rate}%</td>
+                  <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600 }}>{Number(item.amount).toLocaleString('en-IN')}</td>
+                  <td style={{ ...tdS, color:T.textMuted }}>{item.serial_no||'—'}</td>
+                  <td style={{ ...tdS, color:T.textMuted }}>{item.document_no||'—'}</td>
+                  <td style={{ ...tdS, color:T.textMuted }}>{item.boq_req_no||'—'}</td>
+                  <td style={{ ...tdS, fontWeight:600, color:T.primary }}>{item.return_qty||'—'}</td>
+                  <td style={{ ...tdS, color:T.textMuted }}>
+                    {item.return_date ? new Date(item.return_date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}
+                  </td>
+                  <td style={{ ...tdS }}>
+                    {item.received
+                      ? <span style={{ fontSize:11, fontWeight:700, color:'#0D9488', background:'#F0FDFA', padding:'2px 10px', borderRadius:20 }}>✓ Yes</span>
+                      : <span style={{ fontSize:11, fontWeight:700, color:'#DC2626', background:'#FEF2F2', padding:'2px 10px', borderRadius:20 }}>✗ No</span>}
+                  </td>
+                  <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
+                    {isPM && !item.received && (
+                      <div style={{ display:'flex', gap:4 }}>
+                        <button onClick={()=>markReceived(item, true)} disabled={saving===item.id}
+                          style={{ background:'#0D9488', color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                          ✓ Yes
+                        </button>
+                        <button onClick={()=>markReceived(item, false)} disabled={saving===item.id}
+                          style={{ background:'#DC2626', color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                          ✗ No
+                        </button>
+                      </div>
+                    )}
+                    {canAdd && !item.received && (
+                      <button onClick={()=>deleteItem(item.id)} disabled={saving===item.id}
+                        style={{ background:'#FEF2F2', color:'#DC2626', border:`1px solid #FECACA`, borderRadius:6, padding:'4px 8px', fontSize:11, cursor:'pointer', marginLeft:4 }}>
+                        🗑
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
     </div>
   );
@@ -2059,7 +2312,7 @@ export default function ProjectDetailPage() {
         {showSTNSRN && (
           <div style={{ ...card, marginBottom:16 }}>
             {sectionTitle('📦','SRN — Store Return Note', 'srndetail', false)}
-            <SRNSection projectId={p.id} role={role} onAllApproved={setSrnAllApproved} />
+            <SRNSectionNew projectId={p.id} role={role} onAllReceived={setSrnAllApproved} />
           </div>
         )}
 
