@@ -42,6 +42,7 @@ export default function SiteExpensesPage() {
   // Paid modal state
   const [paidModal,    setPaidModal]    = useState<any>(null);
   const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] });
+  const [dateFilter,   setDateFilter]   = useState(new Date().toISOString().split('T')[0]);
   const [fromAccounts,  setFromAccounts]  = useState<string[]>([]);
   const [expenseTypes,  setExpenseTypes]  = useState<string[]>(['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous']);
 
@@ -172,6 +173,21 @@ export default function SiteExpensesPage() {
               <div style={{ fontSize:18, fontWeight:800, color:s.color }}>{s.value}</div>
             </div>
           ))}
+        </div>
+
+        {/* Date Filter */}
+        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+          <label style={{ fontSize:13, fontWeight:600, color:T.textMuted }}>Filter by Date:</label>
+          <input type="date" value={dateFilter} onChange={e=>setDateFilter(e.target.value)}
+            style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'7px 12px', fontSize:13, outline:'none', color:T.text }} />
+          <button onClick={()=>setDateFilter(new Date().toISOString().split('T')[0])}
+            style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:'7px 14px', color:T.primary, cursor:'pointer', fontSize:12, fontWeight:600 }}>
+            Today
+          </button>
+          <button onClick={()=>setDateFilter('')}
+            style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'7px 14px', color:T.textMuted, cursor:'pointer', fontSize:12 }}>
+            All Dates
+          </button>
         </div>
 
         {/* All Expenses Table */}
