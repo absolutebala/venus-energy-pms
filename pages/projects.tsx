@@ -470,33 +470,44 @@ export default function ProjectsPage() {
         )}
 
         {/* Filters */}
-        <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
-          <input value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
-            placeholder="Search project, PO number, Indus ID, site, vendor…"
-            style={{ ...inputStyle(focused), width:320 }} />
-
-          <select value={projectStatusFilter} onChange={e=>{setProjectStatusFilter(e.target.value);setPage(1);}} style={{ ...inputStyle(), minWidth:140 }}>
-            <option value="">All Statuses</option>
-            {uniqueProjectStatuses.map(s=><option key={s} value={s}>{s}</option>)}
-          </select>
-          <select value={vendorFilter} onChange={e=>{setVendorFilter(e.target.value);setPage(1);}} style={{ ...inputStyle(), minWidth:140 }}>
-            <option value="">All Vendors</option>
-            {filterVendors.map(v=><option key={v} value={v}>{v}</option>)}
-          </select>
-          <select value={pmFilter} onChange={e=>{setPmFilter(e.target.value);setPage(1);}} style={{ ...inputStyle(), minWidth:120 }}>
-            <option value="">All PMs</option>
-            {filterPMs.map(pm=><option key={pm} value={pm}>{pm}</option>)}
-          </select>
-          <select value={regionFilter} onChange={e=>{setRegionFilter(e.target.value);setPage(1);}} style={{ ...inputStyle(), minWidth:120 }}>
-            <option value="">All Regions</option>
-            {Array.from(new Set(roleFilteredProjects.map((p:any)=>p.region||'').filter(Boolean))).sort().map(r=><option key={r} value={r}>{r}</option>)}
-          </select>
-          {activeFilterCount > 0 && (
-            <button onClick={()=>{setProjectStatusFilter('');setVendorFilter('');setPmFilter('');setRegionFilter('');setPage(1);}}
-              style={{ ...inputStyle(), color:T.danger, borderColor:'#FECACA', background:T.dangerBg, cursor:'pointer', fontWeight:600, whiteSpace:'nowrap' as const }}>
-              ✕ Clear
-            </button>
-          )}
+        {(() => {
+          const hasFilter = !!(search || projectStatusFilter || vendorFilter || pmFilter || regionFilter);
+          const dis = (key: string) => hasFilter && !{search,projectStatusFilter,vendorFilter,pmFilter,regionFilter}[key as any];
+          const disStyle = { opacity:0.4, pointerEvents:'none' as const };
+          return (
+          <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr auto', gap:8, marginBottom:16, alignItems:'center' }}>
+            <input value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
+              placeholder="Project name, PO no, Indus ID, site…"
+              style={{ ...inputStyle(focused), ...(hasFilter && !search ? disStyle : {}) }} />
+            <select value={projectStatusFilter} onChange={e=>{setProjectStatusFilter(e.target.value);setPage(1);}}
+              style={{ ...inputStyle(), ...(hasFilter && !projectStatusFilter ? disStyle : {}) }} disabled={!!(hasFilter && !projectStatusFilter)}>
+              <option value="">All Statuses</option>
+              {uniqueProjectStatuses.map(s=><option key={s} value={s}>{s}</option>)}
+            </select>
+            <select value={vendorFilter} onChange={e=>{setVendorFilter(e.target.value);setPage(1);}}
+              style={{ ...inputStyle(), ...(hasFilter && !vendorFilter ? disStyle : {}) }} disabled={!!(hasFilter && !vendorFilter)}>
+              <option value="">All Vendors</option>
+              {filterVendors.map(v=><option key={v} value={v}>{v}</option>)}
+            </select>
+            <select value={pmFilter} onChange={e=>{setPmFilter(e.target.value);setPage(1);}}
+              style={{ ...inputStyle(), ...(hasFilter && !pmFilter ? disStyle : {}) }} disabled={!!(hasFilter && !pmFilter)}>
+              <option value="">All PMs</option>
+              {filterPMs.map(pm=><option key={pm} value={pm}>{pm}</option>)}
+            </select>
+            <select value={regionFilter} onChange={e=>{setRegionFilter(e.target.value);setPage(1);}}
+              style={{ ...inputStyle(), ...(hasFilter && !regionFilter ? disStyle : {}) }} disabled={!!(hasFilter && !regionFilter)}>
+              <option value="">All Regions</option>
+              {Array.from(new Set(roleFilteredProjects.map((p:any)=>p.region||'').filter(Boolean))).sort().map(r=><option key={r} value={r}>{r}</option>)}
+            </select>
+            {hasFilter ? (
+              <button onClick={()=>{setSearch('');setProjectStatusFilter('');setVendorFilter('');setPmFilter('');setRegionFilter('');setPage(1);}}
+                style={{ background:T.dangerBg, border:`1px solid #FECACA`, borderRadius:8, padding:'8px 14px', color:T.danger, cursor:'pointer', fontSize:12, fontWeight:700, whiteSpace:'nowrap' as const }}>
+                ✕ Clear
+              </button>
+            ) : <div />}
+          </div>
+          );
+        })()}
 
           <select value={typeFilter} onChange={e=>{ setTypeFilter(e.target.value); setPage(1); }} style={{ ...inputStyle(), width:'auto', marginLeft:'auto' }}>
             {TYPES.map(t=><option key={t}>{t}</option>)}
