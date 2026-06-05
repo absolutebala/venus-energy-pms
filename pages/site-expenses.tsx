@@ -90,7 +90,7 @@ export default function SiteExpensesPage() {
       // Date filter
       if (datePreset !== 'all') {
         const today = new Date(); today.setHours(0,0,0,0);
-        const todayStr = today.toISOString().split('T')[0];
+        const todayStr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
         const inRange = (d: string, from: Date, to: Date) => {
           if (!d) return false;
           const dt = new Date(d); dt.setHours(0,0,0,0);
