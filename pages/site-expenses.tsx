@@ -42,7 +42,9 @@ export default function SiteExpensesPage() {
   // Paid modal state
   const [paidModal,    setPaidModal]    = useState<any>(null);
   const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] });
-  const [dateFilter,   setDateFilter]   = useState(new Date().toISOString().split('T')[0]);
+  const [datePreset,   setDatePreset]   = useState<string>('today');
+  const [customFrom,   setCustomFrom]   = useState('');
+  const [customTo,     setCustomTo]     = useState('');
   const [fromAccounts,  setFromAccounts]  = useState<string[]>([]);
   const [expenseTypes,  setExpenseTypes]  = useState<string[]>(['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous']);
 
@@ -176,18 +178,24 @@ export default function SiteExpensesPage() {
         </div>
 
         {/* Date Filter */}
-        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
-          <label style={{ fontSize:13, fontWeight:600, color:T.textMuted }}>Filter by Date:</label>
-          <input type="date" value={dateFilter} onChange={e=>setDateFilter(e.target.value)}
-            style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'7px 12px', fontSize:13, outline:'none', color:T.text }} />
-          <button onClick={()=>setDateFilter(new Date().toISOString().split('T')[0])}
-            style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:'7px 14px', color:T.primary, cursor:'pointer', fontSize:12, fontWeight:600 }}>
-            Today
-          </button>
-          <button onClick={()=>setDateFilter('')}
-            style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'7px 14px', color:T.textMuted, cursor:'pointer', fontSize:12 }}>
-            All Dates
-          </button>
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16, flexWrap:'wrap' as const }}>
+          {([['today','Today'],['week','This Week'],['last7','Last 7 Days'],['month','This Month'],['lastmonth','Last Month'],['all','All'],['custom','Custom']] as [string,string][]).map(([val,label])=>(
+            <button key={val} onClick={()=>setDatePreset(val)}
+              style={{ background:datePreset===val?T.primary:'#fff', color:datePreset===val?'#fff':T.textMuted,
+                border:`1px solid ${datePreset===val?T.primary:T.border}`, borderRadius:8,
+                padding:'6px 14px', cursor:'pointer', fontSize:12, fontWeight:datePreset===val?700:400, transition:'all 0.15s' }}>
+              {label}
+            </button>
+          ))}
+          {datePreset==='custom' && (
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <input type="date" value={customFrom} onChange={e=>setCustomFrom(e.target.value)}
+                style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', fontSize:12, outline:'none' }} />
+              <span style={{ fontSize:12, color:T.textMuted }}>to</span>
+              <input type="date" value={customTo} onChange={e=>setCustomTo(e.target.value)}
+                style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', fontSize:12, outline:'none' }} />
+            </div>
+          )}
         </div>
 
         {/* All Expenses Table */}
