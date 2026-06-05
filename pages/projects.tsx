@@ -272,6 +272,7 @@ export default function ProjectsPage() {
     if (router.query.pm) setPmFilter(decodeURIComponent(router.query.pm as string));
     if (router.query.region) setRegionFilter(decodeURIComponent(router.query.region as string));
     if (router.query.vendor) setVendorFilter(decodeURIComponent(router.query.vendor as string));
+    if (router.query.page) setPage(Number(router.query.page));
   }, [router.isReady, router.query]);
 
   const searchMatch = (p: any) => {
