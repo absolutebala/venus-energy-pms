@@ -111,7 +111,18 @@ export default function SRNReturnPage() {
     });
   }, [allItems, projects]);
 
-  const filtered = grouped.filter(p => {
+  const kpiFiltered = kpiFilter ? grouped.map(p => ({
+    ...p,
+    stnItems: p.stnItems.filter((i:any) => {
+      if (kpiFilter === 'submitted')    return i.utilisedStatus === 'submitted';
+      if (kpiFilter === 'pm_approved')  return i.utilisedStatus === 'pm_approved';
+      if (kpiFilter === 'srn_pending')  return i.srnStatus === 'srn_raised';
+      if (kpiFilter === 'srn_received') return i.srnStatus === 'srn_received';
+      return true;
+    })
+  })).filter((p:any) => p.stnItems.length > 0) : grouped;
+
+  const filtered = kpiFiltered.filter(p => {
     if (!search) return true;
     const s = search.toLowerCase();
     return p.projectId.toLowerCase().includes(s) ||
