@@ -500,7 +500,7 @@ export default function ProjectsPage() {
               {Array.from(new Set(roleFilteredProjects.map((p:any)=>p.region||'').filter(Boolean))).sort().map(r=><option key={r} value={r}>{r}</option>)}
             </select>
             <select value={typeFilter} onChange={e=>{ setTypeFilter(e.target.value); setPage(1); }}
-              style={{ ...inputStyle(), ...(hasFilter && typeFilter==='All' ? disStyle : {}) }} disabled={!!(hasFilter && typeFilter==='All')}>
+              style={{ ...inputStyle(), ...(hasFilter && typeFilter==='All Types' ? disStyle : {}) }} disabled={!!(hasFilter && typeFilter==='All Types')}>
               {TYPES.map(t=><option key={t}>{t}</option>)}
             </select>
             {hasFilter ? (
