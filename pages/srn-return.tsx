@@ -150,16 +150,20 @@ export default function SRNReturnPage() {
         </div>
 
         {/* Summary cards */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:14, marginBottom:20 }}>
           {[
-            { label:'Total STN Items',  value:allItems.length,                                                                           color:Theme.primary },
-            { label:'Submitted',        value:allItems.filter((i:any)=>i.utilisedStatus==='submitted').length,                           color:'#2563EB'     },
-            { label:'PM Approved',      value:allItems.filter((i:any)=>i.utilisedStatus==='pm_approved').length,                         color:Theme.success },
-            { label:'SRN Received',     value:allItems.filter((i:any)=>(i as any).srnStatus==='srn_received').length,                   color:'#0D9488'     },
+            { label:'Total STN Items',  value:allItems.length,                                                                            color:Theme.primary,  filter:null             },
+            { label:'Submitted',        value:allItems.filter((i:any)=>i.utilisedStatus==='submitted').length,                            color:'#2563EB',      filter:'submitted'      },
+            { label:'PM Approved',      value:allItems.filter((i:any)=>i.utilisedStatus==='pm_approved').length,                          color:Theme.success,  filter:'pm_approved'    },
+            { label:'SRN Pending',      value:allItems.filter((i:any)=>(i as any).srnStatus==='srn_raised').length,                       color:'#D97706',      filter:'srn_pending'    },
+            { label:'SRN Received',     value:allItems.filter((i:any)=>(i as any).srnStatus==='srn_received').length,                     color:'#0D9488',      filter:'srn_received'   },
           ].map(s=>(
-            <div key={s.label} style={{ ...card, padding:'14px 16px' }}>
-              <div style={{ fontSize:11, color:Theme.textMuted, fontWeight:600, textTransform:'uppercase', marginBottom:4 }}>{s.label}</div>
+            <div key={s.label} onClick={()=>setKpiFilter(kpiFilter===s.filter?null:s.filter)}
+              style={{ ...card, padding:'14px 16px', cursor:'pointer', borderColor:kpiFilter===s.filter?s.color:Theme.border,
+                boxShadow:kpiFilter===s.filter?`0 0 0 2px ${s.color}30`:'none', transition:'all 0.15s' }}>
+              <div style={{ fontSize:11, color:kpiFilter===s.filter?s.color:Theme.textMuted, fontWeight:600, textTransform:'uppercase' as const, marginBottom:4 }}>{s.label}</div>
               <div style={{ fontSize:22, fontWeight:800, color:s.color }}>{s.value}</div>
+              {kpiFilter===s.filter && <div style={{ fontSize:10, color:s.color, marginTop:2 }}>● Filtered</div>}
             </div>
           ))}
         </div>
