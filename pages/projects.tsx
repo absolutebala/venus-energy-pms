@@ -144,38 +144,20 @@ export default function ProjectsPage() {
     if (!newForm.indusId.trim())   errors.indusId   = 'Required';
     if (Object.keys(errors).length > 0) { setNewFormErrors(errors); return; }
 
-    // Check for duplicate project_id before inserting
     setCreating(true);
-    try {
-      const sbCheck = createClient();
-      const { data: dupCheck } = await sbCheck
-        .from('projects')
-        .select('id')
-        .eq('project_id', newForm.projectId.trim())
-        .maybeSingle();
-      if (dupCheck) {
-        setNewFormErrors({ projectId: 'Project ID already exists' });
-        setCreating(false);
-        return;
-      }
-    } catch(_) {}
 
     try {
       const sb = createClient();
       const year = new Date().getFullYear();
-      const { data: existing } = await sb.from('projects').select('id').like('id', `VE-${year}-%`);
-      let nextNum = 1;
-      if (existing && existing.length > 0) {
-        const nums = existing
-          .map((r: any) => parseInt(r.id.split('-')[2]))
-          .filter((n: number) => !isNaN(n));
-        if (nums.length > 0) nextNum = Math.max(...nums) + 1;
-      }
 
-      // Retry up to 5 times in case of race condition on pkey
+      // Use SQL to get the true numeric max — avoids alphabetic sort issues and race conditions
+      const { data: maxData } = await sb.rpc('get_next_project_num', { year_prefix: `VE-${year}-` });
+      let nextNum = maxData ?? 1;
+
+      // Retry up to 10 times in case of concurrent inserts
       let inserted = false;
       let lastError = '';
-      for (let attempt = 0; attempt < 5; attempt++) {
+      for (let attempt = 0; attempt < 10; attempt++) {
         const newId = `VE-${year}-${String(nextNum + attempt).padStart(3,'0')}`;
         const { error } = await sb.from('projects').insert({
           id: newId,
