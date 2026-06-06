@@ -270,18 +270,7 @@ export default function ProjectsPage() {
   const [vendorFilter,  setVendorFilter]  = useState('');
   const [showFilters,   setShowFilters]   = useState(false);
   const [projectStatusFilter, setProjectStatusFilter] = useState('');
-  const [filterVendors, setFilterVendors] = useState<string[]>([]);
-  const [filterPMs,     setFilterPMs]     = useState<string[]>([]);
-
-  React.useEffect(() => {
-    const sb = createClient();
-    sb.from('vendors').select('name').order('name').then(({data}) => {
-      if (data) setFilterVendors(data.map((v:any)=>v.name));
-    });
-    sb.from('profiles').select('full_name').eq('role','project_manager').order('full_name').then(({data}) => {
-      if (data) setFilterPMs(data.map((p:any)=>p.full_name).filter(Boolean));
-    });
-  }, []);
+  // filterVendors and filterPMs now computed as cascading useMemos below
   const [regionFilter, setRegionFilter] = useState('');
 
   // Redirect PM
@@ -354,6 +343,89 @@ export default function ProjectsPage() {
   const uniqueProjectStatuses = React.useMemo(() =>
     Array.from(new Set(roleFilteredProjects.map((p:any)=>p.projectStatus||'').filter(Boolean))).sort()
   , [roleFilteredProjects]);
+
+  // ── Cascading filter options ──────────────────────────────────────────────
+  // Each dropdown shows values available after applying all OTHER active filters
+
+  const projectsForVendorFilter = React.useMemo(() =>
+    roleFilteredProjects.filter((p:any) => {
+      if (statusFilter !== 'All') {
+        if (statusFilter === 'PO Open')   return (p as any).poStatus === 'Open';
+        if (statusFilter === 'PO Closed') return (p as any).poStatus === 'Closed';
+        if (statusFilter === 'Not Set')   return !(p as any).projectStatus;
+        return ((p as any).projectStatus || '') === statusFilter;
+      }
+      if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
+      if (pmFilter && (p as any).pm !== pmFilter) return false;
+      if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
+      if (regionFilter && (p as any).region !== regionFilter) return false;
+      return true;
+    })
+  , [roleFilteredProjects, statusFilter, typeFilter, pmFilter, projectStatusFilter, regionFilter]);
+
+  const projectsForPMFilter = React.useMemo(() =>
+    roleFilteredProjects.filter((p:any) => {
+      if (statusFilter !== 'All') {
+        if (statusFilter === 'PO Open')   return (p as any).poStatus === 'Open';
+        if (statusFilter === 'PO Closed') return (p as any).poStatus === 'Closed';
+        if (statusFilter === 'Not Set')   return !(p as any).projectStatus;
+        return ((p as any).projectStatus || '') === statusFilter;
+      }
+      if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
+      if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
+      if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
+      if (regionFilter && (p as any).region !== regionFilter) return false;
+      return true;
+    })
+  , [roleFilteredProjects, statusFilter, typeFilter, vendorFilter, projectStatusFilter, regionFilter]);
+
+  const projectsForRegionFilter = React.useMemo(() =>
+    roleFilteredProjects.filter((p:any) => {
+      if (statusFilter !== 'All') {
+        if (statusFilter === 'PO Open')   return (p as any).poStatus === 'Open';
+        if (statusFilter === 'PO Closed') return (p as any).poStatus === 'Closed';
+        if (statusFilter === 'Not Set')   return !(p as any).projectStatus;
+        return ((p as any).projectStatus || '') === statusFilter;
+      }
+      if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
+      if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
+      if (pmFilter && (p as any).pm !== pmFilter) return false;
+      if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
+      return true;
+    })
+  , [roleFilteredProjects, statusFilter, typeFilter, vendorFilter, pmFilter, projectStatusFilter]);
+
+  const projectsForTypeFilter = React.useMemo(() =>
+    roleFilteredProjects.filter((p:any) => {
+      if (statusFilter !== 'All') {
+        if (statusFilter === 'PO Open')   return (p as any).poStatus === 'Open';
+        if (statusFilter === 'PO Closed') return (p as any).poStatus === 'Closed';
+        if (statusFilter === 'Not Set')   return !(p as any).projectStatus;
+        return ((p as any).projectStatus || '') === statusFilter;
+      }
+      if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
+      if (pmFilter && (p as any).pm !== pmFilter) return false;
+      if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
+      if (regionFilter && (p as any).region !== regionFilter) return false;
+      return true;
+    })
+  , [roleFilteredProjects, statusFilter, vendorFilter, pmFilter, projectStatusFilter, regionFilter]);
+
+  const projectsForStatusFilter = React.useMemo(() =>
+    roleFilteredProjects.filter((p:any) => {
+      if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
+      if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
+      if (pmFilter && (p as any).pm !== pmFilter) return false;
+      if (regionFilter && (p as any).region !== regionFilter) return false;
+      return true;
+    })
+  , [roleFilteredProjects, typeFilter, vendorFilter, pmFilter, regionFilter]);
+
+  const cascadeVendors    = Array.from(new Set(projectsForVendorFilter.map((p:any)=>p.vendor||'').filter(Boolean))).sort();
+  const cascadePMs        = Array.from(new Set(projectsForPMFilter.map((p:any)=>p.pm||'').filter(Boolean))).sort();
+  const cascadeRegions    = Array.from(new Set(projectsForRegionFilter.map((p:any)=>p.region||'').filter(Boolean))).sort();
+  const cascadeTypes      = Array.from(new Set(projectsForTypeFilter.map((p:any)=>p.type||'').filter(Boolean))).sort();
+  const cascadeStatuses   = Array.from(new Set(projectsForStatusFilter.map((p:any)=>p.projectStatus||'').filter(Boolean))).sort();
 
   const activeFilterCount = [projectStatusFilter, vendorFilter, pmFilter, regionFilter].filter(Boolean).length;
 
@@ -542,26 +614,27 @@ export default function ProjectsPage() {
             <select value={projectStatusFilter} onChange={e=>{setProjectStatusFilter(e.target.value);setPage(1);}}
               style={{ ...inputStyle() }}>
               <option value="">All Statuses</option>
-              {uniqueProjectStatuses.map(s=><option key={s} value={s}>{s}</option>)}
+              {cascadeStatuses.map(s=><option key={s} value={s}>{s}</option>)}
             </select>
             <select value={vendorFilter} onChange={e=>{setVendorFilter(e.target.value);setPage(1);}}
               style={{ ...inputStyle() }}>
               <option value="">All Vendors</option>
-              {filterVendors.map(v=><option key={v} value={v}>{v}</option>)}
+              {cascadeVendors.map(v=><option key={v} value={v}>{v}</option>)}
             </select>
             <select value={pmFilter} onChange={e=>{setPmFilter(e.target.value);setPage(1);}}
               style={{ ...inputStyle() }}>
               <option value="">All PMs</option>
-              {filterPMs.map(pm=><option key={pm} value={pm}>{pm}</option>)}
+              {cascadePMs.map(pm=><option key={pm} value={pm}>{pm}</option>)}
             </select>
             <select value={regionFilter} onChange={e=>{setRegionFilter(e.target.value);setPage(1);}}
               style={{ ...inputStyle() }}>
               <option value="">All Regions</option>
-              {Array.from(new Set(roleFilteredProjects.map((p:any)=>p.region||'').filter(Boolean))).sort().map(r=><option key={r} value={r}>{r}</option>)}
+              {cascadeRegions.map(r=><option key={r} value={r}>{r}</option>)}
             </select>
             <select value={typeFilter} onChange={e=>{ setTypeFilter(e.target.value); setPage(1); }}
               style={{ ...inputStyle() }}>
-              {TYPES.map(t=><option key={t}>{t}</option>)}
+              <option value="All Types">All Types</option>
+              {cascadeTypes.map(t=><option key={t} value={t}>{t}</option>)}
             </select>
             {hasFilter ? (
               <button onClick={()=>{setSearch('');setProjectStatusFilter('');setVendorFilter('');setPmFilter('');setRegionFilter('');setTypeFilter('All Types');setPage(1);}}
