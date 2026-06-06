@@ -1794,14 +1794,7 @@ export default function ProjectDetailPage() {
   const [allTransactions, setAllTransactions] = React.useState(PAYMENT_TRANSACTIONS);
   const [srnAllApproved, setSrnAllApproved] = React.useState(false);
 
-  // stnAllApproved: true when all STN items with balance > 0 have return_received = true
-  const { getByProject: getSTNItems } = usePOItems();
-  const stnAllApproved = React.useMemo(() => {
-    if (!p?.id) return false;
-    const stnItems = getSTNItems(p.id).filter((i:any) => i.utilisedStatus === 'pm_approved' && Math.max(0,(i.quantity||0)-(i.pmApprovedQty||0)) > 0);
-    if (stnItems.length === 0) return false;
-    return stnItems.every((i:any) => i.returnReceived === true);
-  }, [p?.id, getSTNItems]);
+  // stnAllApproved defined below after p is declared
   const [editingSection, setEditingSection] = useState<string|null>(null);
   const [autoEditDone, setAutoEditDone] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1975,6 +1968,16 @@ export default function ProjectDetailPage() {
       });
   }, []);
 
+
+  // stnAllApproved: computed from po_items after p is available
+  const { getByProject: getSTNItems } = usePOItems();
+  const stnAllApproved = React.useMemo(() => {
+    const pid = id as string;
+    if (!pid) return false;
+    const stnItems = getSTNItems(pid).filter((i:any) => i.utilisedStatus === 'pm_approved' && Math.max(0,(i.quantity||0)-(i.pmApprovedQty||0)) > 0);
+    if (stnItems.length === 0) return false;
+    return stnItems.every((i:any) => i.returnReceived === true);
+  }, [id, getSTNItems]);
 
   // Billing checklist — auto-computed read-only (no manual state needed)
   const [billingNotes, setBillingNotes] = useState('');
