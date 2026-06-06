@@ -146,11 +146,10 @@ function WorkProgressSection({ projectId, role }: { projectId: string; role: str
 
   // STN header fields (lifted_date, gate_entry_no, vehicle_no) — stored on project
   const { updateProject: updateProj } = useProjects();
-  const [stnHeader, setStnHeader] = React.useState({
-    liftedDate:  (project as any)?.liftedDate  || '',
-    gateEntryNo: (project as any)?.gateEntryNo || '',
-    vehicleNo:   (project as any)?.vehicleNo   || '',
-  });
+  const [stnHeader, setStnHeader] = React.useState({ liftedDate:'', gateEntryNo:'', vehicleNo:''  });
+  React.useEffect(() => {
+    if (project) setStnHeader({ liftedDate:(project as any).liftedDate||'', gateEntryNo:(project as any).gateEntryNo||'', vehicleNo:(project as any).vehicleNo||''  });
+  }, [project]);
   const [stnHeaderSaving, setStnHeaderSaving] = React.useState(false);
 
   const saveStnHeader = async () => {
@@ -340,11 +339,10 @@ function POItemsSection({ projectId, project, editing, canAdd=true, isVendorRole
 
   // STN header fields (lifted_date, gate_entry_no, vehicle_no) — stored on project
   const { updateProject: updateProj } = useProjects();
-  const [stnHeader, setStnHeader] = React.useState({
-    liftedDate:  (project as any)?.liftedDate  || '',
-    gateEntryNo: (project as any)?.gateEntryNo || '',
-    vehicleNo:   (project as any)?.vehicleNo   || '',
-  });
+  const [stnHeader, setStnHeader] = React.useState({ liftedDate:'', gateEntryNo:'', vehicleNo:''  });
+  React.useEffect(() => {
+    if (project) setStnHeader({ liftedDate:(project as any).liftedDate||'', gateEntryNo:(project as any).gateEntryNo||'', vehicleNo:(project as any).vehicleNo||''  });
+  }, [project]);
   const [stnHeaderSaving, setStnHeaderSaving] = React.useState(false);
 
   const saveStnHeader = async () => {
@@ -1309,11 +1307,10 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
 
   // STN header fields (lifted_date, gate_entry_no, vehicle_no) — stored on project
   const { updateProject: updateProj } = useProjects();
-  const [stnHeader, setStnHeader] = React.useState({
-    liftedDate:  (project as any)?.liftedDate  || '',
-    gateEntryNo: (project as any)?.gateEntryNo || '',
-    vehicleNo:   (project as any)?.vehicleNo   || '',
-  });
+  const [stnHeader, setStnHeader] = React.useState({ liftedDate:'', gateEntryNo:'', vehicleNo:''  });
+  React.useEffect(() => {
+    if (project) setStnHeader({ liftedDate:(project as any).liftedDate||'', gateEntryNo:(project as any).gateEntryNo||'', vehicleNo:(project as any).vehicleNo||''  });
+  }, [project]);
   const [stnHeaderSaving, setStnHeaderSaving] = React.useState(false);
 
   const saveStnHeader = async () => {
@@ -1534,11 +1531,10 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
 
   // STN header fields (lifted_date, gate_entry_no, vehicle_no) — stored on project
   const { updateProject: updateProj } = useProjects();
-  const [stnHeader, setStnHeader] = React.useState({
-    liftedDate:  (project as any)?.liftedDate  || '',
-    gateEntryNo: (project as any)?.gateEntryNo || '',
-    vehicleNo:   (project as any)?.vehicleNo   || '',
-  });
+  const [stnHeader, setStnHeader] = React.useState({ liftedDate:'', gateEntryNo:'', vehicleNo:''  });
+  React.useEffect(() => {
+    if (project) setStnHeader({ liftedDate:(project as any).liftedDate||'', gateEntryNo:(project as any).gateEntryNo||'', vehicleNo:(project as any).vehicleNo||''  });
+  }, [project]);
   const [stnHeaderSaving, setStnHeaderSaving] = React.useState(false);
 
   const saveStnHeader = async () => {
