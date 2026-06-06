@@ -122,13 +122,23 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: err } = await supabase
-        .from('projects')
-        .select('*')
-        .order('id')
-        .limit(5000);
-      if (err) { setError(err.message); return; }
-      setProjects((data || []).map(mapRow));
+      // Supabase PostgREST caps at 1000 rows — fetch in batches
+      const PAGE_SIZE = 1000;
+      let allData: any[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error: err } = await supabase
+          .from('projects')
+          .select('*')
+          .order('id')
+          .range(from, from + PAGE_SIZE - 1);
+        if (err) { setError(err.message); return; }
+        if (!data || data.length === 0) break;
+        allData = allData.concat(data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+      setProjects(allData.map(mapRow));
     } catch (e: any) {
       setError(e.message);
     } finally {
