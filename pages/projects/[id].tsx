@@ -266,7 +266,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
   const [submitting, setSubmitting] = React.useState<string|null>(null);
   const [utilisedMap, setUtilisedMap] = React.useState<Record<string,string>>({});
   const [toast,    setToast]    = React.useState<any>(null);
-  const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', serialNo:'', documentNo:'', boqReqNo:'', amount:'' });
+  const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', serialNo:'', documentNo:'', boqReqNo:'', amount:'', liftedDate:'', gateEntryNo:'', vehicleNo:'' });
   const [editRow,  setEditRow]  = React.useState<any>({});
 
   // Check localStorage for pending STN items (set by projects page Upload PO flow)
@@ -328,8 +328,9 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
       await addItem({ projectId, description:newRow.description, hsnCode:newRow.hsnCode,
         uom:newRow.uom, quantity:Number(newRow.quantity), rate:0,
         gstRate:Number(newRow.gstRate), amount:Number((newRow as any).amount)||0, sortOrder:items.length+1,
-        serialNo:(newRow as any).serialNo, documentNo:(newRow as any).documentNo, boqReqNo:(newRow as any).boqReqNo } as any);
-      setNewRow({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', serialNo:'', documentNo:'', boqReqNo:'', amount:'' });
+        serialNo:(newRow as any).serialNo, documentNo:(newRow as any).documentNo, boqReqNo:(newRow as any).boqReqNo,
+        liftedDate:(newRow as any).liftedDate||null, gateEntryNo:(newRow as any).gateEntryNo||null, vehicleNo:(newRow as any).vehicleNo||null } as any);
+      setNewRow({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', serialNo:'', documentNo:'', boqReqNo:'', amount:'', liftedDate:'', gateEntryNo:'', vehicleNo:'' });
       setAdding(false);
       logActivity(projectId, `STN Item '${newRow.description}' added`, poProfile?.full_name||'', poProfile?.role||'').catch(console.error);
       setToast({ msg:'✅ PO Item added', type:'success' });
@@ -516,6 +517,17 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
               <div key={f}>
                 <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
                 <input type={t} value={(newRow as any)[f]} onChange={e=>setNewRow(p=>({...p,[f]:e.target.value}))} style={inpS} />
+              </div>
+            ))}
+          </div>
+
+          {/* Lifting details */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:12 }}>
+            {([['Lifted Date','liftedDate','date'],['Gate Entry No','gateEntryNo','text'],['Vehicle No','vehicleNo','text']] as [string,string,string][]).map(([l,f,t])=>(
+              <div key={f}>
+                <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{l}</label>
+                <input type={t} value={(newRow as any)[f]||''} onChange={e=>setNewRow(p=>({...p,[f]:e.target.value}))} style={inpS}
+                  {...(t==='date' ? { max: new Date().toISOString().split('T')[0] } : {})} />
               </div>
             ))}
           </div>
