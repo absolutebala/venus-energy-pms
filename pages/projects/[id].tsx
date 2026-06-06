@@ -2525,8 +2525,7 @@ export default function ProjectDetailPage() {
                 style={{ ...inputStyle(), width:'100%', resize:'vertical', boxSizing:'border-box' as const }} />
             </div>
 
-            {isBilling && ['pm_approved','billing_review'].includes(p.status) && (
-              {(() => {
+            {isBilling && ['pm_approved','billing_review'].includes(p.status) && (() => {
                 const docSt2 = getDocStatus(p.id);
                 const allReady = stnAllApproved && srnAllApproved && !!docSt2['ptw_document'] && !!docSt2['jmr_document'];
                 return (
@@ -2536,7 +2535,6 @@ export default function ProjectDetailPage() {
                   </button>
                 );
               })()}
-            )}
 
             {p.status === 'completed' && (
               <div style={{ background:T.successBg, border:`1px solid #BBF7D0`, borderRadius:8, padding:'10px 14px', fontSize:13, color:T.success, fontWeight:600 }}>
