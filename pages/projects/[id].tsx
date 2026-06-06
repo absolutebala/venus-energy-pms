@@ -969,6 +969,7 @@ function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; r
   const [newRow,  setNewRow]  = React.useState({
     description:'', hsn_code:'', uom:'', quantity:'', rate:'', gst_rate:'18', amount:'',
     serial_no:'', document_no:'', boq_req_no:'', return_qty:'', return_date:'',
+    lifted_date:'', gate_entry_no:'', vehicle_no:'',
   });
 
   const fetchItems = React.useCallback(async () => {
@@ -1006,13 +1007,16 @@ function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; r
         boq_req_no:  newRow.boq_req_no.trim(),
         return_qty:  Number(newRow.return_qty)||0,
         return_date: newRow.return_date || null,
+        lifted_date:  newRow.lifted_date || null,
+        gate_entry_no: newRow.gate_entry_no.trim() || null,
+        vehicle_no:   newRow.vehicle_no.trim() || null,
         received:    false,
         sort_order:  items.length + 1,
       };
       const { error } = await sb.from('srn').insert(payload);
       if (error) throw new Error(error.message);
       logSRNAct(projectId, `SRN item added: ${newRow.description}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
-      setNewRow({ description:'', hsn_code:'', uom:'', quantity:'', rate:'', gst_rate:'18', amount:'', serial_no:'', document_no:'', boq_req_no:'', return_qty:'', return_date:'' });
+      setNewRow({ description:'', hsn_code:'', uom:'', quantity:'', rate:'', gst_rate:'18', amount:'', serial_no:'', document_no:'', boq_req_no:'', return_qty:'', return_date:'', lifted_date:'', gate_entry_no:'', vehicle_no:'' });
       setAdding(false);
       setToast({ msg:'✅ SRN item added', type:'success' });
       await fetchItems();
@@ -1124,7 +1128,19 @@ function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; r
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:14 }}>
             <div>
               <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Return Date</div>
-              <input style={inp} type="date" value={newRow.return_date} onChange={e=>setNewRow(p=>({...p,return_date:e.target.value}))} />
+              <input style={inp} type="date" value={newRow.return_date} onChange={e=>setNewRow(p=>({...p,return_date:e.target.value}))} max={new Date().toISOString().split('T')[0]} />
+            </div>
+            <div>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Lifted Date</div>
+              <input style={inp} type="date" value={newRow.lifted_date} onChange={e=>setNewRow(p=>({...p,lifted_date:e.target.value}))} max={new Date().toISOString().split('T')[0]} />
+            </div>
+            <div>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Gate Entry No</div>
+              <input style={inp} value={newRow.gate_entry_no} onChange={e=>setNewRow(p=>({...p,gate_entry_no:e.target.value}))} placeholder="Gate Entry No" />
+            </div>
+            <div>
+              <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Vehicle No</div>
+              <input style={inp} value={newRow.vehicle_no} onChange={e=>setNewRow(p=>({...p,vehicle_no:e.target.value}))} placeholder="Vehicle No" />
             </div>
           </div>
           <div style={{ display:'flex', gap:8 }}>
@@ -1149,7 +1165,7 @@ function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; r
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
             <thead>
               <tr>
-                {['#','Description','HSN','UOM','Qty','Rate','GST%','Amount','Serial No','Doc No','BOQ Req','Return Qty','Return Date','Received','Actions'].map((h,i)=>(
+                {['#','Description','HSN','UOM','Qty','Rate','GST%','Amount','Serial No','Doc No','BOQ Req','Return Qty','Return Date','Lifted Date','Gate Entry No','Vehicle No','Received','Actions'].map((h,i)=>(
                   <th key={i} style={{ ...thS, textAlign:i>=4&&i<=7?'right' as const:'left' as const }}>{h}</th>
                 ))}
               </tr>
@@ -1172,6 +1188,11 @@ function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; r
                   <td style={{ ...tdS, color:T.textMuted }}>
                     {item.return_date ? new Date(item.return_date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}
                   </td>
+                  <td style={{ ...tdS, color:T.textMuted }}>
+                    {item.lifted_date ? new Date(item.lifted_date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}
+                  </td>
+                  <td style={{ ...tdS, color:T.textMuted }}>{item.gate_entry_no||'—'}</td>
+                  <td style={{ ...tdS, color:T.textMuted }}>{item.vehicle_no||'—'}</td>
                   <td style={{ ...tdS }}>
                     {item.received
                       ? <span style={{ fontSize:11, fontWeight:700, color:'#0D9488', background:'#F0FDFA', padding:'2px 10px', borderRadius:20 }}>✓ Yes</span>
