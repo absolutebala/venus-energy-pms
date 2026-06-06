@@ -90,11 +90,11 @@ export default function ProjectsPage() {
       // Create new project — sequential ID same as createNewProject
       const sb2 = createClient();
       const year = new Date().getFullYear();
-      const { data: existing } = await sb2.from('projects').select('id').order('id', { ascending:false }).limit(1);
+      const { data: existing } = await sb2.from('projects').select('id').like('id', `VE-${year}-%`);
       let nextNum = 1;
-      if (existing?.length) {
-        const parts = existing[0].id.split('-');
-        nextNum = parseInt(parts[parts.length-1]) + 1;
+      if (existing && existing.length > 0) {
+        const nums = existing.map((r: any) => parseInt(r.id.split('-')[2])).filter((n: number) => !isNaN(n));
+        if (nums.length > 0) nextNum = Math.max(...nums) + 1;
       }
       const newId = `VE-${year}-${String(nextNum).padStart(3,'0')}`;
       const { error: insertErr } = await sb2.from('projects').insert({
