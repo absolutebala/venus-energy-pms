@@ -144,23 +144,6 @@ function WorkProgressSection({ projectId, role }: { projectId: string; role: str
   const labelS: React.CSSProperties = { display:'block', fontSize:10, fontWeight:600,
     color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const };
 
-  // STN header fields (lifted_date, gate_entry_no, vehicle_no) — stored on project
-  const { updateProject: updateProj } = useProjects();
-  const [stnHeader, setStnHeader] = React.useState({ liftedDate:'', gateEntryNo:'', vehicleNo:''  });
-  React.useEffect(() => {
-    if (project) setStnHeader({ liftedDate:(project as any).liftedDate||'', gateEntryNo:(project as any).gateEntryNo||'', vehicleNo:(project as any).vehicleNo||''  });
-  }, [project]);
-  const [stnHeaderSaving, setStnHeaderSaving] = React.useState(false);
-
-  const saveStnHeader = async () => {
-    setStnHeaderSaving(true);
-    try {
-      await updateProj(projectId, { liftedDate: stnHeader.liftedDate, gateEntryNo: stnHeader.gateEntryNo, vehicleNo: stnHeader.vehicleNo } as any, poProfile?.full_name ?? undefined);
-      setToast({ msg:'✅ STN header saved', type:'success' });
-    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
-    finally { setStnHeaderSaving(false); }
-  };
-
   const saveNew = async () => {
     if (!newRow.workDate || !newRow.workDescription) return;
     setSaving(true);
@@ -286,6 +269,23 @@ function POItemsSection({ projectId, project, editing, canAdd=true, isVendorRole
   const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', serialNo:'', documentNo:'', boqReqNo:'', amount:'' });
   const [editRow,  setEditRow]  = React.useState<any>({});
 
+  // STN header fields (lifted_date, gate_entry_no, vehicle_no) — stored on project
+  const { updateProject: updateProj } = useProjects();
+  const [stnHeader, setStnHeader] = React.useState({ liftedDate:'', gateEntryNo:'', vehicleNo:'' });
+  React.useEffect(() => {
+    if (project) setStnHeader({ liftedDate:(project as any).liftedDate||'', gateEntryNo:(project as any).gateEntryNo||'', vehicleNo:(project as any).vehicleNo||'' });
+  }, [project]);
+  const [stnHeaderSaving, setStnHeaderSaving] = React.useState(false);
+
+  const saveStnHeader = async () => {
+    setStnHeaderSaving(true);
+    try {
+      await updateProj(projectId, { liftedDate: stnHeader.liftedDate, gateEntryNo: stnHeader.gateEntryNo, vehicleNo: stnHeader.vehicleNo } as any, poProfile?.full_name ?? undefined);
+      setToast({ msg:'✅ STN header saved', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setStnHeaderSaving(false); }
+  };
+
   // Check localStorage for pending STN items (set by projects page Upload PO flow)
   React.useEffect(() => {
     if (!projectId) return;
@@ -336,23 +336,6 @@ function POItemsSection({ projectId, project, editing, canAdd=true, isVendorRole
   const thS: React.CSSProperties  = { padding:'7px 8px', fontSize:9, fontWeight:700, textTransform:'uppercase',
     color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, background:T.primaryLight, whiteSpace:'nowrap' as const };
   const tdS: React.CSSProperties  = { padding:'8px 8px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
-
-  // STN header fields (lifted_date, gate_entry_no, vehicle_no) — stored on project
-  const { updateProject: updateProj } = useProjects();
-  const [stnHeader, setStnHeader] = React.useState({ liftedDate:'', gateEntryNo:'', vehicleNo:''  });
-  React.useEffect(() => {
-    if (project) setStnHeader({ liftedDate:(project as any).liftedDate||'', gateEntryNo:(project as any).gateEntryNo||'', vehicleNo:(project as any).vehicleNo||''  });
-  }, [project]);
-  const [stnHeaderSaving, setStnHeaderSaving] = React.useState(false);
-
-  const saveStnHeader = async () => {
-    setStnHeaderSaving(true);
-    try {
-      await updateProj(projectId, { liftedDate: stnHeader.liftedDate, gateEntryNo: stnHeader.gateEntryNo, vehicleNo: stnHeader.vehicleNo } as any, poProfile?.full_name ?? undefined);
-      setToast({ msg:'✅ STN header saved', type:'success' });
-    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
-    finally { setStnHeaderSaving(false); }
-  };
 
   const saveNew = async () => {
     if (!newRow.description || !newRow.quantity) return;
@@ -1305,23 +1288,6 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
 
   const totalAmount = items.reduce((a, e) => a + e.amount, 0);
 
-  // STN header fields (lifted_date, gate_entry_no, vehicle_no) — stored on project
-  const { updateProject: updateProj } = useProjects();
-  const [stnHeader, setStnHeader] = React.useState({ liftedDate:'', gateEntryNo:'', vehicleNo:''  });
-  React.useEffect(() => {
-    if (project) setStnHeader({ liftedDate:(project as any).liftedDate||'', gateEntryNo:(project as any).gateEntryNo||'', vehicleNo:(project as any).vehicleNo||''  });
-  }, [project]);
-  const [stnHeaderSaving, setStnHeaderSaving] = React.useState(false);
-
-  const saveStnHeader = async () => {
-    setStnHeaderSaving(true);
-    try {
-      await updateProj(projectId, { liftedDate: stnHeader.liftedDate, gateEntryNo: stnHeader.gateEntryNo, vehicleNo: stnHeader.vehicleNo } as any, poProfile?.full_name ?? undefined);
-      setToast({ msg:'✅ STN header saved', type:'success' });
-    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
-    finally { setStnHeaderSaving(false); }
-  };
-
   const saveNew = async () => {
     if (!newRow.expenseDate || !newRow.amount) return;
     setSaving(true);
@@ -1528,23 +1494,6 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
     background:T.primaryLight, whiteSpace:'nowrap' as const,
   };
   const tdS: React.CSSProperties = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
-
-  // STN header fields (lifted_date, gate_entry_no, vehicle_no) — stored on project
-  const { updateProject: updateProj } = useProjects();
-  const [stnHeader, setStnHeader] = React.useState({ liftedDate:'', gateEntryNo:'', vehicleNo:''  });
-  React.useEffect(() => {
-    if (project) setStnHeader({ liftedDate:(project as any).liftedDate||'', gateEntryNo:(project as any).gateEntryNo||'', vehicleNo:(project as any).vehicleNo||''  });
-  }, [project]);
-  const [stnHeaderSaving, setStnHeaderSaving] = React.useState(false);
-
-  const saveStnHeader = async () => {
-    setStnHeaderSaving(true);
-    try {
-      await updateProj(projectId, { liftedDate: stnHeader.liftedDate, gateEntryNo: stnHeader.gateEntryNo, vehicleNo: stnHeader.vehicleNo } as any, poProfile?.full_name ?? undefined);
-      setToast({ msg:'✅ STN header saved', type:'success' });
-    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
-    finally { setStnHeaderSaving(false); }
-  };
 
   const saveNew = async () => {
     if (!newRow.invoiceNo || !newRow.invoiceDate || !newRow.invoiceAmount) return;
