@@ -130,7 +130,7 @@ export default function Header() {
           .in('project_id', myProjectIds).eq('utilised_status','submitted');
         if (stnPending?.length) notifs.push({ id:'stn-pending', type:'warning', is_read:false,
           title:`${stnPending.length} STN Item${stnPending.length>1?'s':''} Awaiting Your Approval`,
-          message: [...new Set(stnPending.map((i:any)=>i.project_id))].slice(0,3).join(', '),
+          message: Array.from(new Set(stnPending.map((i:any)=>i.project_id))).slice(0,3).join(', '),
           link:'/projects', created_at: new Date(now.getTime()-60000).toISOString() });
 
         // PTW expiring on their projects
@@ -215,14 +215,14 @@ export default function Header() {
           .in('project_id', myProjectIds).eq('utilised_status','pm_approved').gte('updated_at', week);
         if (stnApproved?.length) notifs.push({ id:'stn-approved', type:'success', is_read:false,
           title:`${stnApproved.length} STN Item${stnApproved.length>1?'s':''} Approved by PM`,
-          message: [...new Set(stnApproved.map((i:any)=>i.project_id))].slice(0,3).join(', '),
+          message: Array.from(new Set(stnApproved.map((i:any)=>i.project_id))).slice(0,3).join(', '),
           link:'/projects', created_at: new Date(now.getTime()-60000).toISOString() });
 
         const { data: stnRejected } = await supabase.from('po_items').select('id,project_id,description')
           .in('project_id', myProjectIds).eq('utilised_status','pm_rejected').gte('updated_at', week);
         if (stnRejected?.length) notifs.push({ id:'stn-rejected', type:'error', is_read:false,
           title:`${stnRejected.length} STN Item${stnRejected.length>1?'s':''} Rejected — Resubmit`,
-          message: [...new Set(stnRejected.map((i:any)=>i.project_id))].slice(0,3).join(', '),
+          message: Array.from(new Set(stnRejected.map((i:any)=>i.project_id))).slice(0,3).join(', '),
           link:'/projects', created_at: new Date(now.getTime()-120000).toISOString() });
 
         // Expenses approved/rejected
@@ -230,7 +230,7 @@ export default function Header() {
           .in('project_id', myProjectIds).eq('status','paid').gte('updated_at', week);
         if (expApproved?.length) notifs.push({ id:'exp-approved', type:'success', is_read:false,
           title:`${expApproved.length} Expense${expApproved.length>1?'s':''} Approved`,
-          message: [...new Set(expApproved.map((i:any)=>i.project_id))].slice(0,3).join(', '),
+          message: Array.from(new Set(expApproved.map((i:any)=>i.project_id))).slice(0,3).join(', '),
           link:'/site-expenses', created_at: new Date(now.getTime()-180000).toISOString() });
 
         // Recent activity on their projects
