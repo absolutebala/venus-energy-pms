@@ -171,22 +171,37 @@ export default function ProjectsPage() {
           .filter((n: number) => !isNaN(n));
         if (nums.length > 0) nextNum = Math.max(...nums) + 1;
       }
-      const newId = `VE-${year}-${String(nextNum).padStart(3,'0')}`;
-      const { error } = await sb.from('projects').insert({
-        id: newId,
-        project_id: newForm.projectId.trim(),
-        po_no:      newForm.poNo.trim(),
-        po_date:    newForm.poDate || null,
-        indus_id:   newForm.indusId.trim(),
-        site:       newForm.site.trim() || newForm.indusId.trim(),
-        region:     newForm.region.trim() || '',
-        type:       newForm.type.trim() || '',
-        status: 'not_started', po_value: 0,
-      });
-      if (error) throw new Error(error.message);
-      await refreshProjects();
-      setShowNewModal(false);
-      router.push(`/projects/${newId}`);
+
+      // Retry up to 5 times in case of race condition on pkey
+      let inserted = false;
+      let lastError = '';
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const newId = `VE-${year}-${String(nextNum + attempt).padStart(3,'0')}`;
+        const { error } = await sb.from('projects').insert({
+          id: newId,
+          project_id: newForm.projectId.trim(),
+          po_no:      newForm.poNo.trim(),
+          po_date:    newForm.poDate || null,
+          indus_id:   newForm.indusId.trim(),
+          site:       newForm.site.trim() || newForm.indusId.trim(),
+          region:     newForm.region.trim() || '',
+          type:       newForm.type.trim() || '',
+          status: 'not_started', po_value: 0,
+        });
+        if (!error) {
+          await refreshProjects();
+          setShowNewModal(false);
+          router.push(`/projects/${newId}`);
+          inserted = true;
+          break;
+        }
+        if (!error.message.includes('projects_pkey')) {
+          lastError = error.message;
+          break;
+        }
+        lastError = error.message;
+      }
+      if (!inserted && lastError) throw new Error(lastError);
     } catch(err: any) {
       alert('Failed to create project: ' + err.message);
     } finally {
