@@ -373,7 +373,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
               <tr>
                 {[
                   {h:'#',w:28},{h:'Item Code',w:90},{h:'Item Description',w:200},{h:'UOM',w:50},
-                  {h:'Qty',w:45},{h:'Doc No',w:80},{h:'BOQ Req',w:80},{h:'Serial No',w:100},
+                  {h:'Qty',w:45},{h:'Doc No',w:80},{h:'Lifted Date',w:100},{h:'Gate Entry No',w:110},{h:'Vehicle No',w:100},{h:'BOQ Req',w:80},{h:'Serial No',w:100},
                   {h:'Tax',w:45},{h:'Amount',w:80},{h:'Total Value',w:90},{h:'Util Qty',w:80},{h:'Status',w:90},{h:'',w:90}
                 ].map(({h,w},i)=>(
                   <th key={i} style={{ ...thS, minWidth:w }}>{h}</th>
@@ -390,6 +390,9 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
                     <td style={{ ...tdS, color:T.textMuted, textAlign:'center' as const }}>{item.uom||'—'}</td>
                     <td style={{ ...tdS, textAlign:'center' as const }}>{item.quantity.toLocaleString()}</td>
                     <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{(item as any).documentNo||'—'}</td>
+                    <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{(item as any).liftedDate ? new Date((item as any).liftedDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</td>
+                    <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{(item as any).gateEntryNo||'—'}</td>
+                    <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{(item as any).vehicleNo||'—'}</td>
                     <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{(item as any).boqReqNo||'—'}</td>
                     <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{(item as any).serialNo||'—'}</td>
                     <td style={{ ...tdS, color:T.textMuted, textAlign:'center' as const }}>{item.gstRate}%</td>
@@ -431,15 +434,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
                       ) : null}
                     </td>
                   </tr>
-                  <tr style={{ background:'#F8FAFC' }}>
-                    <td colSpan={14} style={{ padding:'4px 8px 6px 32px', borderBottom:`1px solid ${T.border}` }}>
-                      <div style={{ display:'flex', gap:24, fontSize:11, color:T.textMuted }}>
-                        <span>📅 <strong>Lifted Date:</strong> {(item as any).liftedDate ? new Date((item as any).liftedDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</span>
-                        <span>🚪 <strong>Gate Entry No:</strong> {(item as any).gateEntryNo || '—'}</span>
-                        <span>🚚 <strong>Vehicle No:</strong> {(item as any).vehicleNo || '—'}</span>
-                      </div>
-                    </td>
-                  </tr>
+
                   {editId === item.id && (
                     <tr style={{ background:T.primaryLight }}>
                       <td colSpan={12} style={{ padding:'14px', borderBottom:`1px solid ${T.border}` }}>
