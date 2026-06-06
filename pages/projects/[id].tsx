@@ -1793,6 +1793,15 @@ export default function ProjectDetailPage() {
   }, [dbProject?.id, id]);
   const [allTransactions, setAllTransactions] = React.useState(PAYMENT_TRANSACTIONS);
   const [srnAllApproved, setSrnAllApproved] = React.useState(false);
+
+  // stnAllApproved: true when all STN items with balance > 0 have return_received = true
+  const { getByProject: getSTNItems } = usePOItems();
+  const stnAllApproved = React.useMemo(() => {
+    if (!p?.id) return false;
+    const stnItems = getSTNItems(p.id).filter((i:any) => i.utilisedStatus === 'pm_approved' && Math.max(0,(i.quantity||0)-(i.pmApprovedQty||0)) > 0);
+    if (stnItems.length === 0) return false;
+    return stnItems.every((i:any) => i.returnReceived === true);
+  }, [p?.id, getSTNItems]);
   const [editingSection, setEditingSection] = useState<string|null>(null);
   const [autoEditDone, setAutoEditDone] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1967,8 +1976,7 @@ export default function ProjectDetailPage() {
   }, []);
 
 
-  // Billing checklist
-  const [checklist, setChecklist] = useState({ stn:false, srn:false, ptw:false, materials:false });
+  // Billing checklist — auto-computed read-only (no manual state needed)
   const [billingNotes, setBillingNotes] = useState('');
 
   // PM review
@@ -2102,7 +2110,8 @@ export default function ProjectDetailPage() {
   };
 
   const handleBillingDone = () => {
-    if (!checklist.stn || !checklist.srn || !checklist.ptw || !checklist.materials) {
+    const _docSt = getDocStatus(p.id);
+    if (!stnAllApproved || !srnAllApproved || !_docSt['ptw_document'] || !_docSt['jmr_document']) {
       setToast({ msg:'All 4 checklist items must be completed before releasing payment.', type:'error' });
       return;
     }
@@ -2470,33 +2479,42 @@ export default function ProjectDetailPage() {
           <div style={{ ...card, marginBottom:16, border:`1.5px solid ${T.border}`, }}>
             {sectionTitle('💳','Billing Review Checklist', 'billing', isBilling)}
 
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12, marginBottom:16 }}>
-              {[
-                { key:'stn',       label:'STN Done',                desc:'Store Transfer Note completed with Indus' },
-                { key:'srn',       label:'SRN Done',                desc:'Store Return Note completed with Indus'   },
-                { key:'ptw',       label:'PTW Done',                desc:'Permit to Work completed'                 },
-                { key:'materials', label:'Materials Returned to Indus', desc:'All materials from STN returned via SRN — MANDATORY', important:true },
-              ].map(item=>{
-                const checked = checklist[item.key as keyof typeof checklist];
-                return (
-                  <div key={item.key} onClick={()=>isBilling&&setChecklist(c=>({...c,[item.key]:!c[item.key as keyof typeof c]}))}
-                    style={{ padding:14, borderRadius:10, border:`2px solid ${checked?item.important?T.primary:T.success:item.important?'#EF4444':T.border}`, background:checked?item.important?T.primaryLight:T.successBg:'#fff', cursor:isBilling?'pointer':'default', transition:'all 0.15s' }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                      <div style={{ width:22, height:22, borderRadius:6, border:`2px solid ${checked?item.important?T.primary:T.success:T.border}`, background:checked?item.important?T.primary:T.success:'#fff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                        {checked && <span style={{ color:'#fff', fontSize:13, fontWeight:700 }}>✓</span>}
-                      </div>
-                      <div>
-                        <div style={{ fontSize:13, fontWeight:700, color:T.text }}>
-                          {item.label}
-                          {item.important && <span style={{ fontSize:10, color:T.danger, marginLeft:6 }}>MANDATORY</span>}
+            {(() => {
+              const docSt = getDocStatus(p.id);
+              const items2 = [
+                { key:'stn', label:'STN Done',     desc:'All STN returns received by PM',          checked: stnAllApproved,            important: false },
+                { key:'srn', label:'SRN Done',     desc:'All SRN items received by PM',             checked: srnAllApproved,            important: true  },
+                { key:'ptw', label:'PTW Done',     desc:'Permit to Work document uploaded',         checked: !!docSt['ptw_document'],   important: false },
+                { key:'jmr', label:'JMR Document', desc:'JMR / JMS document uploaded',              checked: !!docSt['jmr_document'],   important: true  },
+              ];
+              return (
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12, marginBottom:16 }}>
+                  {items2.map(item => (
+                    <div key={item.key}
+                      style={{ padding:14, borderRadius:10,
+                        border:`2px solid ${item.checked ? item.important ? T.primary : T.success : item.important ? '#EF4444' : T.border}`,
+                        background:item.checked ? item.important ? T.primaryLight : T.successBg : '#fff',
+                        transition:'all 0.15s' }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                        <div style={{ width:22, height:22, borderRadius:6,
+                          border:`2px solid ${item.checked ? item.important ? T.primary : T.success : T.border}`,
+                          background:item.checked ? item.important ? T.primary : T.success : '#fff',
+                          display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                          {item.checked && <span style={{ color:'#fff', fontSize:13, fontWeight:700 }}>✓</span>}
                         </div>
-                        <div style={{ fontSize:11, color:T.textMuted }}>{item.desc}</div>
+                        <div>
+                          <div style={{ fontSize:13, fontWeight:700, color:T.text }}>
+                            {item.label}
+                            {item.important && <span style={{ fontSize:10, color:item.checked ? T.success : T.danger, marginLeft:6 }}>{item.checked ? '✓ DONE' : 'MANDATORY'}</span>}
+                          </div>
+                          <div style={{ fontSize:11, color:T.textMuted }}>{item.desc}</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  ))}
+                </div>
+              );
+            })()}
 
             <div style={{ marginBottom:16 }}>
               <label style={{ display:'block', fontSize:13, fontWeight:600, color:T.text, marginBottom:6 }}>Invoice Reference / Billing Notes</label>
@@ -2505,10 +2523,16 @@ export default function ProjectDetailPage() {
             </div>
 
             {isBilling && ['pm_approved','billing_review'].includes(p.status) && (
-              <button onClick={handleBillingDone}
-                style={{ ...btnPrimary, background:Object.values(checklist).every(Boolean)?T.success:T.border, cursor:Object.values(checklist).every(Boolean)?'pointer':'not-allowed' }}>
-                ✅ Mark Billing Done — Release Payment
-              </button>
+              {(() => {
+                const docSt2 = getDocStatus(p.id);
+                const allReady = stnAllApproved && srnAllApproved && !!docSt2['ptw_document'] && !!docSt2['jmr_document'];
+                return (
+                  <button onClick={allReady ? handleBillingDone : undefined}
+                    style={{ ...btnPrimary, background:allReady?T.success:T.border, cursor:allReady?'pointer':'not-allowed' }}>
+                    ✅ Mark Billing Done — Release Payment
+                  </button>
+                );
+              })()}
             )}
 
             {p.status === 'completed' && (
