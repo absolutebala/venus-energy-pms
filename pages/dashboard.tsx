@@ -491,12 +491,15 @@ function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
       {/* ── Expenses & Invoices cards ── */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
         {[
-          { label:'Pending Expense Requests', value:expPending.length,             color:'#D97706', icon:'📋', sub:`₹${(expPendingAmt/1000).toFixed(1)}K pending` },
-          { label:'Paid Expenses',            value:expPaid.length,                color:T.success, icon:'✅', sub:`₹${(expPaidAmt/1000).toFixed(1)}K paid` },
-          { label:'Total Invoices',           value:invTotal,                      color:T.primary, icon:'🧾', sub:`${invSubmitted} submitted` },
-          { label:'Total Invoice Value',      value:`₹${(invTotalValue/100000).toFixed(1)}L`, color:'#7C3AED', icon:'💰', sub:`${invDraft} drafts` },
+          { label:'Pending Expense Requests', value:expPending.length,             color:'#D97706', icon:'📋', sub:`₹${(expPendingAmt/1000).toFixed(1)}K pending`, href:'/site-expenses' },
+          { label:'Paid Expenses',            value:expPaid.length,                color:T.success, icon:'✅', sub:`₹${(expPaidAmt/1000).toFixed(1)}K paid`,    href:'/site-expenses' },
+          { label:'Total Invoices',           value:invTotal,                      color:T.primary, icon:'🧾', sub:`${invSubmitted} submitted`,                   href:'/invoices'      },
+          { label:'Total Invoice Value',      value:`₹${(invTotalValue/100000).toFixed(1)}L`, color:'#7C3AED', icon:'💰', sub:`${invDraft} drafts`,              href:'/invoices'      },
         ].map((s,i)=>(
-          <div key={i} style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px' }}>
+          <div key={i} onClick={()=>router.push(s.href)}
+            style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px', cursor:'pointer', transition:'all 0.15s' }}
+            onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(-1px)'}
+            onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(0)'}>
             <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:s.color }} />
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
               <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase' as const, letterSpacing:0.5 }}>{s.label}</div>
@@ -1056,6 +1059,22 @@ export default function Dashboard() {
 
   const selStyle: React.CSSProperties = { background:'#fff', border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 10px', fontSize:12, color:T.text, outline:'none', cursor:'pointer' };
 
+  // Dashboard filters
+  const [dashRegion,   setDashRegion]   = React.useState('');
+  const [dashType,     setDashType]     = React.useState('');
+  const [dashDateFrom, setDashDateFrom] = React.useState('');
+  const [dashDateTo,   setDashDateTo]   = React.useState('');
+
+  const filteredProjects = React.useMemo(() => {
+    return (dbProjects as any[]).filter((p:any) => {
+      if (dashRegion && p.region !== dashRegion) return false;
+      if (dashType   && p.type   !== dashType)   return false;
+      if (dashDateFrom && p.poDate && p.poDate < dashDateFrom) return false;
+      if (dashDateTo   && p.poDate && p.poDate > dashDateTo)   return false;
+      return true;
+    });
+  }, [dbProjects, dashRegion, dashType, dashDateFrom, dashDateTo]);
+
   return (
     <Layout>
       <div className="fade-in">
@@ -1066,17 +1085,40 @@ export default function Dashboard() {
           </div>
           {/* Filter bar only for admin roles */}
           {['super_admin','region_manager'].includes(role) && (
-            <div style={{ display:'flex', gap:8 }}>
-              <select style={selStyle}><option>All Regions</option>{['Tamil Nadu','Karnataka','Maharashtra','Delhi','Kerala'].map(r=><option key={r}>{r}</option>)}</select>
-              <select style={selStyle}><option>All Types</option>{['Tower Erection','Tower Maintenance','Fiber Installation','Civil Works'].map(t=><option key={t}>{t}</option>)}</select>
-              <input type="date" style={{ ...selStyle, width:130 }} />
+            <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' as const }}>
+              <select value={dashRegion} onChange={e=>setDashRegion(e.target.value)} style={selStyle}>
+                <option value="">All Regions</option>
+                {Array.from(new Set((dbProjects as any[]).map((p:any)=>p.region).filter(Boolean))).sort().map(r=><option key={r as string} value={r as string}>{r as string}</option>)}
+              </select>
+              <select value={dashType} onChange={e=>setDashType(e.target.value)} style={selStyle}>
+                <option value="">All Types</option>
+                {Array.from(new Set((dbProjects as any[]).map((p:any)=>p.type).filter(Boolean))).sort().map(t=><option key={t as string} value={t as string}>{t as string}</option>)}
+              </select>
+              <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                <span style={{ fontSize:11, color:T.textMuted }}>From</span>
+                <input type="date" value={dashDateFrom} onChange={e=>setDashDateFrom(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  style={{ ...selStyle, width:130 }} />
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                <span style={{ fontSize:11, color:T.textMuted }}>To</span>
+                <input type="date" value={dashDateTo} onChange={e=>setDashDateTo(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  style={{ ...selStyle, width:130 }} />
+              </div>
+              {(dashRegion||dashType||dashDateFrom||dashDateTo) && (
+                <button onClick={()=>{setDashRegion('');setDashType('');setDashDateFrom('');setDashDateTo('');}}
+                  style={{ fontSize:11, color:T.danger, background:'#FEF2F2', border:`1px solid #FECACA`, borderRadius:6, padding:'4px 10px', cursor:'pointer' }}>
+                  ✕ Clear
+                </button>
+              )}
             </div>
           )}
         </div>
 
         {isLoading && <div style={{ display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center', height:300, gap:12 }}><div className="spinner" style={{ width:40, height:40, borderTopColor:T.primary, borderColor:`${T.primary}30` }} /><div style={{ fontSize:13, color:T.textMuted }}>Loading dashboard...</div></div>}
-        {!isLoading && role === 'super_admin'     && <SuperAdminDashboard   projects={dbProjects as any[]} />}
-        {!isLoading && role === 'region_manager'  && <RegionManagerDashboard projects={dbProjects as any[]} />}
+        {!isLoading && role === 'super_admin'     && <SuperAdminDashboard   projects={filteredProjects} />}
+        {!isLoading && role === 'region_manager'  && <RegionManagerDashboard projects={filteredProjects} />}
         {!isLoading && role === 'project_manager' && <ProjectManagerDashboard projects={dbProjects as any[]} pmName={profile?.full_name||''} />}
         {!isLoading && role === 'site_engineer'   && <SiteEngineerDashboard  projects={dbProjects as any[]} />}
         {!isLoading && role === 'vendor'          && <VendorDashboard         projects={dbProjects as any[]} />}
