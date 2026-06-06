@@ -125,7 +125,8 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       const { data, error: err } = await supabase
         .from('projects')
         .select('*')
-        .order('id');
+        .order('id')
+        .limit(5000);
       if (err) { setError(err.message); return; }
       setProjects((data || []).map(mapRow));
     } catch (e: any) {
