@@ -550,11 +550,11 @@ export default function ProjectsPage() {
         )}
         {/* Summary cards */}
         {(()=>{
-          const poOpen   = roleFilteredProjects.filter((p:any)=>(p as any).poStatus==='Open').length;
-          const poClosed = roleFilteredProjects.filter((p:any)=>(p as any).poStatus==='Closed').length;
-          const totalPOValue = roleFilteredProjects.reduce((a:number,p:any)=>a+(p.poValue||0),0);
+          const poOpen   = filtered.filter((p:any)=>(p as any).poStatus==='Open').length;
+          const poClosed = filtered.filter((p:any)=>(p as any).poStatus==='Closed').length;
+          const totalPOValue = filtered.reduce((a:number,p:any)=>a+(p.poValue||0),0);
           const summaryCards = [
-            { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value: String(counts.total), color: T.primary, icon:'📁', filter:'All' as string|null },
+            { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value: String(filtered.length), color: T.primary, icon:'📁', filter:'All' as string|null },
             { label:'PO Open',        value: String(poOpen),   color:'#059669', icon:'🟢', filter:'PO Open'  as string|null },
             { label:'PO Closed',      value: String(poClosed), color:'#DC2626', icon:'🔴', filter:'PO Closed' as string|null },
             { label:'Total PO Value', value: `₹${(totalPOValue/100000).toFixed(1)}L`, color:'#7C3AED', icon:'💰', filter:null },
