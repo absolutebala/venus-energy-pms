@@ -12,6 +12,7 @@ export interface POItem {
   pmApprovedQty?: number | null; returnQty?: number | null;
   srnStatus?: string; srnDate?: string | null;
   returnReceived?: boolean;
+  liftedDate?: string; gateEntryNo?: string; vehicleNo?: string;
 }
 
 function mapRow(row: any): POItem {
@@ -36,15 +37,18 @@ function mapRow(row: any): POItem {
     srnStatus:     row.srn_status     ?? 'pending',
     srnDate:       row.srn_date       ?? null,
     returnReceived: row.return_received ?? false,
+    liftedDate:    row.lifted_date    ?? '',
+    gateEntryNo:   row.gate_entry_no  ?? '',
+    vehicleNo:     row.vehicle_no     ?? '',
   };
 }
 
 function mapToDb(item: Partial<POItem>): Record<string, any> {
   const db: Record<string, any> = {};
   const map: Record<string, string> = {
-    projectId:'project_id', hsnCode:'hsn_code', gstRate:'gst_rate', sortOrder:'sort_order', serialNo:'serial_no', documentNo:'document_no', boqReqNo:'boq_req_no', utilisedQty:'utilised_qty', utilisedStatus:'utilised_status', pmApprovedQty:'pm_approved_qty', returnQty:'return_qty', srnStatus:'srn_status', srnDate:'srn_date', returnReceived:'return_received',
+    projectId:'project_id', hsnCode:'hsn_code', gstRate:'gst_rate', sortOrder:'sort_order', serialNo:'serial_no', documentNo:'document_no', boqReqNo:'boq_req_no', utilisedQty:'utilised_qty', utilisedStatus:'utilised_status', pmApprovedQty:'pm_approved_qty', returnQty:'return_qty', srnStatus:'srn_status', srnDate:'srn_date', returnReceived:'return_received', liftedDate:'lifted_date', gateEntryNo:'gate_entry_no', vehicleNo:'vehicle_no',
   };
-  const VALID = new Set(['project_id','description','hsn_code','uom','quantity','rate','gst_rate','amount','sort_order','serial_no','document_no','boq_req_no','utilised_qty','utilised_status','pm_approved_qty','return_qty','srn_status','srn_date','return_received']);
+  const VALID = new Set(['project_id','description','hsn_code','uom','quantity','rate','gst_rate','amount','sort_order','serial_no','document_no','boq_req_no','utilised_qty','utilised_status','pm_approved_qty','return_qty','srn_status','srn_date','return_received','lifted_date','gate_entry_no','vehicle_no']);
   for (const [key, val] of Object.entries(item)) {
     const dbKey = map[key] || key;
     if (VALID.has(dbKey)) db[dbKey] = val;

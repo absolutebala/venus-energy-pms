@@ -255,7 +255,7 @@ function WorkProgressSection({ projectId, role }: { projectId: string; role: str
 }
 
 
-function POItemsSection({ projectId, project, editing, canAdd=true, isVendorRole=false }: { projectId: string; project?: any; editing: boolean; canAdd?: boolean; isVendorRole?: boolean }) {
+function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }: { projectId: string; editing: boolean; canAdd?: boolean; isVendorRole?: boolean }) {
   const { getByProject, addItem, updateItem, deleteItem, loading } = usePOItems();
   const { logActivity } = useActivity();
   const { profile: poProfile } = useAuth();
@@ -268,23 +268,6 @@ function POItemsSection({ projectId, project, editing, canAdd=true, isVendorRole
   const [toast,    setToast]    = React.useState<any>(null);
   const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', serialNo:'', documentNo:'', boqReqNo:'', amount:'' });
   const [editRow,  setEditRow]  = React.useState<any>({});
-
-  // STN header fields (lifted_date, gate_entry_no, vehicle_no) — stored on project
-  const { updateProject: updateProj } = useProjects();
-  const [stnHeader, setStnHeader] = React.useState({ liftedDate:'', gateEntryNo:'', vehicleNo:'' });
-  React.useEffect(() => {
-    if (project) setStnHeader({ liftedDate:(project as any).liftedDate||'', gateEntryNo:(project as any).gateEntryNo||'', vehicleNo:(project as any).vehicleNo||'' });
-  }, [project]);
-  const [stnHeaderSaving, setStnHeaderSaving] = React.useState(false);
-
-  const saveStnHeader = async () => {
-    setStnHeaderSaving(true);
-    try {
-      await updateProj(projectId, { liftedDate: stnHeader.liftedDate, gateEntryNo: stnHeader.gateEntryNo, vehicleNo: stnHeader.vehicleNo } as any, poProfile?.full_name ?? undefined);
-      setToast({ msg:'✅ STN header saved', type:'success' });
-    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
-    finally { setStnHeaderSaving(false); }
-  };
 
   // Check localStorage for pending STN items (set by projects page Upload PO flow)
   React.useEffect(() => {
@@ -451,9 +434,9 @@ function POItemsSection({ projectId, project, editing, canAdd=true, isVendorRole
                   <tr style={{ background:'#F8FAFC' }}>
                     <td colSpan={14} style={{ padding:'4px 8px 6px 32px', borderBottom:`1px solid ${T.border}` }}>
                       <div style={{ display:'flex', gap:24, fontSize:11, color:T.textMuted }}>
-                        <span>📅 <strong>Lifted Date:</strong> {project?.liftedDate ? new Date(project.liftedDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</span>
-                        <span>🚪 <strong>Gate Entry No:</strong> {project?.gateEntryNo || '—'}</span>
-                        <span>🚚 <strong>Vehicle No:</strong> {project?.vehicleNo || '—'}</span>
+                        <span>📅 <strong>Lifted Date:</strong> {(item as any).liftedDate ? new Date((item as any).liftedDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</span>
+                        <span>🚪 <strong>Gate Entry No:</strong> {(item as any).gateEntryNo || '—'}</span>
+                        <span>🚚 <strong>Vehicle No:</strong> {(item as any).vehicleNo || '—'}</span>
                       </div>
                     </td>
                   </tr>
@@ -482,20 +465,20 @@ function POItemsSection({ projectId, project, editing, canAdd=true, isVendorRole
                             Total Value (incl. tax): ₹{(Number((editRow as any).amount||0) * (1 + Number(editRow.gstRate||0)/100)).toLocaleString('en-IN', {minimumFractionDigits:2})}
                           </div>
                         )}
-                        {/* STN Header fields */}
+                        {/* Per-item STN fields */}
                         <div style={{ borderTop:`1px solid ${T.primaryMid}`, paddingTop:10, marginBottom:10 }}>
-                          <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:8, textTransform:'uppercase' as const }}>STN Header (applies to all items)</div>
+                          <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:8, textTransform:'uppercase' as const }}>Lifting Details</div>
                           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:10 }}>
                             {([['Lifted Date','liftedDate','date'],['Gate Entry No','gateEntryNo','text'],['Vehicle No','vehicleNo','text']] as [string,string,string][]).map(([l,f,t])=>(
                               <div key={f}>
                                 <label style={{ display:'block', fontSize:9, fontWeight:700, color:T.textMuted, marginBottom:2, textTransform:'uppercase' as const }}>{l}</label>
-                                <input type={t} value={(stnHeader as any)[f]||''} onChange={e=>setStnHeader(p=>({...p,[f]:e.target.value}))} style={{ ...inpS, padding:'4px 7px', fontSize:12 }} />
+                                <input type={t} value={(editRow as any)[f]||''} onChange={e=>setEditRow((p:any)=>({...p,[f]:e.target.value}))} style={{ ...inpS, padding:'4px 7px', fontSize:12 }} />
                               </div>
                             ))}
                           </div>
                         </div>
                         <div style={{ display:'flex', gap:10 }}>
-                          <button onClick={async()=>{ await saveEdit(item.id); await saveStnHeader(); }} disabled={saving||stnHeaderSaving} style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13, fontWeight:600 }}>✓ Save</button>
+                          <button onClick={()=>saveEdit(item.id)} disabled={saving} style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13, fontWeight:600 }}>✓ Save</button>
                           <button onClick={()=>setEditId(null)} style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13 }}>Cancel</button>
                         </div>
                       </td>
@@ -2343,7 +2326,7 @@ export default function ProjectDetailPage() {
         {/* ── STN ── */}
         <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('📋','STN', 'poitems', role!=='vendor' && canEdit)}
-          <POItemsSection projectId={p.id} project={p} editing={editing('poitems')} canAdd={canEdit} isVendorRole={role==='vendor'} />
+          <POItemsSection projectId={p.id} editing={editing('poitems')} canAdd={canEdit} isVendorRole={role==='vendor'} />
         </div>
 
         {/* ── SRN ── */}

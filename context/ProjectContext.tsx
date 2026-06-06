@@ -14,7 +14,6 @@ export interface Project {
   safetyPhotos: boolean; sitePhotos: boolean; jmrDocument: boolean;
   atCertificate: boolean; nocDocument: boolean; drawingDocument: boolean; ptwDocument: boolean;
   createdAt?: string; updatedAt?: string; updatedBy?: string;
-  liftedDate?: string; gateEntryNo?: string; vehicleNo?: string;
 }
 
 // Map Supabase snake_case → camelCase used throughout the portal
@@ -59,9 +58,6 @@ function mapRow(row: any): Project {
     createdAt:     row.created_at    ?? '',
     updatedAt:     row.updated_at    ?? '',
     updatedBy:     row.updated_by    ?? '',
-    liftedDate:    row.lifted_date   ?? '',
-    gateEntryNo:   row.gate_entry_no ?? '',
-    vehicleNo:     row.vehicle_no    ?? '',
   };
 }
 
@@ -72,7 +68,7 @@ const DB_COLUMNS = new Set([
   'status','po_value','billed_amount','paid_amount','progress',
   'po_date','start_date','end_date','ptw_ticket_id','ptw_supervisor',
   'ptw_date_from','ptw_date_to','work_scope','remarks','safety_photos','site_photos','jmr_document','at_certificate','noc_document','drawing_document','ptw_document',
-  'updated_at','updated_by','lifted_date','gate_entry_no','vehicle_no',
+  'updated_at','updated_by',
 ]);
 
 // Map camelCase form updates → Supabase snake_case, filtering unknown columns
@@ -85,7 +81,6 @@ function mapToDb(updates: Partial<Project>): Record<string, any> {
     ptwTicketId:'ptw_ticket_id', ptwSupervisor:'ptw_supervisor',
     ptwDateFrom:'ptw_date_from', ptwDateTo:'ptw_date_to',
     workScope:'work_scope', updatedBy:'updated_by',
-    liftedDate:'lifted_date', gateEntryNo:'gate_entry_no', vehicleNo:'vehicle_no',
     safetyPhotos:'safety_photos', sitePhotos:'site_photos',
     jmrDocument:'jmr_document', atCertificate:'at_certificate',
     nocDocument:'noc_document', drawingDocument:'drawing_document', ptwDocument:'ptw_document',
