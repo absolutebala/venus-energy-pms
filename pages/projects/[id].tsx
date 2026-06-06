@@ -1782,7 +1782,7 @@ export default function ProjectDetailPage() {
   const showPTW           = !loading && can('sec_ptw',              'read');
 
   const { getProject, updateProject: ctxUpdateProject } = useProjects();
-  const { getByProject: getProjectDocs, addDoc, deleteDoc: deleteWorkDoc } = useWorkDocs();
+  const { getByProject: getProjectDocs, addDoc, deleteDoc: deleteWorkDoc, getDocStatus } = useWorkDocs();
   const { getByProject: getActivityLog, logActivity } = useActivity();
   const dbProject = id ? getProject(id as string) : undefined;
   const seedFallback = (Array.isArray(SEED_PROJECTS)?SEED_PROJECTS:[]).find((p:any)=>p.id===id);
