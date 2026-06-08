@@ -121,8 +121,8 @@ export default function SiteExpensesPage() {
       return new Date(b.expenseDate||b.createdAt||0).getTime() - new Date(a.expenseDate||a.createdAt||0).getTime();
     });
 
-  const pendingTotal = filtered.filter((e:any) => e.status === 'pending').reduce((a:number,e:any) => a + Number(e.amount), 0);
-  const paidTotal    = filtered.filter((e:any) => e.status === 'paid').reduce((a:number,e:any) => a + Number(e.amount), 0);
+  const pendingTotal = allExpenses.filter((e:any) => e.status === 'pending').reduce((a:number,e:any) => a + Number(e.amount), 0);
+  const paidTotal    = allExpenses.filter((e:any) => e.status === 'paid').reduce((a:number,e:any) => a + Number(e.amount), 0);
 
   const handleAdd = async () => {
     if (!selectedProject || !form.amount || !form.expenseDate) {
@@ -189,7 +189,7 @@ export default function SiteExpensesPage() {
             { label:"Total Records",    value: expenses.length,                                          color:T.primary },
             { label:"Pending Amount",   value: fmt(pendingTotal),                                        color:T.warning },
             { label:"Paid Amount",      value: fmt(paidTotal),                                           color:T.success },
-            { label:"Pending Requests", value: filtered.filter((e:any)=>e.status==="pending").length,    color:T.danger  },
+            { label:"Pending Requests", value: allExpenses.filter((e:any)=>e.status==="pending").length,    color:T.danger  },
           ].map(s => (
             <div key={s.label} style={{ ...card, padding:"14px 16px" }}>
               <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:"uppercase", marginBottom:4 }}>{s.label}</div>
