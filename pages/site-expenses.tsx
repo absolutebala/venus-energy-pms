@@ -180,13 +180,13 @@ export default function SiteExpensesPage() {
       <div className="fade-in">
         <div style={{ fontSize:22, fontWeight:800, color:T.text, marginBottom:4 }}>Expenses</div>
         <div style={{ fontSize:13, color:T.textMuted, marginBottom:20 }}>
-          {expLoading ? "Loading..." : `${expenses.length} records`}
+          {expLoading ? "Loading..." : `${allExpenses.length} records`}
         </div>
 
         {/* Summary cards */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
           {[
-            { label:"Total Records",    value: expenses.length,                                          color:T.primary },
+            { label:"Total Records",    value: allExpenses.length,                                          color:T.primary },
             { label:"Pending Amount",   value: fmt(pendingTotal),                                        color:T.warning },
             { label:"Paid Amount",      value: fmt(paidTotal),                                           color:T.success },
             { label:"Pending Requests", value: allExpenses.filter((e:any)=>e.status==="pending").length,    color:T.danger  },
