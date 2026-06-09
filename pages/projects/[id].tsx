@@ -8,6 +8,7 @@ import Modal from '@/components/Modal';
 import { useInvoices } from '@/context/InvoiceContext';
 import { useExpenses } from '@/context/ExpenseContext';
 import { useWorkDocs } from '@/context/WorkDocContext';
+import DateInput from '@/components/DateInput';
 import { useMaterial } from '@/context/MaterialContext';
 import { usePOItems } from '@/context/POItemContext';
 import { useWorkProgress } from '@/context/WorkProgressContext';
@@ -186,7 +187,7 @@ function WorkProgressSection({ projectId, role }: { projectId: string; role: str
                     <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
                     {editId === item.id ? (
                       <>
-                        <td style={tdS}><input type="date" value={editRow.workDate||''} onChange={e=>setEditRow((p:any)=>({...p,workDate:e.target.value}))} style={inpS} /></td>
+                        <td style={tdS}><DateInput value={editRow.workDate||''} onChange={v=>setEditRow((p:any)=>({...p,workDate:v}))} style={inpS} /></td>
                         <td style={tdS}><input value={editRow.workDescription||''} onChange={e=>setEditRow((p:any)=>({...p,workDescription:e.target.value}))} style={inpS} /></td>
                         <td style={tdS}><input value={editRow.workStatus||''} onChange={e=>setEditRow((p:any)=>({...p,workStatus:e.target.value}))} style={inpS} /></td>
                         <td style={tdS}><input value={editRow.totalWorkStatus||''} onChange={e=>setEditRow((p:any)=>({...p,totalWorkStatus:e.target.value}))} style={inpS} /></td>
@@ -229,7 +230,7 @@ function WorkProgressSection({ projectId, role }: { projectId: string; role: str
         <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:14, marginBottom:12 }}>
           <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New Work Progress Entry</div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr 1fr 1fr', gap:10, marginBottom:10 }}>
-            <div><label style={labelS}>Work Date *</label><input type="date" value={newRow.workDate} onChange={e=>setNewRow(p=>({...p,workDate:e.target.value}))} style={inpS} /></div>
+            <div><label style={labelS}>Work Date *</label><DateInput value={newRow.workDate} onChange={v=>setNewRow(p=>({...p,workDate:v}))} style={inpS} /></div>
             <div><label style={labelS}>Work Description *</label><input value={newRow.workDescription} onChange={e=>setNewRow(p=>({...p,workDescription:e.target.value}))} style={inpS} placeholder="Describe work done today" /></div>
             <div><label style={labelS}>Work Status</label><input value={newRow.workStatus} onChange={e=>setNewRow(p=>({...p,workStatus:e.target.value}))} style={inpS} placeholder="e.g. In Progress" /></div>
             <div><label style={labelS}>Total Work Status</label><input value={newRow.totalWorkStatus} onChange={e=>setNewRow(p=>({...p,totalWorkStatus:e.target.value}))} style={inpS} placeholder="e.g. 60% complete" /></div>
@@ -921,10 +922,10 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
                             onChange={e=>setReturnMap(p=>({...p,[item.id]:e.target.value}))}
                             placeholder="Return Qty"
                             style={{ width:75, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 6px', fontSize:11, outline:'none' }} />
-                          <input type="date"
+                          <DateInput
                             value={returnDateMap[item.id]??''}
-                            onChange={e=>setReturnDateMap(p=>({...p,[item.id]:e.target.value}))}
-                            style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 6px', fontSize:11, outline:'none' }} />
+                            onChange={v=>setReturnDateMap(p=>({...p,[item.id]:v}))}
+                            style={{ border:`1px solid ${T.border}`, borderRadius:6, fontSize:11 }} />
                         </div>
                         <button onClick={()=>saveReturn(item)} disabled={isSaving||!returnMap[item.id]}
                           style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'4px 8px', fontSize:11, cursor:'pointer',
@@ -1140,11 +1141,11 @@ function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; r
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:14 }}>
             <div>
               <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Return Date</div>
-              <input style={inp} type="date" value={newRow.return_date} onChange={e=>setNewRow(p=>({...p,return_date:e.target.value}))} max={new Date().toISOString().split('T')[0]} />
+              <DateInput value={newRow.return_date} onChange={v=>setNewRow(p=>({...p,return_date:v}))} style={inp} />
             </div>
             <div>
               <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Lifted Date</div>
-              <input style={inp} type="date" value={newRow.lifted_date} onChange={e=>setNewRow(p=>({...p,lifted_date:e.target.value}))} max={new Date().toISOString().split('T')[0]} />
+              <DateInput value={newRow.lifted_date} onChange={v=>setNewRow(p=>({...p,lifted_date:v}))} style={inp} />
             </div>
             <div>
               <div style={{ fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:3 }}>Gate Entry No</div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
+import DateInput from '@/components/DateInput';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useExpenses } from '@/context/ExpenseContext';
@@ -210,10 +211,10 @@ export default function SiteExpensesPage() {
           ))}
           {datePreset==='custom' && (
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <input type="date" value={customFrom} max={new Date().toISOString().split("T")[0]} onChange={e=>setCustomFrom(e.target.value)}
+              <DateInput value={customFrom} onChange={setCustomFrom}
                 style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', fontSize:12, outline:'none' }} />
               <span style={{ fontSize:12, color:T.textMuted }}>to</span>
-              <input type="date" value={customTo} max={new Date().toISOString().split("T")[0]} onChange={e=>setCustomTo(e.target.value)}
+              <DateInput value={customTo} onChange={setCustomTo}
                 style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', fontSize:12, outline:'none' }} />
             </div>
           )}
@@ -315,7 +316,7 @@ export default function SiteExpensesPage() {
             </p>
             <div style={{ marginBottom:14 }}>
               <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Transaction Date</label>
-              <input type="date" value={paidForm.txnDate} onChange={e=>setPaidForm(p=>({...p,txnDate:e.target.value}))}
+              <DateInput value={paidForm.txnDate} onChange={v=>setPaidForm(p=>({...p,txnDate:v}))}
                 style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const }} />
             </div>
             <div style={{ marginBottom:14 }}>

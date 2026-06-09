@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
+import DateInput from '@/components/DateInput';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
 import CreatableSelect from '@/components/CreatableSelect';
@@ -300,7 +301,7 @@ export default function NewProjectPage() {
               {/* Row 3: PO Date + PO No + Project No */}
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'0 16px' }}>
                 <F label="PO Date" required>
-                  <input type="date" value={poDate} onChange={e=>setPoDate(e.target.value)} style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
+                  <DateInput value={poDate} onChange={setPoDate} style={{ ...inputStyle(), width:'100%', boxSizing:'border-box' as const }} />
                 </F>
                 <F label="PO No." required><Inp value={poNo} onChange={setPoNo} placeholder="PO-2025-001" /></F>
                 <F label="Project No."><Inp value={projectNo} onChange={setProjectNo} placeholder="PRJ-2025-001" /></F>

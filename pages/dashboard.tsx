@@ -5,6 +5,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase';
 import { T, card, badge } from '@/lib/theme';
+import DateInput from '@/components/DateInput';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 // ── Shared mock data ──────────────────────────────────────────────
@@ -1096,15 +1097,13 @@ export default function Dashboard() {
               </select>
               <div style={{ display:'flex', alignItems:'center', gap:4 }}>
                 <span style={{ fontSize:11, color:T.textMuted }}>From</span>
-                <input type="date" value={dashDateFrom} onChange={e=>setDashDateFrom(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
-                  style={{ ...selStyle, width:130 }} />
+                <DateInput value={dashDateFrom} onChange={setDashDateFrom}
+                  style={{ ...selStyle, width:130, padding:'6px 36px 6px 10px' }} />
               </div>
               <div style={{ display:'flex', alignItems:'center', gap:4 }}>
                 <span style={{ fontSize:11, color:T.textMuted }}>To</span>
-                <input type="date" value={dashDateTo} onChange={e=>setDashDateTo(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
-                  style={{ ...selStyle, width:130 }} />
+                <DateInput value={dashDateTo} onChange={setDashDateTo}
+                  style={{ ...selStyle, width:130, padding:'6px 36px 6px 10px' }} />
               </div>
               {(dashRegion||dashType||dashDateFrom||dashDateTo) && (
                 <button onClick={()=>{setDashRegion('');setDashType('');setDashDateFrom('');setDashDateTo('');}}
