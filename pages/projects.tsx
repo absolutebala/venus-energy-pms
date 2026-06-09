@@ -849,9 +849,15 @@ export default function ProjectsPage() {
             ] as [string,string,string,string][]).map(([label,field,type,ph])=>(
               <div key={field} style={{ marginBottom:14 }}>
                 <label style={{ display:'block', fontSize:12, fontWeight:600, color:'#6B7280', marginBottom:4, textTransform:'uppercase' as const }}>{label}</label>
-                <input type={type} placeholder={ph} value={(newForm as any)[field]}
-                  onChange={e=>{ setNewForm((f:any)=>({...f,[field]:e.target.value})); setNewFormErrors((er:any)=>({...er,[field]:''})); }}
-                  style={{ width:'100%', padding:'8px 10px', border:`1.5px solid ${(newFormErrors as any)[field]?'#EF4444':'#E5E7EB'}`, borderRadius:7, fontSize:13, outline:'none', boxSizing:'border-box' as const }} />
+                {type === 'date' ? (
+                  <DateInput value={(newForm as any)[field]}
+                    onChange={v=>{ setNewForm((f:any)=>({...f,[field]:v})); setNewFormErrors((er:any)=>({...er,[field]:''})); }}
+                    style={{ width:'100%', padding:'8px 10px', border:`1.5px solid ${(newFormErrors as any)[field]?'#EF4444':'#E5E7EB'}`, borderRadius:7, fontSize:13, outline:'none', boxSizing:'border-box' as const }} />
+                ) : (
+                  <input type={type} placeholder={ph} value={(newForm as any)[field]}
+                    onChange={e=>{ setNewForm((f:any)=>({...f,[field]:e.target.value})); setNewFormErrors((er:any)=>({...er,[field]:''})); }}
+                    style={{ width:'100%', padding:'8px 10px', border:`1.5px solid ${(newFormErrors as any)[field]?'#EF4444':'#E5E7EB'}`, borderRadius:7, fontSize:13, outline:'none', boxSizing:'border-box' as const }} />
+                )}
                 {(newFormErrors as any)[field] && <div style={{ fontSize:11, color:'#EF4444', marginTop:3 }}>{(newFormErrors as any)[field]}</div>}
               </div>
             ))}

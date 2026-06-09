@@ -1421,8 +1421,12 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                ['UPI ID','upiId','text','e.g. name@upi']] as [string,string,string,string][]).map(([l,f,t,ph])=>(
               <div key={f}>
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{l}</label>
-                <input type={t} value={(newRow as any)[f]} placeholder={ph}
-                  onChange={e=>setNewRow(p=>({...p,[f]:e.target.value}))} style={inpS} />
+                {t === 'date' ? (
+                  <DateInput value={(newRow as any)[f]} onChange={v=>setNewRow(p=>({...p,[f]:v}))} style={inpS} />
+                ) : (
+                  <input type={t} value={(newRow as any)[f]} placeholder={ph}
+                    onChange={e=>setNewRow(p=>({...p,[f]:e.target.value}))} style={inpS} />
+                )}
               </div>
             ))}
             <div>
@@ -1600,8 +1604,12 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
                ['GST (₹)','gst','number','']] as [string,string,string,string][]).map(([label,field,type,ph])=>(
               <div key={field}>
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</label>
-                <input type={type} value={(newRow as any)[field]} placeholder={ph}
-                  onChange={e=>setNewRow(p=>({...p,[field]:e.target.value}))} style={inpS} />
+                {type === 'date' ? (
+                  <DateInput value={(newRow as any)[field]} onChange={v=>setNewRow(p=>({...p,[field]:v}))} style={inpS} />
+                ) : (
+                  <input type={type} value={(newRow as any)[field]} placeholder={ph}
+                    onChange={e=>setNewRow(p=>({...p,[field]:e.target.value}))} style={inpS} />
+                )}
               </div>
             ))}
             <div>

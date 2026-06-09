@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/router';
+import DateInput from '@/components/DateInput';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useInvoices } from '@/context/InvoiceContext';
@@ -231,10 +232,16 @@ export default function InvoicesPage() {
                  ["GST (₹)","gst","number",""]] as [string,string,string,string][]).map(([label,field,type,ph]) => (
                 <div key={field}>
                   <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>{label}</label>
-                  <input type={type} value={(newInv as any)[field]} placeholder={ph}
-                    onChange={e => setNewInv(p => ({ ...p, [field]: e.target.value }))}
-                    style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px",
-                      fontSize:13, width:"100%", boxSizing:"border-box" as const, outline:"none", background:"#fff" }} />
+                  {type === 'date' ? (
+                    <DateInput value={(newInv as any)[field]} onChange={v => setNewInv(p => ({ ...p, [field]: v }))}
+                      style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px",
+                        fontSize:13, width:"100%", boxSizing:"border-box" as const, outline:"none", background:"#fff" }} />
+                  ) : (
+                    <input type={type} value={(newInv as any)[field]} placeholder={ph}
+                      onChange={e => setNewInv(p => ({ ...p, [field]: e.target.value }))}
+                      style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px",
+                        fontSize:13, width:"100%", boxSizing:"border-box" as const, outline:"none", background:"#fff" }} />
+                  )}
                 </div>
               ))}
               <div>
