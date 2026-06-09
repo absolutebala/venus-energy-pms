@@ -27,7 +27,6 @@ function toISO(display: string): string {
 }
 
 function isValidISO(iso: string): boolean {
-  if (!iso) return false;
   const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!m) return false;
   const [, yyyy, mm, dd] = m.map(Number);
@@ -85,34 +84,80 @@ export default function DateInput({ value, onChange, placeholder='DD-MM-YYYY', s
     if (norm.length === 10) validate(norm);
   };
 
-  const handleBlur = () => { if (text.length > 0 && text.length < 10) setError('Incomplete date'); };
+  const handleBlur = () => {
+    if (text.length > 0 && text.length < 10) setError('Incomplete date');
+  };
 
   const handlePickerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const iso = e.target.value;
     if (!iso) return;
-    if (iso > maxDate) { setError('Future date not allowed'); setText(toDisplay(iso)); return; }
-    setText(toDisplay(iso)); setError(''); onChange(iso);
+    if (iso > maxDate) { setError('Future date not allowed'); return; }
+    setText(toDisplay(iso));
+    setError('');
+    onChange(iso);
   };
 
   const inpStyle: React.CSSProperties = {
     border: `1px solid ${error ? '#DC2626' : T.border}`,
-    borderRadius: 7, padding: '6px 30px 6px 10px', fontSize: 13,
-    outline: 'none', background: disabled ? '#F9FAFB' : '#fff',
-    color: T.text, width: '100%', boxSizing: 'border-box' as const,
+    borderRadius: 7,
+    padding: '6px 30px 6px 10px',
+    fontSize: 13,
+    outline: 'none',
+    background: disabled ? '#F9FAFB' : '#fff',
+    color: T.text,
+    width: '100%',
+    boxSizing: 'border-box' as const,
     ...style,
     ...(error ? { border: '1px solid #DC2626' } : {}),
   };
 
   return (
     <div style={{ position: 'relative', width: '100%' }}>
-      <input type="text" value={text} onChange={handleChange} onPaste={handlePaste}
-        onBlur={handleBlur} placeholder={placeholder} disabled={disabled}
-        maxLength={10} style={inpStyle} />
-      <input ref={pickerRef} type="date" max={maxDate} min={min}
-        onChange={handlePickerChange} tabIndex={-1}
-        style={{ position:'absolute', top:0, right:0, width:28, height:'100%', opacity:0, cursor:'pointer', zIndex:2 }} />
-      <span style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', fontSize:13, pointerEvents:'none', zIndex:1 }}>📅</span>
-      {error && <div style={{ fontSize:10, color:'#DC2626', marginTop:2 }}>{error}</div>}
+      {/* Text input — fully interactive, no overlay */}
+      <input
+        type="text"
+        value={text}
+        onChange={handleChange}
+        onPaste={handlePaste}
+        onBlur={handleBlur}
+        placeholder={placeholder}
+        disabled={disabled}
+        maxLength={10}
+        style={inpStyle}
+      />
+      {/* Calendar icon button — only this triggers the picker */}
+      <button
+        type="button"
+        onClick={() => { if (!disabled) pickerRef.current?.click(); }}
+        tabIndex={-1}
+        style={{
+          position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
+          background: 'none', border: 'none',
+          cursor: disabled ? 'default' : 'pointer',
+          padding: 2, fontSize: 13, lineHeight: 1,
+          zIndex: 2, color: T.textMuted,
+        }}
+      >📅</button>
+      {/* Hidden date picker — only opened via button click above */}
+      <input
+        ref={pickerRef}
+        type="date"
+        max={maxDate}
+        min={min}
+        onChange={handlePickerChange}
+        tabIndex={-1}
+        style={{
+          position: 'absolute',
+          top: 0, right: 0,
+          width: 0, height: 0,
+          opacity: 0,
+          pointerEvents: 'none',
+          zIndex: -1,
+        }}
+      />
+      {error && (
+        <div style={{ fontSize: 10, color: '#DC2626', marginTop: 2 }}>{error}</div>
+      )}
     </div>
   );
 }
