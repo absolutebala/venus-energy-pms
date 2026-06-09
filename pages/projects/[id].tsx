@@ -1790,7 +1790,9 @@ export default function ProjectDetailPage() {
 
   const showPTW           = !loading && can('sec_ptw',              'read');
 
-  const { getProject, updateProject: ctxUpdateProject } = useProjects();
+  const { getProject, updateProject: ctxUpdateProject, projects: allProjects } = useProjects();
+  const { expenses: allExpenses } = useExpenses();
+  const { invoices: allInvoices } = useInvoices();
   const { getByProject: getProjectDocs, addDoc, deleteDoc: deleteWorkDoc, getDocStatus } = useWorkDocs();
   const { getByProject: getActivityLog, logActivity } = useActivity();
   const dbProject = id ? getProject(id as string) : undefined;
@@ -2289,22 +2291,29 @@ export default function ProjectDetailPage() {
 
           {showFinancial && <div style={card}>
             {sectionTitle('💰','Financial Summary', 'financial', canEditFin)}
-            {[
-              { label:'PO Value',      key:'poValue',      color:T.text    },
-              { label:'Billed Amount', key:'billedAmount', color:T.info    },
-              { label:'Paid Amount',   key:null,           color:T.success, computed: p.paidAmount||0 },
-              { label:'Projection',    key:null,           color:T.warning, computed: (p.billedAmount||0) - (p.paidAmount||0) },
-            ].map((r,i)=>(
-              <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:`1px solid ${T.border}` }}>
-                <span style={{ fontSize:13, color:T.textMuted }}>{r.label}</span>
-                {editing('financial') && canEditFin && r.key ? (
-                  <input type="number" value={(form as any)[r.key]||0} onChange={e=>setForm((f:any)=>({...f,[r.key!]:Number(e.target.value)}))}
-                    style={{ ...inputStyle(), width:160, textAlign:'right' as const }} />
-                ) : (
-                  <span style={{ fontSize:14, fontWeight:700, color:r.color }}>{fmt(r.computed !== undefined ? r.computed : (p as any)[r.key!])}</span>
-                )}
-              </div>
-            ))}
+            {(() => {
+              // Aggregate across all projects with same PO number
+              const siblingIds = (allProjects as any[]).filter((proj:any) => proj.poNo === p.poNo).map((proj:any) => proj.id);
+              const poPaidAmt = allExpenses.filter((e:any) => siblingIds.includes(e.projectId) && e.status === 'paid').reduce((a:number,e:any) => a + Number(e.amount||0), 0);
+              const poBilledAmt = allInvoices.filter((i:any) => siblingIds.includes(i.projectId) && (i.invoiceStatus === 'Approved' || i.paymentStatus === 'Paid')).reduce((a:number,i:any) => a + Number(i.invoiceAmount||0), 0);
+              const rows = [
+                { label:'PO Value',      key:'poValue',  color:T.text,    computed: undefined },
+                { label:'Billed Amount', key:null,       color:T.info,    computed: poBilledAmt },
+                { label:'Paid Amount',   key:null,       color:T.success, computed: poPaidAmt },
+                { label:'Projection',    key:null,       color:T.warning, computed: poBilledAmt - poPaidAmt },
+              ];
+              return rows.map((r,i)=>(
+                <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:`1px solid ${T.border}` }}>
+                  <span style={{ fontSize:13, color:T.textMuted }}>{r.label}</span>
+                  {editing('financial') && canEditFin && r.key ? (
+                    <input type="number" value={(form as any)[r.key]||0} onChange={e=>setForm((f:any)=>({...f,[r.key!]:Number(e.target.value)}))}
+                      style={{ ...inputStyle(), width:160, textAlign:'right' as const }} />
+                  ) : (
+                    <span style={{ fontSize:14, fontWeight:700, color:r.color }}>{fmt(r.computed !== undefined ? r.computed : (p as any)[r.key!])}</span>
+                  )}
+                </div>
+              ));
+            })()}
             <div style={{ display:'flex', justifyContent:'space-between', padding:'12px 14px', background:T.primaryLight, borderRadius:8, marginTop:12 }}>
               <span style={{ fontSize:13, fontWeight:700, color:T.primary }}>PO Aging</span>
               <span style={{ fontSize:14, fontWeight:800, color:T.primary }}>
