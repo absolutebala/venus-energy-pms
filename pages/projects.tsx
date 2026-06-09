@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
+import DateInput from '@/components/DateInput';
 import { useProjects } from '@/context/ProjectContext';
 import { createClient } from '@/lib/supabase';
 import { useWorkDocs } from '@/context/WorkDocContext';
