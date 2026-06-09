@@ -454,8 +454,8 @@ function STNSRNSummary() {
 function SuperAdminDashboard({ projects: propProjects, loading=false }: { projects: any[]; loading?: boolean }) {
   const projects = propProjects;
   const router = useRouter();
-  const { expenses } = useExpenses();
-  const { invoices } = useInvoices();
+  const { expenses, loading: expLoading } = useExpenses();
+  const { invoices, loading: invLoading } = useInvoices();
   const STATUS_COLORS: Record<string,string> = {
     'Yet to Start':'#9CA3AF','Work In Progress':'#3B82F6','Work Completed/ Approval Pending':'#10B981',
     'Billing Shared':'#8B5CF6','LL Issues':'#EF4444','Site Issues':'#F97316','CR Pending':'#F59E0B',
@@ -492,7 +492,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
   return (
     <div>
       {/* ── Expenses & Invoices cards ── */}
-      {loading ? (
+      {(loading || expLoading || invLoading) ? (
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'60px 0', gap:12 }}>
           <div className="spinner" style={{ width:36, height:36, borderTopColor:T.primary, borderColor:`${T.primary}30` }} />
           <div style={{ fontSize:13, color:T.textMuted }}>Loading dashboard data...</div>
@@ -914,8 +914,8 @@ function ViewerDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
 function AccountingDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
   const router = useRouter();
   const [selectedProject, setSelectedProject] = useState<string|null>(null);
-  const { expenses } = useExpenses();
-  const { invoices } = useInvoices();
+  const { expenses, loading: expLoading } = useExpenses();
+  const { invoices, loading: invLoading } = useInvoices();
   const expPending    = expenses.filter((e:any)=>e.status==='pending');
   const expPaid       = expenses.filter((e:any)=>e.status==='paid');
   const expPendingAmt = expPending.reduce((a:number,e:any)=>a+Number(e.amount),0);
