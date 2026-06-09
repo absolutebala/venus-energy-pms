@@ -699,7 +699,13 @@ export default function ProjectsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 && (
+                {projLoading && (
+                  <tr><td colSpan={11} style={{ padding:40, textAlign:'center' as const }}>
+                    <div className="spinner" style={{ margin:'0 auto', width:32, height:32, borderTopColor:T.primary, borderColor:`${T.primary}30` }} />
+                    <div style={{ fontSize:13, color:T.textMuted, marginTop:10 }}>Loading projects...</div>
+                  </td></tr>
+                )}
+                {!projLoading && filtered.length === 0 && (
                   <tr><td colSpan={11} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
                 )}
                 {[...filtered].sort((a:any,b:any)=>{ const ai=filtered.indexOf(a), bi=filtered.indexOf(b); return sortDir==='asc'?ai-bi:bi-ai; }).slice((page-1)*PER_PAGE, page*PER_PAGE).map((p:any, idx:number) => {

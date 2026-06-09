@@ -451,7 +451,7 @@ function STNSRNSummary() {
 
 // ── 2. REGION MANAGER DASHBOARD ──────────────────────────────────
 
-function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
+function SuperAdminDashboard({ projects: propProjects, loading=false }: { projects: any[]; loading?: boolean }) {
   const projects = propProjects;
   const router = useRouter();
   const { expenses } = useExpenses();
@@ -492,7 +492,13 @@ function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
   return (
     <div>
       {/* ── Expenses & Invoices cards ── */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
+      {loading && (
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'60px 0', gap:12 }}>
+          <div className="spinner" style={{ width:36, height:36, borderTopColor:T.primary, borderColor:`${T.primary}30` }} />
+          <div style={{ fontSize:13, color:T.textMuted }}>Loading dashboard data...</div>
+        </div>
+      )}
+      {!loading && <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
         {[
           { label:'Pending Expense Requests', value:expPending.length,             color:'#D97706', icon:'📋', sub:`₹${(expPendingAmt/1000).toFixed(1)}K pending`, href:'/site-expenses' },
           { label:'Paid Expenses',            value:expPaid.length,                color:T.success, icon:'✅', sub:`₹${(expPaidAmt/1000).toFixed(1)}K paid`,    href:'/site-expenses' },
@@ -606,6 +612,7 @@ function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
         <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>📦 STN / SRN Summary</div>
         <STNSRNSummary />
       </div>
+      }
     </div>
   );
 }
@@ -1117,14 +1124,13 @@ export default function Dashboard() {
           )}
         </div>
 
-        {isLoading && <div style={{ display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center', height:300, gap:12 }}><div className="spinner" style={{ width:40, height:40, borderTopColor:T.primary, borderColor:`${T.primary}30` }} /><div style={{ fontSize:13, color:T.textMuted }}>Loading dashboard...</div></div>}
-        {!isLoading && role === 'super_admin'     && <SuperAdminDashboard   projects={filteredProjects} />}
-        {!isLoading && role === 'region_manager'  && <RegionManagerDashboard projects={filteredProjects} />}
-        {!isLoading && role === 'project_manager' && <ProjectManagerDashboard projects={dbProjects as any[]} pmName={profile?.full_name||''} />}
-        {!isLoading && role === 'site_engineer'   && <SiteEngineerDashboard  projects={dbProjects as any[]} />}
-        {!isLoading && role === 'vendor'          && <VendorDashboard         projects={dbProjects as any[]} />}
-        {!isLoading && role === 'viewer' && <ViewerDashboard projects={dbProjects as any[]} />}
-        {!isLoading && role === 'accounting_team' && <AccountingDashboard     projects={dbProjects as any[]} />}
+        {role === 'super_admin'     && <SuperAdminDashboard   projects={isLoading ? [] : filteredProjects} loading={isLoading} />}
+        {role === 'region_manager'  && <RegionManagerDashboard projects={isLoading ? [] : filteredProjects} />}
+        {role === 'project_manager' && <ProjectManagerDashboard projects={isLoading ? [] : (dbProjects as any[])} pmName={profile?.full_name||''} />}
+        {role === 'site_engineer'   && <SiteEngineerDashboard  projects={isLoading ? [] : (dbProjects as any[])} />}
+        {role === 'vendor'          && <VendorDashboard         projects={isLoading ? [] : (dbProjects as any[])} />}
+        {role === 'viewer'          && <ViewerDashboard         projects={isLoading ? [] : (dbProjects as any[])} />}
+        {role === 'accounting_team' && <AccountingDashboard     projects={isLoading ? [] : (dbProjects as any[])} />}
       </div>
     </Layout>
   );
