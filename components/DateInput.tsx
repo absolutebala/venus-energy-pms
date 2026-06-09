@@ -97,6 +97,15 @@ export default function DateInput({ value, onChange, placeholder='DD-MM-YYYY', s
     onChange(iso);
   };
 
+  const openPicker = () => {
+    if (disabled || !pickerRef.current) return;
+    try {
+      (pickerRef.current as any).showPicker();
+    } catch {
+      pickerRef.current.click();
+    }
+  };
+
   const inpStyle: React.CSSProperties = {
     border: `1px solid ${error ? '#DC2626' : T.border}`,
     borderRadius: 7,
@@ -113,7 +122,6 @@ export default function DateInput({ value, onChange, placeholder='DD-MM-YYYY', s
 
   return (
     <div style={{ position: 'relative', width: '100%' }}>
-      {/* Text input — fully interactive, no overlay */}
       <input
         type="text"
         value={text}
@@ -125,20 +133,7 @@ export default function DateInput({ value, onChange, placeholder='DD-MM-YYYY', s
         maxLength={10}
         style={inpStyle}
       />
-      {/* Calendar icon button — only this triggers the picker */}
-      <button
-        type="button"
-        onClick={() => { if (!disabled) pickerRef.current?.click(); }}
-        tabIndex={-1}
-        style={{
-          position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
-          background: 'none', border: 'none',
-          cursor: disabled ? 'default' : 'pointer',
-          padding: 2, fontSize: 13, lineHeight: 1,
-          zIndex: 2, color: T.textMuted,
-        }}
-      >📅</button>
-      {/* Hidden date picker — only opened via button click above */}
+      {/* Native picker — hidden but functional */}
       <input
         ref={pickerRef}
         type="date"
@@ -146,15 +141,28 @@ export default function DateInput({ value, onChange, placeholder='DD-MM-YYYY', s
         min={min}
         onChange={handlePickerChange}
         tabIndex={-1}
+        aria-hidden="true"
         style={{
           position: 'absolute',
-          top: 0, right: 0,
-          width: 0, height: 0,
+          top: 0, left: 0,
+          width: '1px', height: '1px',
           opacity: 0,
           pointerEvents: 'none',
           zIndex: -1,
         }}
       />
+      {/* Calendar icon — clickable */}
+      <span
+        onClick={openPicker}
+        style={{
+          position: 'absolute', right: 8, top: '50%',
+          transform: 'translateY(-50%)',
+          fontSize: 14, cursor: disabled ? 'default' : 'pointer',
+          userSelect: 'none',
+          zIndex: 3,
+        }}
+        title="Open date picker"
+      >📅</span>
       {error && (
         <div style={{ fontSize: 10, color: '#DC2626', marginTop: 2 }}>{error}</div>
       )}
