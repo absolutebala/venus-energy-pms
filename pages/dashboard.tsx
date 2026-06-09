@@ -492,13 +492,12 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
   return (
     <div>
       {/* ── Expenses & Invoices cards ── */}
-      {loading && (
+      {loading ? (
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'60px 0', gap:12 }}>
           <div className="spinner" style={{ width:36, height:36, borderTopColor:T.primary, borderColor:`${T.primary}30` }} />
           <div style={{ fontSize:13, color:T.textMuted }}>Loading dashboard data...</div>
         </div>
-      )}
-      {!loading && <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
+      ) : <><div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
         {[
           { label:'Pending Expense Requests', value:expPending.length,             color:'#D97706', icon:'📋', sub:`₹${(expPendingAmt/1000).toFixed(1)}K pending`, href:'/site-expenses' },
           { label:'Paid Expenses',            value:expPaid.length,                color:T.success, icon:'✅', sub:`₹${(expPaidAmt/1000).toFixed(1)}K paid`,    href:'/site-expenses' },
@@ -612,7 +611,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
         <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>📦 STN / SRN Summary</div>
         <STNSRNSummary />
       </div>
-      }
+      </>}
     </div>
   );
 }
