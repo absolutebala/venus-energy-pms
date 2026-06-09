@@ -473,19 +473,21 @@ function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
 
   const statusData = Object.entries(statusGroups).map(([name,value]:any)=>({ name, value, color: STATUS_COLORS[name]||'#6B7280', status: name })).filter((d:any)=>d.value>0).sort((a:any,b:any)=>b.value-a.value);
 
-  const pmGroups = projects.reduce((acc:any,p)=>{ acc[p.pm]=(acc[p.pm]||[]); acc[p.pm].push(p); return acc; },{});
+  const pmGroups = projects.reduce((acc:any,p:any)=>{ const key=p.pm||''; acc[key]=(acc[key]||[]); acc[key].push(p); return acc; },{});
   const vendorGroups = projects.reduce((acc:any,p)=>{ if(p.vendor){ acc[p.vendor]=(acc[p.vendor]||[]); acc[p.vendor].push(p); } return acc; },{});
 
-  // Expense metrics
-  const expPending     = expenses.filter((e:any)=>e.status==='pending');
-  const expPaid        = expenses.filter((e:any)=>e.status==='paid');
+  // Expense metrics — filtered by projects in current filter selection
+  const filteredProjectIds = new Set(projects.map((p:any) => p.id));
+  const expPending     = expenses.filter((e:any)=>e.status==='pending' && filteredProjectIds.has(e.projectId));
+  const expPaid        = expenses.filter((e:any)=>e.status==='paid' && filteredProjectIds.has(e.projectId));
   const expPendingAmt  = expPending.reduce((a:number,e:any)=>a+Number(e.amount),0);
   const expPaidAmt     = expPaid.reduce((a:number,e:any)=>a+Number(e.amount),0);
-  // Invoice metrics
-  const invTotal       = invoices.length;
-  const invDraft       = invoices.filter((i:any)=>i.invoiceStatus==='Draft').length;
-  const invSubmitted   = invoices.filter((i:any)=>i.invoiceStatus==='Submitted').length;
-  const invTotalValue  = invoices.reduce((a:number,i:any)=>a+Number(i.invoiceAmount||0),0);
+  // Invoice metrics — filtered by projects in current filter selection
+  const filteredInvoices = invoices.filter((i:any) => filteredProjectIds.has(i.projectId));
+  const invTotal       = filteredInvoices.length;
+  const invDraft       = filteredInvoices.filter((i:any)=>i.invoiceStatus==='Draft').length;
+  const invSubmitted   = filteredInvoices.filter((i:any)=>i.invoiceStatus==='Submitted').length;
+  const invTotalValue  = filteredInvoices.reduce((a:number,i:any)=>a+Number(i.invoiceAmount||0),0);
 
   return (
     <div>
@@ -567,7 +569,7 @@ function SuperAdminDashboard({ projects: propProjects }: { projects: any[] }) {
                 onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
                 onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
-                  <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{pm}</span>
+                  <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{pm || 'Unassigned'}</span>
                   <span style={{ fontSize:11, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10 }}>{(ps as any[]).length} →</span>
                 </div>
                 <div style={{ display:'flex', gap:5, flexWrap:'wrap' as const }}>
@@ -644,7 +646,7 @@ function RegionManagerDashboard({ projects }: { projects: typeof ALL_PROJECTS })
             return (
               <div key={pm} style={{ padding:'10px 12px', background:T.bg, borderRadius:8, marginBottom:8 }}>
                 <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-                  <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{pm}</span>
+                  <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{pm || 'Unassigned'}</span>
                   <span style={{ fontSize:12, color:T.primary, fontWeight:700 }}>{ps.length} projects</span>
                 </div>
                 <div style={{ display:'flex', gap:8 }}>
@@ -1093,7 +1095,7 @@ export default function Dashboard() {
               </select>
               <select value={dashType} onChange={e=>setDashType(e.target.value)} style={selStyle}>
                 <option value="">All Types</option>
-                {Array.from(new Set((dbProjects as any[]).map((p:any)=>p.type).filter(Boolean))).sort().map(t=><option key={t as string} value={t as string}>{t as string}</option>)}
+                {Array.from(new Set((dbProjects as any[]).filter((p:any)=>!dashRegion||p.region===dashRegion).map((p:any)=>p.type).filter(Boolean))).sort().map(t=><option key={t as string} value={t as string}>{t as string}</option>)}
               </select>
               <div style={{ display:'flex', alignItems:'center', gap:4 }}>
                 <span style={{ fontSize:11, color:T.textMuted }}>From</span>
