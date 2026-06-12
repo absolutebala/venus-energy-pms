@@ -177,7 +177,7 @@ export default function VendorsPage() {
             { label:'Total Vendors',  value:loading?'…':vendors.length,                   color:T.primary, icon:'🏢' },
             { label:'Active',         value:vendors.filter(v=>v.active).length,   color:T.success, icon:'✅' },
 
-            { label:'Total PO Value', value:`₹${(vendors.reduce((a,v)=>a+v.poValue,0)/10000000).toFixed(2)}Cr`, color:T.warning, icon:'💰' },
+            { label:'Total PO Value', value:`₹${(vendors.reduce((a,v)=>a+v.poValue,0)/100000).toFixed(1)}L`, color:T.warning, icon:'💰' },
           ].map((s,i)=>(
             <div key={i} style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px' }}>
               <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:s.color }} />
