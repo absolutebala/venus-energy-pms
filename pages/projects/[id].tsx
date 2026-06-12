@@ -2351,7 +2351,15 @@ export default function ProjectDetailPage() {
                       vendorEmail:   found?.email   || f.vendorEmail,
                     }));
                   }}
-                  onCreateNew={v => setForm((f:any) => ({ ...f, vendor:v, vendorContact:'', vendorPhone:'', vendorEmail:'' }))}
+                  onCreateNew={async v => {
+                    // Save new vendor to vendors table
+                    try {
+                      const sb = createClient();
+                      await sb.from('vendors').insert({ name: v, is_active: true });
+                      fetchVendors(); // refresh dropdown
+                    } catch(err) { console.error('Vendor insert error:', err); }
+                    setForm((f:any) => ({ ...f, vendor:v, vendorContact:'', vendorPhone:'', vendorEmail:'' }));
+                  }}
                 />
               </div>
               {[['Contact Person','vendorContact'],['Phone','vendorPhone'],['Email','vendorEmail']].map(([label,key])=>(
