@@ -160,3 +160,13 @@ export const td: React.CSSProperties = {
   fontSize: 13,
   borderBottom: '1px solid #F1F5F9',
 };
+
+// Smart Indian currency formatter
+// < 1L → ₹XX.XK | 1L–99.9L → ₹XX.XL | ≥ 100L → ₹X.XXCr
+export const fmtINR = (v: number): string => {
+  const n = Number(v) || 0;
+  if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)}Cr`;
+  if (n >= 100000)   return `₹${(n / 100000).toFixed(1)}L`;
+  if (n >= 1000)     return `₹${(n / 1000).toFixed(1)}K`;
+  return `₹${n.toFixed(0)}`;
+};

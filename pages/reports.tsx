@@ -10,11 +10,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useProjects } from '@/context/ProjectContext';
 import { useInvoices } from '@/context/InvoiceContext';
 import { useMaterial } from '@/context/MaterialContext';
-import { T, card, badge } from '@/lib/theme';
+import { T, card, badge , fmtINR} from '@/lib/theme';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
-const fmt    = (v:number) => `₹${(v/100000).toFixed(1)}L`;
-const fmtCr  = (v:number) => `₹${(v/10000000).toFixed(2)} Cr`;
+const fmt    = fmtINR;
+const fmtCr  = fmtINR;
 const PCT_CLR= (v:number) => v>=80?T.success:v>=50?T.info:T.danger;
 const getAging = (startDate:string, status?:string, endDate?:string) => {
   if (!startDate) return 0;

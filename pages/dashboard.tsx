@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase';
-import { T, card, badge } from '@/lib/theme';
+import { T, card, badge , fmtINR} from '@/lib/theme';
 import DateInput from '@/components/DateInput';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -40,8 +40,8 @@ const TIMELINE = [
   { date:'15/05/2025 10:00 AM', action:'Project created and assigned to RM',  by:'Ramesh Kumar',         role:'RM'      },
 ];
 
-const fmt    = (v:number) => `₹${(v/100000).toFixed(2)}L`;
-const fmtCr  = (v:number) => `₹${(v/10000000).toFixed(2)} Cr`;
+const fmt    = fmtINR;
+const fmtCr  = fmtINR;
 const STATUS_DISPLAY: Record<string,string> = {
   in_progress:'In Progress', pending:'Pending', delayed:'Delayed',
   completed:'Completed', submitted:'Submitted', pm_approved:'PM Approved',
@@ -502,7 +502,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
           { label:'Pending Expense Requests', value:expPending.length,             color:'#D97706', icon:'📋', sub:`₹${(expPendingAmt/1000).toFixed(1)}K pending`, href:'/site-expenses' },
           { label:'Paid Expenses',            value:expPaid.length,                color:T.success, icon:'✅', sub:`₹${(expPaidAmt/1000).toFixed(1)}K paid`,    href:'/site-expenses' },
           { label:'Total Invoices',           value:invTotal,                      color:T.primary, icon:'🧾', sub:`${invSubmitted} submitted`,                   href:'/invoices'      },
-          { label:'Total Invoice Value',      value:`₹${(invTotalValue/100000).toFixed(1)}L`, color:'#7C3AED', icon:'💰', sub:`${invDraft} drafts`,              href:'/invoices'      },
+          { label:'Total Invoice Value',      value:fmtINR(invTotalValue), color:'#7C3AED', icon:'💰', sub:`${invDraft} drafts`,              href:'/invoices'      },
         ].map((s,i)=>(
           <div key={i} onClick={()=>router.push(s.href)}
             style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px', cursor:'pointer', transition:'all 0.15s' }}
@@ -598,7 +598,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
                   <span style={{ fontSize:12, fontWeight:600, color:T.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const, maxWidth:160 }}>{v}</span>
                   <span style={{ fontSize:11, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10, flexShrink:0 }}>{(ps as any[]).length} →</span>
                 </div>
-                <div style={{ fontSize:11, color:T.textMuted }}>₹{((ps as any[]).reduce((a:number,p:any)=>a+p.poValue,0)/100000).toFixed(1)}L total PO</div>
+                <div style={{ fontSize:11, color:T.textMuted }}>{fmtINR((ps as any[]).reduce((a:number,p:any)=>a+p.poValue,0))} total PO</div>
               </div>
             ))}
           </div>
@@ -933,7 +933,7 @@ function AccountingDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
         <KpiCard label="Pending Expenses"  value={expPending.length}                          icon="📋" color={T.warning} sub={`₹${(expPendingAmt/1000).toFixed(1)}K`} />
         <KpiCard label="Paid Expenses"     value={expPaid.length}                             icon="✅" color={T.success} sub={`₹${(expPaidAmt/1000).toFixed(1)}K`} />
         <KpiCard label="Submitted Invoices" value={pending.length}                            icon="🧾" color={T.primary} onClick={()=>router.push('/invoices')} />
-        <KpiCard label="Total Invoice Value" value={`₹${(invTotalValue/100000).toFixed(1)}L`} icon="💰" color='#7C3AED' />
+        <KpiCard label="Total Invoice Value" value={fmtINR(invTotalValue)} icon="💰" color='#7C3AED' />
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>

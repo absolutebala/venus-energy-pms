@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
-import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/lib/theme';
+import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle , fmtINR} from '@/lib/theme';
 import DateInput from '@/components/DateInput';
 import { useProjects } from '@/context/ProjectContext';
 import { createClient } from '@/lib/supabase';
@@ -11,7 +11,7 @@ import { useWorkDocs } from '@/context/WorkDocContext';
 import { MOCK_PROJECTS } from '@/lib/projectData';
 import * as XLSX from 'xlsx';
 
-const fmt = (v: number) => `₹${(v / 100000).toFixed(2)}L`;
+const fmt = fmtINR;
 
 const STATUS_DISPLAY: Record<string,string> = {
   in_progress:'In Progress', delayed:'Delayed', completed:'Completed', pending:'Pending',
@@ -532,7 +532,7 @@ export default function ProjectsPage() {
                 <div style={{ display:'flex', gap:12, flexWrap:'wrap' as const }}>
                   <span style={{ fontSize:12, color:T.textMuted }}>{filtered.length} project(s)</span>
                   <span style={{ fontSize:12, color:T.textMuted }}>
-                    PO Value: <strong style={{ color:T.text }}>₹{(filtered.reduce((a,p)=>{const pp=p as any;return a+(pp.poValue||0);},0)/100000).toFixed(1)}L</strong>
+                    PO Value: <strong style={{ color:T.text }}>{fmtINR(filtered.reduce((a,p)=>{const pp=p as any;return a+(pp.poValue||0);},0))}</strong>
                   </span>
                   <span style={{ fontSize:12, color:T.danger }}>
                     Delayed: <strong>{filtered.filter((p:any)=>p.status==='delayed').length}</strong>
@@ -558,7 +558,7 @@ export default function ProjectsPage() {
             { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value: String(filtered.length), color: T.primary, icon:'📁', filter:'All' as string|null },
             { label:'PO Open',        value: String(poOpen),   color:'#059669', icon:'🟢', filter:'PO Open'  as string|null },
             { label:'PO Closed',      value: String(poClosed), color:'#DC2626', icon:'🔴', filter:'PO Closed' as string|null },
-            { label:'Total PO Value', value: `₹${(totalPOValue/100000).toFixed(1)}L`, color:'#7C3AED', icon:'💰', filter:null },
+            { label:'Total PO Value', value: fmtINR(totalPOValue), color:'#7C3AED', icon:'💰', filter:null },
           ];
           return (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>

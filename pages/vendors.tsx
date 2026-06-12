@@ -5,7 +5,7 @@ const supabase = createClient();
 import Layout from '@/components/Layout';
 import Modal from '@/components/Modal';
 import Toast from '@/components/Toast';
-import { T, card, btnPrimary, btnSecondary, btnDanger, th, td, inputStyle, badge } from '@/lib/theme';
+import { T, card, btnPrimary, btnSecondary, btnDanger, th, td, inputStyle, badge , fmtINR} from '@/lib/theme';
 
 // Vendors loaded from Supabase
 
@@ -177,7 +177,7 @@ export default function VendorsPage() {
             { label:'Total Vendors',  value:loading?'…':vendors.length,                   color:T.primary, icon:'🏢' },
             { label:'Active',         value:vendors.filter(v=>v.active).length,   color:T.success, icon:'✅' },
 
-            { label:'Total PO Value', value:`₹${(vendors.reduce((a,v)=>a+v.poValue,0)/100000).toFixed(1)}L`, color:T.warning, icon:'💰' },
+            { label:'Total PO Value', value:fmtINR(vendors.reduce((a,v)=>a+v.poValue,0)), color:T.warning, icon:'💰' },
           ].map((s,i)=>(
             <div key={i} style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px' }}>
               <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:s.color }} />
@@ -223,7 +223,7 @@ export default function VendorsPage() {
                     </td>
                     <td style={{ ...td, fontSize:12 }}>{v.gst || '—'}</td>
                     <td style={td}>{v.projects} ({v.done} done)</td>
-                    <td style={{ ...td, fontWeight:600, color:T.text, whiteSpace:'nowrap' }}>₹{(v.poValue/100000).toFixed(2)}L</td>
+                    <td style={{ ...td, fontWeight:600, color:T.text, whiteSpace:'nowrap' }}>{fmtINR(v.poValue)}</td>
                     <td style={td}>
                       <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
                         <span style={{ fontSize:11, fontWeight:600, color:v.active?T.success:T.danger, background:v.active?T.successBg:'#FEF2F2', padding:'3px 10px', borderRadius:20, display:'inline-block' }}>
