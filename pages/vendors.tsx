@@ -195,7 +195,7 @@ export default function VendorsPage() {
         <div style={card}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
             <input value={search} onChange={e=>setSearch(e.target.value)} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)} placeholder="Search vendor, contact, email, GST…" style={{ ...inputStyle(focused), width:260 }} />
-
+            <button onClick={openNew} style={{ ...btnPrimary }}>+ New Vendor</button>
           </div>
 
           <div style={{ overflowX:'auto' }}>

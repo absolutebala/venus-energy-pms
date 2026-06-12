@@ -1966,7 +1966,7 @@ export default function ProjectDetailPage() {
 
   // Fetch vendor list from Supabase
   const [vendorList, setVendorList] = React.useState<{name:string;contact:string;phone:string;email:string}[]>([]);
-  React.useEffect(() => {
+  const fetchVendors = React.useCallback(() => {
     const sb = createClient();
     sb.from('vendors').select('name,contact_person,phone,email').eq('is_active', true).order('name')
       .then(({ data }) => {
@@ -1978,6 +1978,12 @@ export default function ProjectDetailPage() {
         })));
       });
   }, []);
+  React.useEffect(() => { fetchVendors(); }, [fetchVendors]);
+  React.useEffect(() => {
+    const onFocus = () => fetchVendors();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [fetchVendors]);
 
 
   // stnAllApproved: computed from po_items after p is available
