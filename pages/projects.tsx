@@ -265,6 +265,8 @@ export default function ProjectsPage() {
   });
   const PER_PAGE = 10;
   const [pmFilter,     setPmFilter]     = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [vendorFilter,  setVendorFilter]  = useState('');
   const [showFilters,   setShowFilters]   = useState(false);
   const [projectStatusFilter, setProjectStatusFilter] = useState('');
@@ -704,7 +706,7 @@ export default function ProjectsPage() {
                     onClick={()=>setSortDir(d=>d==='asc'?'desc':'asc')}>
                     S.No. {sortDir==='asc'?'↑':'↓'}
                   </th>
-                  {['PO Number','PO Count','Aging','PO Status','Project Name','Project ID','Indus ID','Site Name','Project Status','Delivery Date'].map((h,i)=>(
+                  {['PO Number','PO Count','Aging','PO Status','Project Name','Project ID','Indus ID','Site Name','Project Status','Delivery Date',...(profile?.role==='super_admin'?['Delete']:[])].map((h,i)=>(
                     <th key={i} style={{ padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
                       color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`,
                       whiteSpace:'nowrap' as const, background:T.primaryLight }}>
@@ -715,13 +717,13 @@ export default function ProjectsPage() {
               </thead>
               <tbody>
                 {projLoading && (
-                  <tr><td colSpan={11} style={{ padding:40, textAlign:'center' as const }}>
+                  <tr><td colSpan={12} style={{ padding:40, textAlign:'center' as const }}>
                     <div className="spinner" style={{ margin:'0 auto', width:32, height:32, borderTopColor:T.primary, borderColor:`${T.primary}30` }} />
                     <div style={{ fontSize:13, color:T.textMuted, marginTop:10 }}>Loading projects...</div>
                   </td></tr>
                 )}
                 {!projLoading && filtered.length === 0 && (
-                  <tr><td colSpan={11} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
+                  <tr><td colSpan={12} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
                 )}
                 {[...filtered].sort((a:any,b:any)=>{ const ai=filtered.indexOf(a), bi=filtered.indexOf(b); return sortDir==='asc'?ai-bi:bi-ai; }).slice((page-1)*PER_PAGE, page*PER_PAGE).map((p:any, idx:number) => {
                   const delDate = p.endDate;
@@ -784,6 +786,13 @@ export default function ProjectsPage() {
                           {isPast && <span style={{ fontSize:10, display:'block', color:'#DC2626' }}>Overdue</span>}
                         </span> : <span style={{ color:T.textDim }}>—</span>}
                       </td>
+                      {profile?.role === 'super_admin' && (
+                        <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, textAlign:'center' as const }}
+                          onClick={ev=>{ ev.stopPropagation(); setDeleteTarget(p); }}>
+                          <button style={{ background:'#FEF2F2', color:'#DC2626', border:'1px solid #FECACA', borderRadius:6,
+                            padding:'4px 10px', fontSize:11, fontWeight:600, cursor:'pointer' }}>🗑 Delete</button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -890,6 +899,43 @@ export default function ProjectsPage() {
           </div>
         </div>
       )}
+
+      {/* ── Delete Confirmation Modal ── */}
+      {deleteTarget && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:1000,
+          display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ background:'#fff', borderRadius:14, padding:32, width:420, boxShadow:'0 8px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ fontSize:18, fontWeight:700, color:'#DC2626', marginBottom:8 }}>⚠️ Delete Project</div>
+            <div style={{ fontSize:13, color:'#374151', marginBottom:16, lineHeight:1.6 }}>
+              Are you sure you want to permanently delete project <strong>{(deleteTarget as any).projectId || deleteTarget.id}</strong>?
+              <br/>This action <strong>cannot be undone</strong>.
+            </div>
+            <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+              <button disabled={deleteLoading}
+                onClick={()=>setDeleteTarget(null)}
+                style={{ padding:'8px 20px', borderRadius:8, border:`1px solid ${T.border}`,
+                  background:'#fff', cursor:'pointer', fontSize:13, color:T.text }}>
+                Cancel
+              </button>
+              <button disabled={deleteLoading}
+                onClick={async ()=>{
+                  setDeleteLoading(true);
+                  const supabase = createClient();
+                  const { error } = await supabase.from('projects').delete().eq('id', deleteTarget.id);
+                  setDeleteLoading(false);
+                  if (error) { alert('Delete failed: ' + error.message); return; }
+                  setDeleteTarget(null);
+                }}
+                style={{ padding:'8px 20px', borderRadius:8, border:'none',
+                  background:'#DC2626', color:'#fff', cursor:deleteLoading?'not-allowed':'pointer',
+                  fontSize:13, fontWeight:600, opacity:deleteLoading?0.7:1 }}>
+                {deleteLoading ? 'Deleting...' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </Layout>
   );
 }
