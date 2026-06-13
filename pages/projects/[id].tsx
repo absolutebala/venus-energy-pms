@@ -1621,7 +1621,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
               <div key={field}>
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</label>
                 {type === 'date' ? (
-                  <DateInput value={(newRow as any)[field]} onChange={v=>setNewRow(p=>({...p,[field]:v}))} style={inpS} />
+                  <DateInput value={(newRow as any)[field]} onChange={v=>setNewRow(p=>({...p,[field]:v}))} max={field==='dueDate'?'9999-12-31':undefined} style={inpS} />
                 ) : (
                   <input type={type} value={(newRow as any)[field]} placeholder={ph}
                     onChange={e=>setNewRow(p=>({...p,[field]:e.target.value}))} style={inpS} />
