@@ -135,6 +135,12 @@ export default function ReportsPage() {
 
 
 
+  const statusFilteredProjects = agingFilter
+    ? projects.filter((p:any)=>{ const a=getAging(p.startDate,p.status,p.endDate); return a>=agingFilter.min && a<=agingFilter.max; })
+    : projects;
+  const statusTotalPages = Math.ceil(statusFilteredProjects.length / STATUS_PER_PAGE);
+  const statusPageData = statusFilteredProjects.slice((statusPage-1)*STATUS_PER_PAGE, statusPage*STATUS_PER_PAGE);
+
   const openColModal = (key: string) => {
     setDraftCols(getVisibleCols(key));
     setColModal(key);
@@ -512,12 +518,7 @@ export default function ReportsPage() {
                         minWidth: k==='indusId'?60:k==='status'?100:undefined,
                         overflow:'hidden', textOverflow:'ellipsis' }}>{getColLabel('status',k)}</th>
                     ))}</tr></thead>
-                    {(() => {
-                      const filteredP = agingFilter ? projects.filter((p:any)=>{ const a=getAging(p.startDate,p.status,p.endDate); return a>=agingFilter.min && a<=agingFilter.max; }) : projects;
-                      const totalPages = Math.ceil(filteredP.length/STATUS_PER_PAGE);
-                      const pageData = filteredP.slice((statusPage-1)*STATUS_PER_PAGE, statusPage*STATUS_PER_PAGE);
-                      return <>
-                    <tbody>{pageData.map((p:any,i:number)=>(
+                    <tbody>{statusPageData.map((p:any,i:number)=>(
                       <tr key={p.id} style={{ background:i%2===0?'#fff':T.bg, borderBottom:`1px solid ${T.border}` }}>
                         {getVisibleCols('status').map(k=>(
                           <td key={k} style={{ padding:'9px 10px', fontSize:12,
