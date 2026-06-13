@@ -135,12 +135,6 @@ export default function ReportsPage() {
 
 
 
-  const statusFilteredProjects = agingFilter
-    ? projects.filter((p:any)=>{ const a=getAging(p.startDate,p.status,p.endDate); return a>=agingFilter.min && a<=agingFilter.max; })
-    : projects;
-  const statusTotalPages = Math.ceil(statusFilteredProjects.length / STATUS_PER_PAGE);
-  const statusPageData = statusFilteredProjects.slice((statusPage-1)*STATUS_PER_PAGE, statusPage*STATUS_PER_PAGE);
-
   const openColModal = (key: string) => {
     setDraftCols(getVisibleCols(key));
     setColModal(key);
