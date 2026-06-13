@@ -69,14 +69,29 @@ const GST_OPTIONS = ['0','5','12','18','28'];
 
 const VENDORS = ['ABC Telecom Services','XYZ Infra Solutions','TowerTech Pvt Ltd','NetConnect Services','PowerSys India','BuildRight Constructions'];
 const PROJECT_STATUS_OPTIONS = [
-  'Yet to Start','Work In Progress','Work Completed/ Approval Pending',
-  'Billing Shared','LL Issues','Site Issues','CR Pending',
-  'JMS Pending with AE','Site Hold','Fresh to be Return',
-  'SRN BOQ Pending','SRN Document correction Pending','PO Amendment Done',
-  'WCC Raised','Invoice Submitted Payment pending',
-  'Invoice Submitted Payment Received','Invoice to be submit/PTW Pending',
-  'Invoice to be submit/SRN Pending','Invoice to be submit/ Approval Pending',
-  'Work Not Done','Allocation Not received','PO Not reflected','Others',
+  'Already Billed with Another PO',
+  'Allocation Not Received',
+  'Site Issues',
+  'Site Hold',
+  'LL Issues',
+  'Work Not Done',
+  'Yet to Start',
+  'CR Pending',
+  'SRN BOQ Pending',
+  'SRN Document Correction Pending',
+  'Fresh to be Return',
+  'Work In Progress',
+  'Work Completed / Approval Pending',
+  'JMS Pending with AE',
+  'Billing Shared',
+  'PO Not Reflected',
+  'PO Amendment Done',
+  'WCC Raised',
+  'Invoice to be Submit / SRN Pending',
+  'Invoice to be Submit / Approval Pending',
+  'Invoice to be Submit / PTW Pending',
+  'Invoice Submitted – Payment Pending',
+  'Invoice Submitted – Payment Received',
 ];
 
 const REGIONS  = ['Tamil Nadu','Karnataka','Telangana','Maharashtra','Delhi','Kerala','West Bengal'];
@@ -2195,12 +2210,18 @@ export default function ProjectDetailPage() {
                 <span style={{ color:T.textDim }}>/</span>
                 <h1 style={{ fontSize:20, fontWeight:800, color:T.text, margin:0 }}>{p.id}</h1>
                 <div style={{ minWidth:200 }}>
-                  <CreatableDropdown
+                  <select
                     value={p.projectStatus || ''}
-                    onChange={v => ctxUpdateProject(p.id, { projectStatus: v } as any, profile?.full_name ?? undefined)}
-                    options={projectStatusOpts}
-                    placeholder="— Set Project Status —"
-                    onCreateNew={v=>addLookupOption('project_status', v)} />
+                    onChange={e => ctxUpdateProject(p.id, { projectStatus: e.target.value } as any, profile?.full_name ?? undefined)}
+                    style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 12px', fontSize:13, outline:'none', background:'#fff', minWidth:220, cursor:'pointer' }}>
+                    <option value="">— Set Project Status —</option>
+                    {PROJECT_STATUS_OPTIONS.map(opt => {
+                      const currentIdx = PROJECT_STATUS_OPTIONS.indexOf(p.projectStatus || '');
+                      const optIdx = PROJECT_STATUS_OPTIONS.indexOf(opt);
+                      const isDisabled = currentIdx !== -1 && optIdx < currentIdx;
+                      return <option key={opt} value={opt} disabled={isDisabled} style={{ color: isDisabled ? '#9CA3AF' : 'inherit' }}>{opt}</option>;
+                    })}
+                  </select>
                 </div>
               </div>
               <div style={{ fontSize:14, color:T.textMuted }}>{p.site} · {p.region}</div>
