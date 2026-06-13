@@ -691,7 +691,7 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
     <div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
         <KpiCard label="My Projects"      value={myProjects.length}                                    icon="📁" color={T.primary} onClick={()=>router.push('/projects')} />
-        <KpiCard label="Vendor Required"  value={noVendor.length}                                      icon="⚠️" color={T.danger}  onClick={()=>router.push('/pm/projects?tab=unassigned')} />
+        <KpiCard label="Vendor Required"  value={noVendor.length}                                      icon="⚠️" color={T.danger}  onClick={()=>router.push('/projects?noVendor=1')} />
         <KpiCard label="In Progress"      value={myProjects.filter(p=>p.status==='in_progress').length} icon="⚡" color={T.info}    onClick={()=>router.push('/projects')} />
         <KpiCard label="Pending Invoice"  value={billing.length}                                        icon="💳" color='#7C3AED'  onClick={()=>router.push('/pm/projects?tab=billing')} />
       </div>

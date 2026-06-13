@@ -269,7 +269,8 @@ export default function ProjectsPage() {
   const [showFilters,   setShowFilters]   = useState(false);
   const [projectStatusFilter, setProjectStatusFilter] = useState('');
   // filterVendors and filterPMs now computed as cascading useMemos below
-  const [regionFilter, setRegionFilter] = useState('');
+  const [regionFilter,  setRegionFilter]  = useState('');
+  const [noVendorFilter, setNoVendorFilter] = useState(false);
 
   // Redirect PM
   useEffect(() => {
@@ -297,6 +298,7 @@ export default function ProjectsPage() {
     if (qMax) setAgeMax(Number(qMax));
     if (router.query.pm) setPmFilter(decodeURIComponent(router.query.pm as string));
     if (router.query.region) setRegionFilter(decodeURIComponent(router.query.region as string));
+    if (router.query.noVendor) setNoVendorFilter(router.query.noVendor === '1');
     if (router.query.vendor) setVendorFilter(decodeURIComponent(router.query.vendor as string));
     if (router.query.page) setPage(Number(router.query.page));
   }, [router.isReady, router.query]);
@@ -333,7 +335,9 @@ export default function ProjectsPage() {
     if (pmFilter && (p as any).pm !== pmFilter) return false;
     if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
     if (regionFilter && (p as any).region !== regionFilter) return false;
+    if (noVendorFilter && (p as any).vendor) return false;
     if (regionFilter && (p as any).region !== regionFilter) return false;
+    if (noVendorFilter && (p as any).vendor) return false;
     if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
     return searchMatch(p);
   });
@@ -357,6 +361,7 @@ export default function ProjectsPage() {
       if (pmFilter && (p as any).pm !== pmFilter) return false;
       if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
       if (regionFilter && (p as any).region !== regionFilter) return false;
+    if (noVendorFilter && (p as any).vendor) return false;
       return true;
     })
   , [roleFilteredProjects, statusFilter, typeFilter, pmFilter, projectStatusFilter, regionFilter]);
@@ -373,6 +378,7 @@ export default function ProjectsPage() {
       if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
       if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
       if (regionFilter && (p as any).region !== regionFilter) return false;
+    if (noVendorFilter && (p as any).vendor) return false;
       return true;
     })
   , [roleFilteredProjects, statusFilter, typeFilter, vendorFilter, projectStatusFilter, regionFilter]);
@@ -405,6 +411,7 @@ export default function ProjectsPage() {
       if (pmFilter && (p as any).pm !== pmFilter) return false;
       if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
       if (regionFilter && (p as any).region !== regionFilter) return false;
+    if (noVendorFilter && (p as any).vendor) return false;
       return true;
     })
   , [roleFilteredProjects, statusFilter, vendorFilter, pmFilter, projectStatusFilter, regionFilter]);
@@ -415,6 +422,7 @@ export default function ProjectsPage() {
       if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
       if (pmFilter && (p as any).pm !== pmFilter) return false;
       if (regionFilter && (p as any).region !== regionFilter) return false;
+    if (noVendorFilter && (p as any).vendor) return false;
       return true;
     })
   , [roleFilteredProjects, typeFilter, vendorFilter, pmFilter, regionFilter]);
