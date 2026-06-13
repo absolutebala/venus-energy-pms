@@ -1015,7 +1015,7 @@ function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; r
   }, [items, onAllReceived]);
 
   const isPM   = ['project_manager','super_admin','region_manager'].includes(role);
-  const canAdd = ['super_admin','vendor'].includes(role);
+  const canAdd = ['super_admin','vendor','pm'].includes(role);
 
   const addItem = async () => {
     if (!newRow.description.trim()) { setToast({ msg:'Description is required', type:'error' }); return; }
