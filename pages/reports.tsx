@@ -532,6 +532,20 @@ export default function ReportsPage() {
                       </tr>
                     ))}</tbody>
                   </table>
+                  {statusTotalPages > 1 && (
+                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 4px', borderTop:`1px solid ${T.border}`, marginTop:8 }}>
+                      <span style={{ fontSize:12, color:T.textMuted }}>
+                        Showing {Math.min((statusPage-1)*STATUS_PER_PAGE+1, statusFilteredProjects.length)}–{Math.min(statusPage*STATUS_PER_PAGE, statusFilteredProjects.length)} of {statusFilteredProjects.length} projects
+                      </span>
+                      <div style={{ display:'flex', gap:4, alignItems:'center' }}>
+                        <button onClick={()=>setStatusPage(p=>Math.max(1,p-1))} disabled={statusPage===1}
+                          style={{ padding:'5px 12px', borderRadius:6, border:`1px solid ${T.border}`, background:'#fff', cursor:statusPage===1?'not-allowed':'pointer', opacity:statusPage===1?0.4:1, fontSize:12 }}>← Prev</button>
+                        <span style={{ padding:'4px 10px', fontSize:12, color:T.text, fontWeight:600 }}>{statusPage} / {statusTotalPages}</span>
+                        <button onClick={()=>setStatusPage(p=>Math.min(statusTotalPages,p+1))} disabled={statusPage>=statusTotalPages}
+                          style={{ padding:'5px 12px', borderRadius:6, border:`1px solid ${T.border}`, background:'#fff', cursor:statusPage>=statusTotalPages?'not-allowed':'pointer', opacity:statusPage>=statusTotalPages?0.4:1, fontSize:12 }}>Next →</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
