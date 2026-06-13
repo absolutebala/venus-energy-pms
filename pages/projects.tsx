@@ -457,6 +457,19 @@ export default function ProjectsPage() {
 
     const ws = XLSX.utils.json_to_sheet(rows);
 
+    // Force text type for PO Number and ID columns to ensure VLOOKUP compatibility
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    const textCols = ['PO Number', 'Project ID', 'Indus ID'];
+    const headerRow = rows.length > 0 ? Object.keys(rows[0]) : [];
+    textCols.forEach(colName => {
+      const colIdx = headerRow.indexOf(colName);
+      if (colIdx < 0) return;
+      for (let r = 1; r <= range.e.r; r++) {
+        const addr = XLSX.utils.encode_cell({ r, c: colIdx });
+        if (ws[addr]) { ws[addr].t = 's'; ws[addr].v = String(ws[addr].v); delete ws[addr].z; }
+      }
+    });
+
     // Column widths
     ws['!cols'] = [
       { wch: 6 },   // S.No.
