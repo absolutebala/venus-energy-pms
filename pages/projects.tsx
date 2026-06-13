@@ -336,8 +336,6 @@ export default function ProjectsPage() {
     if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
     if (regionFilter && (p as any).region !== regionFilter) return false;
     if (noVendorFilter && (p as any).vendor) return false;
-    if (regionFilter && (p as any).region !== regionFilter) return false;
-    if (noVendorFilter && (p as any).vendor) return false;
     if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
     return searchMatch(p);
   });
@@ -361,7 +359,6 @@ export default function ProjectsPage() {
       if (pmFilter && (p as any).pm !== pmFilter) return false;
       if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
       if (regionFilter && (p as any).region !== regionFilter) return false;
-    if (noVendorFilter && (p as any).vendor) return false;
       return true;
     })
   , [roleFilteredProjects, statusFilter, typeFilter, pmFilter, projectStatusFilter, regionFilter]);
@@ -378,7 +375,6 @@ export default function ProjectsPage() {
       if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
       if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
       if (regionFilter && (p as any).region !== regionFilter) return false;
-    if (noVendorFilter && (p as any).vendor) return false;
       return true;
     })
   , [roleFilteredProjects, statusFilter, typeFilter, vendorFilter, projectStatusFilter, regionFilter]);
@@ -411,7 +407,6 @@ export default function ProjectsPage() {
       if (pmFilter && (p as any).pm !== pmFilter) return false;
       if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
       if (regionFilter && (p as any).region !== regionFilter) return false;
-    if (noVendorFilter && (p as any).vendor) return false;
       return true;
     })
   , [roleFilteredProjects, statusFilter, vendorFilter, pmFilter, projectStatusFilter, regionFilter]);
@@ -422,7 +417,6 @@ export default function ProjectsPage() {
       if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
       if (pmFilter && (p as any).pm !== pmFilter) return false;
       if (regionFilter && (p as any).region !== regionFilter) return false;
-    if (noVendorFilter && (p as any).vendor) return false;
       return true;
     })
   , [roleFilteredProjects, typeFilter, vendorFilter, pmFilter, regionFilter]);
