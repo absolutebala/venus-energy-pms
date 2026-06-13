@@ -85,10 +85,10 @@ export default function Header() {
         message: pendingInv.slice(0,3).map((i:any)=>i.invoice_no).join(', '),
         link:'/invoices', created_at: now.toISOString() });
 
-      const { data: delayedProj } = await supabase.from('projects').select('id,site').eq('status','delayed');
+      const { data: delayedProj } = await supabase.from('projects').select('id,site,po_no,indus_id').eq('status','delayed');
       if (delayedProj?.length) notifs.push({ id:'proj-delayed', type:'error', is_read:false,
         title:`${delayedProj.length} Project${delayedProj.length>1?'s':''} Delayed`,
-        message: delayedProj.slice(0,3).map((p:any)=>p.id).join(', '),
+        message: delayedProj.slice(0,3).map((p:any)=>`${p.po_no||p.id} (${p.indus_id||p.site})`).join(', '),
         link:'/projects', created_at: new Date(now.getTime()-60000).toISOString() });
 
       const { data: ptwExpiring } = await supabase.from('projects').select('id,site,ptw_date_to,ptw_ticket_id')
@@ -98,16 +98,16 @@ export default function Header() {
         message:`Expires ${new Date(p.ptw_date_to).toLocaleDateString('en-IN')} — ${p.site}`,
         link:`/projects/${p.id}`, created_at: new Date(now.getTime()-120000).toISOString() }));
 
-      const { data: billingProj } = await supabase.from('projects').select('id,site').eq('status','billing_review');
+      const { data: billingProj } = await supabase.from('projects').select('id,site,po_no,indus_id').eq('status','billing_review');
       if (billingProj?.length) notifs.push({ id:'billing-review', type:'info', is_read:false,
         title:`${billingProj.length} Project${billingProj.length>1?'s':''} in Billing Review`,
         message: billingProj.slice(0,3).map((p:any)=>p.site).join(', '),
         link:'/invoices', created_at: new Date(now.getTime()-180000).toISOString() });
 
-      const { data: recentAct } = await supabase.from('activity_log').select('project_id,action,by_name,created_at')
+      const { data: recentAct } = await supabase.from('activity_log').select('project_id,action,by_name,created_at,projects(po_no,indus_id)')
         .gte('created_at',week).order('created_at',{ascending:false}).limit(5);
       recentAct?.forEach((a:any,i:number) => notifs.push({ id:`act-${i}`, type:'info', is_read:false,
-        title:a.action, message:`${a.by_name} · ${a.project_id}`,
+        title:a.action, message:`${a.by_name} · PO: ${(a as any).projects?.po_no||a.project_id} · ${(a as any).projects?.indus_id||''}`,
         link:`/projects/${a.project_id}`, created_at: a.created_at }));
     }
 
@@ -119,10 +119,10 @@ export default function Header() {
 
       if (myProjectIds.length > 0) {
         // Newly assigned projects (created in last 7 days)
-        const { data: newAssigned } = await supabase.from('projects').select('id,site,po_no')
+        const { data: newAssigned } = await supabase.from('projects').select('id,site,po_no,indus_id')
           .eq('pm', name).gte('created_at', week);
         newAssigned?.forEach((p:any) => notifs.push({ id:`assigned-${p.id}`, type:'success', is_read:false,
-          title:`Project Assigned to You`, message:`${p.id} — ${p.site}`,
+          title:`Project Assigned to You`, message:`PO: ${p.po_no||p.id} · ${p.indus_id||p.site}`,
           link:`/projects/${p.id}`, created_at: now.toISOString() }));
 
         // STN utilisation submitted pending PM approval
@@ -143,19 +143,19 @@ export default function Header() {
           link:`/projects/${p.id}`, created_at: new Date(now.getTime()-120000).toISOString() }));
 
         // Delayed projects
-        const { data: delayed } = await supabase.from('projects').select('id,site')
+        const { data: delayed } = await supabase.from('projects').select('id,site,po_no,indus_id')
           .in('id', myProjectIds).eq('status','delayed');
         if (delayed?.length) notifs.push({ id:'pm-delayed', type:'error', is_read:false,
           title:`${delayed.length} of Your Projects Delayed`,
-          message: delayed.slice(0,3).map((p:any)=>p.id).join(', '),
+          message: delayed.slice(0,3).map((p:any)=>`${p.po_no||p.id} (${p.indus_id||p.site})`).join(', '),
           link:'/projects', created_at: new Date(now.getTime()-180000).toISOString() });
 
         // Recent activity on their projects
-        const { data: recentAct } = await supabase.from('activity_log').select('project_id,action,by_name,created_at')
+        const { data: recentAct } = await supabase.from('activity_log').select('project_id,action,by_name,created_at,projects(po_no,indus_id)')
           .in('project_id', myProjectIds.slice(0,50)).gte('created_at',week)
           .order('created_at',{ascending:false}).limit(5);
         recentAct?.forEach((a:any,i:number) => notifs.push({ id:`act-${i}`, type:'info', is_read:false,
-          title:a.action, message:`${a.by_name} · ${a.project_id}`,
+          title:a.action, message:`${a.by_name} · PO: ${(a as any).projects?.po_no||a.project_id} · ${(a as any).projects?.indus_id||''}`,
           link:`/projects/${a.project_id}`, created_at: a.created_at }));
       }
     }
@@ -167,32 +167,32 @@ export default function Header() {
 
       if (myProjectIds.length > 0) {
         // Newly assigned
-        const { data: newAssigned } = await supabase.from('projects').select('id,site')
+        const { data: newAssigned } = await supabase.from('projects').select('id,site,po_no,indus_id')
           .eq('rm', name).gte('created_at', week);
         newAssigned?.forEach((p:any) => notifs.push({ id:`assigned-${p.id}`, type:'success', is_read:false,
-          title:`Project Assigned to Your Region`, message:`${p.id} — ${p.site}`,
+          title:`Project Assigned to Your Region`, message:`PO: ${p.po_no||p.id} · ${p.indus_id||p.site}`,
           link:`/projects/${p.id}`, created_at: now.toISOString() }));
 
         // Delayed
         const delayed = (myProjects||[]).filter((p:any)=>p.status==='delayed');
         if (delayed.length) notifs.push({ id:'rm-delayed', type:'error', is_read:false,
           title:`${delayed.length} Project${delayed.length>1?'s':''} Delayed in Your Region`,
-          message: delayed.slice(0,3).map((p:any)=>p.id).join(', '),
+          message: delayed.slice(0,3).map((p:any)=>`${p.po_no||p.id} (${p.indus_id||p.site})`).join(', '),
           link:'/projects', created_at: new Date(now.getTime()-60000).toISOString() });
 
         // Billing review
         const billing = (myProjects||[]).filter((p:any)=>p.status==='billing_review');
         if (billing.length) notifs.push({ id:'rm-billing', type:'info', is_read:false,
           title:`${billing.length} Project${billing.length>1?'s':''} in Billing Review`,
-          message: billing.slice(0,3).map((p:any)=>p.id).join(', '),
+          message: billing.slice(0,3).map((p:any)=>`${p.po_no||p.id} (${p.indus_id||p.site})`).join(', '),
           link:'/invoices', created_at: new Date(now.getTime()-120000).toISOString() });
 
         // Recent activity
-        const { data: recentAct } = await supabase.from('activity_log').select('project_id,action,by_name,created_at')
+        const { data: recentAct } = await supabase.from('activity_log').select('project_id,action,by_name,created_at,projects(po_no,indus_id)')
           .in('project_id', myProjectIds.slice(0,50)).gte('created_at',week)
           .order('created_at',{ascending:false}).limit(5);
         recentAct?.forEach((a:any,i:number) => notifs.push({ id:`act-${i}`, type:'info', is_read:false,
-          title:a.action, message:`${a.by_name} · ${a.project_id}`,
+          title:a.action, message:`${a.by_name} · PO: ${(a as any).projects?.po_no||a.project_id} · ${(a as any).projects?.indus_id||''}`,
           link:`/projects/${a.project_id}`, created_at: a.created_at }));
       }
     }
@@ -207,7 +207,7 @@ export default function Header() {
         const { data: newAssigned } = await supabase.from('projects').select('id,site')
           .eq('vendor', vendorName).gte('created_at', week);
         newAssigned?.forEach((p:any) => notifs.push({ id:`assigned-${p.id}`, type:'success', is_read:false,
-          title:`New Project Assigned to You`, message:`${p.id} — ${p.site}`,
+          title:`New Project Assigned to You`, message:`PO: ${p.po_no||p.id} · ${p.indus_id||p.site}`,
           link:`/projects/${p.id}`, created_at: now.toISOString() }));
 
         // STN items approved/rejected for them
@@ -234,11 +234,11 @@ export default function Header() {
           link:'/site-expenses', created_at: new Date(now.getTime()-180000).toISOString() });
 
         // Recent activity on their projects
-        const { data: recentAct } = await supabase.from('activity_log').select('project_id,action,by_name,created_at')
+        const { data: recentAct } = await supabase.from('activity_log').select('project_id,action,by_name,created_at,projects(po_no,indus_id)')
           .in('project_id', myProjectIds.slice(0,50)).gte('created_at',week)
           .order('created_at',{ascending:false}).limit(5);
         recentAct?.forEach((a:any,i:number) => notifs.push({ id:`act-${i}`, type:'info', is_read:false,
-          title:a.action, message:`${a.by_name} · ${a.project_id}`,
+          title:a.action, message:`${a.by_name} · PO: ${(a as any).projects?.po_no||a.project_id} · ${(a as any).projects?.indus_id||''}`,
           link:`/projects/${a.project_id}`, created_at: a.created_at }));
       }
     }
