@@ -526,7 +526,7 @@ export default function ReportsPage() {
                             whiteSpace: 'nowrap' as const,
                             color: k==='poNo'?T.primary:k==='aging'&&p.aging>90?T.danger:k==='aging'&&p.aging>60?'#D97706':T.text,
                             fontWeight: k==='poNo'||k==='poValue'||k==='billedAmt'?700:400 }}>
-                            {getCellValue(k, p)}
+                            {k==='poNo' ? <span onClick={()=>router.push('/projects/'+p.id)} style={{ cursor:'pointer', color:T.primary, textDecoration:'underline', fontWeight:700 }}>{getCellValue(k,p)}</span> : getCellValue(k, p)}
                           </td>
                         ))}
                       </tr>
