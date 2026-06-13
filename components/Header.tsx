@@ -245,7 +245,9 @@ export default function Header() {
 
     // Sort by created_at desc
     notifs.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    setNotifications(notifs);
+    const readIds2 = (() => { try { return new Set(JSON.parse(localStorage.getItem("notif_read") || "[]")); } catch { return new Set<string>(); } })();
+    const markedNotifs = notifs.map(n => ({ ...n, is_read: readIds2.has(n.id) }));
+    setNotifications(markedNotifs.sort((a,b) => new Date(b.created_at).getTime()-new Date(a.created_at).getTime()));
   }, [profile?.role, profile?.full_name, (profile as any)?.vendor_id]);
 
   // Keep ref to latest fetchNotifications to avoid stale closure in Realtime
