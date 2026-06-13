@@ -296,7 +296,7 @@ export default function ProjectsPage() {
     }
     if (qMin) setAgeMin(Number(qMin));
     if (qMax) setAgeMax(Number(qMax));
-    if (router.query.pm) setPmFilter(decodeURIComponent(router.query.pm as string));
+    if (router.query.pm !== undefined) setPmFilter(decodeURIComponent(router.query.pm as string));
     if (router.query.region) setRegionFilter(decodeURIComponent(router.query.region as string));
     if (router.query.noVendor) setNoVendorFilter(router.query.noVendor === '1');
     if (router.query.vendor) setVendorFilter(decodeURIComponent(router.query.vendor as string));
@@ -332,7 +332,7 @@ export default function ProjectsPage() {
     if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
     if (ageMin !== null && p.aging < ageMin) return false;
     if (ageMax !== null && ageMax < 999 && p.aging > ageMax) return false;
-    if (pmFilter && (p as any).pm !== pmFilter) return false;
+    if (pmFilter) { const _pm = (p as any).pm; if (pmFilter === '__unassigned__') { if (_pm) return false; } else if (_pm !== pmFilter) return false; }
     if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
     if (regionFilter && (p as any).region !== regionFilter) return false;
     if (noVendorFilter && (p as any).vendor) return false;
@@ -356,7 +356,7 @@ export default function ProjectsPage() {
         return ((p as any).projectStatus || '') === statusFilter;
       }
       if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
-      if (pmFilter && (p as any).pm !== pmFilter) return false;
+      if (pmFilter) { const _pm = (p as any).pm; if (pmFilter === '__unassigned__') { if (_pm) return false; } else if (_pm !== pmFilter) return false; }
       if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
       if (regionFilter && (p as any).region !== regionFilter) return false;
       return true;
@@ -389,7 +389,7 @@ export default function ProjectsPage() {
       }
       if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
       if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
-      if (pmFilter && (p as any).pm !== pmFilter) return false;
+      if (pmFilter) { const _pm = (p as any).pm; if (pmFilter === '__unassigned__') { if (_pm) return false; } else if (_pm !== pmFilter) return false; }
       if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
       return true;
     })
@@ -404,7 +404,7 @@ export default function ProjectsPage() {
         return ((p as any).projectStatus || '') === statusFilter;
       }
       if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
-      if (pmFilter && (p as any).pm !== pmFilter) return false;
+      if (pmFilter) { const _pm = (p as any).pm; if (pmFilter === '__unassigned__') { if (_pm) return false; } else if (_pm !== pmFilter) return false; }
       if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
       if (regionFilter && (p as any).region !== regionFilter) return false;
       return true;
@@ -415,7 +415,7 @@ export default function ProjectsPage() {
     roleFilteredProjects.filter((p:any) => {
       if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
       if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
-      if (pmFilter && (p as any).pm !== pmFilter) return false;
+      if (pmFilter) { const _pm = (p as any).pm; if (pmFilter === '__unassigned__') { if (_pm) return false; } else if (_pm !== pmFilter) return false; }
       if (regionFilter && (p as any).region !== regionFilter) return false;
       return true;
     })
@@ -542,7 +542,7 @@ export default function ProjectsPage() {
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
               <div>
                 <div style={{ fontSize:15, fontWeight:700, color:T.primary, marginBottom:4 }}>
-                  {pmFilter ? `📋 Projects assigned to: ${pmFilter}` : `🏢 Projects for vendor: ${vendorFilter}`}
+                  {pmFilter ? `📋 Projects assigned to: ${pmFilter === '__unassigned__' ? 'Unassigned' : pmFilter}` : `🏢 Projects for vendor: ${vendorFilter}`}
                 </div>
                 <div style={{ display:'flex', gap:12, flexWrap:'wrap' as const }}>
                   <span style={{ fontSize:12, color:T.textMuted }}>{filtered.length} project(s)</span>

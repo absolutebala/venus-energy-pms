@@ -569,7 +569,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
           <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Projects by PM</div>
           <div style={{ display:'flex', flexDirection:'column' as const, gap:6 }}>
             {Object.entries(pmGroups).slice(0,5).map(([pm,ps]:any)=>(
-              <div key={pm} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pm)}`)}
+              <div key={pm} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pm || '__unassigned__')}`)}
                 style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', transition:'all 0.15s' }}
                 onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
                 onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
