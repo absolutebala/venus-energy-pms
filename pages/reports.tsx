@@ -198,6 +198,13 @@ export default function ReportsPage() {
     }).filter((p:any) => region === 'All' || p.region === region);
   }, [rawProjects, invoices, region]);
 
+  const statusFilteredProjects = React.useMemo(() => agingFilter
+    ? projects.filter((p:any)=>{ const a=getAging(p.startDate,p.status,p.endDate); return a>=agingFilter.min && a<=agingFilter.max; })
+    : projects
+  , [projects, agingFilter]);
+  const statusTotalPages = Math.ceil(statusFilteredProjects.length / STATUS_PER_PAGE);
+  const statusPageData = statusFilteredProjects.slice((statusPage-1)*STATUS_PER_PAGE, statusPage*STATUS_PER_PAGE);
+
   const regions = useMemo(() => Array.from(new Set((rawProjects as any[]).map((p:any)=>p.region).filter(Boolean))), [rawProjects]);
 
   const totalPO      = projects.reduce((a,p:any)=>a+p.poValue,0);
