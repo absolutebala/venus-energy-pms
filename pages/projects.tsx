@@ -925,6 +925,7 @@ export default function ProjectsPage() {
                   setDeleteLoading(false);
                   if (error) { alert('Delete failed: ' + error.message); return; }
                   setDeleteTarget(null);
+                  await refreshProjects();
                 }}
                 style={{ padding:'8px 20px', borderRadius:8, border:'none',
                   background:'#DC2626', color:'#fff', cursor:deleteLoading?'not-allowed':'pointer',
