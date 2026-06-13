@@ -667,7 +667,7 @@ export default function ProjectsPage() {
               <div style={{ fontSize:14, fontWeight:600, color:T.text }}>
                 {statusFilter==='All'&&ageMin===null?'All Projects':`Filtered Projects`} · {filtered.length} records
               </div>
-              {['super_admin','rm','pm'].includes(profile?.role ?? '') && filtered.length > 0 && (
+              {['super_admin','rm','pm','vendor'].includes(profile?.role ?? '') && filtered.length > 0 && (
                 <button
                   onClick={exportToExcel}
                   title="Export to Excel"
