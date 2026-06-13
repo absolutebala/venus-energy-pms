@@ -284,11 +284,21 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handle);
   }, []);
 
+  const getReadIds = (): Set<string> => {
+    try { return new Set(JSON.parse(localStorage.getItem('notif_read') || '[]')); }
+    catch { return new Set(); }
+  };
+
   const markRead = (id: string) => {
+    const ids = getReadIds(); ids.add(id);
+    localStorage.setItem('notif_read', JSON.stringify(Array.from(ids)));
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
   };
 
   const markAllRead = () => {
+    const ids = getReadIds();
+    notifications.forEach(n => ids.add(n.id));
+    localStorage.setItem('notif_read', JSON.stringify(Array.from(ids)));
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
   };
 
