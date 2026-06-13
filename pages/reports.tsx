@@ -53,9 +53,6 @@ const ALL_COLS: Record<string, {key:string; label:string}[]> = {
     { key:'poValue',   label:'PO Value'     },
     { key:'billedAmt', label:'Billed'       },
     { key:'paidAmt',   label:'Paid'         },
-    { key:'startDate', label:'Start Date'   },
-    { key:'endDate',   label:'End Date'     },
-    { key:'jobType',   label:'Job Type'     },
   ],
   stnsrn: [
     { key:'id',       label:'Project ID'    },
@@ -93,6 +90,7 @@ export default function ReportsPage() {
   const { allItems: materials, loading: matLoading } = useMaterial();
 
   const [colConfigs,  setColConfigs]  = useState<Record<string,string[]>>({});
+  const [agingFilter, setAgingFilter]  = useState<{min:number;max:number}|null>(null);
   const [configError, setConfigError] = useState<string|null>(null);
   const [colModal,   setColModal]   = useState<string|null>(null); // active report key
   const [savingCols, setSavingCols] = useState(false);
@@ -495,7 +493,7 @@ export default function ReportsPage() {
                     { label:'121–180 Days', min:121, max:180, color:'#7C3AED', bg:'#F5F3FF' },
                     { label:'180+ Days',    min:181, max:99999,color:'#9F1239',bg:'#FFF1F2' },
                   ].map(b=>(
-                    <div key={b.label} style={{ background:b.bg, border:`1px solid ${b.color}30`, borderRadius:10, padding:'12px 14px' }}>
+                    <div key={b.label} onClick={()=>setAgingFilter(agingFilter?.min===b.min?null:{min:b.min,max:b.max})} style={{ background:b.bg, border:`1px solid ${agingFilter?.min===b.min?b.color:b.color+'30'}`, borderRadius:10, padding:'12px 14px', cursor:'pointer', boxShadow:agingFilter?.min===b.min?`0 0 0 2px ${b.color}40`:'none', transition:'all 0.15s' }}>
                       <div style={{ fontSize:10, fontWeight:600, color:b.color, textTransform:'uppercase' as const, marginBottom:4 }}>{b.label}</div>
                       <div style={{ fontSize:22, fontWeight:800, color:b.color }}>
                         {projects.filter((p:any)=>{ const a=getAging(p.startDate,p.status,p.endDate); return a>=b.min && a<=b.max; }).length}
@@ -509,7 +507,7 @@ export default function ReportsPage() {
                     <thead><tr>{getVisibleCols('status').map(k=>(
                       <th key={k} style={thS}>{getColLabel('status',k)}</th>
                     ))}</tr></thead>
-                    <tbody>{projects.map((p:any,i:number)=>(
+                    <tbody>{(agingFilter ? projects.filter((p:any)=>{ const a=getAging(p.startDate,p.status,p.endDate); return a>=agingFilter.min && a<=agingFilter.max; }) : projects).map((p:any,i:number)=>(
                       <tr key={p.id} style={{ background:i%2===0?'#fff':T.bg, borderBottom:`1px solid ${T.border}` }}>
                         {getVisibleCols('status').map(k=>(
                           <td key={k} style={{ padding:'9px 10px', fontSize:12,
