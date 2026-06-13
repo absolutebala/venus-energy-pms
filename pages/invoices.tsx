@@ -234,6 +234,7 @@ export default function InvoicesPage() {
                   <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>{label}</label>
                   {type === 'date' ? (
                     <DateInput value={(newInv as any)[field]} onChange={v => setNewInv(p => ({ ...p, [field]: v }))}
+                      max={field === 'dueDate' ? '9999-12-31' : undefined}
                       style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px",
                         fontSize:13, width:"100%", boxSizing:"border-box" as const, outline:"none", background:"#fff" }} />
                   ) : (
