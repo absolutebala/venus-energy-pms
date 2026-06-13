@@ -1342,7 +1342,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
             <thead>
               <tr>
-                {['#','Req. Date','Expense Type','Remarks','Amount (₹)','TXN Ref','Payment Mode','Txn Date','Status',''].map((h,i)=>(
+                {['#','Req. Date','Expense Type','Remarks','Vendor','Amount (₹)','TXN Ref','Payment Mode','Txn Date','Status',''].map((h,i)=>(
                   <th key={i} style={thS}>{h}</th>
                 ))}
               </tr>
@@ -1362,6 +1362,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                         </span>
                       </td>
                       <td style={{ ...tdS, fontSize:12, color:T.textMuted }}>{item.remarks||'—'}</td>
+                      <td style={{ ...tdS, fontSize:12, color:T.textMuted }}>{(item as any).site||'—'}</td>
                       <td style={{ ...tdS, textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(item.amount)}</td>
                       <td style={{ ...tdS, fontSize:12, color:T.textMuted }}>{(item as any).paidTxnRef||'—'}</td>
                       <td style={{ ...tdS, fontSize:12, color:T.textMuted }}>{(item as any).paidPaymentMode||'—'}</td>
@@ -1387,7 +1388,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                     <td colSpan={7} style={{ padding:'14px', borderBottom:`1px solid ${T.border}` }}>
                       <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>Edit Expense</div>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
-                        {([['Date *','expenseDate','date'],['Amount (₹) *','amount','number'],['Site','site','text'],
+                        {([['Date *','expenseDate','date'],['Amount (₹) *','amount','number'],['Vendor','site','text'],
                            ['Remarks','remarks','text'],['Bank Account No','bankAccount','text'],['UPI ID','upiId','text']] as [string,string,string][]).map(([l,f,t])=>(
                           <div key={f}>
                             <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{l}</label>
