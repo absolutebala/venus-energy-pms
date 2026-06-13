@@ -444,35 +444,48 @@ export default function ProjectsPage() {
 
   // ── Export filtered projects to Excel ──────────────────────────────────────
   const exportToExcel = () => {
+    // Helper: clean string — removes hidden chars, trims whitespace
+    const clean = (v: any): string => v == null ? '' : String(v).replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ').trim();
+
     const rows = filtered.map((p: any, idx: number) => ({
       'S.No.':           idx + 1,
-      'PO Number':       p.poNo || '',
-      'PO Date':         p.poDate ? new Date(p.poDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '',
+      'PO Number':       clean(p.poNo),
+      'PO Date':         p.poDate ? new Date(p.poDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '',
       'PO Count':        projects.filter((p2: any) => p2.poNo === p.poNo).length,
       'Aging (Days)':    getAgeDays(p.id),
-      'PO Status':       p.poStatus || '',
-      'Job Type':        p.type || '',
-      'Project ID':      p.projectId || '',
-      'Indus ID':        p.indusId || '',
-      'Site Name':       p.site || '',
-      'Project Status':  p.projectStatus || '',
-      'Delivery Date':   p.endDate ? new Date(p.endDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '',
+      'PO Status':       clean(p.poStatus),
+      'Job Type':        clean(p.type),
+      'Project ID':      clean(p.projectId),
+      'Indus ID':        clean(p.indusId),
+      'Site Name':       clean(p.site),
+      'Project Status':  clean(p.projectStatus),
+      'Delivery Date':   p.endDate ? new Date(p.endDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '',
     }));
 
     const ws = XLSX.utils.json_to_sheet(rows);
 
-    // Force text type for PO Number and ID columns to ensure VLOOKUP compatibility
+    // Ensure all cells are clean — strip hidden chars, set correct types
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    const textCols = ['PO Number', 'Project ID', 'Indus ID'];
+    const numCols = ['S.No.', 'PO Count', 'Aging (Days)'];
     const headerRow = rows.length > 0 ? Object.keys(rows[0]) : [];
-    textCols.forEach(colName => {
-      const colIdx = headerRow.indexOf(colName);
-      if (colIdx < 0) return;
-      for (let r = 1; r <= range.e.r; r++) {
-        const addr = XLSX.utils.encode_cell({ r, c: colIdx });
-        if (ws[addr]) { ws[addr].t = 's'; ws[addr].v = String(ws[addr].v); delete ws[addr].z; }
+    for (let r = 1; r <= range.e.r; r++) {
+      for (let c = 0; c <= range.e.c; c++) {
+        const addr = XLSX.utils.encode_cell({ r, c });
+        if (!ws[addr]) continue;
+        const colName = headerRow[c];
+        if (numCols.includes(colName)) {
+          // Force numeric type
+          ws[addr].t = 'n';
+          ws[addr].v = Number(ws[addr].v);
+          delete ws[addr].z;
+        } else {
+          // Force clean string — kills hidden chars
+          ws[addr].t = 's';
+          ws[addr].v = String(ws[addr].v).replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ').trim();
+          delete ws[addr].z;
+        }
       }
-    });
+    }
 
     // Column widths
     ws['!cols'] = [
