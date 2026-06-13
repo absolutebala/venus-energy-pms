@@ -42,7 +42,8 @@ const PIE_COLORS = ['#2563EB','#DC2626','#16A34A','#D97706','#7C3AED','#6B7280']
 // ── Available columns per report type ────────────────────────────
 const ALL_COLS: Record<string, {key:string; label:string}[]> = {
   status: [
-    { key:'id',        label:'Project ID'   },
+    { key:'poNo',      label:'PO Number'    },
+    { key:'indusId',   label:'Indus ID'     },
     { key:'site',      label:'Site'         },
     { key:'region',    label:'Region'       },
     { key:'status',    label:'Status'       },
@@ -55,8 +56,6 @@ const ALL_COLS: Record<string, {key:string; label:string}[]> = {
     { key:'paidAmt',   label:'Paid'         },
     { key:'startDate', label:'Start Date'   },
     { key:'endDate',   label:'End Date'     },
-    { key:'indusId',   label:'Indus ID'     },
-    { key:'poNo',      label:'PO Number'    },
     { key:'jobType',   label:'Job Type'     },
   ],
   stnsrn: [
@@ -489,6 +488,24 @@ export default function ReportsPage() {
                 <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>
                   All Projects — Status Overview <span style={{ fontSize:12, fontWeight:400, color:T.textMuted }}>({projects.length} records)</span>
                 </div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10, marginBottom:16 }}>
+                  {[
+                    { label:'0–30 Days',    min:0,   max:30,  color:'#059669', bg:'#D1FAE5' },
+                    { label:'31–60 Days',   min:31,  max:60,  color:'#2563EB', bg:'#EFF6FF' },
+                    { label:'61–90 Days',   min:61,  max:90,  color:'#D97706', bg:'#FFFBEB' },
+                    { label:'91–120 Days',  min:91,  max:120, color:'#DC2626', bg:'#FEF2F2' },
+                    { label:'121–180 Days', min:121, max:180, color:'#7C3AED', bg:'#F5F3FF' },
+                    { label:'180+ Days',    min:181, max:99999,color:'#9F1239',bg:'#FFF1F2' },
+                  ].map(b=>(
+                    <div key={b.label} style={{ background:b.bg, border:`1px solid ${b.color}30`, borderRadius:10, padding:'12px 14px' }}>
+                      <div style={{ fontSize:10, fontWeight:600, color:b.color, textTransform:'uppercase' as const, marginBottom:4 }}>{b.label}</div>
+                      <div style={{ fontSize:22, fontWeight:800, color:b.color }}>
+                        {projects.filter((p:any)=>{ const a=getAging(p.startDate,p.status,p.endDate); return a>=b.min && a<=b.max; }).length}
+                      </div>
+                      <div style={{ fontSize:10, color:b.color, opacity:0.7 }}>projects</div>
+                    </div>
+                  ))}
+                </div>
                 <div style={{ overflowX:'auto' as const }}>
                   <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                     <thead><tr>{getVisibleCols('status').map(k=>(
@@ -498,8 +515,9 @@ export default function ReportsPage() {
                       <tr key={p.id} style={{ background:i%2===0?'#fff':T.bg, borderBottom:`1px solid ${T.border}` }}>
                         {getVisibleCols('status').map(k=>(
                           <td key={k} style={{ padding:'9px 10px', fontSize:12,
-                            color: k==='id'?T.primary:k==='aging'&&p.aging>90?T.danger:k==='aging'&&p.aging>60?'#D97706':T.text,
-                            fontWeight: k==='id'||k==='poValue'||k==='billedAmt'?700:400 }}>
+                            whiteSpace: 'nowrap' as const,
+                            color: k==='poNo'?T.primary:k==='aging'&&p.aging>90?T.danger:k==='aging'&&p.aging>60?'#D97706':T.text,
+                            fontWeight: k==='poNo'||k==='poValue'||k==='billedAmt'?700:400 }}>
                             {getCellValue(k, p)}
                           </td>
                         ))}
