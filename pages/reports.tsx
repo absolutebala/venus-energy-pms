@@ -44,7 +44,6 @@ const ALL_COLS: Record<string, {key:string; label:string}[]> = {
   status: [
     { key:'poNo',      label:'PO Number'    },
     { key:'indusId',   label:'Indus ID'     },
-    { key:'site',      label:'Site'         },
     { key:'region',    label:'Region'       },
     { key:'status',    label:'Status'       },
     { key:'pm',        label:'PM'           },
@@ -75,7 +74,6 @@ const ALL_COLS: Record<string, {key:string; label:string}[]> = {
   ],
   aging: [
     { key:'id',        label:'Project ID'   },
-    { key:'site',      label:'Site'         },
     { key:'region',    label:'Region'       },
     { key:'status',    label:'Status'       },
     { key:'aging',     label:'Aging (days)' },
@@ -488,7 +486,7 @@ export default function ReportsPage() {
                 <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>
                   All Projects — Status Overview <span style={{ fontSize:12, fontWeight:400, color:T.textMuted }}>({projects.length} records)</span>
                 </div>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10, marginBottom:16 }}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
                   {[
                     { label:'0–30 Days',    min:0,   max:30,  color:'#059669', bg:'#D1FAE5' },
                     { label:'31–60 Days',   min:31,  max:60,  color:'#2563EB', bg:'#EFF6FF' },
