@@ -789,32 +789,14 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
 
       <div style={card}>
         <div style={{ display:'flex', justifyContent:'space-between', marginBottom:14 }}>
-          <div style={{ fontSize:14, fontWeight:600, color:T.text }}>My Projects — Recently Assigned</div>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text }}>My Projects</div>
           <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>View All →</Link>
         </div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
-          {recent.map((p,i)=>{
-            const stColor: Record<string,string> = { in_progress:'#2563EB', delayed:'#DC2626', billing_review:'#7C3AED', completed:'#16A34A', pending:'#D97706' };
-            const stLabel: Record<string,string> = { in_progress:'In Progress', delayed:'Delayed', billing_review:'Billing', completed:'Done', pending:'Pending' };
-            const c = stColor[p.status]||T.textDim;
-            return (
-              <div key={i} onClick={()=>router.push(`/pm/projects/${p.id}`)}
-                style={{ background:T.bg, border:`1px solid ${!p.vendorAssigned?T.danger:T.border}`, borderRadius:10, padding:14, cursor:'pointer', transition:'all 0.15s' }}
-                onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 10px rgba(0,0,0,0.08)'}
-                onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.boxShadow='none'}>
-                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-                  <span style={{ fontSize:11, fontWeight:700, color:T.primary }}>{p.id}</span>
-                  <span style={{ fontSize:10, background:`${c}18`, color:c, padding:'2px 7px', borderRadius:10, fontWeight:600 }}>{stLabel[p.status]||p.status}</span>
-                </div>
-                <div style={{ fontSize:13, fontWeight:600, color:T.text, marginBottom:4 }}>{p.site}</div>
-                <div style={{ fontSize:11, color:T.textMuted, marginBottom:8 }}>{p.site}</div>
-                <div style={{ fontSize:11, color:T.textMuted }}>
-                  {p.vendor ? `✅ ${p.vendor}` : '⚠️ No vendor assigned'}
-                </div>
-                <div style={{ fontSize:11, color:T.textDim, marginTop:4 }}>Start: {p.startDate ? new Date(p.startDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</div>
-              </div>
-            );
-          })}
+        <div style={{ overflowX:'auto' as const }}>
+          <table style={{ width:'100%' }}><TableHead /><tbody>
+            {myProjects.map((p:any)=><ProjectRow key={p.id} p={p} href={`/projects/${p.id}`} />)}
+          </tbody></table>
+          {myProjects.length===0 && <div style={{ textAlign:'center', padding:40, color:T.textDim }}>No projects found.</div>}
         </div>
       </div>
     </div>
@@ -877,9 +859,9 @@ function VendorDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
     sb.from('vendors').select('name').eq('id',(profile as any).vendor_id).single()
       .then(({data})=>{ if(data?.name) setMyVendorName(data.name); });
   }, [profile]);
-  const myProjects = projects.filter((p:any)=>myVendorName ? p.vendor===myVendorName : false);
-  const docsPending  = myProjects.filter(p=>['in_progress','pending'].includes(p.status)).length;
-  const submitted    = myProjects.filter(p=>p.status==='submitted').length;
+  const myProjects  = projects.filter((p:any)=>myVendorName ? p.vendor===myVendorName : false);
+  const docsPending = myProjects.filter((p:any)=>!['submitted','pm_approved','billing_review','completed','wcc_raised'].includes((p as any).projectStatus||'')).length;
+  const submitted   = myProjects.filter((p:any)=>['submitted','pm_approved'].includes((p as any).projectStatus||'')).length;
 
   return (
     <div>
@@ -910,29 +892,10 @@ function VendorDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
           <div style={{ fontSize:14, fontWeight:600, color:T.text }}>My Assigned Projects</div>
           <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>View All →</Link>
         </div>
-        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-          {myProjects.map((p,i)=>{
-            const stColor: Record<string,string> = { in_progress:'#2563EB', delayed:'#DC2626', billing_review:'#7C3AED', completed:'#16A34A', pending:'#D97706', submitted:'#0D9488' };
-            const c = stColor[p.status]||T.textDim;
-            return (
-              <div key={i} onClick={()=>router.push(`/projects/${p.id}`)}
-                style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 14px', background:T.bg, borderRadius:10, cursor:'pointer', border:`1px solid ${T.border}` }}
-                onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'}
-                onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.boxShadow='none'}>
-                <div>
-                  <div style={{ fontSize:12, fontWeight:700, color:T.primary }}>{(p as any).poNo || p.id}</div>
-                  <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{p.projectName}</div>
-                  <div style={{ fontSize:11, color:T.textMuted }}>{p.site} · {p.type}</div>
-                </div>
-                <div style={{ textAlign:'right' }}>
-                  <span style={{ background:`${c}18`, color:c, border:`1px solid ${c}40`, padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:700 }}>
-                    {STATUS_DISPLAY[p.status]||(p.status==='not_started'?'Not Started':p.status)}
-                  </span>
-                  <div style={{ fontSize:11, color:T.textMuted, marginTop:4 }}>{(p as any).site} · {(p as any).region}</div>
-                </div>
-              </div>
-            );
-          })}
+        <div style={{ overflowX:'auto' as const }}>
+          <table style={{ width:'100%' }}><TableHead /><tbody>
+            {myProjects.map((p:any)=><ProjectRow key={p.id} p={p} href={`/projects/${p.id}`} />)}
+          </tbody></table>
           {myProjects.length===0 && <div style={{ textAlign:'center', padding:40, color:T.textDim }}>No projects assigned yet.</div>}
         </div>
       </div>
