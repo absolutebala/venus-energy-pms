@@ -1243,8 +1243,18 @@ export default function Dashboard() {
   const [dashDateFrom, setDashDateFrom] = React.useState('');
   const [dashDateTo,   setDashDateTo]   = React.useState('');
 
+  // Compute aging for all dbProjects
+  const projectsWithAging = React.useMemo(() => {
+    const today = new Date();
+    return (dbProjects as any[]).map((p:any) => {
+      const ref = p.poDate || p.startDate || p.createdAt;
+      const aging = ref ? Math.floor((today.getTime() - new Date(ref).getTime()) / 86400000) : 0;
+      return { ...p, aging };
+    });
+  }, [dbProjects]);
+
   const filteredProjects = React.useMemo(() => {
-    return (dbProjects as any[]).filter((p:any) => {
+    return projectsWithAging.filter((p:any) => {
       if (dashRegion && p.region !== dashRegion) return false;
       if (dashType   && p.type   !== dashType)   return false;
       if (dashDateFrom && p.poDate && p.poDate < dashDateFrom) return false;
@@ -1294,11 +1304,11 @@ export default function Dashboard() {
 
         {role === 'super_admin'     && <SuperAdminDashboard   projects={isLoading ? [] : filteredProjects} loading={isLoading} />}
         {role === 'region_manager'  && <RegionManagerDashboard projects={isLoading ? [] : filteredProjects} />}
-        {role === 'project_manager' && <ProjectManagerDashboard projects={isLoading ? [] : (dbProjects as any[])} pmName={profile?.full_name||''} />}
-        {role === 'site_engineer'   && <SiteEngineerDashboard  projects={isLoading ? [] : (dbProjects as any[])} />}
-        {role === 'vendor'          && <VendorDashboard         projects={isLoading ? [] : (dbProjects as any[])} />}
-        {role === 'viewer'          && <ViewerDashboard         projects={isLoading ? [] : (dbProjects as any[])} />}
-        {role === 'accounting_team' && <AccountingDashboard     projects={isLoading ? [] : (dbProjects as any[])} />}
+        {role === 'project_manager' && <ProjectManagerDashboard projects={isLoading ? [] : projectsWithAging} pmName={profile?.full_name||''} />}
+        {role === 'site_engineer'   && <SiteEngineerDashboard  projects={isLoading ? [] : projectsWithAging} />}
+        {role === 'vendor'          && <VendorDashboard         projects={isLoading ? [] : projectsWithAging} />}
+        {role === 'viewer'          && <ViewerDashboard         projects={isLoading ? [] : projectsWithAging} />}
+        {role === 'accounting_team' && <AccountingDashboard     projects={isLoading ? [] : projectsWithAging} />}
       </div>
     </Layout>
   );
