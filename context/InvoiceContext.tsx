@@ -4,8 +4,9 @@ import { createClient } from '@/lib/supabase';
 const supabase = createClient();
 
 export interface Invoice {
-  id: string; invoiceNo: string; invoiceDate: string; workBoqRef: string;
+  id: string; invoiceNo: string; invoiceDate: string;
   invoiceAmount: number; gst: number; totalAmount: number;
+  wccNo: string; receiptNo: string;
   invoiceStatus: string; paymentStatus: string; dueDate: string;
   projectId: string; poNo: string; createdBy: string;
   createdAt?: string; updatedAt?: string;
@@ -16,10 +17,11 @@ function mapRow(row: any): Invoice {
     id:            row.id            ?? '',
     invoiceNo:     row.invoice_no    ?? '',
     invoiceDate:   row.invoice_date  ?? '',
-    workBoqRef:    row.work_boq_ref  ?? '',
     invoiceAmount: Number(row.invoice_amount ?? 0),
     gst:           Number(row.gst           ?? 0),
     totalAmount:   Number(row.total_amount  ?? 0),
+    wccNo:         row.wcc_no       ?? '',
+    receiptNo:     row.receipt_no   ?? '',
     invoiceStatus: row.invoice_status ?? 'Draft',
     paymentStatus: row.payment_status ?? 'Pending',
     dueDate:       row.due_date       ?? '',
@@ -34,8 +36,9 @@ function mapRow(row: any): Invoice {
 function mapToDb(inv: Partial<Invoice>): Record<string, any> {
   const db: Record<string, any> = {};
   const map: Record<string, string> = {
-    invoiceNo:'invoice_no', invoiceDate:'invoice_date', workBoqRef:'work_boq_ref',
+    invoiceNo:'invoice_no', invoiceDate:'invoice_date',
     invoiceAmount:'invoice_amount', totalAmount:'total_amount', invoiceStatus:'invoice_status',
+    wccNo:'wcc_no', receiptNo:'receipt_no',
     paymentStatus:'payment_status', dueDate:'due_date',
     projectId:'project_id', poNo:'po_no', createdBy:'created_by',
   };

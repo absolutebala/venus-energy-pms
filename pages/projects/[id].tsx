@@ -1599,6 +1599,27 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
     finally { setSaving(false); }
   };
 
+  const [editInvId,  setEditInvId]  = React.useState<string|null>(null);
+  const [editInvRow, setEditInvRow] = React.useState<any>({});
+
+  const saveInvEdit = async () => {
+    if (!editInvId) return;
+    setSaving(true);
+    try {
+      const amt = Number(editInvRow.invoiceAmount)||0, gst = Number(editInvRow.gst)||0;
+      await updateInvoice(editInvId, {
+        invoiceNo: editInvRow.invoiceNo, invoiceDate: editInvRow.invoiceDate,
+        invoiceAmount: amt, gst, totalAmount: amt + gst,
+        dueDate: editInvRow.dueDate, invoiceStatus: editInvRow.invoiceStatus,
+        paymentStatus: editInvRow.paymentStatus,
+        wccNo: editInvRow.wccNo||'', receiptNo: editInvRow.receiptNo||'',
+      } as any);
+      setEditInvId(null); setEditInvRow({});
+      setToast({ msg:'✅ Invoice updated', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(false); }
+  };
+
   const fmt  = (n: number) => '₹' + Number(n).toLocaleString('en-IN');
   const fmtD = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } };
 
@@ -1787,7 +1808,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
 }
 
 function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:string; canAdd:boolean; projectPoNo?:string }) {
-  const { getByProject, addInvoice, deleteInvoice, loading } = useInvoices();
+  const { getByProject, addInvoice, updateInvoice, deleteInvoice, loading } = useInvoices();
   const { profile } = useAuth();
   const { logActivity } = useActivity();
   const items = getByProject(projectId);
@@ -1795,8 +1816,9 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
   const [saving,  setSaving]  = React.useState(false);
   const [toast,   setToast]   = React.useState<any>(null);
   const [newRow,  setNewRow]  = React.useState({
-    invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'',
-    gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo
+    invoiceNo:'', invoiceDate:'', invoiceAmount:'',
+    gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo,
+    wccNo:'', receiptNo:''
   });
 
   const fmt  = (n: number) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits:2 });
@@ -1834,13 +1856,15 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
     try {
       await addInvoice({
         invoiceNo: newRow.invoiceNo, invoiceDate: newRow.invoiceDate,
-        workBoqRef: newRow.workBoqRef, invoiceAmount: amt, gst, totalAmount: amt + gst,
+        invoiceAmount: amt, gst, totalAmount: amt + gst,
+        wccNo: newRow.wccNo||'', receiptNo: newRow.receiptNo||'',
         invoiceStatus: newRow.invoiceStatus, paymentStatus: newRow.paymentStatus,
         dueDate: newRow.dueDate, poNo: newRow.poNo || projectPoNo,
         projectId, createdBy: profile?.full_name || '',
       });
-      setNewRow({ invoiceNo:'', invoiceDate:'', workBoqRef:'', invoiceAmount:'',
-        gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo });
+      setNewRow({ invoiceNo:'', invoiceDate:'', invoiceAmount:'',
+        gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo,
+        wccNo:'', receiptNo:'' });
       setAdding(false);
       logActivity(projectId, `Invoice ${newRow.invoiceNo} added`, profile?.full_name||'', profile?.role||'').catch(console.error);
       setToast({ msg:'✅ Invoice saved', type:'success' });
@@ -1863,7 +1887,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
           <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:900 }}>
             <thead>
               <tr>
-                {['#','Invoice No','Invoice Date','Work/BOQ Ref','Amount (₹)','GST (₹)','Total (₹)','Inv. Status','Pay Status','Due Date',''].map((h,i)=>(
+                {['#','Invoice No','Invoice Date','Basic Amount (₹)','GST (₹)','Total Amount (₹)','WCC No','Receipt No','Inv. Status','Pay Status','Due Date',''].map((h,i)=>(
                   <th key={i} style={{ ...thS, textAlign:i>=4&&i<=6?'right' as const:'left' as const }}>{h}</th>
                 ))}
               </tr>
@@ -1877,20 +1901,61 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
                     {item.poNo && <div style={{ fontSize:10, color:T.textMuted }}>{item.poNo}</div>}
                   </td>
                   <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD(item.invoiceDate)}</td>
-                  <td style={tdS}>{item.workBoqRef || '—'}</td>
                   <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600 }}>{fmt(item.invoiceAmount)}</td>
                   <td style={{ ...tdS, textAlign:'right' as const, color:T.textMuted }}>{fmt(item.gst)}</td>
                   <td style={{ ...tdS, textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(item.totalAmount)}</td>
+                  <td style={tdS}>{(item as any).wccNo || '—'}</td>
+                  <td style={tdS}>{(item as any).receiptNo || '—'}</td>
                   <td style={tdS}><Pill label={item.invoiceStatus} cfg={INV_COLORS[item.invoiceStatus]||INV_COLORS.Draft} /></td>
                   <td style={tdS}><Pill label={item.paymentStatus} cfg={PAY_COLORS[item.paymentStatus]||PAY_COLORS.Pending} /></td>
                   <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD(item.dueDate)}</td>
-                  <td style={{ ...tdS, width:36 }}>
-                    {canAdd && (
-                      <button onClick={() => deleteInvoice(item.id)}
-                        style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:15 }}>🗑</button>
-                    )}
+                  <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
+                    <div style={{ display:'flex', gap:4 }}>
+                      {canAdd && (
+                        <button onClick={()=>{ setEditInvId(editInvId===item.id?null:item.id); setEditInvRow({...item}); }}
+                          style={{ background:editInvId===item.id?T.primary:'#F0FDFA', color:editInvId===item.id?'#fff':'#0D9488',
+                            border:`1px solid #99F6E4`, borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>✏️</button>
+                      )}
+                      {canAdd && (
+                        <button onClick={() => deleteInvoice(item.id)}
+                          style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:15 }}>🗑</button>
+                      )}
+                    </div>
                   </td>
                 </tr>
+                {editInvId === item.id && (
+                  <tr style={{ background:T.primaryLight }}>
+                    <td colSpan={12} style={{ padding:14, borderBottom:`1px solid ${T.border}` }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:10 }}>✏️ Edit Invoice</div>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:8 }}>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Invoice No</div><input style={inpS} value={editInvRow.invoiceNo||''} onChange={e=>setEditInvRow((p:any)=>({...p,invoiceNo:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Invoice Date</div><DateInput value={editInvRow.invoiceDate||''} onChange={v=>setEditInvRow((p:any)=>({...p,invoiceDate:v}))} style={inpS} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Due Date</div><DateInput value={editInvRow.dueDate||''} onChange={v=>setEditInvRow((p:any)=>({...p,dueDate:v}))} style={inpS} max="9999-12-31" /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Basic Amount (₹)</div><input style={inpS} type="number" value={editInvRow.invoiceAmount||''} onChange={e=>setEditInvRow((p:any)=>({...p,invoiceAmount:e.target.value}))} /></div>
+                      </div>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:12 }}>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>GST (₹)</div><input style={inpS} type="number" value={editInvRow.gst||''} onChange={e=>setEditInvRow((p:any)=>({...p,gst:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>WCC No</div><input style={inpS} value={editInvRow.wccNo||''} onChange={e=>setEditInvRow((p:any)=>({...p,wccNo:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Receipt No</div><input style={inpS} value={editInvRow.receiptNo||''} onChange={e=>setEditInvRow((p:any)=>({...p,receiptNo:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Invoice Status</div>
+                          <select style={inpS} value={editInvRow.invoiceStatus||''} onChange={e=>setEditInvRow((p:any)=>({...p,invoiceStatus:e.target.value}))}>
+                            {['Draft','Submitted','Approved','Rejected','Paid'].map(s=><option key={s}>{s}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{ display:'flex', gap:8 }}>
+                        <button onClick={saveInvEdit} disabled={saving}
+                          style={{ background:T.primary, color:'#fff', border:'none', borderRadius:7, padding:'6px 18px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                          {saving?'Saving…':'💾 Save'}
+                        </button>
+                        <button onClick={()=>{ setEditInvId(null); setEditInvRow({}); }}
+                          style={{ background:'#fff', color:T.textMuted, border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 18px', fontSize:12, cursor:'pointer' }}>
+                          Cancel
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               ))}
             </tbody>
             <tfoot>
@@ -1915,8 +1980,9 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
           <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>New Invoice Entry</div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
             {([['PO Number','poNo','text','PO-2025-XXX'],['Invoice No *','invoiceNo','text','INV-2025-XXX'],
-               ['Work/BOQ Ref','workBoqRef','text','BOQ-XXX-001'],['Invoice Date *','invoiceDate','date',''],
-               ['Due Date','dueDate','date',''],['Amount (₹) *','invoiceAmount','number',''],
+               ['Invoice Date *','invoiceDate','date',''],
+               ['Due Date','dueDate','date',''],['Basic Amount (₹) *','invoiceAmount','number',''],
+               ['WCC No','wccNo','text',''],['Receipt No','receiptNo','text',''],
                ['GST (₹)','gst','number','']] as [string,string,string,string][]).map(([label,field,type,ph])=>(
               <div key={field}>
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</label>

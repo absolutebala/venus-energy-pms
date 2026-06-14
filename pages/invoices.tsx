@@ -61,10 +61,31 @@ export default function InvoicesPage() {
   const [showForm,    setShowForm]    = useState(false);
   const [toast,       setToast]       = useState<any>(null);
   const [saving,      setSaving]      = useState(false);
+  const [editInvId,   setEditInvId]   = useState<string|null>(null);
+  const [editInvRow,  setEditInvRow]  = useState<any>({});
   const [newInv,      setNewInv]      = useState({
-    invoiceNo:"", invoiceDate:"", workBoqRef:"", invoiceAmount:"",
+    invoiceNo:"", invoiceDate:"", invoiceAmount:"",
     gst:"", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
+    wccNo:"", receiptNo:"",
   });
+
+  const saveInvEdit = async () => {
+    if (!editInvId) return;
+    setSaving(true);
+    try {
+      const amt = Number(editInvRow.invoiceAmount)||0, gst = Number(editInvRow.gst)||0;
+      await updateInvoice(editInvId, {
+        invoiceNo: editInvRow.invoiceNo, invoiceDate: editInvRow.invoiceDate,
+        invoiceAmount: amt, gst, totalAmount: amt + gst,
+        dueDate: editInvRow.dueDate, invoiceStatus: editInvRow.invoiceStatus,
+        paymentStatus: editInvRow.paymentStatus,
+        wccNo: editInvRow.wccNo||'', receiptNo: editInvRow.receiptNo||'',
+      } as any);
+      setEditInvId(null); setEditInvRow({});
+      setToast({ msg:'✅ Invoice updated', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(false); }
+  };
 
   // Smart PO match
   const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g,"");
@@ -128,14 +149,16 @@ export default function InvoicesPage() {
     try {
       await addInvoice({
         invoiceNo: newInv.invoiceNo, invoiceDate: newInv.invoiceDate,
-        workBoqRef: newInv.workBoqRef, invoiceAmount: amt, gst, totalAmount: amt + gst,
+        invoiceAmount: amt, gst, totalAmount: amt + gst,
+        wccNo: newInv.wccNo||"", receiptNo: newInv.receiptNo||"",
         invoiceStatus: newInv.invoiceStatus, paymentStatus: newInv.paymentStatus,
         dueDate: newInv.dueDate, poNo: newInv.poNo || (linkedProj as any)?.poNo || "",
         projectId: (linkedProj as any)?.id || "",
         createdBy: profile?.full_name || "",
       });
-      setNewInv({ invoiceNo:"", invoiceDate:"", workBoqRef:"", invoiceAmount:"",
-        gst:"", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"" });
+      setNewInv({ invoiceNo:"", invoiceDate:"", invoiceAmount:"",
+        gst:"", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
+        wccNo:"", receiptNo:"" });
       setShowForm(false);
       setToast({ msg:"✅ Invoice added successfully", type:"success" });
     } catch (err: any) {
@@ -227,9 +250,9 @@ export default function InvoicesPage() {
             <div style={{ fontSize:14, fontWeight:700, color:T.primary, marginBottom:14 }}>+ New Invoice</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:12 }}>
               {([["PO Number","poNo","text","PO-2025-XXX"],["Invoice No *","invoiceNo","text","INV-2025-XXX"],
-                 ["Work/BOQ Ref","workBoqRef","text","BOQ-XXX-001"],["Invoice Date *","invoiceDate","date",""],
-                 ["Due Date","dueDate","date",""],["Invoice Amount (₹) *","invoiceAmount","number",""],
-                 ["GST (₹)","gst","number",""]] as [string,string,string,string][]).map(([label,field,type,ph]) => (
+                 ["Invoice Date *","invoiceDate","date",""],["Due Date","dueDate","date",""],
+                 ["Basic Amount (₹) *","invoiceAmount","number",""],["GST (₹)","gst","number",""],
+                 ["WCC No","wccNo","text",""],["Receipt No","receiptNo","text",""]] as [string,string,string,string][]).map(([label,field,type,ph]) => (
                 <div key={field}>
                   <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>{label}</label>
                   {type === 'date' ? (
@@ -283,7 +306,7 @@ export default function InvoicesPage() {
               <thead>
                 <tr>
                   <th style={thS()}>#</th>
-                  {([["invoiceNo","Invoice No"],["invoiceDate","Invoice Date"],["workBoqRef","Work/BOQ Ref"],
+                  {([["invoiceNo","Invoice No"],["invoiceDate","Invoice Date"],["invoiceAmount","Basic Amount (₹)"],["totalAmount","Total Amount (₹)"],
                      ["invoiceAmount","Amount (₹)"],["gst","GST (₹)"],["totalAmount","Total (₹)"],
                      ["invoiceStatus","Inv. Status"],["paymentStatus","Pay Status"],["dueDate","Due Date"]] as [SortKey,string][])
                     .map(([key, label]) => (
@@ -312,13 +335,19 @@ export default function InvoicesPage() {
                         <div style={{ fontSize:10, color:T.textMuted }}>{inv.poNo}</div>
                       </td>
                       <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{fmtDate(inv.invoiceDate)}</td>
-                      <td style={tdS}>{inv.workBoqRef || "—"}</td>
                       <td style={{ ...tdS, textAlign:"right" as const, fontWeight:600 }}>{fmt(inv.invoiceAmount)}</td>
                       <td style={{ ...tdS, textAlign:"right" as const, color:T.textMuted }}>{fmt(inv.gst)}</td>
                       <td style={{ ...tdS, textAlign:"right" as const, fontWeight:700, color:T.primary }}>{fmt(inv.totalAmount)}</td>
+                      <td style={tdS}>{(inv as any).wccNo || "—"}</td>
+                      <td style={tdS}>{(inv as any).receiptNo || "—"}</td>
                       <td style={tdS}><StatusPill label={inv.invoiceStatus} cfg={INV_STATUS_CFG[inv.invoiceStatus] || INV_STATUS_CFG.Draft} /></td>
                       <td style={tdS}><StatusPill label={inv.paymentStatus} cfg={PAY_STATUS_CFG[inv.paymentStatus] || PAY_STATUS_CFG.Pending} /></td>
                       <td style={{ ...tdS, whiteSpace:"nowrap" as const, color:T.textMuted }}>{fmtDate(inv.dueDate)}</td>
+                      <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
+                        <button onClick={e=>{e.stopPropagation();setEditInvId(editInvId===inv.id?null:inv.id);setEditInvRow({...inv});}}
+                          style={{ background:editInvId===inv.id?T.primary:'#F0FDFA', color:editInvId===inv.id?'#fff':'#0D9488',
+                            border:`1px solid #99F6E4`, borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>✏️</button>
+                      </td>
                       {canApprove && (
                         <td style={tdS}>
                           <div style={{ display:'flex', gap:4 }}>
@@ -342,6 +371,39 @@ export default function InvoicesPage() {
                         </td>
                       )}
                     </tr>
+                    {editInvId === inv.id && (
+                      <tr style={{ background:T.primaryLight }}>
+                        <td colSpan={12} style={{ padding:14, borderBottom:`1px solid ${T.border}` }}>
+                          <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:10 }}>✏️ Edit Invoice</div>
+                          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:8 }}>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Invoice No</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%' }} value={editInvRow.invoiceNo||''} onChange={e=>setEditInvRow((p:any)=>({...p,invoiceNo:e.target.value}))} /></div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Invoice Date</div><input type="date" style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%' }} value={editInvRow.invoiceDate||''} onChange={e=>setEditInvRow((p:any)=>({...p,invoiceDate:e.target.value}))} /></div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Due Date</div><input type="date" style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%' }} value={editInvRow.dueDate||''} onChange={e=>setEditInvRow((p:any)=>({...p,dueDate:e.target.value}))} /></div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Basic Amount (₹)</div><input type="number" style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%' }} value={editInvRow.invoiceAmount||''} onChange={e=>setEditInvRow((p:any)=>({...p,invoiceAmount:e.target.value}))} /></div>
+                          </div>
+                          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:12 }}>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>GST (₹)</div><input type="number" style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%' }} value={editInvRow.gst||''} onChange={e=>setEditInvRow((p:any)=>({...p,gst:e.target.value}))} /></div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>WCC No</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%' }} value={editInvRow.wccNo||''} onChange={e=>setEditInvRow((p:any)=>({...p,wccNo:e.target.value}))} /></div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Receipt No</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%' }} value={editInvRow.receiptNo||''} onChange={e=>setEditInvRow((p:any)=>({...p,receiptNo:e.target.value}))} /></div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Invoice Status</div>
+                              <select style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%' }} value={editInvRow.invoiceStatus||''} onChange={e=>setEditInvRow((p:any)=>({...p,invoiceStatus:e.target.value}))}>
+                                {['Draft','Submitted','Approved','Rejected','Paid'].map(s=><option key={s}>{s}</option>)}
+                              </select>
+                            </div>
+                          </div>
+                          <div style={{ display:'flex', gap:8 }}>
+                            <button onClick={saveInvEdit} disabled={saving}
+                              style={{ background:T.primary, color:'#fff', border:'none', borderRadius:7, padding:'6px 18px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                              {saving?'Saving…':'💾 Save'}
+                            </button>
+                            <button onClick={()=>{ setEditInvId(null); setEditInvRow({}); }}
+                              style={{ background:'#fff', color:T.textMuted, border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 18px', fontSize:12, cursor:'pointer' }}>
+                              Cancel
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                   );
                 })}
               </tbody>
