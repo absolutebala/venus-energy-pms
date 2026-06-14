@@ -103,8 +103,16 @@ export default function SRNReturnPage() {
   const stnByRegion = useMemo(() => { const r:Record<string,{total:number;pending:number}> = {}; for (const i of stnAllItems) { const proj=(projects as any[]).find(p=>p.id===i.projectId); const reg=proj?.region||'—'; const isPend=i.pmApprovedQty===null||i.pmApprovedQty===undefined; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++; } return r; }, [stnAllItems, projects]);
   const srnByPM     = useMemo(() => { const r:Record<string,{total:number;pending:number}> = {}; for (const proj of srnGrouped) { const pm=proj.pm||'—'; for (const i of proj.srnItems) { const isPend=!i.received; if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(isPend) r[pm].pending++; } } return r; }, [srnGrouped]);
   const srnByRegion = useMemo(() => { const r:Record<string,{total:number;pending:number}> = {}; for (const proj of srnGrouped) { const reg=proj.region||'—'; for (const i of proj.srnItems) { const isPend=!i.received; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++; } } return r; }, [srnGrouped]);
-  const stnPendingCount = stnAllItems.filter(i => i.utilisedStatus !== 'pm_approved').length;
-  const srnPendingCount = srnRawItems.filter((i:any) => !i.received).length;
+  const stnPendingCount  = stnAllItems.filter(i => i.utilisedStatus !== 'pm_approved').length;
+  const stnRejectedCount = stnAllItems.filter(i => i.utilisedStatus === 'pm_rejected').length;
+  const srnPendingCount  = srnRawItems.filter((i:any) => !i.received).length;
+  const srnRejectedCount = srnRawItems.filter((i:any) => i.received === false && i.pm_comment).length;
+
+  const [kpiSubFilter, setKpiSubFilter] = useState<{type:string;status:string}|null>(null);
+  const toggleKpiSub = (type: string, status: string) => {
+    if (kpiSubFilter?.type===type && kpiSubFilter?.status===status) setKpiSubFilter(null);
+    else setKpiSubFilter({ type, status });
+  };
 
   // ── Handle card filter click ─────────────────────────────────────────────
   const handleCardClick = (type: string, field: string, value: string) => {
