@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -7,6 +8,7 @@ import { createClient } from '@/lib/supabase';
 import { T as Theme, card } from '@/lib/theme';
 
 export default function SRNReturnPage() {
+  const router = useRouter();
   const { profile } = useAuth();
   const { projects, loading: projLoading } = useProjects();
   const sb = createClient();
@@ -90,7 +92,20 @@ export default function SRNReturnPage() {
 
   const PER_PAGE = 20;
   const [page, setPage] = React.useState(1);
-  React.useEffect(() => { setPage(1); }, [search, kpiFilter]);
+
+  // Sync page from URL on load
+  React.useEffect(() => {
+    if (router.isReady) {
+      const p = Number(router.query.page);
+      if (p && p > 0) setPage(p);
+    }
+  }, [router.isReady]);
+
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setPage(1);
+    router.replace({ query: { ...router.query, page: 1 } }, undefined, { shallow: true });
+  }, [search, kpiFilter]);
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
   const paginated = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
 
@@ -253,7 +268,7 @@ export default function SRNReturnPage() {
               Showing {(page-1)*PER_PAGE+1}–{Math.min(page*PER_PAGE, filtered.length)} of {filtered.length} projects
             </div>
             <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-              <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1}
+              <button onClick={()=>{ const n=Math.max(1,page-1); setPage(n); router.push({query:{...router.query,page:n}},undefined,{shallow:true}); }} disabled={page===1}
                 style={{ padding:'5px 12px', borderRadius:6, border:`1px solid #E5E7EB`, background:'#fff',
                   cursor:page===1?'not-allowed':'pointer', fontSize:12, color:page===1?'#9CA3AF':'#374151', opacity:page===1?0.5:1 }}>
                 ← Prev
@@ -264,14 +279,14 @@ export default function SRNReturnPage() {
               },[] as number[]).map((n,i)=>
                 n===-1
                   ? <span key={`e${i}`} style={{ fontSize:12, color:'#9CA3AF', padding:'0 4px' }}>…</span>
-                  : <button key={n} onClick={()=>setPage(n)}
+                  : <button key={n} onClick={()=>{ setPage(n); router.push({query:{...router.query,page:n}},undefined,{shallow:true}); }}
                       style={{ padding:'5px 10px', borderRadius:6, border:`1px solid ${page===n?'#0D9488':'#E5E7EB'}`,
                         background:page===n?'#0D9488':'#fff', color:page===n?'#fff':'#374151',
                         cursor:'pointer', fontSize:12, fontWeight:page===n?700:400, minWidth:32 }}>
                       {n}
                     </button>
               )}
-              <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages}
+              <button onClick={()=>{ const n=Math.min(totalPages,page+1); setPage(n); router.push({query:{...router.query,page:n}},undefined,{shallow:true}); }} disabled={page===totalPages}
                 style={{ padding:'5px 12px', borderRadius:6, border:`1px solid #E5E7EB`, background:'#fff',
                   cursor:page===totalPages?'not-allowed':'pointer', fontSize:12, color:page===totalPages?'#9CA3AF':'#374151', opacity:page===totalPages?0.5:1 }}>
                 Next →
