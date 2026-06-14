@@ -281,6 +281,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
   const [editId,   setEditId]   = React.useState<string|null>(null);
   const [submitting, setSubmitting] = React.useState<string|null>(null);
   const [utilisedMap, setUtilisedMap] = React.useState<Record<string,string>>({});
+  const [vendorCommentMap, setVendorCommentMap] = React.useState<Record<string,string>>({});
   const [toast,    setToast]    = React.useState<any>(null);
   const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', serialNo:'', documentNo:'', boqReqNo:'', amount:'', liftedDate:'', gateEntryNo:'', vehicleNo:'' });
   const [editRow,  setEditRow]  = React.useState<any>({});
@@ -798,6 +799,21 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
     finally { setSaving(null); }
   };
 
+  const resubmitUtilised = async (item: any) => {
+    const qty = utilisedMap[item.id] !== undefined ? Number(utilisedMap[item.id]) : Number(item.utilisedQty ?? 0);
+    const comment = vendorCommentMap[item.id]?.trim() || '';
+    if (!qty) { setToast({ msg:'Please enter utilised quantity', type:'error' }); return; }
+    if (!comment) { setToast({ msg:'Please enter a comment explaining the change', type:'error' }); return; }
+    setSaving(item.id);
+    try {
+      await updateItem(item.id, { utilisedQty: qty, utilisedStatus: 'submitted', pmApprovedQty: null, pmComment: comment } as any);
+      logSTN(projectId, `STN resubmitted by vendor: ${comment}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+      setToast({ msg:'✅ Resubmitted for PM approval', type:'success' });
+      setVendorCommentMap(p => { const n={...p}; delete n[item.id]; return n; });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(null); }
+  };
+
   const pmApprove = async (item: any) => {
     setSaving(item.id);
     try {
@@ -984,6 +1000,26 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
                           opacity:isSaving||item.utilisedQty===null?0.5:1 }}>
                         {isSaving?'…':'Submit'}
                       </button>
+                    )}
+                    {isVendor && (item as any).utilisedStatus==='pm_rejected' && (
+                      <div style={{ display:'flex', flexDirection:'column' as const, gap:4, minWidth:160 }}>
+                        <div style={{ fontSize:10, color:'#DC2626', fontWeight:600, marginBottom:2 }}>Rejected — Resubmit</div>
+                        <input type="number" min={0} max={item.quantity}
+                          value={utilisedMap[item.id]??((item as any).utilisedQty??'')}
+                          onChange={e=>setUtilisedMap(p=>({...p,[item.id]:e.target.value}))}
+                          placeholder="New Qty"
+                          style={{ width:'100%', border:`1px solid #FECACA`, borderRadius:6, padding:'3px 6px', fontSize:11, outline:'none' }} />
+                        <input type="text"
+                          value={vendorCommentMap[item.id]??''}
+                          onChange={e=>setVendorCommentMap(p=>({...p,[item.id]:e.target.value}))}
+                          placeholder="Comment (required)"
+                          style={{ width:'100%', border:`1px solid #FECACA`, borderRadius:6, padding:'3px 6px', fontSize:11, outline:'none' }} />
+                        <button onClick={()=>resubmitUtilised(item)} disabled={isSaving}
+                          style={{ background:'#D97706', color:'#fff', border:'none', borderRadius:6,
+                            padding:'4px 8px', fontSize:11, cursor:'pointer', fontWeight:600, opacity:isSaving?0.5:1 }}>
+                          {isSaving?'…':'🔄 Resubmit'}
+                        </button>
+                      </div>
                     )}
                     {isPM && item.utilisedStatus==='submitted' && (
                       <div style={{ display:'flex', gap:4 }}>
