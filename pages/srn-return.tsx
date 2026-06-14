@@ -212,14 +212,22 @@ export default function SRNReturnPage() {
               <span style={{ fontSize:18 }}>📦</span>
               <span style={{ fontSize:14, fontWeight:700, color:Theme.primary }}>STN — Store Transfer Note</span>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:16 }}>
               <div style={{ background:Theme.primaryLight, borderRadius:8, padding:'10px 14px' }}>
                 <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>Total Items</div>
                 <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{stnAllItems.length}</div>
               </div>
-              <div style={{ background:'#FFFBEB', borderRadius:8, padding:'10px 14px' }}>
-                <div style={{ fontSize:10, fontWeight:600, color:'#92400E', textTransform:'uppercase' as const, marginBottom:4 }}>Pending PM Approval</div>
+              <div onClick={()=>toggleKpiSub('stn','pm_rejected')} style={{ background:kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='pm_rejected'?'#FEE2E2':'#FEF2F2', borderRadius:8, padding:'10px 14px', cursor:'pointer',
+                border:kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='pm_rejected'?'2px solid #DC2626':'2px solid transparent', transition:'all 0.15s' }}>
+                <div style={{ fontSize:10, fontWeight:600, color:'#991B1B', textTransform:'uppercase' as const, marginBottom:4 }}>✗ Rejected by PM</div>
+                <div style={{ fontSize:24, fontWeight:800, color:'#DC2626' }}>{stnRejectedCount}</div>
+                {kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='pm_rejected' && <div style={{ fontSize:10, color:'#DC2626', marginTop:2 }}>● Filtered</div>}
+              </div>
+              <div onClick={()=>toggleKpiSub('stn','pending_approval')} style={{ background:kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='pending_approval'?'#FEF3C7':'#FFFBEB', borderRadius:8, padding:'10px 14px', cursor:'pointer',
+                border:kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='pending_approval'?'2px solid #D97706':'2px solid transparent', transition:'all 0.15s' }}>
+                <div style={{ fontSize:10, fontWeight:600, color:'#92400E', textTransform:'uppercase' as const, marginBottom:4 }}>⏳ Pending Approval</div>
                 <div style={{ fontSize:24, fontWeight:800, color:'#D97706' }}>{stnPendingCount}</div>
+                {kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='pending_approval' && <div style={{ fontSize:10, color:'#D97706', marginTop:2 }}>● Filtered</div>}
               </div>
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
@@ -240,14 +248,22 @@ export default function SRNReturnPage() {
               <span style={{ fontSize:18 }}>🔄</span>
               <span style={{ fontSize:14, fontWeight:700, color:Theme.primary }}>SRN — Store Return Note</span>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:16 }}>
               <div style={{ background:Theme.primaryLight, borderRadius:8, padding:'10px 14px' }}>
                 <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>Total Items</div>
                 <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{srnRawItems.length}</div>
               </div>
-              <div style={{ background:'#FEF2F2', borderRadius:8, padding:'10px 14px' }}>
-                <div style={{ fontSize:10, fontWeight:600, color:'#991B1B', textTransform:'uppercase' as const, marginBottom:4 }}>Pending PM Approval</div>
-                <div style={{ fontSize:24, fontWeight:800, color:'#DC2626' }}>{srnPendingCount}</div>
+              <div onClick={()=>toggleKpiSub('srn','rejected')} style={{ background:kpiSubFilter?.type==='srn'&&kpiSubFilter?.status==='rejected'?'#FEE2E2':'#FEF2F2', borderRadius:8, padding:'10px 14px', cursor:'pointer',
+                border:kpiSubFilter?.type==='srn'&&kpiSubFilter?.status==='rejected'?'2px solid #DC2626':'2px solid transparent', transition:'all 0.15s' }}>
+                <div style={{ fontSize:10, fontWeight:600, color:'#991B1B', textTransform:'uppercase' as const, marginBottom:4 }}>✗ Rejected by PM</div>
+                <div style={{ fontSize:24, fontWeight:800, color:'#DC2626' }}>{srnRejectedCount}</div>
+                {kpiSubFilter?.type==='srn'&&kpiSubFilter?.status==='rejected' && <div style={{ fontSize:10, color:'#DC2626', marginTop:2 }}>● Filtered</div>}
+              </div>
+              <div onClick={()=>toggleKpiSub('srn','pending')} style={{ background:kpiSubFilter?.type==='srn'&&kpiSubFilter?.status==='pending'?'#FEF3C7':'#FFFBEB', borderRadius:8, padding:'10px 14px', cursor:'pointer',
+                border:kpiSubFilter?.type==='srn'&&kpiSubFilter?.status==='pending'?'2px solid #D97706':'2px solid transparent', transition:'all 0.15s' }}>
+                <div style={{ fontSize:10, fontWeight:600, color:'#92400E', textTransform:'uppercase' as const, marginBottom:4 }}>⏳ Pending Approval</div>
+                <div style={{ fontSize:24, fontWeight:800, color:'#D97706' }}>{srnPendingCount}</div>
+                {kpiSubFilter?.type==='srn'&&kpiSubFilter?.status==='pending' && <div style={{ fontSize:10, color:'#D97706', marginTop:2 }}>● Filtered</div>}
               </div>
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
