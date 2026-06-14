@@ -1996,6 +1996,14 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
               </div>
             ))}
             <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Total Amount (₹)</label>
+              <div style={{ ...inpS, background:T.primaryLight, fontWeight:700, color:T.primary }}>
+                {(Number((newRow as any).invoiceAmount)||0) + (Number((newRow as any).gst)||0) > 0
+                  ? '₹' + ((Number((newRow as any).invoiceAmount)||0) + (Number((newRow as any).gst)||0)).toLocaleString('en-IN')
+                  : '—'}
+              </div>
+            </div>
+            <div>
               <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Invoice Status</label>
               <select value={newRow.invoiceStatus} onChange={e=>setNewRow(p=>({...p,invoiceStatus:e.target.value}))}
                 style={{ ...inpS, cursor:'pointer' }}>

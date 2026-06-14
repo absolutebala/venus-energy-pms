@@ -269,6 +269,14 @@ export default function InvoicesPage() {
                 </div>
               ))}
               <div>
+                <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>Total Amount (₹)</label>
+                <div style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px", fontSize:13, background:T.primaryLight, fontWeight:700, color:T.primary }}>
+                  {(Number(newInv.invoiceAmount)||0) + (Number(newInv.gst)||0) > 0
+                    ? '₹' + ((Number(newInv.invoiceAmount)||0) + (Number(newInv.gst)||0)).toLocaleString('en-IN')
+                    : '—'}
+                </div>
+              </div>
+              <div>
                 <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>Invoice Status</label>
                 <select value={newInv.invoiceStatus} onChange={e => setNewInv(p => ({ ...p, invoiceStatus: e.target.value }))}
                   style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px", fontSize:13, width:"100%", outline:"none", background:"#fff", cursor:"pointer" }}>
