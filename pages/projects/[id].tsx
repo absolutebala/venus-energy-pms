@@ -1447,7 +1447,8 @@ function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; r
             </thead>
             <tbody>
               {items.map((item:any, idx:number) => (
-                <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
+                <React.Fragment key={item.id}>
+                <tr style={{ background:idx%2===0?'#fff':T.bg }}>
                   <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
                   <td style={{ ...tdS, fontWeight:600 }}>{item.description}</td>
                   <td style={{ ...tdS, color:T.textMuted }}>{item.hsn_code||'—'}</td>
@@ -1545,6 +1546,7 @@ function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; r
                     </td>
                   </tr>
                 )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
