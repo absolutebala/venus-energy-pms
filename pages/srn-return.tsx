@@ -21,6 +21,9 @@ export default function SRNReturnPage() {
   const [search,      setSearch]      = useState('');
   const [expandedSRN, setExpandedSRN] = useState<string|null>(null);
   const [expandedSTN, setExpandedSTN] = useState<string|null>(null);
+  const [commentPopup, setCommentPopup] = useState<{text:string;title:string}|null>(null);
+  const [srnRejectTarget, setSrnRejectTarget] = useState<any>(null);
+  const [srnRejectComment, setSrnRejectComment] = useState('');
 
   // View toggles + card filter
   const [showSRN, setShowSRN] = useState(true);
@@ -42,11 +45,25 @@ export default function SRNReturnPage() {
   useEffect(() => { fetchSRN(); }, [fetchSRN]);
 
   const markReceived = async (item: any, received: boolean) => {
+    if (!received) { setSrnRejectTarget(item); setSrnRejectComment(''); return; }
     setSaving(item.id);
     try {
-      const { error } = await sb.from('srn').update({ received }).eq('id', item.id);
+      const { error } = await sb.from('srn').update({ received: true, pm_comment: null }).eq('id', item.id);
       if (error) throw new Error(error.message);
-      setSrnRawItems(prev => prev.map((i:any) => i.id === item.id ? { ...i, received } : i));
+      setSrnRawItems(prev => prev.map((i:any) => i.id === item.id ? { ...i, received: true, pm_comment: null } : i));
+    } catch(err) { console.error(err); }
+    finally { setSaving(null); }
+  };
+
+  const confirmSrnReject = async () => {
+    if (!srnRejectTarget) return;
+    if (!srnRejectComment.trim()) return;
+    setSaving(srnRejectTarget.id);
+    try {
+      const { error } = await sb.from('srn').update({ received: false, pm_comment: srnRejectComment.trim() }).eq('id', srnRejectTarget.id);
+      if (error) throw new Error(error.message);
+      setSrnRawItems(prev => prev.map((i:any) => i.id === srnRejectTarget.id ? { ...i, received: false, pm_comment: srnRejectComment.trim() } : i));
+      setSrnRejectTarget(null); setSrnRejectComment('');
     } catch(err) { console.error(err); }
     finally { setSaving(null); }
   };
@@ -331,7 +348,7 @@ export default function SRNReturnPage() {
                     <div style={{ overflowX:'auto' as const }}>
                       <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                         <thead>
-                          <tr>{['#','Description','UOM','Qty','Rate','GST%','Amount','Utilised Qty','PM Approved Qty','Status'].map((h,i)=>(
+                          <tr>{['#','Description','UOM','Qty','Rate','GST%','Amount','Utilised Qty','PM Approved Qty','Comments','Status'].map((h,i)=>(
                             <th key={i} style={{ ...thS }}>{h}</th>
                           ))}</tr>
                         </thead>
@@ -347,6 +364,15 @@ export default function SRNReturnPage() {
                               <td style={{ ...tdS, fontWeight:600 }}>{Number(m.amount||0).toLocaleString('en-IN')}</td>
                               <td style={tdS}>{m.utilisedQty??'—'}</td>
                               <td style={{ ...tdS, fontWeight:700, color:m.pmApprovedQty!=null&&m.pmApprovedQty>0?'#0D9488':m.pmApprovedQty===0?'#DC2626':'#D97706' }}>{m.pmApprovedQty!=null&&m.pmApprovedQty>0?m.pmApprovedQty:m.pmApprovedQty===0?'Rejected':'Pending'}</td>
+                              <td style={{ ...tdS, textAlign:'center' as const }}>
+                                <span onClick={()=>setCommentPopup({text: m.pmComment||'', title: m.description})}
+                                  style={{ fontSize:11, fontWeight:700, cursor:'pointer',
+                                    color:m.pmComment?'#7C3AED':'#9CA3AF',
+                                    background:m.pmComment?'#F5F3FF':'#F9FAFB',
+                                    padding:'2px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>
+                                  {m.pmComment ? '💬 1' : '—'}
+                                </span>
+                              </td>
                               <td style={tdS}>
                                 <span style={{ fontSize:11, fontWeight:700,
                                   color:m.pmApprovedQty!=null&&m.pmApprovedQty>0?'#0D9488':m.pmApprovedQty===0?'#DC2626':'#D97706',
@@ -377,7 +403,7 @@ export default function SRNReturnPage() {
                     <div style={{ overflowX:'auto' as const }}>
                       <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                         <thead>
-                          <tr>{['#','Description','HSN','UOM','Qty','Rate','GST%','Amount','Serial No','Doc No','BOQ Req','Return Qty','Return Date','Received','Action'].map((h,i)=>(
+                          <tr>{['#','Description','HSN','UOM','Qty','Rate','GST%','Amount','Serial No','Doc No','BOQ Req','Return Qty','Return Date','Received','Comments','Action'].map((h,i)=>(
                             <th key={i} style={{ ...thS }}>{h}</th>
                           ))}</tr>
                         </thead>
@@ -403,6 +429,15 @@ export default function SRNReturnPage() {
                                 {m.received
                                   ? <span style={{ fontSize:11, fontWeight:700, color:'#0D9488', background:'#F0FDFA', padding:'2px 10px', borderRadius:20 }}>✓ Yes</span>
                                   : <span style={{ fontSize:11, fontWeight:700, color:'#DC2626', background:'#FEF2F2', padding:'2px 10px', borderRadius:20 }}>✗ No</span>}
+                              </td>
+                              <td style={{ ...tdS, textAlign:'center' as const }}>
+                                <span onClick={()=>setCommentPopup({text: m.pm_comment||'', title: m.description})}
+                                  style={{ fontSize:11, fontWeight:700, cursor:'pointer',
+                                    color:m.pm_comment?'#7C3AED':'#9CA3AF',
+                                    background:m.pm_comment?'#F5F3FF':'#F9FAFB',
+                                    padding:'2px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>
+                                  {m.pm_comment ? '💬 1' : '—'}
+                                </span>
                               </td>
                               <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
                                 {isPM && !m.received && (
@@ -447,6 +482,60 @@ export default function SRNReturnPage() {
             </div>
           </div>
         )}
+
+      {/* Comment Popup */}
+      {commentPopup && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:1000,
+          display:'flex', alignItems:'center', justifyContent:'center' }}
+          onClick={()=>setCommentPopup(null)}>
+          <div style={{ background:'#fff', borderRadius:14, padding:28, width:440, boxShadow:'0 8px 40px rgba(0,0,0,0.2)' }}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{ fontSize:15, fontWeight:700, color:'#7C3AED', marginBottom:8 }}>💬 PM Comment</div>
+            <div style={{ fontSize:13, fontWeight:600, color:'#374151', marginBottom:10 }}>{commentPopup.title}</div>
+            {commentPopup.text ? (
+              <div style={{ fontSize:13, color:'#DC2626', background:'#FEF2F2', borderRadius:8, padding:'12px 14px', lineHeight:1.6 }}>
+                {commentPopup.text}
+              </div>
+            ) : (
+              <div style={{ fontSize:13, color:'#9CA3AF', background:'#F9FAFB', borderRadius:8, padding:'12px 14px' }}>
+                No comments yet.
+              </div>
+            )}
+            <div style={{ marginTop:14, textAlign:'right' as const }}>
+              <button onClick={()=>setCommentPopup(null)}
+                style={{ padding:'7px 18px', borderRadius:8, border:'1px solid #E5E7EB', background:'#fff', cursor:'pointer', fontSize:13 }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SRN Reject Modal */}
+      {srnRejectTarget && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:1000,
+          display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ background:'#fff', borderRadius:14, padding:28, width:420, boxShadow:'0 8px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ fontSize:16, fontWeight:700, color:'#DC2626', marginBottom:8 }}>✗ Mark SRN Not Received</div>
+            <div style={{ fontSize:13, color:'#374151', marginBottom:12 }}>
+              <strong>{srnRejectTarget.description}</strong>
+            </div>
+            <label style={{ fontSize:11, fontWeight:600, color:'#6B7280', textTransform:'uppercase' as const }}>Comment *</label>
+            <textarea value={srnRejectComment} onChange={e=>setSrnRejectComment(e.target.value)}
+              placeholder="Enter reason…" rows={3}
+              style={{ width:'100%', marginTop:6, marginBottom:14, border:'1.5px solid #E5E7EB', borderRadius:8,
+                padding:'8px 10px', fontSize:13, outline:'none', resize:'vertical' as const, boxSizing:'border-box' as const }} />
+            <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+              <button onClick={()=>setSrnRejectTarget(null)}
+                style={{ padding:'8px 18px', borderRadius:8, border:'1px solid #E5E7EB', background:'#fff', cursor:'pointer', fontSize:13 }}>Cancel</button>
+              <button onClick={confirmSrnReject} disabled={!srnRejectComment.trim()}
+                style={{ padding:'8px 18px', borderRadius:8, border:'none', background:'#DC2626', color:'#fff',
+                  cursor:srnRejectComment.trim()?'pointer':'not-allowed', fontSize:13, fontWeight:600, opacity:srnRejectComment.trim()?1:0.5 }}>
+                ✗ Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       </div>
     </Layout>
   );
