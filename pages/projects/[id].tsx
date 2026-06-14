@@ -778,10 +778,12 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
   const { logActivity: logSTN } = useActivity();
   const allSTNItems = getByProject(projectId);
   const items = allSTNItems.filter((i:any) => i.utilisedStatus && i.utilisedStatus !== 'pending');
-  const [saving,        setSaving]        = React.useState<string|null>(null);
-  const [returnMap,     setReturnMap]     = React.useState<Record<string,string>>({});
-  const [returnDateMap, setReturnDateMap] = React.useState<Record<string,string>>({});
-  const [toast,         setToast]         = React.useState<any>(null);
+  const [saving,          setSaving]          = React.useState<string|null>(null);
+  const [returnMap,       setReturnMap]       = React.useState<Record<string,string>>({});
+  const [returnDateMap,   setReturnDateMap]   = React.useState<Record<string,string>>({});
+  const [toast,           setToast]           = React.useState<any>(null);
+  const [utilisedMap,     setUtilisedMap]     = React.useState<Record<string,string>>({});
+  const [vendorCommentMap,setVendorCommentMap]= React.useState<Record<string,string>>({});
 
   React.useEffect(() => {
     const allApproved = items.length > 0 && items.every((i:any) => i.utilisedStatus === 'pm_approved');
