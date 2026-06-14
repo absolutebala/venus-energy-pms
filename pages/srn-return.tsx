@@ -346,13 +346,13 @@ export default function SRNReturnPage() {
                               <td style={tdS}>{m.gstRate}%</td>
                               <td style={{ ...tdS, fontWeight:600 }}>{Number(m.amount||0).toLocaleString('en-IN')}</td>
                               <td style={tdS}>{m.utilisedQty??'—'}</td>
-                              <td style={{ ...tdS, fontWeight:700, color:m.pmApprovedQty!=null?'#0D9488':'#D97706' }}>{m.pmApprovedQty??'Pending'}</td>
+                              <td style={{ ...tdS, fontWeight:700, color:m.pmApprovedQty!=null&&m.pmApprovedQty>0?'#0D9488':m.pmApprovedQty===0?'#DC2626':'#D97706' }}>{m.pmApprovedQty!=null&&m.pmApprovedQty>0?m.pmApprovedQty:m.pmApprovedQty===0?'Rejected':'Pending'}</td>
                               <td style={tdS}>
                                 <span style={{ fontSize:11, fontWeight:700,
-                                  color:m.pmApprovedQty!=null?'#0D9488':'#D97706',
-                                  background:m.pmApprovedQty!=null?'#F0FDFA':'#FFFBEB',
+                                  color:m.pmApprovedQty!=null&&m.pmApprovedQty>0?'#0D9488':m.pmApprovedQty===0?'#DC2626':'#D97706',
+                                  background:m.pmApprovedQty!=null&&m.pmApprovedQty>0?'#F0FDFA':m.pmApprovedQty===0?'#FEF2F2':'#FFFBEB',
                                   padding:'2px 8px', borderRadius:20 }}>
-                                  {m.pmApprovedQty!=null?'✓ Approved':'⏳ Pending'}
+                                  {m.pmApprovedQty!=null&&m.pmApprovedQty>0?'✓ Approved':m.pmApprovedQty===0?'✗ Rejected':'⏳ Pending'}
                                 </span>
                               </td>
                             </tr>

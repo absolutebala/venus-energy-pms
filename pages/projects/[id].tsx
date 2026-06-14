@@ -809,10 +809,19 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
   };
 
   const pmReject = async (item: any) => {
-    setSaving(item.id);
+    setRejectTarget(item);
+    setRejectComment('');
+  };
+
+  const confirmReject = async () => {
+    if (!rejectTarget) return;
+    if (!rejectComment.trim()) { setToast({ msg:'Please enter a rejection comment', type:'error' }); return; }
+    setSaving(rejectTarget.id);
     try {
-      await updateItem(item.id, { utilisedStatus:'pm_rejected' } as any);
-      setToast({ msg:'Returned for revision', type:'info' });
+      await updateItem(rejectTarget.id, { utilisedStatus:'pm_rejected', pmApprovedQty: 0, pmComment: rejectComment.trim() } as any);
+      logSTN(projectId, `STN item rejected: ${rejectComment}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+      setToast({ msg:'✗ Rejected with comment', type:'info' });
+      setRejectTarget(null); setRejectComment('');
     } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
     finally { setSaving(null); }
   };
@@ -849,6 +858,9 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
 
   const isPM     = ['project_manager','super_admin','region_manager'].includes(role);
   const isVendor = role === 'vendor';
+  const [rejectTarget, setRejectTarget] = React.useState<any>(null);
+  const [rejectComment, setRejectComment] = React.useState('');
+  const [commentPopup, setCommentPopup] = React.useState<any>(null);
 
   const thS: React.CSSProperties = { padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase',
     color:T.primary, background:T.primaryLight, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const };
@@ -858,11 +870,60 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
 
   return (
     <div>
+      {/* Reject Modal */}
+      {rejectTarget && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:1000,
+          display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ background:'#fff', borderRadius:14, padding:28, width:420, boxShadow:'0 8px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ fontSize:16, fontWeight:700, color:'#DC2626', marginBottom:8 }}>✗ Reject STN Item</div>
+            <div style={{ fontSize:13, color:'#374151', marginBottom:12 }}>
+              <strong>{rejectTarget.description}</strong><br/>
+              <span style={{ color:'#6B7280', fontSize:12 }}>Utilised Qty: {rejectTarget.utilisedQty}</span>
+            </div>
+            <label style={{ fontSize:11, fontWeight:600, color:'#6B7280', textTransform:'uppercase' as const }}>Rejection Comment *</label>
+            <textarea value={rejectComment} onChange={e=>setRejectComment(e.target.value)}
+              placeholder="Enter reason for rejection…"
+              rows={3}
+              style={{ width:'100%', marginTop:6, marginBottom:14, border:'1.5px solid #E5E7EB', borderRadius:8,
+                padding:'8px 10px', fontSize:13, outline:'none', resize:'vertical' as const, boxSizing:'border-box' as const }} />
+            <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+              <button onClick={()=>setRejectTarget(null)}
+                style={{ padding:'8px 18px', borderRadius:8, border:'1px solid #E5E7EB', background:'#fff', cursor:'pointer', fontSize:13 }}>Cancel</button>
+              <button onClick={confirmReject} disabled={!rejectComment.trim()}
+                style={{ padding:'8px 18px', borderRadius:8, border:'none', background:'#DC2626', color:'#fff',
+                  cursor:rejectComment.trim()?'pointer':'not-allowed', fontSize:13, fontWeight:600, opacity:rejectComment.trim()?1:0.5 }}>
+                ✗ Confirm Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Comment Popup */}
+      {commentPopup && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:1000,
+          display:'flex', alignItems:'center', justifyContent:'center' }}
+          onClick={()=>setCommentPopup(null)}>
+          <div style={{ background:'#fff', borderRadius:14, padding:28, width:400, boxShadow:'0 8px 40px rgba(0,0,0,0.2)' }}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{ fontSize:15, fontWeight:700, color:'#7C3AED', marginBottom:8 }}>💬 PM Comment</div>
+            <div style={{ fontSize:13, fontWeight:600, color:'#374151', marginBottom:6 }}>{commentPopup.description}</div>
+            <div style={{ fontSize:13, color:'#DC2626', background:'#FEF2F2', borderRadius:8, padding:'10px 14px', lineHeight:1.6 }}>
+              {commentPopup.pmComment}
+            </div>
+            <div style={{ marginTop:14, textAlign:'right' as const }}>
+              <button onClick={()=>setCommentPopup(null)}
+                style={{ padding:'7px 18px', borderRadius:8, border:'1px solid #E5E7EB', background:'#fff', cursor:'pointer', fontSize:13 }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ overflowX:'auto' as const }}>
         <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
           <thead>
             <tr>
-              {['#','Code','Description','UOM','Issued','Utilised','Status','PM Approved','Balance','Return Qty','Return Date','Return Received','Actions'].map((h,i)=>(
+              {['#','Code','Description','UOM','Issued','Utilised','Status','PM Approved','Balance','Comments','Return Qty','Return Date','Return Received','Actions'].map((h,i)=>(
                 <th key={i} style={{ ...thS, textAlign:i>=4&&i<=9?'right' as const:'left' as const }}>{h}</th>
               ))}
             </tr>
@@ -893,6 +954,15 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
                   </td>
                   <td style={{ ...tdS, textAlign:'right' as const, color:balance>0?T.warning:T.success, fontWeight:600 }}>
                     {item.utilisedStatus==='pm_approved'?balance:'—'}
+                  </td>
+                  <td style={{ ...tdS, textAlign:'center' as const }}>
+                    {(item as any).pmComment ? (
+                      <span onClick={()=>setCommentPopup(item)}
+                        style={{ fontSize:11, fontWeight:700, color:'#7C3AED', background:'#F5F3FF',
+                          padding:'2px 10px', borderRadius:20, cursor:'pointer', whiteSpace:'nowrap' as const }}>
+                        💬 1
+                      </span>
+                    ) : <span style={{ color:T.textDim }}>—</span>}
                   </td>
                   <td style={{ ...tdS, textAlign:'right' as const, fontWeight:600, color:T.primary }}>
                     {hasReturn ? (item as any).returnQty : '—'}
