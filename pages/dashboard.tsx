@@ -644,7 +644,36 @@ function RegionManagerDashboard({ projects }: { projects: typeof ALL_PROJECTS })
         <AlertBanner count={myProjects.filter(p=>p.status==='billing_review').length} msg="Projects pending billing clearance"              color='#7C3AED'   link="/billing"     />
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:14, marginBottom:20 }}>
+        {/* Projects by Vendor */}
+        <div style={card}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>Projects by Vendor</div>
+          {(() => {
+            const vendorGroups: Record<string,any[]> = {};
+            myProjects.forEach((p:any) => {
+              const v = (p as any).vendor || 'Unassigned';
+              if (!vendorGroups[v]) vendorGroups[v] = [];
+              vendorGroups[v].push(p);
+            });
+            return Object.entries(vendorGroups).sort((a,b)=>b[1].length-a[1].length).slice(0,8).map(([vendor,ps])=>(
+              <div key={vendor} onClick={()=>router.push(`/projects?vendor=${encodeURIComponent(vendor)}`)}
+                style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', marginBottom:6, transition:'all 0.15s' }}
+                onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
+                onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
+                  <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{vendor}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10 }}>{ps.length} →</span>
+                </div>
+                <div style={{ display:'flex', gap:5, flexWrap:'wrap' as const }}>
+                  {[{s:'in_progress',l:'Active',c:'#2563EB'},{s:'delayed',l:'Delayed',c:'#DC2626'},{s:'completed',l:'Done',c:'#16A34A'}].map(({s,l,c})=>{
+                    const n=ps.filter((p:any)=>p.status===s).length; if(!n) return null;
+                    return <span key={s} style={{ fontSize:10, color:c, background:`${c}15`, padding:'1px 7px', borderRadius:10, fontWeight:600 }}>{n} {l}</span>;
+                  })}
+                </div>
+              </div>
+            ));
+          })()}
+        </div>
         <div style={card}>
           <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>PM Performance</div>
           {myPMs.map(pm=>{
@@ -700,6 +729,62 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
         <AlertBanner count={noVendor.length}  msg={`${noVendor.length} project(s) need a vendor assigned before work can begin`}  color={T.danger}  link="/pm/projects" />
         <AlertBanner count={myProjects.filter(p=>p.status==='delayed').length} msg="Projects are delayed — review and take action" color={T.warning} link="/pm/projects" />
         <AlertBanner count={billing.length}   msg="Projects completed and waiting for billing invoice"                             color='#7C3AED'   link="/pm/projects" />
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
+        {/* Projects by Vendor */}
+        <div style={card}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>My Projects by Vendor</div>
+          {(() => {
+            const vendorGroups: Record<string,any[]> = {};
+            myProjects.forEach((p:any) => {
+              const v = (p as any).vendor || 'Unassigned';
+              if (!vendorGroups[v]) vendorGroups[v] = [];
+              vendorGroups[v].push(p);
+            });
+            return Object.entries(vendorGroups).sort((a,b)=>b[1].length-a[1].length).slice(0,8).map(([vendor,ps])=>(
+              <div key={vendor} onClick={()=>router.push(`/projects?vendor=${encodeURIComponent(vendor)}&pm=${encodeURIComponent(pmName)}`)}
+                style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', marginBottom:6, transition:'all 0.15s' }}
+                onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
+                onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
+                  <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{vendor}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10 }}>{ps.length} →</span>
+                </div>
+                <div style={{ display:'flex', gap:5, flexWrap:'wrap' as const }}>
+                  {[{s:'in_progress',l:'Active',c:'#2563EB'},{s:'delayed',l:'Delayed',c:'#DC2626'},{s:'completed',l:'Done',c:'#16A34A'},{s:'billing_review',l:'Billing',c:'#7C3AED'}].map(({s,l,c})=>{
+                    const n=ps.filter((p:any)=>p.status===s).length; if(!n) return null;
+                    return <span key={s} style={{ fontSize:10, color:c, background:`${c}15`, padding:'1px 7px', borderRadius:10, fontWeight:600 }}>{n} {l}</span>;
+                  })}
+                </div>
+              </div>
+            ));
+          })()}
+        </div>
+        {/* Status Distribution */}
+        <div style={card}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>My Projects by Status</div>
+          {(() => {
+            const statuses = ['in_progress','delayed','completed','billing_review','pending','submitted','pm_approved'];
+            const labels: Record<string,string> = { in_progress:'In Progress', delayed:'Delayed', completed:'Completed', billing_review:'Billing Review', pending:'Pending', submitted:'Submitted', pm_approved:'PM Approved' };
+            const colors: Record<string,string> = { in_progress:'#2563EB', delayed:'#DC2626', completed:'#16A34A', billing_review:'#7C3AED', pending:'#D97706', submitted:'#0D9488', pm_approved:'#0D9488' };
+            return statuses.map(s => {
+              const n = myProjects.filter((p:any)=>p.status===s).length; if(!n) return null;
+              const pct = Math.round(n/myProjects.length*100);
+              return (
+                <div key={s} onClick={()=>router.push(`/projects?status=${s}&pm=${encodeURIComponent(pmName)}`)} style={{ marginBottom:10, cursor:'pointer' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
+                    <span style={{ fontSize:12, color:T.text }}>{labels[s]}</span>
+                    <span style={{ fontSize:12, fontWeight:700, color:colors[s] }}>{n} ({pct}%)</span>
+                  </div>
+                  <div style={{ height:6, background:T.border, borderRadius:3 }}>
+                    <div style={{ height:6, width:`${pct}%`, background:colors[s], borderRadius:3, transition:'width 0.3s' }} />
+                  </div>
+                </div>
+              );
+            });
+          })()}
+        </div>
       </div>
 
       <div style={card}>
