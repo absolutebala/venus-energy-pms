@@ -109,9 +109,11 @@ export default function InvoicesPage() {
 
   // Apply date filter — must be before KPI calcs
   const dateFilteredInvoices = React.useMemo(() => {
+    if (!dateFrom && !dateTo) return invoices;
     return invoices.filter(i => {
-      if (dateFrom && i.invoiceDate < dateFrom) return false;
-      if (dateTo   && i.invoiceDate > dateTo)   return false;
+      if (dateFrom && dateTo) return i.invoiceDate >= dateFrom && i.invoiceDate <= dateTo;
+      if (dateFrom) return i.invoiceDate >= dateFrom;
+      if (dateTo)   return i.invoiceDate <= dateTo;
       return true;
     });
   }, [invoices, dateFrom, dateTo]);
