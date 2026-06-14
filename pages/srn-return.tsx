@@ -101,8 +101,12 @@ export default function SRNReturnPage() {
   // ── KPI aggregations ─────────────────────────────────────────────────────
   const [kpiSubFilter, setKpiSubFilter] = useState<{type:string;status:string}|null>(null);
   const toggleKpiSub = (type: string, status: string) => {
-    if (kpiSubFilter?.type===type && kpiSubFilter?.status===status) setKpiSubFilter(null);
-    else setKpiSubFilter({ type, status });
+    if (kpiSubFilter?.type===type && kpiSubFilter?.status===status) {
+      setKpiSubFilter(null);
+    } else {
+      setKpiSubFilter({ type, status });
+      setCardFilter(null); setShowSRN(true); setShowSTN(true); // clear PM/Region filter
+    }
   };
 
   const stnByPM = useMemo(() => {
@@ -162,6 +166,7 @@ export default function SRNReturnPage() {
       setCardFilter({ type, field, value });
       setShowSRN(type === 'srn');
       setShowSTN(type === 'stn');
+      setKpiSubFilter(null); // clear rejected/pending filter when switching to PM/Region filter
     }
   };
   const clearCardFilter = () => { setCardFilter(null); setShowSRN(true); setShowSTN(true); };
