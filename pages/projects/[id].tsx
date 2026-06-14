@@ -374,9 +374,17 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
   const isPMRole = ['project_manager','super_admin','region_manager'].includes(poProfile?.role||'');
 
   const popmApprove = async (item: any) => {
+    const utilisedQty = Number(item.utilisedQty ?? 0);
+    const issuedQty   = Number(item.quantity ?? 0);
+    if (!utilisedQty || utilisedQty <= 0) {
+      setToast({ msg:'Cannot approve — no utilised quantity entered', type:'error' }); return;
+    }
+    if (utilisedQty !== issuedQty) {
+      setToast({ msg:`Cannot approve — utilised qty (${utilisedQty}) must equal issued qty (${issuedQty})`, type:'error' }); return;
+    }
     setSubmitting(item.id);
     try {
-      await updateItem(item.id, { utilisedStatus:'pm_approved', pmApprovedQty: item.utilisedQty||0 } as any);
+      await updateItem(item.id, { utilisedStatus:'pm_approved', pmApprovedQty: utilisedQty } as any);
       logActivity(projectId, `STN approved: ${item.description}`, poProfile?.full_name||'', poProfile?.role||'').catch(()=>{});
       setToast({ msg:'✅ Approved', type:'success' });
     } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
@@ -389,7 +397,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
     if (!poRejectTarget || !poRejectComment.trim()) return;
     setSubmitting(poRejectTarget.id);
     try {
-      await updateItem(poRejectTarget.id, { utilisedStatus:'pm_rejected', pmApprovedQty: 0, pmComment: poRejectComment.trim() } as any);
+      await updateItem(poRejectTarget.id, { utilisedStatus:'pm_rejected', pmApprovedQty: null, pmComment: poRejectComment.trim() } as any);
       logActivity(projectId, `STN rejected: ${poRejectComment}`, poProfile?.full_name||'', poProfile?.role||'').catch(()=>{});
       setToast({ msg:'✗ Rejected', type:'info' });
       setPoRejectTarget(null); setPoRejectComment('');
@@ -510,9 +518,9 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
                     <td style={{ ...tdS }}>
                       {(item as any).utilisedStatus && (item as any).utilisedStatus !== 'pending' ? (
                         <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:20,
-                          color:(item as any).utilisedStatus==='pm_approved'?'#059669':(item as any).utilisedStatus==='submitted'?'#2563EB':'#DC2626',
-                          background:(item as any).utilisedStatus==='pm_approved'?'#D1FAE5':(item as any).utilisedStatus==='submitted'?'#EFF6FF':'#FEF2F2' }}>
-                          {(item as any).utilisedStatus==='pm_approved'?'Approved':(item as any).utilisedStatus==='submitted'?'Submitted':'Rejected'}
+                          color:(item as any).utilisedStatus==='pm_approved'&&(item as any).pmApprovedQty>0?'#059669':(item as any).utilisedStatus==='submitted'?'#2563EB':(item as any).utilisedStatus==='pm_rejected'?'#DC2626':'#DC2626',
+                          background:(item as any).utilisedStatus==='pm_approved'&&(item as any).pmApprovedQty>0?'#D1FAE5':(item as any).utilisedStatus==='submitted'?'#EFF6FF':'#FEF2F2' }}>
+                          {(item as any).utilisedStatus==='pm_approved'&&(item as any).pmApprovedQty>0?'✓ Approved':(item as any).utilisedStatus==='submitted'?'📤 Submitted':'✗ Rejected'}
                         </span>
                       ) : <span style={{ fontSize:11, color:T.textMuted }}>—</span>}
                     </td>
