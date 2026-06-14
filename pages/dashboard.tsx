@@ -695,14 +695,39 @@ function RegionManagerDashboard({ projects }: { projects: typeof ALL_PROJECTS })
           })}
         </div>
         <div style={card}>
-          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
-            <div style={{ fontSize:14, fontWeight:600, color:T.text }}>My Projects</div>
-            <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>View All →</Link>
-          </div>
-          <table style={{ width:'100%' }}><TableHead /><tbody>
-            {myProjects.slice(0,5).map(p=><ProjectRow key={p.id} p={p} href={`/rm/projects/${p.id}`} />)}
-          </tbody></table>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>Status Distribution</div>
+          {(() => {
+            const sg: Record<string,number> = {};
+            myProjects.forEach((p:any)=>{ const s=(p as any).projectStatus||'Not Set'; sg[s]=(sg[s]||0)+1; });
+            const sc: Record<string,string> = { 'Work Completed':'#16A34A','WCC Raised':'#0D9488','Invoice Submitted':'#2563EB','PO Amendment Done':'#7C3AED','Not Started':'#6B7280','In Progress':'#D97706','Delayed':'#DC2626' };
+            return Object.entries(sg).sort((a,b)=>b[1]-a[1]).map(([s,n])=>{
+              const c=sc[s]||'#6B7280'; const pct=Math.round(n/myProjects.length*100);
+              return (
+                <div key={s} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(myProjects[0]?.rm||'')}`)} style={{ marginBottom:10, cursor:'pointer' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
+                    <span style={{ fontSize:12, color:T.text }}>{s}</span>
+                    <span style={{ fontSize:12, fontWeight:700, color:c }}>{n} ({pct}%)</span>
+                  </div>
+                  <div style={{ height:6, background:T.border, borderRadius:3 }}>
+                    <div style={{ height:6, width:`${pct}%`, background:c, borderRadius:3 }} />
+                  </div>
+                </div>
+              );
+            });
+          })()}
         </div>
+      </div>
+
+      {/* Aging Distribution */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
+        {[{label:'0–30d',color:'#0D9488',f:(p:any)=>p.aging<=30},{label:'31–60d',color:'#D97706',f:(p:any)=>p.aging>30&&p.aging<=60},{label:'61–90d',color:'#DC2626',f:(p:any)=>p.aging>60&&p.aging<=90},{label:'90d+',color:'#7C3AED',f:(p:any)=>p.aging>90}].map(b=>(
+          <div key={b.label} onClick={()=>router.push('/projects')}
+            style={{ ...card, padding:'14px 16px', cursor:'pointer', borderLeft:`4px solid ${b.color}` }}>
+            <div style={{ fontSize:10, fontWeight:600, color:b.color, textTransform:'uppercase' as const, marginBottom:4 }}>{b.label}</div>
+            <div style={{ fontSize:24, fontWeight:800, color:b.color }}>{myProjects.filter(b.f).length}</div>
+            <div style={{ fontSize:10, color:T.textMuted }}>projects</div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -787,17 +812,16 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
         </div>
       </div>
 
-      <div style={card}>
-        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:14 }}>
-          <div style={{ fontSize:14, fontWeight:600, color:T.text }}>My Projects</div>
-          <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>View All →</Link>
-        </div>
-        <div style={{ overflowX:'auto' as const }}>
-          <table style={{ width:'100%' }}><TableHead /><tbody>
-            {myProjects.map((p:any)=><ProjectRow key={p.id} p={p} href={`/projects/${p.id}`} />)}
-          </tbody></table>
-          {myProjects.length===0 && <div style={{ textAlign:'center', padding:40, color:T.textDim }}>No projects found.</div>}
-        </div>
+      {/* Aging Distribution */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
+        {[{label:'0–30d',color:'#0D9488',f:(p:any)=>p.aging<=30},{label:'31–60d',color:'#D97706',f:(p:any)=>p.aging>30&&p.aging<=60},{label:'61–90d',color:'#DC2626',f:(p:any)=>p.aging>60&&p.aging<=90},{label:'90d+',color:'#7C3AED',f:(p:any)=>p.aging>90}].map(b=>(
+          <div key={b.label} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pmName)}`)}
+            style={{ ...card, padding:'14px 16px', cursor:'pointer', borderLeft:`4px solid ${b.color}` }}>
+            <div style={{ fontSize:10, fontWeight:600, color:b.color, textTransform:'uppercase' as const, marginBottom:4 }}>{b.label}</div>
+            <div style={{ fontSize:24, fontWeight:800, color:b.color }}>{myProjects.filter(b.f).length}</div>
+            <div style={{ fontSize:10, color:T.textMuted }}>projects</div>
+          </div>
+        ))}
       </div>
     </div>
   );
