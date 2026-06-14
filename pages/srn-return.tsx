@@ -88,6 +88,12 @@ export default function SRNReturnPage() {
     padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${Theme.border}`, verticalAlign:'middle' as const,
   };
 
+  const PER_PAGE = 20;
+  const [page, setPage] = React.useState(1);
+  React.useEffect(() => { setPage(1); }, [search, kpiFilter]);
+  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  const paginated = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
+
   const isLoading = loading || projLoading;
 
   return (
@@ -97,7 +103,7 @@ export default function SRNReturnPage() {
           <div>
             <div style={{ fontSize:22, fontWeight:800, color:Theme.text }}>SRN Status</div>
             <div style={{ fontSize:13, color:Theme.textMuted, marginTop:2 }}>
-              {isLoading ? 'Loading...' : `${grouped.length} projects · ${items.length} SRN items`}
+              {isLoading ? 'Loading...' : `${filtered.length} projects · ${items.length} SRN items`}
             </div>
           </div>
           <input value={search} onChange={e=>setSearch(e.target.value)}
@@ -131,7 +137,7 @@ export default function SRNReturnPage() {
           </div>
         )}
 
-        {!isLoading && filtered.map((project: any) => {
+        {!isLoading && paginated.map((project: any) => {
           const isExpanded  = expandedId === project.projectId;
           const srnItems    = project.srnItems || [];
           const totalReceived = srnItems.filter((i:any)=>i.received===true).length;
@@ -240,6 +246,39 @@ export default function SRNReturnPage() {
             </div>
           );
         })}
+        {/* ── Pagination ── */}
+        {!isLoading && totalPages > 1 && (
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:16, padding:'10px 4px' }}>
+            <div style={{ fontSize:12, color:'#6B7280' }}>
+              Showing {(page-1)*PER_PAGE+1}–{Math.min(page*PER_PAGE, filtered.length)} of {filtered.length} projects
+            </div>
+            <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+              <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1}
+                style={{ padding:'5px 12px', borderRadius:6, border:`1px solid #E5E7EB`, background:'#fff',
+                  cursor:page===1?'not-allowed':'pointer', fontSize:12, color:page===1?'#9CA3AF':'#374151', opacity:page===1?0.5:1 }}>
+                ← Prev
+              </button>
+              {Array.from({length:totalPages},(_,i)=>i+1).filter(n=>n===1||n===totalPages||Math.abs(n-page)<=1).reduce((acc:number[],n,i,arr)=>{
+                if(i>0&&n-arr[i-1]>1) acc.push(-1);
+                acc.push(n); return acc;
+              },[] as number[]).map((n,i)=>
+                n===-1
+                  ? <span key={`e${i}`} style={{ fontSize:12, color:'#9CA3AF', padding:'0 4px' }}>…</span>
+                  : <button key={n} onClick={()=>setPage(n)}
+                      style={{ padding:'5px 10px', borderRadius:6, border:`1px solid ${page===n?'#0D9488':'#E5E7EB'}`,
+                        background:page===n?'#0D9488':'#fff', color:page===n?'#fff':'#374151',
+                        cursor:'pointer', fontSize:12, fontWeight:page===n?700:400, minWidth:32 }}>
+                      {n}
+                    </button>
+              )}
+              <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages}
+                style={{ padding:'5px 12px', borderRadius:6, border:`1px solid #E5E7EB`, background:'#fff',
+                  cursor:page===totalPages?'not-allowed':'pointer', fontSize:12, color:page===totalPages?'#9CA3AF':'#374151', opacity:page===totalPages?0.5:1 }}>
+                Next →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
