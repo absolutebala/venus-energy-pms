@@ -1795,7 +1795,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
     if (!editInvId) return;
     setSaving(true);
     try {
-      const amt = Number(editInvRow.invoiceAmount)||0, gst = Number(editInvRow.gst)||0;
+      const amt = Number(editInvRow.invoiceAmount)||0, gstPct = Number(editInvRow.gst)||0, gst = amt * gstPct / 100;
       await updateInvoice(editInvId, {
         invoiceNo: editInvRow.invoiceNo, invoiceDate: editInvRow.invoiceDate,
         invoiceAmount: amt, gst, totalAmount: amt + gst,
@@ -1850,7 +1850,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
 
   const saveNew = async () => {
     if (!newRow.invoiceNo || !newRow.invoiceDate || !newRow.invoiceAmount) return;
-    const amt = Number(newRow.invoiceAmount), gst = Number(newRow.gst);
+    const amt = Number(newRow.invoiceAmount), gstPct = Number(newRow.gst), gst = amt * gstPct / 100;
     setSaving(true);
     try {
       await addInvoice({
@@ -1984,7 +1984,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
                ['Invoice Date *','invoiceDate','date',''],
                ['Due Date','dueDate','date',''],['Basic Amount (₹) *','invoiceAmount','number',''],
                ['WCC No','wccNo','text',''],['Receipt No','receiptNo','text',''],
-               ['GST (₹)','gst','number','']] as [string,string,string,string][]).map(([label,field,type,ph])=>(
+               ['GST (%)','gst','number','']] as [string,string,string,string][]).map(([label,field,type,ph])=>(
               <div key={field}>
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</label>
                 {type === 'date' ? (
@@ -1998,8 +1998,8 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
             <div>
               <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Total Amount (₹)</label>
               <div style={{ ...inpS, background:T.primaryLight, fontWeight:700, color:T.primary }}>
-                {(Number((newRow as any).invoiceAmount)||0) + (Number((newRow as any).gst)||0) > 0
-                  ? '₹' + ((Number((newRow as any).invoiceAmount)||0) + (Number((newRow as any).gst)||0)).toLocaleString('en-IN')
+                {(Number((newRow as any).invoiceAmount)||0) > 0
+                  ? '₹' + ((Number((newRow as any).invoiceAmount)||0) * (1 + (Number((newRow as any).gst)||0)/100)).toLocaleString('en-IN', {maximumFractionDigits:2})
                   : '—'}
               </div>
             </div>

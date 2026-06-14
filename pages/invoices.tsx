@@ -73,7 +73,7 @@ export default function InvoicesPage() {
     if (!editInvId) return;
     setSaving(true);
     try {
-      const amt = Number(editInvRow.invoiceAmount)||0, gst = Number(editInvRow.gst)||0;
+      const amt = Number(editInvRow.invoiceAmount)||0, gstPct = Number(editInvRow.gst)||0, gst = amt * gstPct / 100;
       await updateInvoice(editInvId, {
         invoiceNo: editInvRow.invoiceNo, invoiceDate: editInvRow.invoiceDate,
         invoiceAmount: amt, gst, totalAmount: amt + gst,
@@ -143,7 +143,7 @@ export default function InvoicesPage() {
     if (!newInv.invoiceNo || !newInv.invoiceDate || !newInv.invoiceAmount) {
       setToast({ msg:'Please fill Invoice No, Date and Amount', type:'error' }); return;
     }
-    const amt = Number(newInv.invoiceAmount), gst = Number(newInv.gst);
+    const amt = Number(newInv.invoiceAmount), gstPct = Number(newInv.gst), gst = amt * gstPct / 100;
     const linkedProj = matchedProject || projects.find((p:any) => matchesPO(p.poNo, newInv.poNo));
     setSaving(true);
     try {
@@ -251,7 +251,7 @@ export default function InvoicesPage() {
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:12 }}>
               {([["PO Number","poNo","text","PO-2025-XXX"],["Invoice No *","invoiceNo","text","INV-2025-XXX"],
                  ["Invoice Date *","invoiceDate","date",""],["Due Date","dueDate","date",""],
-                 ["Basic Amount (₹) *","invoiceAmount","number",""],["GST (₹)","gst","number",""],
+                 ["Basic Amount (₹) *","invoiceAmount","number",""],["GST (%)","gst","number",""],
                  ["WCC No","wccNo","text",""],["Receipt No","receiptNo","text",""]] as [string,string,string,string][]).map(([label,field,type,ph]) => (
                 <div key={field}>
                   <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>{label}</label>
@@ -271,8 +271,8 @@ export default function InvoicesPage() {
               <div>
                 <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>Total Amount (₹)</label>
                 <div style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px", fontSize:13, background:T.primaryLight, fontWeight:700, color:T.primary }}>
-                  {(Number(newInv.invoiceAmount)||0) + (Number(newInv.gst)||0) > 0
-                    ? '₹' + ((Number(newInv.invoiceAmount)||0) + (Number(newInv.gst)||0)).toLocaleString('en-IN')
+                  {(Number(newInv.invoiceAmount)||0) > 0
+                    ? '₹' + ((Number(newInv.invoiceAmount)||0) * (1 + (Number(newInv.gst)||0)/100)).toLocaleString('en-IN', {maximumFractionDigits:2})
                     : '—'}
                 </div>
               </div>
