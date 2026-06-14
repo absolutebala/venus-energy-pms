@@ -99,10 +99,49 @@ export default function SRNReturnPage() {
   }, [stnAllItems, projects]);
 
   // ── KPI aggregations ─────────────────────────────────────────────────────
-  const stnByPM     = useMemo(() => { const r:Record<string,{total:number;pending:number}> = {}; for (const i of stnAllItems) { const proj=(projects as any[]).find(p=>p.id===i.projectId); const pm=proj?.pm||'—'; const isPend=i.pmApprovedQty===null||i.pmApprovedQty===undefined; if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(isPend) r[pm].pending++; } return r; }, [stnAllItems, projects]);
-  const stnByRegion = useMemo(() => { const r:Record<string,{total:number;pending:number}> = {}; for (const i of stnAllItems) { const proj=(projects as any[]).find(p=>p.id===i.projectId); const reg=proj?.region||'—'; const isPend=i.pmApprovedQty===null||i.pmApprovedQty===undefined; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++; } return r; }, [stnAllItems, projects]);
-  const srnByPM     = useMemo(() => { const r:Record<string,{total:number;pending:number}> = {}; for (const proj of srnGrouped) { const pm=proj.pm||'—'; for (const i of proj.srnItems) { const isPend=!i.received; if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(isPend) r[pm].pending++; } } return r; }, [srnGrouped]);
-  const srnByRegion = useMemo(() => { const r:Record<string,{total:number;pending:number}> = {}; for (const proj of srnGrouped) { const reg=proj.region||'—'; for (const i of proj.srnItems) { const isPend=!i.received; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++; } } return r; }, [srnGrouped]);
+  const stnByPM = useMemo(() => {
+    const r:Record<string,{total:number;pending:number}> = {};
+    const filtered = kpiSubFilter?.type==='stn'
+      ? stnAllItems.filter(i => kpiSubFilter.status==='pm_rejected' ? i.utilisedStatus==='pm_rejected' : i.utilisedStatus!=='pm_approved')
+      : stnAllItems;
+    for (const i of filtered) {
+      const proj=(projects as any[]).find(p=>p.id===i.projectId); const pm=proj?.pm||'—';
+      const isPend=i.utilisedStatus!=='pm_approved'; if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(isPend) r[pm].pending++;
+    } return r;
+  }, [stnAllItems, projects, kpiSubFilter]);
+
+  const stnByRegion = useMemo(() => {
+    const r:Record<string,{total:number;pending:number}> = {};
+    const filtered = kpiSubFilter?.type==='stn'
+      ? stnAllItems.filter(i => kpiSubFilter.status==='pm_rejected' ? i.utilisedStatus==='pm_rejected' : i.utilisedStatus!=='pm_approved')
+      : stnAllItems;
+    for (const i of filtered) {
+      const proj=(projects as any[]).find(p=>p.id===i.projectId); const reg=proj?.region||'—';
+      const isPend=i.utilisedStatus!=='pm_approved'; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++;
+    } return r;
+  }, [stnAllItems, projects, kpiSubFilter]);
+
+  const srnByPM = useMemo(() => {
+    const r:Record<string,{total:number;pending:number}> = {};
+    for (const proj of srnGrouped) {
+      const pm=proj.pm||'—';
+      const items = kpiSubFilter?.type==='srn'
+        ? proj.srnItems.filter((i:any) => kpiSubFilter.status==='rejected' ? (i.received===false&&i.pm_comment) : !i.received)
+        : proj.srnItems;
+      for (const i of items) { const isPend=!i.received; if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(isPend) r[pm].pending++; }
+    } return r;
+  }, [srnGrouped, kpiSubFilter]);
+
+  const srnByRegion = useMemo(() => {
+    const r:Record<string,{total:number;pending:number}> = {};
+    for (const proj of srnGrouped) {
+      const reg=proj.region||'—';
+      const items = kpiSubFilter?.type==='srn'
+        ? proj.srnItems.filter((i:any) => kpiSubFilter.status==='rejected' ? (i.received===false&&i.pm_comment) : !i.received)
+        : proj.srnItems;
+      for (const i of items) { const isPend=!i.received; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++; }
+    } return r;
+  }, [srnGrouped, kpiSubFilter]);
   const stnPendingCount  = stnAllItems.filter(i => i.utilisedStatus !== 'pm_approved').length;
   const stnRejectedCount = stnAllItems.filter(i => i.utilisedStatus === 'pm_rejected').length;
   const srnPendingCount  = srnRawItems.filter((i:any) => !i.received).length;
