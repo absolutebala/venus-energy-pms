@@ -4,6 +4,7 @@ import Layout from '@/components/Layout';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useProjects } from '@/context/ProjectContext';
+import { usePOItems } from '@/context/POItemContext';
 import { createClient } from '@/lib/supabase';
 import { T as Theme, card } from '@/lib/theme';
 
@@ -11,6 +12,7 @@ export default function SRNReturnPage() {
   const router = useRouter();
   const { profile } = useAuth();
   const { projects, loading: projLoading } = useProjects();
+  const { items: stnItems, loading: stnLoading } = usePOItems();
   const sb = createClient();
 
   const [items,      setItems]      = useState<any[]>([]);
@@ -109,7 +111,7 @@ export default function SRNReturnPage() {
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
   const paginated = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
 
-  const isLoading = loading || projLoading;
+  const isLoading = loading || projLoading || stnLoading;
 
   return (
     <Layout>
@@ -126,22 +128,47 @@ export default function SRNReturnPage() {
             style={{ border:`1px solid ${Theme.border}`, borderRadius:8, padding:'8px 14px', fontSize:13, outline:'none', width:260 }} />
         </div>
 
-        {/* Summary cards */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:20 }}>
-          {[
-            { label:'Total SRN Items',  value:items.length,                                  color:Theme.primary, filter:null            },
-            { label:'Received',         value:items.filter((i:any)=>i.received===true).length,  color:'#0D9488',    filter:'received'      },
-            { label:'Pending',          value:items.filter((i:any)=>!i.received).length,        color:'#D97706',    filter:'not_received'  },
-          ].map(s=>(
-            <div key={s.label} onClick={()=>setKpiFilter(kpiFilter===s.filter?null:s.filter)}
-              style={{ ...card, padding:'14px 16px', cursor:'pointer',
-                borderColor:kpiFilter===s.filter?s.color:Theme.border,
-                boxShadow:kpiFilter===s.filter?`0 0 0 2px ${s.color}30`:'none', transition:'all 0.15s' }}>
-              <div style={{ fontSize:11, color:kpiFilter===s.filter?s.color:Theme.textMuted, fontWeight:600, textTransform:'uppercase' as const, marginBottom:4 }}>{s.label}</div>
-              <div style={{ fontSize:22, fontWeight:800, color:s.color }}>{s.value}</div>
-              {kpiFilter===s.filter && <div style={{ fontSize:10, color:s.color, marginTop:2 }}>● Filtered</div>}
+        {/* KPI Cards */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
+          {/* STN Card */}
+          <div style={{ ...card, padding:'18px 20px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+              <span style={{ fontSize:18 }}>📦</span>
+              <span style={{ fontSize:14, fontWeight:700, color:Theme.primary }}>STN — Store Transfer Note</span>
             </div>
-          ))}
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              <div style={{ background:Theme.primaryLight, borderRadius:8, padding:'10px 14px' }}>
+                <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>Total Items</div>
+                <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{stnItems.length}</div>
+              </div>
+              <div style={{ background:'#FFFBEB', borderRadius:8, padding:'10px 14px' }}>
+                <div style={{ fontSize:10, fontWeight:600, color:'#92400E', textTransform:'uppercase' as const, marginBottom:4 }}>Pending PM Approval</div>
+                <div style={{ fontSize:24, fontWeight:800, color:'#D97706' }}>
+                  {stnItems.filter(i => i.pmApprovedQty === null || i.pmApprovedQty === undefined).length}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SRN Card */}
+          <div style={{ ...card, padding:'18px 20px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+              <span style={{ fontSize:18 }}>🔄</span>
+              <span style={{ fontSize:14, fontWeight:700, color:Theme.primary }}>SRN — Store Return Note</span>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              <div style={{ background:Theme.primaryLight, borderRadius:8, padding:'10px 14px' }}>
+                <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>Total Items</div>
+                <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{items.length}</div>
+              </div>
+              <div style={{ background:'#FEF2F2', borderRadius:8, padding:'10px 14px' }}>
+                <div style={{ fontSize:10, fontWeight:600, color:'#991B1B', textTransform:'uppercase' as const, marginBottom:4 }}>Pending PM Approval</div>
+                <div style={{ fontSize:24, fontWeight:800, color:'#DC2626' }}>
+                  {items.filter((i:any) => !i.received).length}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {isLoading && <div style={{ ...card, textAlign:'center', padding:40, color:Theme.textMuted }}>Loading SRN data...</div>}
