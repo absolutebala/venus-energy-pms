@@ -1599,27 +1599,6 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
     finally { setSaving(false); }
   };
 
-  const [editInvId,  setEditInvId]  = React.useState<string|null>(null);
-  const [editInvRow, setEditInvRow] = React.useState<any>({});
-
-  const saveInvEdit = async () => {
-    if (!editInvId) return;
-    setSaving(true);
-    try {
-      const amt = Number(editInvRow.invoiceAmount)||0, gst = Number(editInvRow.gst)||0;
-      await updateInvoice(editInvId, {
-        invoiceNo: editInvRow.invoiceNo, invoiceDate: editInvRow.invoiceDate,
-        invoiceAmount: amt, gst, totalAmount: amt + gst,
-        dueDate: editInvRow.dueDate, invoiceStatus: editInvRow.invoiceStatus,
-        paymentStatus: editInvRow.paymentStatus,
-        wccNo: editInvRow.wccNo||'', receiptNo: editInvRow.receiptNo||'',
-      } as any);
-      setEditInvId(null); setEditInvRow({});
-      setToast({ msg:'✅ Invoice updated', type:'success' });
-    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
-    finally { setSaving(false); }
-  };
-
   const fmt  = (n: number) => '₹' + Number(n).toLocaleString('en-IN');
   const fmtD = (d: string) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } };
 
@@ -1809,6 +1788,26 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
 
 function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:string; canAdd:boolean; projectPoNo?:string }) {
   const { getByProject, addInvoice, updateInvoice, deleteInvoice, loading } = useInvoices();
+  const [editInvId,  setEditInvId]  = React.useState<string|null>(null);
+  const [editInvRow, setEditInvRow] = React.useState<any>({});
+
+  const saveInvEdit = async () => {
+    if (!editInvId) return;
+    setSaving(true);
+    try {
+      const amt = Number(editInvRow.invoiceAmount)||0, gst = Number(editInvRow.gst)||0;
+      await updateInvoice(editInvId, {
+        invoiceNo: editInvRow.invoiceNo, invoiceDate: editInvRow.invoiceDate,
+        invoiceAmount: amt, gst, totalAmount: amt + gst,
+        dueDate: editInvRow.dueDate, invoiceStatus: editInvRow.invoiceStatus,
+        paymentStatus: editInvRow.paymentStatus,
+        wccNo: editInvRow.wccNo||'', receiptNo: editInvRow.receiptNo||'',
+      } as any);
+      setEditInvId(null); setEditInvRow({});
+      setToast({ msg:'✅ Invoice updated', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(false); }
+  };
   const { profile } = useAuth();
   const { logActivity } = useActivity();
   const items = getByProject(projectId);
