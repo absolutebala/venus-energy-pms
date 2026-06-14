@@ -196,7 +196,7 @@ export default function SRNReturnPage() {
       // Apply statusDistFilter
       if (statusDistFilter) {
         const proj0 = (projects as any[]).find(p => p.id === proj.projectId);
-        const ps = proj?.projectStatus || 'Not Set';
+        const ps = proj0?.projectStatus || 'Not Set';
         if (statusDistFilter.type === 'stn' && proj.stnItems.length === 0) return false;
         if (statusDistFilter.type === 'srn' && proj.srnItems.length === 0) return false;
         if (ps !== statusDistFilter.value) return false;
