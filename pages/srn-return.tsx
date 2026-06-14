@@ -103,7 +103,7 @@ export default function SRNReturnPage() {
   const stnByRegion = useMemo(() => { const r:Record<string,{total:number;pending:number}> = {}; for (const i of stnAllItems) { const proj=(projects as any[]).find(p=>p.id===i.projectId); const reg=proj?.region||'—'; const isPend=i.pmApprovedQty===null||i.pmApprovedQty===undefined; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++; } return r; }, [stnAllItems, projects]);
   const srnByPM     = useMemo(() => { const r:Record<string,{total:number;pending:number}> = {}; for (const proj of srnGrouped) { const pm=proj.pm||'—'; for (const i of proj.srnItems) { const isPend=!i.received; if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(isPend) r[pm].pending++; } } return r; }, [srnGrouped]);
   const srnByRegion = useMemo(() => { const r:Record<string,{total:number;pending:number}> = {}; for (const proj of srnGrouped) { const reg=proj.region||'—'; for (const i of proj.srnItems) { const isPend=!i.received; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++; } } return r; }, [srnGrouped]);
-  const stnPendingCount = stnAllItems.filter(i => i.pmApprovedQty === null || i.pmApprovedQty === undefined).length;
+  const stnPendingCount = stnAllItems.filter(i => i.utilisedStatus !== 'pm_approved').length;
   const srnPendingCount = srnRawItems.filter((i:any) => !i.received).length;
 
   // ── Handle card filter click ─────────────────────────────────────────────
@@ -363,7 +363,7 @@ export default function SRNReturnPage() {
                               <td style={tdS}>{m.gstRate}%</td>
                               <td style={{ ...tdS, fontWeight:600 }}>{Number(m.amount||0).toLocaleString('en-IN')}</td>
                               <td style={tdS}>{m.utilisedQty??'—'}</td>
-                              <td style={{ ...tdS, fontWeight:700, color:m.pmApprovedQty!=null&&m.pmApprovedQty>0?'#0D9488':m.pmApprovedQty===0?'#DC2626':'#D97706' }}>{m.pmApprovedQty!=null&&m.pmApprovedQty>0?m.pmApprovedQty:m.pmApprovedQty===0?'Rejected':'Pending'}</td>
+                              <td style={{ ...tdS, fontWeight:700, color:m.utilisedStatus==='pm_approved'?'#0D9488':m.utilisedStatus==='pm_rejected'?'#DC2626':'#D97706' }}>{m.utilisedStatus==='pm_approved'?m.pmApprovedQty:m.utilisedStatus==='pm_rejected'?'Rejected':'Pending'}</td>
                               <td style={{ ...tdS, textAlign:'center' as const }}>
                                 <span onClick={()=>setCommentPopup({text: m.pmComment||'', title: m.description})}
                                   style={{ fontSize:11, fontWeight:700, cursor:'pointer',
@@ -375,10 +375,10 @@ export default function SRNReturnPage() {
                               </td>
                               <td style={tdS}>
                                 <span style={{ fontSize:11, fontWeight:700,
-                                  color:m.pmApprovedQty!=null&&m.pmApprovedQty>0?'#0D9488':m.pmApprovedQty===0?'#DC2626':'#D97706',
-                                  background:m.pmApprovedQty!=null&&m.pmApprovedQty>0?'#F0FDFA':m.pmApprovedQty===0?'#FEF2F2':'#FFFBEB',
+                                  color:m.utilisedStatus==='pm_approved'?'#0D9488':m.utilisedStatus==='pm_rejected'?'#DC2626':m.utilisedStatus==='submitted'?'#2563EB':'#D97706',
+                                  background:m.utilisedStatus==='pm_approved'?'#F0FDFA':m.utilisedStatus==='pm_rejected'?'#FEF2F2':m.utilisedStatus==='submitted'?'#EFF6FF':'#FFFBEB',
                                   padding:'2px 8px', borderRadius:20 }}>
-                                  {m.pmApprovedQty!=null&&m.pmApprovedQty>0?'✓ Approved':m.pmApprovedQty===0?'✗ Rejected':'⏳ Pending'}
+                                  {m.utilisedStatus==='pm_approved'?'✓ Approved':m.utilisedStatus==='pm_rejected'?'✗ Rejected':m.utilisedStatus==='submitted'?'📤 Submitted':'⏳ Pending'}
                                 </span>
                               </td>
                             </tr>
