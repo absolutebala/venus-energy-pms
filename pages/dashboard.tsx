@@ -911,116 +911,82 @@ function VendorDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
         <AlertBanner count={myProjects.filter(p=>p.status==='rejected').length} msg="Projects were rejected — check PM feedback and resubmit" color={T.danger} link="/vendor/projects" />
       </div>
 
-      {/* Status Distribution + Aging */}
-      {(() => {
-        const [vendorStatusFilter, setVendorStatusFilter] = React.useState<string|null>(null);
-        const [vendorAgingFilter,  setVendorAgingFilter]  = React.useState<string|null>(null);
-
-        const agingBuckets = [
-          { label:'0–30d',  color:'#0D9488', filter:(p:any)=>p.aging<=30 },
-          { label:'31–60d', color:'#D97706', filter:(p:any)=>p.aging>30&&p.aging<=60 },
-          { label:'61–90d', color:'#DC2626', filter:(p:any)=>p.aging>60&&p.aging<=90 },
-          { label:'90d+',   color:'#7C3AED', filter:(p:any)=>p.aging>90 },
-        ];
-
-        const statusColors: Record<string,string> = {
-          'Work Completed':'#16A34A','WCC Raised':'#0D9488','Invoice Submitted':'#2563EB',
-          'PO Amendment Done':'#7C3AED','Not Started':'#6B7280','In Progress':'#D97706','Delayed':'#DC2626',
-        };
-
-        const statusGroups: Record<string,number> = {};
-        myProjects.forEach((p:any) => {
-          const s = (p as any).projectStatus || 'Not Set';
-          statusGroups[s] = (statusGroups[s]||0) + 1;
-        });
-
-        const filteredByStatus = vendorStatusFilter
-          ? myProjects.filter((p:any)=>((p as any).projectStatus||'Not Set')===vendorStatusFilter)
-          : myProjects;
-        const filteredByAging = vendorAgingFilter
-          ? myProjects.filter((p:any)=>agingBuckets.find(b=>b.label===vendorAgingFilter)?.filter(p))
-          : myProjects;
-        const displayProjects = vendorStatusFilter
-          ? filteredByStatus
-          : vendorAgingFilter
-          ? filteredByAging
-          : myProjects;
-
-        return (
-          <>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
-              {/* Status Distribution */}
-              <div style={card}>
-                <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>
-                  Status Distribution
-                  {vendorStatusFilter && <span onClick={()=>setVendorStatusFilter(null)} style={{ marginLeft:8, fontSize:11, color:'#DC2626', cursor:'pointer', fontWeight:400 }}>✕ Clear</span>}
-                </div>
-                {Object.entries(statusGroups).sort((a,b)=>b[1]-a[1]).map(([s,n])=>{
-                  const c = statusColors[s]||'#6B7280';
-                  const pct = Math.round(n/myProjects.length*100);
-                  const isActive = vendorStatusFilter===s;
-                  return (
-                    <div key={s} onClick={()=>setVendorStatusFilter(isActive?null:s)} style={{ marginBottom:10, cursor:'pointer', opacity:vendorStatusFilter&&!isActive?0.5:1 }}>
-                      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
-                        <span style={{ fontSize:12, color:isActive?c:T.text, fontWeight:isActive?700:400 }}>{s}</span>
-                        <span style={{ fontSize:12, fontWeight:700, color:c }}>{n} ({pct}%)</span>
-                      </div>
-                      <div style={{ height:6, background:T.border, borderRadius:3 }}>
-                        <div style={{ height:6, width:`${pct}%`, background:c, borderRadius:3, transition:'width 0.3s' }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Aging Distribution */}
-              <div style={card}>
-                <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>
-                  Aging Distribution
-                  {vendorAgingFilter && <span onClick={()=>setVendorAgingFilter(null)} style={{ marginLeft:8, fontSize:11, color:'#DC2626', cursor:'pointer', fontWeight:400 }}>✕ Clear</span>}
-                </div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                  {agingBuckets.map(b => {
-                    const n = myProjects.filter(b.filter).length;
-                    const isActive = vendorAgingFilter===b.label;
-                    return (
-                      <div key={b.label} onClick={()=>setVendorAgingFilter(isActive?null:b.label)}
-                        style={{ background:isActive?`${b.color}15`:T.bg, border:`2px solid ${isActive?b.color:T.border}`,
-                          borderRadius:10, padding:'14px 16px', cursor:'pointer', transition:'all 0.15s',
-                          opacity:vendorAgingFilter&&!isActive?0.5:1 }}>
-                        <div style={{ fontSize:10, fontWeight:600, color:b.color, textTransform:'uppercase' as const, marginBottom:4 }}>{b.label}</div>
-                        <div style={{ fontSize:24, fontWeight:800, color:b.color }}>{n}</div>
-                        <div style={{ fontSize:10, color:T.textMuted }}>projects</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div style={card}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:14 }}>
-                <div style={{ fontSize:14, fontWeight:600, color:T.text }}>
-                  My Assigned Projects
-                  {(vendorStatusFilter||vendorAgingFilter) && (
-                    <span style={{ marginLeft:8, fontSize:11, background:T.primaryLight, color:T.primary, padding:'2px 10px', borderRadius:20 }}>
-                      {vendorStatusFilter||vendorAgingFilter} · {displayProjects.length} projects
-                    </span>
-                  )}
-                </div>
-                <Link href="/projects" style={{ fontSize:12, color:T.primary, textDecoration:'none' }}>View All →</Link>
-              </div>
-              <div style={{ overflowX:'auto' as const }}>
-                <table style={{ width:'100%' }}><TableHead /><tbody>
-                  {displayProjects.map((p:any)=><ProjectRow key={p.id} p={p} href={`/projects/${p.id}`} />)}
-                </tbody></table>
-                {displayProjects.length===0 && <div style={{ textAlign:'center', padding:40, color:T.textDim }}>No projects found.</div>}
-              </div>
-            </div>
-          </>
-        );
-      })()}
+      <VendorProjectsPanel projects={myProjects} />
     </div>
+  );
+}
+
+function VendorProjectsPanel({ projects }: { projects: any[] }) {
+  const [statusFilter, setStatusFilter] = React.useState<string|null>(null);
+  const [agingFilter,  setAgingFilter]  = React.useState<string|null>(null);
+
+  const agingBuckets = [
+    { label:'0–30d',  color:'#0D9488', fn:(p:any)=>p.aging<=30 },
+    { label:'31–60d', color:'#D97706', fn:(p:any)=>p.aging>30&&p.aging<=60 },
+    { label:'61–90d', color:'#DC2626', fn:(p:any)=>p.aging>60&&p.aging<=90 },
+    { label:'90d+',        color:'#7C3AED', fn:(p:any)=>p.aging>90 },
+  ];
+  const statusColors: Record<string,string> = {
+    'Work Completed':'#16A34A','WCC Raised':'#0D9488','Invoice Submitted':'#2563EB',
+    'PO Amendment Done':'#7C3AED','Not Started':'#6B7280','In Progress':'#D97706','Delayed':'#DC2626',
+  };
+  const statusGroups = React.useMemo(()=>{
+    const sg: Record<string,number> = {};
+    projects.forEach((p:any)=>{ const s=(p as any).projectStatus||'Not Set'; sg[s]=(sg[s]||0)+1; });
+    return sg;
+  }, [projects]);
+
+  const displayProjects = React.useMemo(()=>{
+    if (statusFilter) return projects.filter((p:any)=>((p as any).projectStatus||'Not Set')===statusFilter);
+    if (agingFilter)  return projects.filter((p:any)=>agingBuckets.find(b=>b.label===agingFilter)?.fn(p));
+    return projects;
+  }, [projects, statusFilter, agingFilter]);
+
+  return (
+    <>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
+        <div style={card}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>
+            Status Distribution
+            {statusFilter && <span onClick={()=>setStatusFilter(null)} style={{ marginLeft:8, fontSize:11, color:'#DC2626', cursor:'pointer', fontWeight:400 }}>✕ Clear</span>}
+          </div>
+          {Object.entries(statusGroups).sort((a,b)=>b[1]-a[1]).map(([s,n])=>{
+            const c=statusColors[s]||'#6B7280'; const pct=Math.round(n/(projects.length||1)*100); const isActive=statusFilter===s;
+            return (
+              <div key={s} onClick={()=>{ setStatusFilter(isActive?null:s); setAgingFilter(null); }} style={{ marginBottom:10, cursor:'pointer', opacity:statusFilter&&!isActive?0.5:1 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
+                  <span style={{ fontSize:12, color:isActive?c:T.text, fontWeight:isActive?700:400 }}>{s}</span>
+                  <span style={{ fontSize:12, fontWeight:700, color:c }}>{n} ({pct}%)</span>
+                </div>
+                <div style={{ height:6, background:T.border, borderRadius:3 }}>
+                  <div style={{ height:6, width:`${pct}%`, background:c, borderRadius:3, transition:'width 0.3s' }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={card}>
+          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>
+            Aging Distribution
+            {agingFilter && <span onClick={()=>setAgingFilter(null)} style={{ marginLeft:8, fontSize:11, color:'#DC2626', cursor:'pointer', fontWeight:400 }}>✕ Clear</span>}
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+            {agingBuckets.map(b=>{
+              const n=projects.filter(b.fn).length; const isActive=agingFilter===b.label;
+              return (
+                <div key={b.label} onClick={()=>{ setAgingFilter(isActive?null:b.label); setStatusFilter(null); }}
+                  style={{ background:isActive?`${b.color}15`:T.bg, border:`2px solid ${isActive?b.color:T.border}`,
+                    borderRadius:10, padding:'14px 16px', cursor:'pointer', transition:'all 0.15s', opacity:agingFilter&&!isActive?0.5:1 }}>
+                  <div style={{ fontSize:10, fontWeight:600, color:b.color, textTransform:'uppercase' as const, marginBottom:4 }}>{b.label}</div>
+                  <div style={{ fontSize:24, fontWeight:800, color:b.color }}>{n}</div>
+                  <div style={{ fontSize:10, color:T.textMuted }}>projects</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
