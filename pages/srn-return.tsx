@@ -60,6 +60,7 @@ export default function SRNReturnPage() {
         poNo:   proj?.poNo   || '—',
         vendor: proj?.vendor || '—',
         pm:     proj?.pm     || '—',
+        region: proj?.region || '—',
         srnItems,
       };
     });
@@ -129,47 +130,116 @@ export default function SRNReturnPage() {
         </div>
 
         {/* KPI Cards */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
-          {/* STN Card */}
-          <div style={{ ...card, padding:'18px 20px' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
-              <span style={{ fontSize:18 }}>📦</span>
-              <span style={{ fontSize:14, fontWeight:700, color:Theme.primary }}>STN — Store Transfer Note</span>
-            </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-              <div style={{ background:Theme.primaryLight, borderRadius:8, padding:'10px 14px' }}>
-                <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>Total Items</div>
-                <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{stnItems.length}</div>
-              </div>
-              <div style={{ background:'#FFFBEB', borderRadius:8, padding:'10px 14px' }}>
-                <div style={{ fontSize:10, fontWeight:600, color:'#92400E', textTransform:'uppercase' as const, marginBottom:4 }}>Pending PM Approval</div>
-                <div style={{ fontSize:24, fontWeight:800, color:'#D97706' }}>
-                  {stnItems.filter(i => i.pmApprovedQty === null || i.pmApprovedQty === undefined).length}
-                </div>
-              </div>
-            </div>
-          </div>
+        {(() => {
+          // STN aggregations
+          const stnPending = stnItems.filter(i => i.pmApprovedQty === null || i.pmApprovedQty === undefined);
+          const stnByPM: Record<string,{total:number;pending:number}> = {};
+          const stnByRegion: Record<string,{total:number;pending:number}> = {};
+          for (const i of stnItems) {
+            const proj = (projects as any[]).find(p => p.id === i.projectId);
+            const pm = proj?.pm || '—'; const region = proj?.region || '—';
+            const isPend = i.pmApprovedQty === null || i.pmApprovedQty === undefined;
+            if (!stnByPM[pm])     stnByPM[pm]     = {total:0,pending:0};
+            if (!stnByRegion[region]) stnByRegion[region] = {total:0,pending:0};
+            stnByPM[pm].total++;     if (isPend) stnByPM[pm].pending++;
+            stnByRegion[region].total++; if (isPend) stnByRegion[region].pending++;
+          }
+          // SRN aggregations
+          const srnPending = items.filter((i:any) => !i.received);
+          const srnByPM: Record<string,{total:number;pending:number}> = {};
+          const srnByRegion: Record<string,{total:number;pending:number}> = {};
+          for (const proj of grouped) {
+            const pm = proj.pm || '—'; const region = proj.region || '—';
+            for (const i of proj.srnItems) {
+              const isPend = !i.received;
+              if (!srnByPM[pm])     srnByPM[pm]     = {total:0,pending:0};
+              if (!srnByRegion[region]) srnByRegion[region] = {total:0,pending:0};
+              srnByPM[pm].total++;     if (isPend) srnByPM[pm].pending++;
+              srnByRegion[region].total++; if (isPend) srnByRegion[region].pending++;
+            }
+          }
 
-          {/* SRN Card */}
-          <div style={{ ...card, padding:'18px 20px' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
-              <span style={{ fontSize:18 }}>🔄</span>
-              <span style={{ fontSize:14, fontWeight:700, color:Theme.primary }}>SRN — Store Return Note</span>
-            </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-              <div style={{ background:Theme.primaryLight, borderRadius:8, padding:'10px 14px' }}>
-                <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>Total Items</div>
-                <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{items.length}</div>
+          const BreakdownTable = ({ data, color }: { data: Record<string,{total:number;pending:number}>; color: string }) => (
+            <table style={{ width:'100%', borderCollapse:'collapse' as const, fontSize:11 }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign:'left' as const, padding:'4px 6px', color:Theme.textMuted, fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Name</th>
+                  <th style={{ textAlign:'right' as const, padding:'4px 6px', color:Theme.textMuted, fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Total</th>
+                  <th style={{ textAlign:'right' as const, padding:'4px 6px', color:Theme.textMuted, fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Pending</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(data).sort((a,b)=>b[1].pending-a[1].pending).map(([name,v])=>(
+                  <tr key={name}>
+                    <td style={{ padding:'4px 6px', color:Theme.text, fontWeight:500 }}>{name}</td>
+                    <td style={{ padding:'4px 6px', textAlign:'right' as const, color:Theme.textMuted }}>{v.total}</td>
+                    <td style={{ padding:'4px 6px', textAlign:'right' as const, fontWeight:700, color:v.pending>0?color:Theme.textMuted }}>{v.pending}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          );
+
+          return (
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
+              {/* STN Card */}
+              <div style={{ ...card, padding:'18px 20px' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+                  <span style={{ fontSize:18 }}>📦</span>
+                  <span style={{ fontSize:14, fontWeight:700, color:Theme.primary }}>STN — Store Transfer Note</span>
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+                  <div style={{ background:Theme.primaryLight, borderRadius:8, padding:'10px 14px' }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>Total Items</div>
+                    <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{stnItems.length}</div>
+                  </div>
+                  <div style={{ background:'#FFFBEB', borderRadius:8, padding:'10px 14px' }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:'#92400E', textTransform:'uppercase' as const, marginBottom:4 }}>Pending PM Approval</div>
+                    <div style={{ fontSize:24, fontWeight:800, color:'#D97706' }}>{stnPending.length}</div>
+                  </div>
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:700, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:6 }}>By PM</div>
+                    <BreakdownTable data={stnByPM} color="#D97706" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:700, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:6 }}>By Region</div>
+                    <BreakdownTable data={stnByRegion} color="#D97706" />
+                  </div>
+                </div>
               </div>
-              <div style={{ background:'#FEF2F2', borderRadius:8, padding:'10px 14px' }}>
-                <div style={{ fontSize:10, fontWeight:600, color:'#991B1B', textTransform:'uppercase' as const, marginBottom:4 }}>Pending PM Approval</div>
-                <div style={{ fontSize:24, fontWeight:800, color:'#DC2626' }}>
-                  {items.filter((i:any) => !i.received).length}
+
+              {/* SRN Card */}
+              <div style={{ ...card, padding:'18px 20px' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+                  <span style={{ fontSize:18 }}>🔄</span>
+                  <span style={{ fontSize:14, fontWeight:700, color:Theme.primary }}>SRN — Store Return Note</span>
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+                  <div style={{ background:Theme.primaryLight, borderRadius:8, padding:'10px 14px' }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>Total Items</div>
+                    <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{items.length}</div>
+                  </div>
+                  <div style={{ background:'#FEF2F2', borderRadius:8, padding:'10px 14px' }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:'#991B1B', textTransform:'uppercase' as const, marginBottom:4 }}>Pending PM Approval</div>
+                    <div style={{ fontSize:24, fontWeight:800, color:'#DC2626' }}>{srnPending.length}</div>
+                  </div>
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:700, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:6 }}>By PM</div>
+                    <BreakdownTable data={srnByPM} color="#DC2626" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:700, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:6 }}>By Region</div>
+                    <BreakdownTable data={srnByRegion} color="#DC2626" />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
 
         {isLoading && <div style={{ ...card, textAlign:'center', padding:40, color:Theme.textMuted }}>Loading SRN data...</div>}
 
