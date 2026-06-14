@@ -99,6 +99,12 @@ export default function SRNReturnPage() {
   }, [stnAllItems, projects]);
 
   // ── KPI aggregations ─────────────────────────────────────────────────────
+  const [kpiSubFilter, setKpiSubFilter] = useState<{type:string;status:string}|null>(null);
+  const toggleKpiSub = (type: string, status: string) => {
+    if (kpiSubFilter?.type===type && kpiSubFilter?.status===status) setKpiSubFilter(null);
+    else setKpiSubFilter({ type, status });
+  };
+
   const stnByPM = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
     const filtered = kpiSubFilter?.type==='stn'
@@ -147,11 +153,6 @@ export default function SRNReturnPage() {
   const srnPendingCount  = srnRawItems.filter((i:any) => !i.received).length;
   const srnRejectedCount = srnRawItems.filter((i:any) => i.received === false && i.pm_comment).length;
 
-  const [kpiSubFilter, setKpiSubFilter] = useState<{type:string;status:string}|null>(null);
-  const toggleKpiSub = (type: string, status: string) => {
-    if (kpiSubFilter?.type===type && kpiSubFilter?.status===status) setKpiSubFilter(null);
-    else setKpiSubFilter({ type, status });
-  };
 
   // ── Handle card filter click ─────────────────────────────────────────────
   const handleCardClick = (type: string, field: string, value: string) => {
