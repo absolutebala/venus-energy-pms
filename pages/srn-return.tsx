@@ -100,6 +100,8 @@ export default function SRNReturnPage() {
 
   // ── KPI aggregations ─────────────────────────────────────────────────────
   const [kpiSubFilter, setKpiSubFilter] = useState<{type:string;status:string}|null>(null);
+  const [statusDistFilter, setStatusDistFilter] = useState<{type:string;value:string}|null>(null);
+  const [agingDistFilter,  setAgingDistFilter]  = useState<{type:string;bucket:string}|null>(null);
   const toggleKpiSub = (type: string, status: string) => {
     if (kpiSubFilter?.type===type && kpiSubFilter?.status===status) {
       setKpiSubFilter(null);
@@ -191,6 +193,26 @@ export default function SRNReturnPage() {
         const val = cardFilter.field === 'pm' ? proj.pm : proj.region;
         if (val !== cardFilter.value) return false;
       }
+      // Apply statusDistFilter
+      if (statusDistFilter) {
+        const proj0 = (projects as any[]).find(p => p.id === proj.projectId);
+        const ps = proj?.projectStatus || 'Not Set';
+        if (statusDistFilter.type === 'stn' && proj.stnItems.length === 0) return false;
+        if (statusDistFilter.type === 'srn' && proj.srnItems.length === 0) return false;
+        if (ps !== statusDistFilter.value) return false;
+      }
+      // Apply agingDistFilter
+      if (agingDistFilter) {
+        const proj0 = (projects as any[]).find(p => p.id === proj.projectId);
+        const aging = proj?.aging || 0;
+        const bucket = agingDistFilter.bucket;
+        if (agingDistFilter.type === 'stn' && proj.stnItems.length === 0) return false;
+        if (agingDistFilter.type === 'srn' && proj.srnItems.length === 0) return false;
+        if (bucket === '0-30' && !(aging <= 30)) return false;
+        if (bucket === '31-60' && !(aging > 30 && aging <= 60)) return false;
+        if (bucket === '61-90' && !(aging > 60 && aging <= 90)) return false;
+        if (bucket === '90+' && !(aging > 90)) return false;
+      }
       // Apply kpiSubFilter
       if (kpiSubFilter) {
         if (kpiSubFilter.type === 'stn') {
@@ -213,13 +235,13 @@ export default function SRNReturnPage() {
              proj.poNo.toLowerCase().includes(s) ||
              proj.vendor.toLowerCase().includes(s);
     });
-  }, [allProjectIds, srnGrouped, stnGrouped, cardFilter, search, kpiSubFilter]);
+  }, [allProjectIds, srnGrouped, stnGrouped, cardFilter, search, kpiSubFilter, statusDistFilter, agingDistFilter, projects]);
 
   // ── Pagination ───────────────────────────────────────────────────────────
   const PER_PAGE = 20;
   const [page, setPage] = React.useState(1);
   React.useEffect(() => { if (router.isReady) { const p=Number(router.query.page); if(p&&p>0) setPage(p); } }, [router.isReady]);
-  React.useEffect(() => { setPage(1); router.replace({query:{...router.query,page:1}},undefined,{shallow:true}); }, [search, cardFilter, showSRN, showSTN]);
+  React.useEffect(() => { setPage(1); router.replace({query:{...router.query,page:1}},undefined,{shallow:true}); }, [search, cardFilter, showSRN, showSTN, kpiSubFilter, statusDistFilter, agingDistFilter]);
   const totalPages = Math.ceil(filteredProjects.length / PER_PAGE);
   const paginated  = filteredProjects.slice((page-1)*PER_PAGE, page*PER_PAGE);
   const isLoading  = loading || projLoading || stnLoading;
@@ -345,6 +367,118 @@ export default function SRNReturnPage() {
             </div>
           </div>
         </div>
+
+        {/* Project Status + Aging Distribution Cards */}
+        {!isLoading && (() => {
+          const agingBuckets = [
+            { label:'0–30d', bucket:'0-30', color:'#0D9488', fn:(p:any)=>(p?.aging||0)<=30 },
+            { label:'31–60d', bucket:'31-60', color:'#D97706', fn:(p:any)=>(p?.aging||0)>30&&(p?.aging||0)<=60 },
+            { label:'61–90d', bucket:'61-90', color:'#DC2626', fn:(p:any)=>(p?.aging||0)>60&&(p?.aging||0)<=90 },
+            { label:'90d+', bucket:'90+', color:'#7C3AED', fn:(p:any)=>(p?.aging||0)>90 },
+          ];
+          const statusColors: Record<string,string> = { 'Work Completed':'#16A34A','WCC Raised':'#0D9488','Invoice Submitted':'#2563EB','PO Amendment Done':'#7C3AED','Not Started':'#6B7280','In Progress':'#D97706','Delayed':'#DC2626' };
+
+          // STN projects
+          const stnProjects = stnGrouped.map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
+          const srnProjects = srnGrouped.map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
+
+          const stnStatusGroups: Record<string,number> = {};
+          stnProjects.forEach((p:any) => { const s=p.projectStatus||'Not Set'; stnStatusGroups[s]=(stnStatusGroups[s]||0)+1; });
+          const srnStatusGroups: Record<string,number> = {};
+          srnProjects.forEach((p:any) => { const s=p.projectStatus||'Not Set'; srnStatusGroups[s]=(srnStatusGroups[s]||0)+1; });
+
+          return (
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:14, marginBottom:20 }}>
+              {/* STN Status Distribution */}
+              <div style={{ ...card, padding:'16px 18px' }}>
+                <div style={{ fontSize:13, fontWeight:700, color:'#D97706', marginBottom:12 }}>
+                  📦 STN — Project Status
+                  {statusDistFilter?.type==='stn' && <span onClick={()=>setStatusDistFilter(null)} style={{ marginLeft:6, fontSize:10, color:'#DC2626', cursor:'pointer' }}>✕</span>}
+                </div>
+                {Object.entries(stnStatusGroups).sort((a,b)=>b[1]-a[1]).map(([s,n])=>{
+                  const c2=statusColors[s]||'#6B7280'; const pct=Math.round(n/(stnProjects.length||1)*100);
+                  const isActive=statusDistFilter?.type==='stn'&&statusDistFilter?.value===s;
+                  return (
+                    <div key={s} onClick={()=>setStatusDistFilter(isActive?null:{type:'stn',value:s})} style={{ marginBottom:8, cursor:'pointer', opacity:statusDistFilter?.type==='stn'&&!isActive?0.5:1 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:2 }}>
+                        <span style={{ fontSize:11, color:isActive?c2:Theme.text, fontWeight:isActive?700:400 }}>{s}</span>
+                        <span style={{ fontSize:11, fontWeight:700, color:c2 }}>{n}</span>
+                      </div>
+                      <div style={{ height:4, background:Theme.border, borderRadius:2 }}>
+                        <div style={{ height:4, width:`${pct}%`, background:c2, borderRadius:2 }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* STN Aging Distribution */}
+              <div style={{ ...card, padding:'16px 18px' }}>
+                <div style={{ fontSize:13, fontWeight:700, color:'#D97706', marginBottom:12 }}>
+                  📦 STN — Aging
+                  {agingDistFilter?.type==='stn' && <span onClick={()=>setAgingDistFilter(null)} style={{ marginLeft:6, fontSize:10, color:'#DC2626', cursor:'pointer' }}>✕</span>}
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                  {agingBuckets.map(b=>{
+                    const n=stnProjects.filter(b.fn).length; const isActive=agingDistFilter?.type==='stn'&&agingDistFilter?.bucket===b.bucket;
+                    return (
+                      <div key={b.label} onClick={()=>setAgingDistFilter(isActive?null:{type:'stn',bucket:b.bucket})}
+                        style={{ background:isActive?`${b.color}15`:Theme.bg, border:`2px solid ${isActive?b.color:Theme.border}`,
+                          borderRadius:8, padding:'10px 12px', cursor:'pointer', opacity:agingDistFilter?.type==='stn'&&!isActive?0.5:1 }}>
+                        <div style={{ fontSize:9, fontWeight:600, color:b.color, textTransform:'uppercase' as const, marginBottom:2 }}>{b.label}</div>
+                        <div style={{ fontSize:20, fontWeight:800, color:b.color }}>{n}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* SRN Status Distribution */}
+              <div style={{ ...card, padding:'16px 18px' }}>
+                <div style={{ fontSize:13, fontWeight:700, color:'#DC2626', marginBottom:12 }}>
+                  🔄 SRN — Project Status
+                  {statusDistFilter?.type==='srn' && <span onClick={()=>setStatusDistFilter(null)} style={{ marginLeft:6, fontSize:10, color:'#DC2626', cursor:'pointer' }}>✕</span>}
+                </div>
+                {Object.entries(srnStatusGroups).sort((a,b)=>b[1]-a[1]).map(([s,n])=>{
+                  const c2=statusColors[s]||'#6B7280'; const pct=Math.round(n/(srnProjects.length||1)*100);
+                  const isActive=statusDistFilter?.type==='srn'&&statusDistFilter?.value===s;
+                  return (
+                    <div key={s} onClick={()=>setStatusDistFilter(isActive?null:{type:'srn',value:s})} style={{ marginBottom:8, cursor:'pointer', opacity:statusDistFilter?.type==='srn'&&!isActive?0.5:1 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:2 }}>
+                        <span style={{ fontSize:11, color:isActive?c2:Theme.text, fontWeight:isActive?700:400 }}>{s}</span>
+                        <span style={{ fontSize:11, fontWeight:700, color:c2 }}>{n}</span>
+                      </div>
+                      <div style={{ height:4, background:Theme.border, borderRadius:2 }}>
+                        <div style={{ height:4, width:`${pct}%`, background:c2, borderRadius:2 }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* SRN Aging Distribution */}
+              <div style={{ ...card, padding:'16px 18px' }}>
+                <div style={{ fontSize:13, fontWeight:700, color:'#DC2626', marginBottom:12 }}>
+                  🔄 SRN — Aging
+                  {agingDistFilter?.type==='srn' && <span onClick={()=>setAgingDistFilter(null)} style={{ marginLeft:6, fontSize:10, color:'#DC2626', cursor:'pointer' }}>✕</span>}
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                  {agingBuckets.map(b=>{
+                    const n=srnProjects.filter(b.fn).length; const isActive=agingDistFilter?.type==='srn'&&agingDistFilter?.bucket===b.bucket;
+                    return (
+                      <div key={b.label} onClick={()=>setAgingDistFilter(isActive?null:{type:'srn',bucket:b.bucket})}
+                        style={{ background:isActive?`${b.color}15`:Theme.bg, border:`2px solid ${isActive?b.color:Theme.border}`,
+                          borderRadius:8, padding:'10px 12px', cursor:'pointer', opacity:agingDistFilter?.type==='srn'&&!isActive?0.5:1 }}>
+                        <div style={{ fontSize:9, fontWeight:600, color:b.color, textTransform:'uppercase' as const, marginBottom:2 }}>{b.label}</div>
+                        <div style={{ fontSize:20, fontWeight:800, color:b.color }}>{n}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Toggle bar */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
