@@ -107,7 +107,7 @@ export default function Header() {
       const { data: recentAct } = await supabase.from('activity_log').select('project_id,action,by_name,created_at,projects(po_no,indus_id,type)')
         .gte('created_at',week).order('created_at',{ascending:false}).limit(5);
       recentAct?.forEach((a:any,i:number) => notifs.push({ id:`act-${i}`, type:'info', is_read:false,
-        title:a.action, message:`${a.by_name} · PO: ${(a as any).projects?.po_no||a.project_id} · ${(a as any).projects?.indus_id||''}`,
+        title:a.action, message:`${a.by_name} · PO: ${(a as any).projects?.po_no||a.project_id} · ${(a as any).projects?.indus_id||''}${(a as any).projects?.type ? " · " + (a as any).projects.type : ""}`,
         link:`/projects/${a.project_id}`, created_at: a.created_at }));
     }
 
@@ -155,7 +155,7 @@ export default function Header() {
           .in('project_id', myProjectIds.slice(0,50)).gte('created_at',week)
           .order('created_at',{ascending:false}).limit(5);
         recentAct?.forEach((a:any,i:number) => notifs.push({ id:`act-${i}`, type:'info', is_read:false,
-          title:a.action, message:`${a.by_name} · PO: ${(a as any).projects?.po_no||a.project_id} · ${(a as any).projects?.indus_id||''}`,
+          title:a.action, message:`${a.by_name} · PO: ${(a as any).projects?.po_no||a.project_id} · ${(a as any).projects?.indus_id||''}${(a as any).projects?.type ? " · " + (a as any).projects.type : ""}`,
           link:`/projects/${a.project_id}`, created_at: a.created_at }));
       }
     }
@@ -192,7 +192,7 @@ export default function Header() {
           .in('project_id', myProjectIds.slice(0,50)).gte('created_at',week)
           .order('created_at',{ascending:false}).limit(5);
         recentAct?.forEach((a:any,i:number) => notifs.push({ id:`act-${i}`, type:'info', is_read:false,
-          title:a.action, message:`${a.by_name} · PO: ${(a as any).projects?.po_no||a.project_id} · ${(a as any).projects?.indus_id||''}`,
+          title:a.action, message:`${a.by_name} · PO: ${(a as any).projects?.po_no||a.project_id} · ${(a as any).projects?.indus_id||''}${(a as any).projects?.type ? " · " + (a as any).projects.type : ""}`,
           link:`/projects/${a.project_id}`, created_at: a.created_at }));
       }
     }
@@ -238,7 +238,7 @@ export default function Header() {
           .in('project_id', myProjectIds.slice(0,50)).gte('created_at',week)
           .order('created_at',{ascending:false}).limit(5);
         recentAct?.forEach((a:any,i:number) => notifs.push({ id:`act-${i}`, type:'info', is_read:false,
-          title:a.action, message:`${a.by_name} · PO: ${(a as any).projects?.po_no||a.project_id} · ${(a as any).projects?.indus_id||''}`,
+          title:a.action, message:`${a.by_name} · PO: ${(a as any).projects?.po_no||a.project_id} · ${(a as any).projects?.indus_id||''}${(a as any).projects?.type ? " · " + (a as any).projects.type : ""}`,
           link:`/projects/${a.project_id}`, created_at: a.created_at }));
       }
     }
