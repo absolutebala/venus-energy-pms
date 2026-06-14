@@ -324,7 +324,8 @@ export default function InvoicesPage() {
                 {displayInvoices.map((inv, idx) => {
                   const proj = projects.find((p:any) => p.id === inv.projectId);
                   return (
-                    <tr key={inv.id}
+                    <React.Fragment key={inv.id}>
+                    <tr
                       onClick={() => inv.projectId && router.push(`/projects/${inv.projectId}`)}
                       style={{ background: idx % 2 === 0 ? "#fff" : T.bg, cursor:"pointer" }}
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = T.primaryLight}
@@ -404,6 +405,7 @@ export default function InvoicesPage() {
                         </td>
                       </tr>
                     )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
