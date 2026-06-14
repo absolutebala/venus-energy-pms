@@ -283,6 +283,9 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
   const [utilisedMap, setUtilisedMap] = React.useState<Record<string,string>>({});
   const [vendorCommentMap, setVendorCommentMap] = React.useState<Record<string,string>>({});
   const [toast,    setToast]    = React.useState<any>(null);
+  const [poRejectTarget,  setPoRejectTarget]  = React.useState<any>(null);
+  const [poRejectComment, setPoRejectComment] = React.useState('');
+  const [poCommentPopup,  setPoCommentPopup]  = React.useState<any>(null);
   const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', serialNo:'', documentNo:'', boqReqNo:'', amount:'', liftedDate:'', gateEntryNo:'', vehicleNo:'' });
   const [editRow,  setEditRow]  = React.useState<any>({});
 
@@ -335,6 +338,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
     fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff', color:T.text };
   const thS: React.CSSProperties  = { padding:'7px 8px', fontSize:9, fontWeight:700, textTransform:'uppercase',
     color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, background:T.primaryLight, whiteSpace:'nowrap' as const };
+  const T_success = '#0D9488'; const T_danger = '#DC2626'; const T_warning = '#D97706';
   const tdS: React.CSSProperties  = { padding:'8px 8px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
 
   const saveNew = async () => {
@@ -367,6 +371,32 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
     finally { setSubmitting(null); }
   };
 
+  const isPMRole = ['project_manager','super_admin','region_manager'].includes(poProfile?.role||'');
+
+  const popmApprove = async (item: any) => {
+    setSubmitting(item.id);
+    try {
+      await updateItem(item.id, { utilisedStatus:'pm_approved', pmApprovedQty: item.utilisedQty||0 } as any);
+      logActivity(projectId, `STN approved: ${item.description}`, poProfile?.full_name||'', poProfile?.role||'').catch(()=>{});
+      setToast({ msg:'✅ Approved', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSubmitting(null); }
+  };
+
+  const popmReject = (item: any) => { setPoRejectTarget(item); setPoRejectComment(''); };
+
+  const confirmPoReject = async () => {
+    if (!poRejectTarget || !poRejectComment.trim()) return;
+    setSubmitting(poRejectTarget.id);
+    try {
+      await updateItem(poRejectTarget.id, { utilisedStatus:'pm_rejected', pmApprovedQty: 0, pmComment: poRejectComment.trim() } as any);
+      logActivity(projectId, `STN rejected: ${poRejectComment}`, poProfile?.full_name||'', poProfile?.role||'').catch(()=>{});
+      setToast({ msg:'✗ Rejected', type:'info' });
+      setPoRejectTarget(null); setPoRejectComment('');
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSubmitting(null); }
+  };
+
   const saveEdit = async (id: string) => {
     setSaving(true);
     try {
@@ -383,6 +413,56 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
 
   return (
     <div>
+      {/* PM Reject Modal */}
+      {poRejectTarget && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:1000,
+          display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ background:'#fff', borderRadius:14, padding:28, width:420, boxShadow:'0 8px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ fontSize:16, fontWeight:700, color:'#DC2626', marginBottom:8 }}>✗ Reject STN Item</div>
+            <div style={{ fontSize:13, color:'#374151', marginBottom:12 }}><strong>{poRejectTarget.description}</strong><br/>
+              <span style={{ color:'#6B7280', fontSize:12 }}>Utilised Qty: {poRejectTarget.utilisedQty}</span></div>
+            <label style={{ fontSize:11, fontWeight:600, color:'#6B7280', textTransform:'uppercase' as const }}>Rejection Comment *</label>
+            <textarea value={poRejectComment} onChange={e=>setPoRejectComment(e.target.value)}
+              placeholder="Enter reason for rejection…" rows={3}
+              style={{ width:'100%', marginTop:6, marginBottom:14, border:'1.5px solid #E5E7EB', borderRadius:8,
+                padding:'8px 10px', fontSize:13, outline:'none', resize:'vertical' as const, boxSizing:'border-box' as const }} />
+            <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+              <button onClick={()=>setPoRejectTarget(null)}
+                style={{ padding:'8px 18px', borderRadius:8, border:'1px solid #E5E7EB', background:'#fff', cursor:'pointer', fontSize:13 }}>Cancel</button>
+              <button onClick={confirmPoReject} disabled={!poRejectComment.trim()}
+                style={{ padding:'8px 18px', borderRadius:8, border:'none', background:'#DC2626', color:'#fff',
+                  cursor:poRejectComment.trim()?'pointer':'not-allowed', fontSize:13, fontWeight:600, opacity:poRejectComment.trim()?1:0.5 }}>
+                ✗ Confirm Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Comment Popup */}
+      {poCommentPopup && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:1000,
+          display:'flex', alignItems:'center', justifyContent:'center' }}
+          onClick={()=>setPoCommentPopup(null)}>
+          <div style={{ background:'#fff', borderRadius:14, padding:28, width:420, boxShadow:'0 8px 40px rgba(0,0,0,0.2)' }}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{ fontSize:15, fontWeight:700, color:'#7C3AED', marginBottom:8 }}>💬 PM Comment</div>
+            <div style={{ fontSize:13, fontWeight:600, color:'#374151', marginBottom:10 }}>{poCommentPopup.description}</div>
+            {poCommentPopup.pmComment ? (
+              <div style={{ fontSize:13, color:'#DC2626', background:'#FEF2F2', borderRadius:8, padding:'12px 14px', lineHeight:1.6 }}>
+                {poCommentPopup.pmComment}
+              </div>
+            ) : (
+              <div style={{ fontSize:13, color:'#9CA3AF', background:'#F9FAFB', borderRadius:8, padding:'12px 14px' }}>No comments yet.</div>
+            )}
+            <div style={{ marginTop:14, textAlign:'right' as const }}>
+              <button onClick={()=>setPoCommentPopup(null)}
+                style={{ padding:'7px 18px', borderRadius:8, border:'1px solid #E5E7EB', background:'#fff', cursor:'pointer', fontSize:13 }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading && <div style={{ color:T.textMuted, fontSize:13 }}>Loading STN items...</div>}
       {items.length > 0 && (
         <div style={{ overflowX:'auto' as const }}>
@@ -444,11 +524,28 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
                           <button onClick={()=>deleteItem(item.id)}
                             style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:14 }}>🗑</button>
                         </div>
-                      ) : ((item as any).utilisedStatus==='pending' || (item as any).utilisedStatus==='pm_rejected') ? (
+                      ) : (item as any).utilisedStatus==='submitted' && isPMRole ? (
+                        <div style={{ display:'flex', gap:4 }}>
+                          <button onClick={()=>popmApprove(item)} disabled={submitting===item.id}
+                            style={{ background:'#0D9488', color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                            {submitting===item.id?'…':'✓ Approve'}
+                          </button>
+                          <button onClick={()=>popmReject(item)} disabled={submitting===item.id}
+                            style={{ background:'#DC2626', color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                            ✗ Reject
+                          </button>
+                        </div>
+                      ) : ((item as any).utilisedStatus==='pending' || (item as any).utilisedStatus==='pm_rejected') && !isPMRole ? (
                         <button onClick={()=>submitUtilisation(item,'submitted')} disabled={submitting===item.id}
-                          style={{ background:(item as any).utilisedStatus==='pm_rejected'?T.warning:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>
+                          style={{ background:(item as any).utilisedStatus==='pm_rejected'?'#D97706':T.primary, color:'#fff', border:'none', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>
                           {submitting===item.id?'…':(item as any).utilisedStatus==='pm_rejected'?'Resubmit':'Submit'}
                         </button>
+                      ) : (item as any).pmComment ? (
+                        <span onClick={()=>setPoCommentPopup(item)}
+                          style={{ fontSize:11, fontWeight:700, color:'#7C3AED', background:'#F5F3FF',
+                            padding:'2px 10px', borderRadius:20, cursor:'pointer', whiteSpace:'nowrap' as const }}>
+                          💬 Comment
+                        </span>
                       ) : null}
                     </td>
                   </tr>
