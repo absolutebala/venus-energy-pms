@@ -1227,8 +1227,11 @@ function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; r
     onAllReceived(allReceived);
   }, [items, onAllReceived]);
 
-  const isPM   = ['project_manager','super_admin','region_manager'].includes(role);
-  const canAdd = ['super_admin','vendor','pm'].includes(role);
+  const isPM    = ['project_manager','super_admin','region_manager'].includes(role);
+  const canAdd  = ['super_admin','vendor','pm'].includes(role);
+  const canEdit = ['super_admin','pm','rm','project_manager','super_admin','region_manager'].includes(role);
+  const [editId,  setEditId]  = React.useState<string|null>(null);
+  const [editRow, setEditRow] = React.useState<any>({});
 
   const addItem = async () => {
     if (!newRow.description.trim()) { setToast({ msg:'Description is required', type:'error' }); return; }
@@ -1280,6 +1283,37 @@ function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; r
       } else {
         setToast({ msg: received ? '✅ Marked as Received' : '❌ Marked as Not Received', type: received ? 'success' : 'info' });
       }
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+    finally { setSaving(null); }
+  };
+
+  const saveEdit = async () => {
+    if (!editId) return;
+    setSaving(editId);
+    try {
+      const payload: any = {
+        description:   editRow.description?.trim(),
+        hsn_code:      editRow.hsn_code?.trim() || null,
+        uom:           editRow.uom?.trim() || null,
+        quantity:      Number(editRow.quantity)||0,
+        rate:          Number(editRow.rate)||0,
+        gst_rate:      Number(editRow.gst_rate)||18,
+        amount:        Number(editRow.amount)||0,
+        serial_no:     editRow.serial_no?.trim() || null,
+        document_no:   editRow.document_no?.trim() || null,
+        boq_req_no:    editRow.boq_req_no?.trim() || null,
+        return_qty:    Number(editRow.return_qty)||0,
+        return_date:   editRow.return_date || null,
+        lifted_date:   editRow.lifted_date || null,
+        gate_entry_no: editRow.gate_entry_no?.trim() || null,
+        vehicle_no:    editRow.vehicle_no?.trim() || null,
+      };
+      const { error } = await sb.from('srn').update(payload).eq('id', editId);
+      if (error) throw new Error(error.message);
+      setItems(prev => prev.map((i:any) => i.id === editId ? { ...i, ...payload } : i));
+      logSRNAct(projectId, `SRN item edited: ${editRow.description}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+      setToast({ msg:'✅ SRN item updated', type:'success' });
+      setEditId(null); setEditRow({});
     } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
     finally { setSaving(null); }
   };
@@ -1440,26 +1474,77 @@ function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; r
                       : <span style={{ fontSize:11, fontWeight:700, color:'#DC2626', background:'#FEF2F2', padding:'2px 10px', borderRadius:20 }}>✗ No</span>}
                   </td>
                   <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
-                    {isPM && !item.received && (
-                      <div style={{ display:'flex', gap:4 }}>
-                        <button onClick={()=>markReceived(item, true)} disabled={saving===item.id}
-                          style={{ background:'#0D9488', color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
-                          ✓ Yes
+                    <div style={{ display:'flex', gap:4, flexWrap:'wrap' as const }}>
+                      {isPM && !item.received && (
+                        <>
+                          <button onClick={()=>markReceived(item, true)} disabled={saving===item.id}
+                            style={{ background:'#0D9488', color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                            ✓ Yes
+                          </button>
+                          <button onClick={()=>markReceived(item, false)} disabled={saving===item.id}
+                            style={{ background:'#DC2626', color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
+                            ✗ No
+                          </button>
+                        </>
+                      )}
+                      {canEdit && (
+                        <button onClick={()=>{ setEditId(editId===item.id?null:item.id); setEditRow({...item}); }}
+                          style={{ background:editId===item.id?T.primary:'#F0FDFA', color:editId===item.id?'#fff':'#0D9488', border:`1px solid #99F6E4`, borderRadius:6, padding:'4px 8px', fontSize:11, cursor:'pointer' }}>
+                          ✏️
                         </button>
-                        <button onClick={()=>markReceived(item, false)} disabled={saving===item.id}
-                          style={{ background:'#DC2626', color:'#fff', border:'none', borderRadius:6, padding:'4px 10px', fontSize:11, cursor:'pointer', fontWeight:600 }}>
-                          ✗ No
+                      )}
+                      {canAdd && (
+                        <button onClick={()=>deleteItem(item.id)} disabled={saving===item.id}
+                          style={{ background:'#FEF2F2', color:'#DC2626', border:`1px solid #FECACA`, borderRadius:6, padding:'4px 8px', fontSize:11, cursor:'pointer' }}>
+                          🗑
                         </button>
-                      </div>
-                    )}
-                    {canAdd && !item.received && (
-                      <button onClick={()=>deleteItem(item.id)} disabled={saving===item.id}
-                        style={{ background:'#FEF2F2', color:'#DC2626', border:`1px solid #FECACA`, borderRadius:6, padding:'4px 8px', fontSize:11, cursor:'pointer', marginLeft:4 }}>
-                        🗑
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </td>
                 </tr>
+                {editId === item.id && (
+                  <tr style={{ background:T.primaryLight }}>
+                    <td colSpan={18} style={{ padding:14, borderBottom:`1px solid ${T.border}` }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:10 }}>✏️ Edit SRN Item</div>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:8 }}>
+                        <div style={{ gridColumn:'1/3' }}>
+                          <div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Description *</div>
+                          <input style={inp} value={editRow.description||''} onChange={e=>setEditRow((p:any)=>({...p,description:e.target.value}))} />
+                        </div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>HSN Code</div><input style={inp} value={editRow.hsn_code||''} onChange={e=>setEditRow((p:any)=>({...p,hsn_code:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>UOM</div><input style={inp} value={editRow.uom||''} onChange={e=>setEditRow((p:any)=>({...p,uom:e.target.value}))} /></div>
+                      </div>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:8 }}>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Qty</div><input style={inp} type="number" value={editRow.quantity||''} onChange={e=>setEditRow((p:any)=>({...p,quantity:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Rate</div><input style={inp} type="number" value={editRow.rate||''} onChange={e=>setEditRow((p:any)=>({...p,rate:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>GST%</div><input style={inp} type="number" value={editRow.gst_rate||''} onChange={e=>setEditRow((p:any)=>({...p,gst_rate:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Amount</div><input style={inp} type="number" value={editRow.amount||''} onChange={e=>setEditRow((p:any)=>({...p,amount:e.target.value}))} /></div>
+                      </div>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:8 }}>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Serial No</div><input style={inp} value={editRow.serial_no||''} onChange={e=>setEditRow((p:any)=>({...p,serial_no:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Doc No</div><input style={inp} value={editRow.document_no||''} onChange={e=>setEditRow((p:any)=>({...p,document_no:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>BOQ Req No</div><input style={inp} value={editRow.boq_req_no||''} onChange={e=>setEditRow((p:any)=>({...p,boq_req_no:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Return Qty</div><input style={inp} type="number" value={editRow.return_qty||''} onChange={e=>setEditRow((p:any)=>({...p,return_qty:e.target.value}))} /></div>
+                      </div>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:12 }}>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Return Date</div><DateInput value={editRow.return_date||''} onChange={v=>setEditRow((p:any)=>({...p,return_date:v}))} style={inp} max="9999-12-31" /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Lifted Date</div><DateInput value={editRow.lifted_date||''} onChange={v=>setEditRow((p:any)=>({...p,lifted_date:v}))} style={inp} max="9999-12-31" /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Gate Entry No</div><input style={inp} value={editRow.gate_entry_no||''} onChange={e=>setEditRow((p:any)=>({...p,gate_entry_no:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Vehicle No</div><input style={inp} value={editRow.vehicle_no||''} onChange={e=>setEditRow((p:any)=>({...p,vehicle_no:e.target.value}))} /></div>
+                      </div>
+                      <div style={{ display:'flex', gap:8 }}>
+                        <button onClick={saveEdit} disabled={saving===editId}
+                          style={{ background:T.primary, color:'#fff', border:'none', borderRadius:7, padding:'6px 18px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                          {saving===editId?'Saving…':'💾 Save Changes'}
+                        </button>
+                        <button onClick={()=>{ setEditId(null); setEditRow({}); }}
+                          style={{ background:'#fff', color:T.textMuted, border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 18px', fontSize:12, cursor:'pointer' }}>
+                          Cancel
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               ))}
             </tbody>
           </table>
