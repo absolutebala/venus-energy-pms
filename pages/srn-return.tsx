@@ -204,7 +204,7 @@ export default function SRNReturnPage() {
       // Apply agingDistFilter
       if (agingDistFilter) {
         const proj0 = (projects as any[]).find(p => p.id === proj.projectId);
-        const aging = proj?.aging || 0;
+        const aging = (proj0 as any)?.aging || 0;
         const bucket = agingDistFilter.bucket;
         if (agingDistFilter.type === 'stn' && proj.stnItems.length === 0) return false;
         if (agingDistFilter.type === 'srn' && proj.srnItems.length === 0) return false;
