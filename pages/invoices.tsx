@@ -4,6 +4,7 @@ import DateInput from '@/components/DateInput';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useInvoices } from '@/context/InvoiceContext';
+import * as XLSX from 'xlsx';
 import { useProjects } from '@/context/ProjectContext';
 import { T, card, btnPrimary, btnSecondary } from '@/lib/theme';
 import Toast from '@/components/Toast';
@@ -63,6 +64,9 @@ export default function InvoicesPage() {
   const [saving,      setSaving]      = useState(false);
   const [editInvId,   setEditInvId]   = useState<string|null>(null);
   const [editInvRow,  setEditInvRow]  = useState<any>({});
+  const [dateFrom,    setDateFrom]    = useState('');
+  const [dateTo,      setDateTo]      = useState('');
+  const canExport = !authLoading && (profile?.role === 'super_admin' || profile?.role === 'accounting_team');
   const [newInv,      setNewInv]      = useState({
     invoiceNo:"", invoiceDate:"", invoiceAmount:"",
     gst:"", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
@@ -102,14 +106,24 @@ export default function InvoicesPage() {
     : null;
 
   const today = new Date();
-  const pendingApproval = invoices.filter(i => ["Submitted","Under Review"].includes(i.invoiceStatus));
-  const pendingPayment  = invoices.filter(i => i.paymentStatus === "Pending");
-  const overdue         = invoices.filter(i => i.paymentStatus !== "Paid" && i.dueDate && new Date(i.dueDate) < today);
+
+  // Apply date filter — must be before KPI calcs
+  const dateFilteredInvoices = React.useMemo(() => {
+    return invoices.filter(i => {
+      if (dateFrom && i.invoiceDate < dateFrom) return false;
+      if (dateTo   && i.invoiceDate > dateTo)   return false;
+      return true;
+    });
+  }, [invoices, dateFrom, dateTo]);
+
+  const pendingApproval = dateFilteredInvoices.filter(i => ["Submitted","Under Review"].includes(i.invoiceStatus));
+  const pendingPayment  = dateFilteredInvoices.filter(i => i.paymentStatus === "Pending");
+  const overdue         = dateFilteredInvoices.filter(i => i.paymentStatus !== "Paid" && i.dueDate && new Date(i.dueDate) < today);
 
   const displayInvoices = useMemo(() => {
     let list = poSearch && matchedProject
-      ? invoices.filter(i => i.projectId === (matchedProject as any).id)
-      : [...invoices];
+      ? dateFilteredInvoices.filter(i => i.projectId === (matchedProject as any).id)
+      : [...dateFilteredInvoices];
     if (cardFilter === "pendingApproval") list = list.filter(i => ["Submitted","Under Review"].includes(i.invoiceStatus));
     if (cardFilter === "pendingPayment")  list = list.filter(i => i.paymentStatus === "Pending");
     if (cardFilter === "overdue")         list = list.filter(i => i.paymentStatus !== "Paid" && i.dueDate && new Date(i.dueDate) < today);
@@ -119,7 +133,7 @@ export default function InvoicesPage() {
       return sortDir === "asc" ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
     });
     return list;
-  }, [invoices, poSearch, matchedProject, cardFilter, sortKey, sortDir]);
+  }, [dateFilteredInvoices, poSearch, matchedProject, cardFilter, sortKey, sortDir]);
 
   const totalInvoiced = displayInvoices.reduce((a, i) => a + i.invoiceAmount, 0);
   const totalGST      = displayInvoices.reduce((a, i) => a + i.gst, 0);
@@ -178,6 +192,29 @@ export default function InvoicesPage() {
     padding:"10px 12px", fontSize:13, borderBottom:`1px solid ${T.border}`, verticalAlign:"middle" as const,
   };
 
+  const exportToExcel = () => {
+    const rows = displayInvoices.map((inv, idx) => ({
+      'S.No':           idx + 1,
+      'Invoice No':     inv.invoiceNo,
+      'Invoice Date':   inv.invoiceDate,
+      'PO Number':      (inv as any).poNo || '',
+      'Basic Amount':   inv.invoiceAmount,
+      'GST (₹)':        inv.gst,
+      'Total Amount':   inv.totalAmount,
+      'WCC No':         (inv as any).wccNo || '',
+      'Receipt No':     (inv as any).receiptNo || '',
+      'Invoice Status': inv.invoiceStatus,
+      'Payment Status': inv.paymentStatus,
+      'Due Date':       inv.dueDate || '',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{wch:6},{wch:16},{wch:14},{wch:16},{wch:14},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Invoices');
+    const date = new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb, `Venus_Invoices_${date}.xlsx`);
+  };
+
   return (
     <Layout>
       <div className="fade-in">
@@ -189,9 +226,27 @@ export default function InvoicesPage() {
               {invLoading ? "Loading..." : `${invoices.length} invoices across ${new Set(invoices.map(i=>i.projectId)).size} projects`}
             </div>
           </div>
-          {canCreate && (
-            <button onClick={() => setShowForm(true)} style={{ ...btnPrimary, fontSize:13 }}>+ New Invoice</button>
-          )}
+          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+            <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+              <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>From</span>
+              <input type="date" value={dateFrom} onChange={e=>{ setDateFrom(e.target.value); setCardFilter(null); }}
+                style={{ border:`1px solid ${T.border}`, borderRadius:7, padding:'7px 10px', fontSize:12, outline:'none', color:T.text }} />
+              <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>To</span>
+              <input type="date" value={dateTo} onChange={e=>{ setDateTo(e.target.value); setCardFilter(null); }}
+                style={{ border:`1px solid ${T.border}`, borderRadius:7, padding:'7px 10px', fontSize:12, outline:'none', color:T.text }} />
+              {(dateFrom||dateTo) && <button onClick={()=>{ setDateFrom(''); setDateTo(''); }}
+                style={{ fontSize:11, color:'#DC2626', background:'none', border:'none', cursor:'pointer', fontWeight:600 }}>✕ Clear</button>}
+            </div>
+            {canExport && (
+              <button onClick={exportToExcel}
+                style={{ ...btnSecondary, fontSize:12, display:'flex', alignItems:'center', gap:6 }}>
+                📥 Excel
+              </button>
+            )}
+            {canCreate && (
+              <button onClick={() => setShowForm(true)} style={{ ...btnPrimary, fontSize:13 }}>+ New Invoice</button>
+            )}
+          </div>
         </div>
 
         {/* PO Search */}
@@ -223,7 +278,7 @@ export default function InvoicesPage() {
         {/* Clickable summary cards */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
           {[
-            { label:"Total Invoices",   value:invoices.length, sub:fmt(invoices.reduce((a,i)=>a+i.totalAmount,0)), color:T.primary,  filter:null,              icon:"📄" },
+            { label:"Total Invoices",   value:dateFilteredInvoices.length, sub:fmt(dateFilteredInvoices.reduce((a,i)=>a+i.totalAmount,0)), color:T.primary,  filter:null,              icon:"📄" },
             { label:"Pending Approval", value:pendingApproval.length, sub:`${pendingApproval.length} need review`, color:"#2563EB",  filter:"pendingApproval", icon:"⏳" },
             { label:"Pending Payment",  value:pendingPayment.length,  sub:fmt(pendingPayment.reduce((a,i)=>a+i.totalAmount,0)), color:"#D97706", filter:"pendingPayment", icon:"💳" },
             { label:"Overdue",          value:overdue.length, sub:fmt(overdue.reduce((a,i)=>a+i.totalAmount,0)), color:T.danger, filter:"overdue", icon:"⚠️" },
