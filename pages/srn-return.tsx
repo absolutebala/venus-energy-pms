@@ -186,6 +186,20 @@ export default function SRNReturnPage() {
         const val = cardFilter.field === 'pm' ? proj.pm : proj.region;
         if (val !== cardFilter.value) return false;
       }
+      // Apply kpiSubFilter
+      if (kpiSubFilter) {
+        if (kpiSubFilter.type === 'stn') {
+          const match = proj.stnItems.some((i:any) =>
+            kpiSubFilter.status === 'pm_rejected' ? i.utilisedStatus === 'pm_rejected' : i.utilisedStatus !== 'pm_approved'
+          );
+          if (!match) return false;
+        } else {
+          const match = proj.srnItems.some((i:any) =>
+            kpiSubFilter.status === 'rejected' ? (i.received === false && i.pm_comment) : !i.received
+          );
+          if (!match) return false;
+        }
+      }
       // Apply search
       if (!search) return true;
       const s = search.toLowerCase();
@@ -194,7 +208,7 @@ export default function SRNReturnPage() {
              proj.poNo.toLowerCase().includes(s) ||
              proj.vendor.toLowerCase().includes(s);
     });
-  }, [allProjectIds, srnGrouped, stnGrouped, cardFilter, search]);
+  }, [allProjectIds, srnGrouped, stnGrouped, cardFilter, search, kpiSubFilter]);
 
   // ── Pagination ───────────────────────────────────────────────────────────
   const PER_PAGE = 20;
