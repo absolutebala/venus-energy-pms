@@ -1893,7 +1893,8 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
             </thead>
             <tbody>
               {items.map((item, idx) => (
-                <tr key={item.id} style={{ background:idx%2===0?'#fff':T.bg }}>
+                <React.Fragment key={item.id}>
+                <tr style={{ background:idx%2===0?'#fff':T.bg }}>
                   <td style={{ ...tdS, color:T.textMuted, width:32 }}>{idx+1}</td>
                   <td style={tdS}>
                     <div style={{ fontWeight:700, color:T.primary }}>{item.invoiceNo}</div>
@@ -1955,6 +1956,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
                     </td>
                   </tr>
                 )}
+                </React.Fragment>
               ))}
             </tbody>
             <tfoot>
