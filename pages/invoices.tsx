@@ -197,14 +197,20 @@ export default function InvoicesPage() {
   const exportToExcel = () => {
     const rows = displayInvoices.map((inv, idx) => ({
       'S.No':           idx + 1,
-      'Invoice No':     inv.invoiceNo,
-      'Invoice Date':   inv.invoiceDate,
-      'PO Number':      (inv as any).poNo || '',
-      'Basic Amount':   inv.invoiceAmount,
-      'GST (₹)':        inv.gst,
-      'Total Amount':   inv.totalAmount,
+      'PO No':          (inv as any).poNo || '',
+      'PO Date':        (projects.find((p:any)=>p.id===inv.projectId) as any)?.poDate || '',
+      'Indus ID':       (projects.find((p:any)=>p.id===inv.projectId) as any)?.indusId || '',
+      'Project ID':     inv.projectId || '',
+      'Project':        (projects.find((p:any)=>p.id===inv.projectId) as any)?.site || '',
       'WCC No':         (inv as any).wccNo || '',
       'Receipt No':     (inv as any).receiptNo || '',
+      'Invoice No':     inv.invoiceNo,
+      'Invoice Date':   inv.invoiceDate,
+      'Basic Amount':   inv.invoiceAmount,
+      'Tax Amount':     inv.gst,
+      'Total Amount':   inv.totalAmount,
+      'Circle':         (projects.find((p:any)=>p.id===inv.projectId) as any)?.region || '',
+      'Project Status': (projects.find((p:any)=>p.id===inv.projectId) as any)?.projectStatus || '',
       'Invoice Status': inv.invoiceStatus,
       'Payment Status': inv.paymentStatus,
       'Due Date':       inv.dueDate || '',
@@ -371,20 +377,21 @@ export default function InvoicesPage() {
               <thead>
                 <tr>
                   <th style={thS()}>#</th>
-                  {([["invoiceNo","Invoice No"],["invoiceDate","Invoice Date"],["invoiceAmount","Basic Amount (₹)"],["totalAmount","Total Amount (₹)"],
-                     ["invoiceAmount","Amount (₹)"],["gst","GST (₹)"],["totalAmount","Total (₹)"],
-                     ["invoiceStatus","Inv. Status"],["paymentStatus","Pay Status"],["dueDate","Due Date"]] as [SortKey,string][])
+                  {([["poNo","PO No"],["invoiceDate","PO Date"],["invoiceDate","Indus ID"],["invoiceNo","Project ID"],["invoiceNo","Project"],
+                     ["invoiceNo","WCC No"],["invoiceNo","Receipt No"],["invoiceNo","Invoice No"],["invoiceDate","Invoice Date"],
+                     ["invoiceAmount","Basic Amt (₹)"],["gst","Tax Amt (₹)"],["totalAmount","Total Amt (₹)"],
+                     ["invoiceNo","Circle"],["invoiceNo","Project Status"]] as [SortKey,string][])
                     .map(([key, label]) => (
-                      <th key={key} style={thS(key)} onClick={() => handleSort(key)}>
+                      <th key={label} style={thS(key)} onClick={() => handleSort(key)}>
                         {label}<SortIcon active={sortKey === key} dir={sortDir} />
                       </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {invLoading && <tr><td colSpan={10} style={{ padding:30, textAlign:"center" as const, color:T.textMuted }}>Loading invoices...</td></tr>}
+                {invLoading && <tr><td colSpan={16} style={{ padding:30, textAlign:"center" as const, color:T.textMuted }}>Loading invoices...</td></tr>}
                 {!invLoading && displayInvoices.length === 0 && (
-                  <tr><td colSpan={10} style={{ padding:32, textAlign:"center" as const, color:T.textDim }}>No invoices found</td></tr>
+                  <tr><td colSpan={16} style={{ padding:32, textAlign:"center" as const, color:T.textDim }}>No invoices found</td></tr>
                 )}
                 {displayInvoices.map((inv, idx) => {
                   const proj = projects.find((p:any) => p.id === inv.projectId);
@@ -396,19 +403,20 @@ export default function InvoicesPage() {
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = T.primaryLight}
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = idx % 2 === 0 ? "#fff" : T.bg}>
                       <td style={{ ...tdS, color:T.textMuted, width:36 }}>{idx + 1}</td>
-                      <td style={tdS}>
-                        <div style={{ fontWeight:700, color:T.primary, fontSize:13 }}>{inv.invoiceNo}</div>
-                        <div style={{ fontSize:10, color:T.textMuted }}>{inv.poNo}</div>
-                      </td>
+                      <td style={{ ...tdS, fontWeight:700, color:T.primary, whiteSpace:"nowrap" as const }}>{inv.poNo || "—"}</td>
+                      <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{proj ? fmtDate((proj as any).poDate) : "—"}</td>
+                      <td style={{ ...tdS, color:T.textMuted }}>{proj ? (proj as any).indusId || "—" : "—"}</td>
+                      <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{proj ? (proj as any).id || "—" : "—"}</td>
+                      <td style={{ ...tdS, maxWidth:120 }}><div style={{ fontSize:12, color:T.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{proj ? (proj as any).site || "—" : "—"}</div></td>
+                      <td style={tdS}>{(inv as any).wccNo || "—"}</td>
+                      <td style={tdS}>{(inv as any).receiptNo || "—"}</td>
+                      <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{inv.invoiceNo}</td>
                       <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{fmtDate(inv.invoiceDate)}</td>
                       <td style={{ ...tdS, textAlign:"right" as const, fontWeight:600 }}>{fmt(inv.invoiceAmount)}</td>
                       <td style={{ ...tdS, textAlign:"right" as const, color:T.textMuted }}>{fmt(inv.gst)}</td>
                       <td style={{ ...tdS, textAlign:"right" as const, fontWeight:700, color:T.primary }}>{fmt(inv.totalAmount)}</td>
-                      <td style={tdS}>{(inv as any).wccNo || "—"}</td>
-                      <td style={tdS}>{(inv as any).receiptNo || "—"}</td>
-                      <td style={tdS}><StatusPill label={inv.invoiceStatus} cfg={INV_STATUS_CFG[inv.invoiceStatus] || INV_STATUS_CFG.Draft} /></td>
-                      <td style={tdS}><StatusPill label={inv.paymentStatus} cfg={PAY_STATUS_CFG[inv.paymentStatus] || PAY_STATUS_CFG.Pending} /></td>
-                      <td style={{ ...tdS, whiteSpace:"nowrap" as const, color:T.textMuted }}>{fmtDate(inv.dueDate)}</td>
+                      <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{proj ? (proj as any).region || "—" : "—"}</td>
+                      <td style={tdS}>{proj ? <StatusPill label={(proj as any).projectStatus||'—'} cfg={{bg:'#F3F4F6',color:'#6B7280'}} /> : "—"}</td>
                       <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
                         <button onClick={e=>{e.stopPropagation();setEditInvId(editInvId===inv.id?null:inv.id);setEditInvRow({...inv});}}
                           style={{ background:editInvId===inv.id?T.primary:'#F0FDFA', color:editInvId===inv.id?'#fff':'#0D9488',
@@ -477,7 +485,7 @@ export default function InvoicesPage() {
               {displayInvoices.length > 0 && (
                 <tfoot>
                   <tr style={{ background:T.primaryLight, fontWeight:700 }}>
-                    <td colSpan={4} style={{ ...tdS, color:T.primary }}>Total</td>
+                    <td colSpan={10} style={{ ...tdS, color:T.primary }}>Total</td>
                     <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>{fmt(totalInvoiced)}</td>
                     <td style={{ ...tdS, textAlign:"right" as const, color:T.textMuted }}>{fmt(totalGST)}</td>
                     <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>{fmt(totalAmount)}</td>
