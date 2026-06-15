@@ -244,8 +244,11 @@ export default function SiteExpensesPage() {
 
         {/* Project Filters — cascading */}
         {(() => {
-          // Base: projects that match all OTHER active filters
+          // Only projects that have expenses in the current date-filtered set
+          const expenseProjectIds = new Set(expenses.map((e:any) => e.projectId));
+          // Base: expense-linked projects that match all OTHER active filters
           const cascadeProj = (exclude: string) => (projects as any[]).filter((p:any) => {
+            if (!expenseProjectIds.has(p.id)) return false;
             if (exclude!=='vendor' && expVendorFilter && p.vendor !== expVendorFilter) return false;
             if (exclude!=='pm'     && expPMFilter     && p.pm     !== expPMFilter)     return false;
             if (exclude!=='region' && expRegionFilter && p.region !== expRegionFilter) return false;
