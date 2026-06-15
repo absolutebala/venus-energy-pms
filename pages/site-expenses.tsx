@@ -342,11 +342,11 @@ export default function SiteExpensesPage() {
               style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:"6px 12px", fontSize:13, outline:"none", width:220 }} />
           </div>
           <div style={{ overflowX:"auto" as const }}>
-            <table style={{ width:"100%", borderCollapse:"collapse" as const }}>
+            <table style={{ width:"100%", borderCollapse:"collapse" as const, minWidth:1100 }}>
               <thead>
                 <tr>
                   {["#","Req. Date","PO Number","Indus ID","Remarks","Expense Type","Amount (₹)","TXN Ref","Payment Mode","Txn Date","Status",""].map((h,i)=>(
-                    <th key={i} style={{ ...thS, textAlign:i===5?"right" as const:"left" as const }}>{h}</th>
+                    <th key={i} style={{ ...thS, textAlign:i===6?"right" as const:"left" as const }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -404,36 +404,36 @@ export default function SiteExpensesPage() {
                   );
                 })}
               </tbody>
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 4px', borderTop:`1px solid ${T.border}`, marginTop:4 }}>
-                  <div style={{ fontSize:12, color:'#6B7280' }}>
-                    Showing {(page-1)*PER_PAGE+1}–{Math.min(page*PER_PAGE, allExpenses.length)} of {allExpenses.length} records
-                  </div>
-                  <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                    <button onClick={()=>{ const n=Math.max(1,page-1); setPage(n); router.push({query:{...router.query,page:n}},undefined,{shallow:true}); }} disabled={page===1}
-                      style={{ padding:'5px 12px', borderRadius:6, border:`1px solid #E5E7EB`, background:'#fff', cursor:page===1?'not-allowed':'pointer', fontSize:12, opacity:page===1?0.5:1 }}>← Prev</button>
-                    {Array.from({length:totalPages},(_,i)=>i+1).filter(n=>n===1||n===totalPages||Math.abs(n-page)<=1).reduce((acc:number[],n,i,arr)=>{ if(i>0&&n-arr[i-1]>1) acc.push(-1); acc.push(n); return acc; },[] as number[]).map((n,i)=>
-                      n===-1 ? <span key={`e${i}`} style={{ fontSize:12, color:'#9CA3AF' }}>…</span>
-                      : <button key={n} onClick={()=>{ setPage(n); router.push({query:{...router.query,page:n}},undefined,{shallow:true}); }}
-                          style={{ padding:'5px 10px', borderRadius:6, border:`1px solid ${page===n?T.primary:'#E5E7EB'}`, background:page===n?T.primary:'#fff', color:page===n?'#fff':'#374151', cursor:'pointer', fontSize:12, fontWeight:page===n?700:400, minWidth:32 }}>{n}</button>
-                    )}
-                    <button onClick={()=>{ const n=Math.min(totalPages,page+1); setPage(n); router.push({query:{...router.query,page:n}},undefined,{shallow:true}); }} disabled={page===totalPages}
-                      style={{ padding:'5px 12px', borderRadius:6, border:`1px solid #E5E7EB`, background:'#fff', cursor:page===totalPages?'not-allowed':'pointer', fontSize:12, opacity:page===totalPages?0.5:1 }}>Next →</button>
-                  </div>
-                </div>
-              )}
               {allExpenses.length > 0 && (
                 <tfoot>
                   <tr style={{ background:T.primaryLight, fontWeight:700 }}>
                     <td colSpan={5} style={{ ...tdS, color:T.primary }}>Total</td>
                     <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>{fmt(allExpenses.reduce((a:number,e:any)=>a+Number(e.amount),0))}</td>
-                    <td colSpan={4} style={tdS}></td>
+                    <td colSpan={6} style={tdS}></td>
                   </tr>
                 </tfoot>
               )}
             </table>
           </div>
+          {/* Pagination — outside table */}
+          {totalPages > 1 && (
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 4px', borderTop:`1px solid ${T.border}`, marginTop:4 }}>
+              <div style={{ fontSize:12, color:'#6B7280' }}>
+                Showing {(page-1)*PER_PAGE+1}–{Math.min(page*PER_PAGE, allExpenses.length)} of {allExpenses.length} records
+              </div>
+              <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                <button onClick={()=>{ const n=Math.max(1,page-1); setPage(n); router.push({query:{...router.query,page:n}},undefined,{shallow:true}); }} disabled={page===1}
+                  style={{ padding:'5px 12px', borderRadius:6, border:`1px solid #E5E7EB`, background:'#fff', cursor:page===1?'not-allowed':'pointer', fontSize:12, opacity:page===1?0.5:1 }}>← Prev</button>
+                {Array.from({length:totalPages},(_,i)=>i+1).filter(n=>n===1||n===totalPages||Math.abs(n-page)<=1).reduce((acc:number[],n,i,arr)=>{ if(i>0&&n-arr[i-1]>1) acc.push(-1); acc.push(n); return acc; },[] as number[]).map((n,i)=>
+                  n===-1 ? <span key={`e${i}`} style={{ fontSize:12, color:'#9CA3AF' }}>…</span>
+                  : <button key={n} onClick={()=>{ setPage(n); router.push({query:{...router.query,page:n}},undefined,{shallow:true}); }}
+                      style={{ padding:'5px 10px', borderRadius:6, border:`1px solid ${page===n?T.primary:'#E5E7EB'}`, background:page===n?T.primary:'#fff', color:page===n?'#fff':'#374151', cursor:'pointer', fontSize:12, fontWeight:page===n?700:400, minWidth:32 }}>{n}</button>
+                )}
+                <button onClick={()=>{ const n=Math.min(totalPages,page+1); setPage(n); router.push({query:{...router.query,page:n}},undefined,{shallow:true}); }} disabled={page===totalPages}
+                  style={{ padding:'5px 12px', borderRadius:6, border:`1px solid #E5E7EB`, background:'#fff', cursor:page===totalPages?'not-allowed':'pointer', fontSize:12, opacity:page===totalPages?0.5:1 }}>Next →</button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
