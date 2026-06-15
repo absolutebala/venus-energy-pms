@@ -509,7 +509,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
               <span style={{ color:'#D97706' }}> · {projects.filter((p:any)=>!['Open','Closed'].includes((p as any).poStatus||'')).length} Other</span>}
           </div>
         </div>
-        <div onClick={()=>router.push('/projects?status=Open')}
+        <div onClick={()=>router.push('/projects?status=PO%20Open')}
           style={{ ...card, padding:'16px 18px', cursor:'pointer', position:'relative' as const, overflow:'hidden', transition:'all 0.15s' }}
           onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(-1px)'}
           onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(0)'}>
@@ -521,7 +521,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
           <div style={{ fontSize:26, fontWeight:700, color:'#059669', marginBottom:4 }}>{projects.filter((p:any)=>(p as any).poStatus==='Open').length}</div>
           <div style={{ fontSize:11, color:T.textMuted }}>{Math.round(projects.filter((p:any)=>(p as any).poStatus==='Open').length/Math.max(projects.length,1)*100)}% of total</div>
         </div>
-        <div onClick={()=>router.push('/projects?status=Closed')}
+        <div onClick={()=>router.push('/projects?status=PO%20Closed')}
           style={{ ...card, padding:'16px 18px', cursor:'pointer', position:'relative' as const, overflow:'hidden', transition:'all 0.15s' }}
           onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(-1px)'}
           onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(0)'}>
@@ -532,7 +532,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
           </div>
           <div style={{ fontSize:26, fontWeight:700, color:'#DC2626', marginBottom:4 }}>{projects.filter((p:any)=>(p as any).poStatus==='Closed').length}</div>
           <div style={{ fontSize:11, color:T.textMuted }}>
-            {(() => { const other = projects.filter((p:any)=>!['Open','Closed'].includes((p as any).poStatus||'')).length; return other > 0 ? <span style={{color:'#D97706'}}>{other} unclassified</span> : <span>{Math.round(projects.filter((p:any)=>(p as any).poStatus==='Closed').length/Math.max(projects.length,1)*100)}% of total</span>; })()}
+            {(() => { const other = projects.filter((p:any)=>!['Open','Closed'].includes((p as any).poStatus||'')).length; return other > 0 ? <span onClick={e=>{e.stopPropagation();router.push('/projects');}} style={{color:'#D97706',cursor:'pointer'}}>{other} unclassified (click Projects)</span> : <span>1% of total</span>; })()}
           </div>
         </div>
         <div onClick={()=>router.push('/projects')}
