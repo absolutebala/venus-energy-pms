@@ -279,31 +279,46 @@ export default function ProjectsPage() {
     // Role-based filtering handled below
   }, [profile?.role]);
 
-  useEffect(() => {
-    // Restore page from sessionStorage when coming back from project detail
-    const savedPage = sessionStorage.getItem('projectsPage');
-    if (savedPage && !router.query.page) {
-      sessionStorage.removeItem('projectsPage');
-      setPage(Number(savedPage));
-    }
-  }, []);
-
+  // Sync all filters FROM URL on load/back-navigation
   useEffect(() => {
     if (!router.isReady) return;
-    const { status, ageMin: qMin, ageMax: qMax } = router.query;
-    if (status && typeof status === 'string') {
-      const mapped = STATUS_DISPLAY[status] || status;
-      setStatusFilter(mapped);
-      setPage(1);
-    }
-    if (qMin) setAgeMin(Number(qMin));
-    if (qMax) setAgeMax(Number(qMax));
-    if (router.query.pm !== undefined) setPmFilter(decodeURIComponent(router.query.pm as string));
-    if (router.query.region) setRegionFilter(decodeURIComponent(router.query.region as string));
-    if (router.query.noVendor) setNoVendorFilter(router.query.noVendor === '1');
-    if (router.query.vendor) setVendorFilter(decodeURIComponent(router.query.vendor as string));
-    if (router.query.page) setPage(Number(router.query.page));
-  }, [router.isReady, router.query]);
+    const q = router.query;
+    if (q.status   && typeof q.status === 'string') setStatusFilter(STATUS_DISPLAY[q.status as string] || q.status as string);
+    if (q.type     && typeof q.type   === 'string') setTypeFilter(q.type as string);
+    if (q.search   && typeof q.search === 'string') setSearch(q.search as string);
+    if (q.pm       !== undefined) setPmFilter(decodeURIComponent(q.pm as string));
+    if (q.vendor   !== undefined) setVendorFilter(decodeURIComponent(q.vendor as string));
+    if (q.region   !== undefined) setRegionFilter(decodeURIComponent(q.region as string));
+    if (q.noVendor !== undefined) setNoVendorFilter(q.noVendor === '1');
+    if (q.projStatus !== undefined) setProjectStatusFilter(decodeURIComponent(q.projStatus as string));
+    if (q.ageMin)  setAgeMin(Number(q.ageMin));
+    if (q.ageMax)  setAgeMax(Number(q.ageMax));
+    if (q.page)    setPage(Number(q.page));
+  }, [router.isReady]);
+
+  // Sync all filters TO URL whenever they change
+  const syncToUrl = (overrides: Record<string,any> = {}) => {
+    const q: Record<string,string> = {};
+    const sf  = overrides.statusFilter  ?? statusFilter;
+    const tf  = overrides.typeFilter    ?? typeFilter;
+    const sr  = overrides.search        ?? search;
+    const pm  = overrides.pmFilter      ?? pmFilter;
+    const vf  = overrides.vendorFilter  ?? vendorFilter;
+    const rf  = overrides.regionFilter  ?? regionFilter;
+    const nv  = overrides.noVendorFilter?? noVendorFilter;
+    const psf = overrides.projectStatusFilter ?? projectStatusFilter;
+    const pg  = overrides.page          ?? 1; // reset to 1 on filter change
+    if (sf  && sf  !== 'All')        q.status     = sf;
+    if (tf  && tf  !== 'All Types')  q.type       = tf;
+    if (sr)                           q.search     = sr;
+    if (pm)                           q.pm         = encodeURIComponent(pm);
+    if (vf)                           q.vendor     = encodeURIComponent(vf);
+    if (rf)                           q.region     = encodeURIComponent(rf);
+    if (nv)                           q.noVendor   = '1';
+    if (psf)                          q.projStatus = encodeURIComponent(psf);
+    if (pg > 1)                       q.page       = String(pg);
+    router.replace({ pathname:'/projects', query:q }, undefined, { shallow:true });
+  };
 
   const searchMatch = (p: any) => {
     if (!search) return true;
@@ -573,7 +588,7 @@ export default function ProjectsPage() {
                   </span>
                 </div>
               </div>
-              <button onClick={()=>{ setPmFilter(''); setVendorFilter(''); router.push('/projects'); }}
+              <button onClick={()=>{ setPmFilter(''); setVendorFilter(''); router.replace({pathname:'/projects'},undefined,{shallow:true}); }}
                 style={{ background:T.primary, border:'none', borderRadius:8, padding:'7px 16px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:600, flexShrink:0, marginLeft:12 }}>
                 × Clear Filter
               </button>
@@ -594,7 +609,7 @@ export default function ProjectsPage() {
           return (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
               {summaryCards.map((s,i)=>(
-                <div key={i} onClick={()=>{ if(s.filter){ setStatusFilter(statusFilter===s.filter?'All':s.filter); setPage(1); } }}
+                <div key={i} onClick={()=>{ if(s.filter){ const ns=statusFilter===s.filter?'All':s.filter; setStatusFilter(ns); syncToUrl({statusFilter:ns}); } }}
                   style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px', cursor:s.filter?'pointer':'default', borderColor:statusFilter===s.filter?s.color:T.border, transition:'all 0.15s' }}
                   onMouseEnter={e=>{ if(s.filter){const el=e.currentTarget as HTMLDivElement; el.style.transform='translateY(-1px)'; el.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)';} }}
                   onMouseLeave={e=>{ if(s.filter){const el=e.currentTarget as HTMLDivElement; el.style.transform='translateY(0)'; el.style.boxShadow='0 1px 3px rgba(0,0,0,0.06)';} }}>
@@ -624,7 +639,7 @@ export default function ProjectsPage() {
             {statusFilter !== 'All' && (
               <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:20, padding:'4px 14px', fontSize:12, color:T.primary, fontWeight:600, display:'flex', alignItems:'center', gap:8 }}>
                 Status: {statusFilter}
-                <button onClick={()=>setStatusFilter('All')} style={{ background:'none', border:'none', cursor:'pointer', color:T.primary, fontWeight:700, fontSize:14 }}>×</button>
+                <button onClick={()=>{ setStatusFilter('All'); syncToUrl({statusFilter:'All'}); }} style={{ background:'none', border:'none', cursor:'pointer', color:T.primary, fontWeight:700, fontSize:14 }}>×</button>
               </div>
             )}
           </div>
@@ -637,7 +652,7 @@ export default function ProjectsPage() {
           const disStyle = { opacity:0.4, pointerEvents:'none' as const };
           return (
           <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 1fr auto', gap:8, marginBottom:16, alignItems:'center' }}>
-            <input value={search} onChange={e=>{ setSearch(e.target.value); setPage(1); }} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
+            <input value={search} onChange={e=>{ setSearch(e.target.value); syncToUrl({search:e.target.value}); }} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
               placeholder="Project name, PO no, Indus ID, site…"
               style={{ ...inputStyle(focused) }} />
             <select value={projectStatusFilter} onChange={e=>{setProjectStatusFilter(e.target.value);setPage(1);}}
@@ -645,28 +660,28 @@ export default function ProjectsPage() {
               <option value="">All Statuses</option>
               {cascadeStatuses.map(s=><option key={s} value={s}>{s}</option>)}
             </select>
-            <select value={vendorFilter} onChange={e=>{setVendorFilter(e.target.value);setPage(1);}}
+            <select value={vendorFilter} onChange={e=>{setVendorFilter(e.target.value);syncToUrl({vendorFilter:e.target.value});}}
               style={{ ...inputStyle() }}>
               <option value="">All Vendors</option>
               {cascadeVendors.map(v=><option key={v} value={v}>{v}</option>)}
             </select>
-            <select value={pmFilter} onChange={e=>{setPmFilter(e.target.value);setPage(1);}}
+            <select value={pmFilter} onChange={e=>{setPmFilter(e.target.value);syncToUrl({pmFilter:e.target.value});}}
               style={{ ...inputStyle() }}>
               <option value="">All PMs</option>
               {cascadePMs.map(pm=><option key={pm} value={pm}>{pm}</option>)}
             </select>
-            <select value={regionFilter} onChange={e=>{setRegionFilter(e.target.value);setPage(1);}}
+            <select value={regionFilter} onChange={e=>{setRegionFilter(e.target.value);syncToUrl({regionFilter:e.target.value});}}
               style={{ ...inputStyle() }}>
               <option value="">All Regions</option>
               {cascadeRegions.map(r=><option key={r} value={r}>{r}</option>)}
             </select>
-            <select value={typeFilter} onChange={e=>{ setTypeFilter(e.target.value); setPage(1); }}
+            <select value={typeFilter} onChange={e=>{ setTypeFilter(e.target.value); syncToUrl({typeFilter:e.target.value}); }}
               style={{ ...inputStyle() }}>
               <option value="All Types">All Types</option>
               {cascadeTypes.map(t=><option key={t} value={t}>{t}</option>)}
             </select>
             {hasFilter ? (
-              <button onClick={()=>{setSearch('');setProjectStatusFilter('');setVendorFilter('');setPmFilter('');setRegionFilter('');setTypeFilter('All Types');setPage(1);}}
+              <button onClick={()=>{ setSearch('');setProjectStatusFilter('');setVendorFilter('');setPmFilter('');setRegionFilter('');setTypeFilter('All Types');setStatusFilter('All');setPage(1); router.replace({pathname:'/projects'},undefined,{shallow:true}); }}
                 style={{ background:T.dangerBg, border:`1px solid #FECACA`, borderRadius:8, padding:'8px 14px', color:T.danger, cursor:'pointer', fontSize:12, fontWeight:700, whiteSpace:'nowrap' as const }}>
                 ✕ Clear
               </button>
@@ -748,7 +763,7 @@ export default function ProjectsPage() {
                   const ageBg   = ageDays > 90 ? '#FEF2F2' : ageDays > 60 ? '#FFFBEB' : '#F0FDFA';
                   return (
                     <tr key={p.id} style={{ background:idx%2===0?'#fff':T.bg, cursor:'pointer' }}
-                      onClick={()=>{ sessionStorage.setItem('projectsPage', String(page)); router.push(`/projects/${p.id}`); }}
+                      onClick={()=>{ syncToUrl({page}); router.push(`/projects/${p.id}`); }}
                       onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
                       onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=idx%2===0?'#fff':T.bg}>
                       <td style={{ padding:'10px 12px', color:T.textMuted, fontSize:12, borderBottom:`1px solid ${T.border}` }}>{sortDir==='asc'?(page-1)*PER_PAGE+idx+1:filtered.length-(page-1)*PER_PAGE-idx}</td>
@@ -819,18 +834,18 @@ export default function ProjectsPage() {
               Showing {Math.min((page-1)*PER_PAGE+1, filtered.length)}–{Math.min(page*PER_PAGE, filtered.length)} of {filtered.length} projects
             </div>
             <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-              <button onClick={()=>setPage(p=>{ const n=Math.max(1,p-1); router.replace(`/projects?page=${n}`, undefined, {shallow:true}); return n; })} disabled={page===1}
+              <button onClick={()=>{ const n=Math.max(1,page-1); setPage(n); syncToUrl({page:n}); }} disabled={page===1}
                 style={{ padding:'5px 12px', borderRadius:6, border:`1px solid ${T.border}`, background:'#fff', cursor:page===1?'not-allowed':'pointer', fontSize:12, color:page===1?T.textDim:T.text, opacity:page===1?0.5:1 }}>← Prev</button>
               {Array.from({length:Math.min(5,Math.ceil(filtered.length/PER_PAGE))},(_, i)=>{
                 const totalPages = Math.ceil(filtered.length/PER_PAGE);
                 const start = Math.max(1, Math.min(page-2, totalPages-4));
                 const pg = start+i;
                 return pg<=totalPages ? (
-                  <button key={pg} onClick={()=>{ setPage(pg); router.replace(`/projects?page=${pg}`, undefined, {shallow:true}); }}
+                  <button key={pg} onClick={()=>{ setPage(pg); syncToUrl({page:pg}); }}
                     style={{ padding:'5px 10px', borderRadius:6, border:`1px solid ${pg===page?T.primary:T.border}`, background:pg===page?T.primaryLight:'#fff', cursor:'pointer', fontSize:12, color:pg===page?T.primary:T.text, fontWeight:pg===page?700:400 }}>{pg}</button>
                 ) : null;
               })}
-              <button onClick={()=>setPage(p=>{ const n=Math.min(Math.ceil(filtered.length/PER_PAGE),p+1); router.replace(`/projects?page=${n}`, undefined, {shallow:true}); return n; })} disabled={page>=Math.ceil(filtered.length/PER_PAGE)}
+              <button onClick={()=>{ const n=Math.min(Math.ceil(filtered.length/PER_PAGE),page+1); setPage(n); syncToUrl({page:n}); }} disabled={page>=Math.ceil(filtered.length/PER_PAGE)}
                 style={{ padding:'5px 12px', borderRadius:6, border:`1px solid ${T.border}`, background:'#fff', cursor:page>=Math.ceil(filtered.length/PER_PAGE)?'not-allowed':'pointer', fontSize:12, color:page>=Math.ceil(filtered.length/PER_PAGE)?T.textDim:T.text, opacity:page>=Math.ceil(filtered.length/PER_PAGE)?0.5:1 }}>Next →</button>
             </div>
           </div>
