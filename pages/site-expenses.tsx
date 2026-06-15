@@ -236,7 +236,8 @@ export default function SiteExpensesPage() {
                   const rows = allExpenses.map((e:any, idx:number) => ({
                     'S.No': idx+1,
                     'Date': e.expenseDate,
-                    'Project ID': e.projectId||'',
+                    'PO Number': (projects as any[]).find((p:any)=>p.id===e.projectId)?.poNo || e.projectId || '',
+                    'Indus ID': (projects as any[]).find((p:any)=>p.id===e.projectId)?.indusId || '',
                     'Site': e.site||'',
                     'Expense Type': e.expenseType||'',
                     'Amount (₹)': Number(e.amount||0),
@@ -264,15 +265,15 @@ export default function SiteExpensesPage() {
             <table style={{ width:"100%", borderCollapse:"collapse" as const }}>
               <thead>
                 <tr>
-                  {["#","Req. Date","Project","Remarks","Expense Type","Amount (₹)","TXN Ref","Payment Mode","Txn Date","Status",""].map((h,i)=>(
+                  {["#","Req. Date","PO Number","Indus ID","Remarks","Expense Type","Amount (₹)","TXN Ref","Payment Mode","Txn Date","Status",""].map((h,i)=>(
                     <th key={i} style={{ ...thS, textAlign:i===5?"right" as const:"left" as const }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {expLoading && <tr><td colSpan={10} style={{ padding:30, textAlign:"center" as const, color:T.textMuted }}>Loading...</td></tr>}
+                {expLoading && <tr><td colSpan={12} style={{ padding:30, textAlign:"center" as const, color:T.textMuted }}>Loading...</td></tr>}
                 {!expLoading && allExpenses.length === 0 && (
-                  <tr><td colSpan={10} style={{ padding:30, textAlign:"center" as const, color:T.textDim }}>No expenses found</td></tr>
+                  <tr><td colSpan={12} style={{ padding:30, textAlign:"center" as const, color:T.textDim }}>No expenses found</td></tr>
                 )}
                 {allExpenses.map((e:any, idx:number) => {
                   const proj = (projects as any[]).find(p=>p.id===e.projectId);
@@ -285,9 +286,10 @@ export default function SiteExpensesPage() {
                       <td style={{ ...tdS, color:T.textMuted, width:36 }}>{idx+1}</td>
                       <td style={{ ...tdS, whiteSpace:"nowrap" as const }}>{fmtD(e.expenseDate)}</td>
                       <td style={tdS} onClick={()=>e.projectId&&router.push(`/projects/${e.projectId}`)}>
-                        <div style={{ fontWeight:600, fontSize:13, color:T.primary }}>{e.projectId}</div>
-                        {proj && <div style={{ fontSize:10, color:T.textMuted }}>{proj.poNo}</div>}
+                        <div style={{ fontWeight:600, fontSize:13, color:T.primary, cursor:'pointer' }}>{proj?.poNo || e.projectId || '—'}</div>
+                        {proj?.site && <div style={{ fontSize:10, color:T.textMuted }}>{proj.site}</div>}
                       </td>
+                      <td style={{ ...tdS, fontSize:12, color:T.textMuted }}>{proj?.indusId || '—'}</td>
                       <td style={tdS}>{(e as any).remarks||"—"}</td>
                       <td style={tdS}>
                         <span style={{ fontSize:11, fontWeight:600, color:TYPE_COLORS[e.expenseType]||T.textMuted,
