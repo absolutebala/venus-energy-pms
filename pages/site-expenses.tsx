@@ -242,41 +242,54 @@ export default function SiteExpensesPage() {
           )}
         </div>
 
-        {/* Project Filters */}
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap' as const, marginBottom:16, alignItems:'center' }}>
-          <select value={expStatusFilter} onChange={e=>setExpStatusFilter(e.target.value)}
-            style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
-            <option value="">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="paid">Paid</option>
-          </select>
-          <select value={expVendorFilter} onChange={e=>setExpVendorFilter(e.target.value)}
-            style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
-            <option value="">All Vendors</option>
-            {Array.from(new Set((projects as any[]).map((p:any)=>p.vendor).filter(Boolean))).sort().map(v=><option key={v as string} value={v as string}>{v as string}</option>)}
-          </select>
-          <select value={expPMFilter} onChange={e=>setExpPMFilter(e.target.value)}
-            style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
-            <option value="">All PMs</option>
-            {Array.from(new Set((projects as any[]).map((p:any)=>p.pm).filter(Boolean))).sort().map(pm=><option key={pm as string} value={pm as string}>{pm as string}</option>)}
-          </select>
-          <select value={expRegionFilter} onChange={e=>setExpRegionFilter(e.target.value)}
-            style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
-            <option value="">All Regions</option>
-            {Array.from(new Set((projects as any[]).map((p:any)=>p.region).filter(Boolean))).sort().map(r=><option key={r as string} value={r as string}>{r as string}</option>)}
-          </select>
-          <select value={expTypeFilter} onChange={e=>setExpTypeFilter(e.target.value)}
-            style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
-            <option value="">All Types</option>
-            {Array.from(new Set((projects as any[]).map((p:any)=>p.type).filter(Boolean))).sort().map(t=><option key={t as string} value={t as string}>{t as string}</option>)}
-          </select>
-          {(expStatusFilter||expVendorFilter||expPMFilter||expRegionFilter||expTypeFilter) && (
-            <button onClick={()=>{setExpStatusFilter('');setExpVendorFilter('');setExpPMFilter('');setExpRegionFilter('');setExpTypeFilter('');}}
-              style={{ fontSize:11, color:'#DC2626', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:6, padding:'5px 10px', cursor:'pointer', fontWeight:600 }}>
-              ✕ Clear Filters
-            </button>
-          )}
-        </div>
+        {/* Project Filters — cascading */}
+        {(() => {
+          // Base: projects that match all OTHER active filters
+          const cascadeProj = (exclude: string) => (projects as any[]).filter((p:any) => {
+            if (exclude!=='vendor' && expVendorFilter && p.vendor !== expVendorFilter) return false;
+            if (exclude!=='pm'     && expPMFilter     && p.pm     !== expPMFilter)     return false;
+            if (exclude!=='region' && expRegionFilter && p.region !== expRegionFilter) return false;
+            if (exclude!=='type'   && expTypeFilter   && p.type   !== expTypeFilter)   return false;
+            return true;
+          });
+          const uniq = (arr: any[]) => Array.from(new Set(arr.filter(Boolean))).sort() as string[];
+          return (
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap' as const, marginBottom:16, alignItems:'center' }}>
+            <select value={expStatusFilter} onChange={e=>setExpStatusFilter(e.target.value)}
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
+              <option value="">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="paid">Paid</option>
+            </select>
+            <select value={expVendorFilter} onChange={e=>setExpVendorFilter(e.target.value)}
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
+              <option value="">All Vendors</option>
+              {uniq(cascadeProj('vendor').map((p:any)=>p.vendor)).map(v=><option key={v} value={v}>{v}</option>)}
+            </select>
+            <select value={expPMFilter} onChange={e=>setExpPMFilter(e.target.value)}
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
+              <option value="">All PMs</option>
+              {uniq(cascadeProj('pm').map((p:any)=>p.pm)).map(pm=><option key={pm} value={pm}>{pm}</option>)}
+            </select>
+            <select value={expRegionFilter} onChange={e=>setExpRegionFilter(e.target.value)}
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
+              <option value="">All Regions</option>
+              {uniq(cascadeProj('region').map((p:any)=>p.region)).map(r=><option key={r} value={r}>{r}</option>)}
+            </select>
+            <select value={expTypeFilter} onChange={e=>setExpTypeFilter(e.target.value)}
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
+              <option value="">All Types</option>
+              {uniq(cascadeProj('type').map((p:any)=>p.type)).map(t=><option key={t} value={t}>{t}</option>)}
+            </select>
+            {(expStatusFilter||expVendorFilter||expPMFilter||expRegionFilter||expTypeFilter) && (
+              <button onClick={()=>{setExpStatusFilter('');setExpVendorFilter('');setExpPMFilter('');setExpRegionFilter('');setExpTypeFilter('');}}
+                style={{ fontSize:11, color:'#DC2626', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:6, padding:'5px 10px', cursor:'pointer', fontWeight:600 }}>
+                ✕ Clear
+              </button>
+            )}
+          </div>
+          );
+        })()}
 
         {/* All Expenses Table */}
         <div style={card}>
