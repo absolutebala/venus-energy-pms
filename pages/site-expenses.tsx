@@ -112,7 +112,11 @@ export default function SiteExpensesPage() {
       }
       if (!search) return true;
       const s = search.toLowerCase();
+      const eProj = (projects as any[]).find((p:any) => p.id === e.projectId);
       return e.projectId?.toLowerCase().includes(s) ||
+             eProj?.poNo?.toLowerCase().includes(s) ||
+             eProj?.indusId?.toLowerCase().includes(s) ||
+             eProj?.site?.toLowerCase().includes(s) ||
              e.expenseType?.toLowerCase().includes(s) ||
              e.site?.toLowerCase().includes(s) ||
              e.paidTxnRef?.toLowerCase().includes(s) ||
