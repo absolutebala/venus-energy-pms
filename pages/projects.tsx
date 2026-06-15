@@ -764,7 +764,23 @@ export default function ProjectsPage() {
                   const ageBg   = ageDays > 90 ? '#FEF2F2' : ageDays > 60 ? '#FFFBEB' : '#F0FDFA';
                   return (
                     <tr key={p.id} style={{ background:idx%2===0?'#fff':T.bg, cursor:'pointer' }}
-                      onClick={()=>{ syncToUrl({page}); router.push(`/projects/${p.id}`); }}
+                      onClick={()=>{
+                        // Build current filter state as URL to return to
+                        const retQ: Record<string,string> = {};
+                        if (statusFilter && statusFilter !== 'All') retQ.status = statusFilter;
+                        if (typeFilter && typeFilter !== 'All Types') retQ.type = typeFilter;
+                        if (search) retQ.search = search;
+                        if (pmFilter) retQ.pm = encodeURIComponent(pmFilter);
+                        if (vendorFilter) retQ.vendor = encodeURIComponent(vendorFilter);
+                        if (regionFilter) retQ.region = encodeURIComponent(regionFilter);
+                        if (noVendorFilter) retQ.noVendor = '1';
+                        if (projectStatusFilter) retQ.projStatus = encodeURIComponent(projectStatusFilter);
+                        if (page > 1) retQ.page = String(page);
+                        // First update the /projects URL so back button returns here
+                        router.replace({ pathname:'/projects', query:retQ }, undefined, { shallow:true });
+                        // Then navigate to project detail
+                        setTimeout(()=>router.push(`/projects/${p.id}`), 50);
+                      }}
                       onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
                       onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=idx%2===0?'#fff':T.bg}>
                       <td style={{ padding:'10px 12px', color:T.textMuted, fontSize:12, borderBottom:`1px solid ${T.border}` }}>{sortDir==='asc'?(page-1)*PER_PAGE+idx+1:filtered.length-(page-1)*PER_PAGE-idx}</td>
