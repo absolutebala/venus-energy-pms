@@ -1245,26 +1245,40 @@ export default function Dashboard() {
           </div>
           {/* Filter bar only for admin roles */}
           {['super_admin','region_manager'].includes(role) && (
+            {(() => {
+              // Cascade helper — filter all except the excluded key
+              const cascade = (exclude: string) => (dbProjects as any[]).filter((p:any) => {
+                if (exclude!=='status' && dashStatus && (p as any).projectStatus !== dashStatus) return false;
+                if (exclude!=='region' && dashRegion && p.region !== dashRegion) return false;
+                if (exclude!=='type'   && dashType   && p.type   !== dashType)   return false;
+                if (exclude!=='pm'     && dashPM     && (p as any).pm !== dashPM) return false;
+                if (exclude!=='vendor' && dashVendor && (p as any).vendor !== dashVendor) return false;
+                if (dashDateFrom && p.poDate && p.poDate < dashDateFrom) return false;
+                if (dashDateTo   && p.poDate && p.poDate > dashDateTo)   return false;
+                return true;
+              });
+              const uniq = (arr: any[]) => Array.from(new Set(arr.filter(Boolean))).sort() as string[];
+              return (
             <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' as const }}>
               <select value={dashStatus} onChange={e=>setDashStatus(e.target.value)} style={selStyle}>
                 <option value="">All Statuses</option>
-                {Array.from(new Set((dbProjects as any[]).map((p:any)=>(p as any).projectStatus).filter(Boolean))).sort().map(s=><option key={s as string} value={s as string}>{s as string}</option>)}
+                {uniq(cascade('status').map((p:any)=>(p as any).projectStatus)).map(s=><option key={s} value={s}>{s}</option>)}
               </select>
               <select value={dashRegion} onChange={e=>setDashRegion(e.target.value)} style={selStyle}>
                 <option value="">All Regions</option>
-                {Array.from(new Set((dbProjects as any[]).map((p:any)=>p.region).filter(Boolean))).sort().map(r=><option key={r as string} value={r as string}>{r as string}</option>)}
+                {uniq(cascade('region').map((p:any)=>p.region)).map(r=><option key={r} value={r}>{r}</option>)}
               </select>
               <select value={dashType} onChange={e=>setDashType(e.target.value)} style={selStyle}>
                 <option value="">All Types</option>
-                {Array.from(new Set((dbProjects as any[]).filter((p:any)=>!dashRegion||p.region===dashRegion).map((p:any)=>p.type).filter(Boolean))).sort().map(t=><option key={t as string} value={t as string}>{t as string}</option>)}
+                {uniq(cascade('type').map((p:any)=>p.type)).map(t=><option key={t} value={t}>{t}</option>)}
               </select>
               <select value={dashPM} onChange={e=>setDashPM(e.target.value)} style={selStyle}>
                 <option value="">All PMs</option>
-                {Array.from(new Set((dbProjects as any[]).map((p:any)=>(p as any).pm).filter(Boolean))).sort().map(pm=><option key={pm as string} value={pm as string}>{pm as string}</option>)}
+                {uniq(cascade('pm').map((p:any)=>(p as any).pm)).map(pm=><option key={pm} value={pm}>{pm}</option>)}
               </select>
               <select value={dashVendor} onChange={e=>setDashVendor(e.target.value)} style={selStyle}>
                 <option value="">All Vendors</option>
-                {Array.from(new Set((dbProjects as any[]).map((p:any)=>(p as any).vendor).filter(Boolean))).sort().map(v=><option key={v as string} value={v as string}>{v as string}</option>)}
+                {uniq(cascade('vendor').map((p:any)=>(p as any).vendor)).map(v=><option key={v} value={v}>{v}</option>)}
               </select>
               <div style={{ display:'flex', alignItems:'center', gap:4 }}>
                 <span style={{ fontSize:11, color:T.textMuted }}>From</span>
@@ -1283,6 +1297,7 @@ export default function Dashboard() {
                 </button>
               )}
             </div>
+              );})()}
           )}
         </div>
 
