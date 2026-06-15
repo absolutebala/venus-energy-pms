@@ -532,7 +532,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
           </div>
           <div style={{ fontSize:26, fontWeight:700, color:'#DC2626', marginBottom:4 }}>{projects.filter((p:any)=>(p as any).poStatus==='Closed').length}</div>
           <div style={{ fontSize:11, color:T.textMuted }}>
-            {(() => { const other = projects.filter((p:any)=>!['Open','Closed'].includes((p as any).poStatus||'')).length; return other > 0 ? <span onClick={e=>{e.stopPropagation();router.push('/projects');}} style={{color:'#D97706',cursor:'pointer'}}>{other} unclassified (click Projects)</span> : <span>1% of total</span>; })()}
+            {(() => { const other = projects.filter((p:any)=>!['Open','Closed'].includes((p as any).poStatus||'')).length; return other > 0 ? <span style={{color:'#D97706'}}>{other} unclassified</span> : <span>1% of total</span>; })()}
           </div>
         </div>
         <div onClick={()=>router.push('/projects')}
