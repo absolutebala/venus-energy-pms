@@ -712,7 +712,8 @@ function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { pr
       .then(({ data }) => {
         if (data) setItems(data.map((r:any) => ({
           id: r.id, ticketId: r.ticket_id||'', supervisor: r.supervisor||'',
-          dateFrom: r.date_from||'', dateTo: r.date_to||'', isNew: false,
+          dateFrom: r.date_from||'', dateTo: r.date_to||'',
+          raiser: r.raiser||'', ptwType: r.ptw_type||'', ptwStatus: r.ptw_status||'', isNew: false,
         })));
         setLoading(false);
       });
@@ -720,7 +721,7 @@ function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { pr
 
   const addPTW = () => setItems(prev => [...prev, {
     id: `new-${Date.now()}`, ticketId:'', supervisor: vendorContact||'',
-    dateFrom:'', dateTo:'', isNew: true,
+    dateFrom:'', dateTo:'', raiser:'', ptwType:'', ptwStatus:'', isNew: true,
   }]);
 
   const removeItem = async (id:string|number) => {
@@ -744,6 +745,7 @@ function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { pr
       const payload = {
         project_id: projectId, ticket_id: item.ticketId, supervisor: item.supervisor,
         date_from: item.dateFrom||null, date_to: item.dateTo||null,
+        raiser: item.raiser||null, ptw_type: item.ptwType||null, ptw_status: item.ptwStatus||null,
       };
       if (item.isNew) {
         const { data } = await sb.from('ptw_items').insert(payload).select().single();
@@ -764,13 +766,15 @@ function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { pr
     const payload = {
       project_id: projectId, ticket_id: item.ticketId, supervisor: item.supervisor,
       date_from: item.dateFrom||null, date_to: item.dateTo||null,
+      raiser: item.raiser||null, ptw_type: item.ptwType||null, ptw_status: item.ptwStatus||null,
     };
     if (item.isNew) {
       const { data, error } = await sb.from('ptw_items').insert(payload).select().single();
       if (!error && data) {
         setItems(prev => prev.map((i:any) => i.id===item.id ? {...data, id:data.id,
           ticketId:data.ticket_id, supervisor:data.supervisor,
-          dateFrom:data.date_from||'', dateTo:data.date_to||'', isNew:false} : i));
+          dateFrom:data.date_from||'', dateTo:data.date_to||'',
+          raiser:data.raiser||'', ptwType:data.ptw_type||'', ptwStatus:data.ptw_status||'', isNew:false} : i));
         setToast({ msg:'✅ PTW saved', type:'success' });
       }
     } else {
@@ -808,7 +812,7 @@ const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-dig
         <table style={{ width:'100%', borderCollapse:'collapse' as const, marginBottom:14 }}>
           <thead>
             <tr style={{ background:T.bg }}>
-              {['#','Ticket ID *','Supervisor Name','From Date *','To Date *','Status',''].map((h,i)=>(
+              {['#','Ticket ID *','Raiser','Supervisor Name','PTW Type','From Date *','To Date *','PTW Status',''].map((h,i)=>(
                 <th key={i} style={{ padding:'9px 10px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:T.textMuted, textAlign:'left' as const, borderBottom:`2px solid ${T.border}`, whiteSpace:'nowrap' as const }}>{h}</th>
               ))}
             </tr>
@@ -823,9 +827,22 @@ const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-dig
                     {canEdit ? inp(item.ticketId,'ticketId',item.id,'text','PTW-2025-XXXX')
                     : <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{item.ticketId||'—'}</span>}
                   </td>
+                  <td style={{ padding:'8px 10px', minWidth:140 }}>
+                    {canEdit ? inp(item.raiser,'raiser',item.id,'text','Raiser name')
+                    : <span style={{ fontSize:13, color:T.text }}>{item.raiser||'—'}</span>}
+                  </td>
                   <td style={{ padding:'8px 10px', minWidth:160 }}>
                     {canEdit ? inp(item.supervisor,'supervisor',item.id,'text','Supervisor name')
                     : <span style={{ fontSize:13, color:T.text }}>{item.supervisor||'—'}</span>}
+                  </td>
+                  <td style={{ padding:'8px 10px', minWidth:150 }}>
+                    {canEdit
+                      ? <select value={item.ptwType||''} onChange={e=>update(item.id,'ptwType',e.target.value)}
+                          style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }}>
+                          <option value="">Select Type</option>
+                          {['Manual','Electrical','Material Handling','Height','Excavation'].map(t=><option key={t}>{t}</option>)}
+                        </select>
+                      : <span style={{ fontSize:12, color:T.text }}>{item.ptwType||'—'}</span>}
                   </td>
                   <td style={{ padding:'8px 10px', width:140 }}>
                     {canEdit ? inp(item.dateFrom,'dateFrom',item.id,'date')
@@ -835,12 +852,14 @@ const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-dig
                     {canEdit ? inp(item.dateTo,'dateTo',item.id,'date')
                     : <span style={{ fontSize:12, color:T.textMuted }}>{fmt(item.dateTo)}</span>}
                   </td>
-                  <td style={{ padding:'8px 10px', width:140 }}>
-                    {status ? (
-                      <span style={{ fontSize:11, fontWeight:600, color:status.color, background:status.bg, border:`1px solid ${status.border}`, padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>
-                        {status.label}
-                      </span>
-                    ) : <span style={{ fontSize:12, color:T.textDim }}>—</span>}
+                  <td style={{ padding:'8px 10px', minWidth:150 }}>
+                    {canEdit
+                      ? <select value={item.ptwStatus||''} onChange={e=>update(item.id,'ptwStatus',e.target.value)}
+                          style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }}>
+                          <option value="">Select Status</option>
+                          {['TT Rejected','Closed','Rejected','Auto Closed'].map(s=><option key={s}>{s}</option>)}
+                        </select>
+                      : <span style={{ fontSize:11, fontWeight:600, color:'#6B7280', background:'#F3F4F6', padding:'3px 10px', borderRadius:20 }}>{item.ptwStatus||'—'}</span>}
                   </td>
                   <td style={{ padding:'8px 10px', width:36 }}>
                     {canEdit && (
