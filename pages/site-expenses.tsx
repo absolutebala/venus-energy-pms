@@ -383,7 +383,7 @@ export default function SiteExpensesPage() {
                       onMouseLeave={el=>(el.currentTarget as HTMLTableRowElement).style.background=isPending?'#FFFBEB':idx%2===0?"#fff":T.bg}>
                       <td style={{ ...tdS, color:T.textMuted, width:36 }}>{(page-1)*PER_PAGE+idx+1}</td>
                       <td style={{ ...tdS, whiteSpace:"nowrap" as const }}>{fmtD(e.expenseDate)}</td>
-                      <td style={tdS} onClick={()=>{ if(e.projectId){ const retQ: Record<string,string> = {}; if(datePreset&&datePreset!=='all') retQ.datePreset=datePreset; if(expStatusFilter) retQ.expStatus=expStatusFilter; if(expVendorFilter) retQ.expVendor=encodeURIComponent(expVendorFilter); if(expPMFilter) retQ.expPM=encodeURIComponent(expPMFilter); if(expRegionFilter) retQ.expRegion=encodeURIComponent(expRegionFilter); if(expTypeFilter) retQ.expType=encodeURIComponent(expTypeFilter); if(search) retQ.search=search; if(page>1) retQ.page=String(page); sessionStorage.setItem('expensesFilters', new URLSearchParams(retQ).toString()); router.push(`/projects/${e.projectId}`); }}}>
+                      <td style={tdS} onClick={()=>{ if(e.projectId) window.open(`/projects/${e.projectId}`, '_blank'); }}>
                         <div style={{ fontWeight:600, fontSize:13, color:T.primary, cursor:'pointer' }}>{proj?.poNo || e.projectId || '—'}</div>
                         {proj?.site && <div style={{ fontSize:10, color:T.textMuted }}>{proj.site}</div>}
                       </td>
