@@ -1245,7 +1245,7 @@ export default function Dashboard() {
           </div>
           {/* Filter bar only for admin roles */}
           {['super_admin','region_manager'].includes(role) && (
-            {(() => {
+            (() => {
               // Cascade helper — filter all except the excluded key
               const cascade = (exclude: string) => (dbProjects as any[]).filter((p:any) => {
                 if (exclude!=='status' && dashStatus && (p as any).projectStatus !== dashStatus) return false;
@@ -1297,7 +1297,7 @@ export default function Dashboard() {
                 </button>
               )}
             </div>
-              );})()}
+              )})()}
           )}
         </div>
 
