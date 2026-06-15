@@ -450,9 +450,17 @@ export default function InvoicesPage() {
         {/* Invoice Table */}
         <div style={card}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-            <div style={{ fontSize:14, fontWeight:700, color:T.text }}>
-              {poSearch && matchedProject ? `Invoices for ${(matchedProject as any).id}` : "All Invoices"}
-              <span style={{ fontSize:12, fontWeight:400, color:T.textMuted, marginLeft:10 }}>{displayInvoices.length} records</span>
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <div style={{ fontSize:14, fontWeight:700, color:T.text }}>
+                {poSearch && matchedProject ? `Invoices for ${(matchedProject as any).id}` : "All Invoices"}
+                <span style={{ fontSize:12, fontWeight:400, color:T.textMuted, marginLeft:10 }}>{displayInvoices.length} records</span>
+              </div>
+              {canExport && (
+                <button onClick={exportToExcel}
+                  style={{ background:T.primaryLight, color:T.primary, border:`1px solid ${T.primaryMid}`, borderRadius:7, padding:'5px 12px', fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4 }}>
+                  📥 Excel
+                </button>
+              )}
             </div>
           </div>
           <div style={{ overflowX:"auto" as const }}>
