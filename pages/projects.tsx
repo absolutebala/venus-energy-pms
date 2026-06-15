@@ -329,6 +329,7 @@ export default function ProjectsPage() {
     const displayStatus = STATUS_DISPLAY[p.status] || p.status;
     if (statusFilter === 'PO Open')   return (p as any).poStatus === 'Open';
     if (statusFilter === 'PO Closed') return (p as any).poStatus === 'Closed';
+    if (statusFilter === 'PO Unclassified') return !['Open','Closed'].includes((p as any).poStatus||'');
     if (statusFilter === 'Not Set') return !(p as any).projectStatus;
     if (statusFilter !== 'All') return ((p as any).projectStatus || '') === statusFilter;
     if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
