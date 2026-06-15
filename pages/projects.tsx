@@ -279,22 +279,30 @@ export default function ProjectsPage() {
     // Role-based filtering handled below
   }, [profile?.role]);
 
-  // Sync all filters FROM URL on load/back-navigation
+  // Sync all filters FROM URL or sessionStorage on load/back-navigation
   useEffect(() => {
     if (!router.isReady) return;
     const q = router.query;
-    // Always reset to defaults first, then apply URL values
-    setStatusFilter(q.status ? (STATUS_DISPLAY[q.status as string] || q.status as string) : 'All');
-    setTypeFilter(q.type ? q.type as string : 'All Types');
-    setSearch(q.search ? q.search as string : '');
-    setPmFilter(q.pm ? decodeURIComponent(q.pm as string) : '');
-    setVendorFilter(q.vendor ? decodeURIComponent(q.vendor as string) : '');
-    setRegionFilter(q.region ? decodeURIComponent(q.region as string) : '');
-    setNoVendorFilter(q.noVendor === '1');
-    setProjectStatusFilter(q.projStatus ? decodeURIComponent(q.projStatus as string) : '');
-    if (q.ageMin) setAgeMin(Number(q.ageMin)); else setAgeMin(null);
-    if (q.ageMax) setAgeMax(Number(q.ageMax)); else setAgeMax(null);
-    setPage(q.page ? Number(q.page) : 1);
+    // If no query params but sessionStorage has saved filters, restore from there
+    const hasQuery = Object.keys(q).length > 0;
+    const saved = !hasQuery ? sessionStorage.getItem('projectsFilters') : null;
+    const params = saved ? Object.fromEntries(new URLSearchParams(saved)) : q as Record<string,string>;
+    if (saved) {
+      // Restore URL from sessionStorage
+      router.replace({ pathname:'/projects', query:params }, undefined, { shallow:true });
+      sessionStorage.removeItem('projectsFilters');
+    }
+    setStatusFilter(params.status ? (STATUS_DISPLAY[params.status] || params.status) : 'All');
+    setTypeFilter(params.type ? params.type : 'All Types');
+    setSearch(params.search ? params.search : '');
+    setPmFilter(params.pm ? decodeURIComponent(params.pm) : '');
+    setVendorFilter(params.vendor ? decodeURIComponent(params.vendor) : '');
+    setRegionFilter(params.region ? decodeURIComponent(params.region) : '');
+    setNoVendorFilter(params.noVendor === '1');
+    setProjectStatusFilter(params.projStatus ? decodeURIComponent(params.projStatus) : '');
+    if (params.ageMin) setAgeMin(Number(params.ageMin)); else setAgeMin(null);
+    if (params.ageMax) setAgeMax(Number(params.ageMax)); else setAgeMax(null);
+    setPage(params.page ? Number(params.page) : 1);
   }, [router.isReady, router.query]);
 
   // Sync all filters TO URL whenever they change
@@ -765,7 +773,7 @@ export default function ProjectsPage() {
                   return (
                     <tr key={p.id} style={{ background:idx%2===0?'#fff':T.bg, cursor:'pointer' }}
                       onClick={()=>{
-                        // Build current filter state as URL to return to
+                        // Build filter query string
                         const retQ: Record<string,string> = {};
                         if (statusFilter && statusFilter !== 'All') retQ.status = statusFilter;
                         if (typeFilter && typeFilter !== 'All Types') retQ.type = typeFilter;
@@ -776,10 +784,10 @@ export default function ProjectsPage() {
                         if (noVendorFilter) retQ.noVendor = '1';
                         if (projectStatusFilter) retQ.projStatus = encodeURIComponent(projectStatusFilter);
                         if (page > 1) retQ.page = String(page);
-                        // First update the /projects URL so back button returns here
-                        router.replace({ pathname:'/projects', query:retQ }, undefined, { shallow:true });
-                        // Then navigate to project detail
-                        setTimeout(()=>router.push(`/projects/${p.id}`), 50);
+                        const qs = new URLSearchParams(retQ).toString();
+                        // Store in sessionStorage as fallback
+                        sessionStorage.setItem('projectsFilters', qs);
+                        router.push(`/projects/${p.id}`);
                       }}
                       onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
                       onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=idx%2===0?'#fff':T.bg}>
