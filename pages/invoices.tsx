@@ -66,6 +66,15 @@ export default function InvoicesPage() {
   const [editInvRow,  setEditInvRow]  = useState<any>({});
   const [dateFrom,    setDateFrom]    = useState('');
   const [dateTo,      setDateTo]      = useState('');
+  const [datePreset,  setDatePreset]  = useState('all');
+  const [customFrom,  setCustomFrom]  = useState('');
+  const [customTo,    setCustomTo]    = useState('');
+  const [invVendor,   setInvVendor]   = useState('');
+  const [invPM,       setInvPM]       = useState('');
+  const [invRegion,   setInvRegion]   = useState('');
+  const [invType,     setInvType]     = useState('');
+  const [invPage,     setInvPage]     = useState(1);
+  const INV_PER_PAGE = 10;
   const canExport = !authLoading && (profile?.role === 'super_admin' || profile?.role === 'accounting_team');
   const [newInv,      setNewInv]      = useState({
     invoiceNo:"", invoiceDate:"", invoiceAmount:"",
@@ -109,14 +118,28 @@ export default function InvoicesPage() {
 
   // Apply date filter — must be before KPI calcs
   const dateFilteredInvoices = React.useMemo(() => {
-    if (!dateFrom && !dateTo) return invoices;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const todayStr = today.toISOString().split('T')[0];
+    const startOfWeek = new Date(today); startOfWeek.setDate(today.getDate()-today.getDay());
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const fmtD = (d: Date) => d.toISOString().split('T')[0];
     return invoices.filter(i => {
-      if (dateFrom && dateTo) return i.invoiceDate >= dateFrom && i.invoiceDate <= dateTo;
-      if (dateFrom) return i.invoiceDate >= dateFrom;
-      if (dateTo)   return i.invoiceDate <= dateTo;
+      const d = i.invoiceDate;
+      if (datePreset === 'today')   return d === todayStr;
+      if (datePreset === 'week')    return d >= fmtD(startOfWeek) && d <= todayStr;
+      if (datePreset === 'month')   return d >= fmtD(startOfMonth) && d <= todayStr;
+      if (datePreset === 'custom' && customFrom && customTo) return d >= customFrom && d <= customTo;
+      // project-level filters
+      return true;
+    }).filter(i => {
+      const proj = (projects as any[]).find((p:any) => p.id === i.projectId);
+      if (invVendor && proj?.vendor !== invVendor) return false;
+      if (invPM     && proj?.pm     !== invPM)     return false;
+      if (invRegion && proj?.region !== invRegion) return false;
+      if (invType   && proj?.type   !== invType)   return false;
       return true;
     });
-  }, [invoices, dateFrom, dateTo]);
+  }, [invoices, datePreset, customFrom, customTo, invVendor, invPM, invRegion, invType, projects]);
 
   const pendingApproval = dateFilteredInvoices.filter(i => ["Submitted","Under Review"].includes(i.invoiceStatus));
   const pendingPayment  = dateFilteredInvoices.filter(i => i.paymentStatus === "Pending");
@@ -137,6 +160,11 @@ export default function InvoicesPage() {
     return list;
   }, [dateFilteredInvoices, poSearch, matchedProject, cardFilter, sortKey, sortDir]);
 
+  // Reset page on filter change
+  React.useEffect(() => { setInvPage(1); }, [datePreset, customFrom, customTo, invVendor, invPM, invRegion, invType, cardFilter, poSearch]);
+
+  const invTotalPages   = Math.ceil(displayInvoices.length / INV_PER_PAGE);
+  const paginatedInv    = displayInvoices.slice((invPage-1)*INV_PER_PAGE, invPage*INV_PER_PAGE);
   const totalInvoiced = displayInvoices.reduce((a, i) => a + i.invoiceAmount, 0);
   const totalGST      = displayInvoices.reduce((a, i) => a + i.gst, 0);
   const totalAmount   = displayInvoices.reduce((a, i) => a + i.totalAmount, 0);
@@ -234,17 +262,7 @@ export default function InvoicesPage() {
               {invLoading ? "Loading..." : `${invoices.length} invoices across ${new Set(invoices.map(i=>i.projectId)).size} projects`}
             </div>
           </div>
-          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-            <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-              <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>From</span>
-              <input type="date" value={dateFrom} onChange={e=>{ setDateFrom(e.target.value); setCardFilter(null); }}
-                style={{ border:`1px solid ${T.border}`, borderRadius:7, padding:'7px 10px', fontSize:12, outline:'none', color:T.text }} />
-              <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>To</span>
-              <input type="date" value={dateTo} onChange={e=>{ setDateTo(e.target.value); setCardFilter(null); }}
-                style={{ border:`1px solid ${T.border}`, borderRadius:7, padding:'7px 10px', fontSize:12, outline:'none', color:T.text }} />
-              {(dateFrom||dateTo) && <button onClick={()=>{ setDateFrom(''); setDateTo(''); }}
-                style={{ fontSize:11, color:'#DC2626', background:'none', border:'none', cursor:'pointer', fontWeight:600 }}>✕ Clear</button>}
-            </div>
+          <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' as const }}>
             {canExport && (
               <button onClick={exportToExcel}
                 style={{ ...btnSecondary, fontSize:12, display:'flex', alignItems:'center', gap:6 }}>
@@ -256,6 +274,71 @@ export default function InvoicesPage() {
             )}
           </div>
         </div>
+
+        {/* Date Preset Filter */}
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12, flexWrap:'wrap' as const }}>
+          {([['all','All'],['today','Today'],['week','This Week'],['month','This Month'],['custom','Custom']] as [string,string][]).map(([val,label])=>(
+            <button key={val} onClick={()=>{ setDatePreset(val); setCardFilter(null); }}
+              style={{ background:datePreset===val?T.primary:'#fff', color:datePreset===val?'#fff':T.textMuted,
+                border:`1px solid ${datePreset===val?T.primary:T.border}`, borderRadius:8,
+                padding:'6px 14px', cursor:'pointer', fontSize:12, fontWeight:datePreset===val?700:400 }}>
+              {label}
+            </button>
+          ))}
+          {datePreset==='custom' && (
+            <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+              <DateInput value={customFrom} onChange={setCustomFrom}
+                style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', fontSize:12, outline:'none' }} />
+              <span style={{ fontSize:12, color:T.textMuted }}>to</span>
+              <DateInput value={customTo} onChange={setCustomTo}
+                style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', fontSize:12, outline:'none' }} />
+            </div>
+          )}
+        </div>
+
+        {/* Cascading dropdown filters */}
+        {(() => {
+          const cascadeProj = (exclude: string) => (projects as any[]).filter((p:any) => {
+            const hasInv = invoices.some(i => i.projectId === p.id);
+            if (!hasInv) return false;
+            if (exclude!=='vendor' && invVendor && p.vendor !== invVendor) return false;
+            if (exclude!=='pm'     && invPM     && p.pm     !== invPM)     return false;
+            if (exclude!=='region' && invRegion && p.region !== invRegion) return false;
+            if (exclude!=='type'   && invType   && p.type   !== invType)   return false;
+            return true;
+          });
+          const uniq = (arr: any[]) => Array.from(new Set(arr.filter(Boolean))).sort() as string[];
+          return (
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap' as const, marginBottom:16, alignItems:'center' }}>
+            <select value={invVendor} onChange={e=>setInvVendor(e.target.value)}
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
+              <option value="">All Vendors</option>
+              {uniq(cascadeProj('vendor').map((p:any)=>p.vendor)).map(v=><option key={v} value={v}>{v}</option>)}
+            </select>
+            <select value={invPM} onChange={e=>setInvPM(e.target.value)}
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
+              <option value="">All PMs</option>
+              {uniq(cascadeProj('pm').map((p:any)=>p.pm)).map(pm=><option key={pm} value={pm}>{pm}</option>)}
+            </select>
+            <select value={invRegion} onChange={e=>setInvRegion(e.target.value)}
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
+              <option value="">All Regions</option>
+              {uniq(cascadeProj('region').map((p:any)=>p.region)).map(r=><option key={r} value={r}>{r}</option>)}
+            </select>
+            <select value={invType} onChange={e=>setInvType(e.target.value)}
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
+              <option value="">All Types</option>
+              {uniq(cascadeProj('type').map((p:any)=>p.type)).map(t=><option key={t} value={t}>{t}</option>)}
+            </select>
+            {(invVendor||invPM||invRegion||invType) && (
+              <button onClick={()=>{ setInvVendor(''); setInvPM(''); setInvRegion(''); setInvType(''); }}
+                style={{ fontSize:11, color:'#DC2626', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:6, padding:'5px 10px', cursor:'pointer', fontWeight:600 }}>
+                ✕ Clear
+              </button>
+            )}
+          </div>
+          );
+        })()}
 
         {/* PO Search */}
         <div style={{ ...card, marginBottom:16 }}>
@@ -393,7 +476,7 @@ export default function InvoicesPage() {
                 {!invLoading && displayInvoices.length === 0 && (
                   <tr><td colSpan={16} style={{ padding:32, textAlign:"center" as const, color:T.textDim }}>No invoices found</td></tr>
                 )}
-                {displayInvoices.map((inv, idx) => {
+                {paginatedInv.map((inv, idx) => {
                   const proj = projects.find((p:any) => p.id === inv.projectId);
                   return (
                     <React.Fragment key={inv.id}>
@@ -402,7 +485,7 @@ export default function InvoicesPage() {
                       style={{ background: idx % 2 === 0 ? "#fff" : T.bg, cursor:"pointer" }}
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = T.primaryLight}
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = idx % 2 === 0 ? "#fff" : T.bg}>
-                      <td style={{ ...tdS, color:T.textMuted, width:36 }}>{idx + 1}</td>
+                      <td style={{ ...tdS, color:T.textMuted, width:36 }}>{(invPage-1)*INV_PER_PAGE+idx+1}</td>
                       <td style={{ ...tdS, fontWeight:700, color:T.primary, whiteSpace:"nowrap" as const }}>{inv.poNo || "—"}</td>
                       <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{proj ? fmtDate((proj as any).poDate) : "—"}</td>
                       <td style={{ ...tdS, color:T.textMuted }}>{proj ? (proj as any).indusId || "—" : "—"}</td>
@@ -495,6 +578,24 @@ export default function InvoicesPage() {
               )}
             </table>
           </div>
+          {invTotalPages > 1 && (
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 4px', borderTop:`1px solid ${T.border}`, marginTop:4 }}>
+              <div style={{ fontSize:12, color:'#6B7280' }}>
+                Showing {(invPage-1)*INV_PER_PAGE+1}–{Math.min(invPage*INV_PER_PAGE, displayInvoices.length)} of {displayInvoices.length} invoices
+              </div>
+              <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                <button onClick={()=>setInvPage(n=>Math.max(1,n-1))} disabled={invPage===1}
+                  style={{ padding:'5px 12px', borderRadius:6, border:`1px solid #E5E7EB`, background:'#fff', cursor:invPage===1?'not-allowed':'pointer', fontSize:12, opacity:invPage===1?0.5:1 }}>← Prev</button>
+                {Array.from({length:invTotalPages},(_,i)=>i+1).filter(n=>n===1||n===invTotalPages||Math.abs(n-invPage)<=1).reduce((acc:number[],n,i,arr)=>{ if(i>0&&n-arr[i-1]>1) acc.push(-1); acc.push(n); return acc; },[] as number[]).map((n,i)=>
+                  n===-1 ? <span key={`e${i}`} style={{ fontSize:12, color:'#9CA3AF' }}>…</span>
+                  : <button key={n} onClick={()=>setInvPage(n)}
+                      style={{ padding:'5px 10px', borderRadius:6, border:`1px solid ${invPage===n?T.primary:'#E5E7EB'}`, background:invPage===n?T.primary:'#fff', color:invPage===n?'#fff':'#374151', cursor:'pointer', fontSize:12, fontWeight:invPage===n?700:400, minWidth:32 }}>{n}</button>
+                )}
+                <button onClick={()=>setInvPage(n=>Math.min(invTotalPages,n+1))} disabled={invPage===invTotalPages}
+                  style={{ padding:'5px 12px', borderRadius:6, border:`1px solid #E5E7EB`, background:'#fff', cursor:invPage===invTotalPages?'not-allowed':'pointer', fontSize:12, opacity:invPage===invTotalPages?0.5:1 }}>Next →</button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
