@@ -238,9 +238,21 @@ export default function SRNReturnPage() {
   }, [allProjectIds, srnGrouped, stnGrouped, cardFilter, search, kpiSubFilter, statusDistFilter, agingDistFilter, projects]);
 
   // ── Pagination ───────────────────────────────────────────────────────────
-  const PER_PAGE = 20;
+  const PER_PAGE = 10;
   const [page, setPage] = React.useState(1);
-  React.useEffect(() => { if (router.isReady) { const p=Number(router.query.page); if(p&&p>0) setPage(p); } }, [router.isReady]);
+  React.useEffect(() => {
+    if (!router.isReady) return;
+    const hasQuery = Object.keys(router.query).length > 0;
+    const saved = !hasQuery ? sessionStorage.getItem('srnFilters') : null;
+    if (saved) {
+      const params = Object.fromEntries(new URLSearchParams(saved));
+      sessionStorage.removeItem('srnFilters');
+      if (params.search) setSearch(params.search);
+      if (params.page) setPage(Number(params.page));
+    } else {
+      const p = Number(router.query.page); if(p&&p>0) setPage(p);
+    }
+  }, [router.isReady]);
   React.useEffect(() => { setPage(1); router.replace({query:{...router.query,page:1}},undefined,{shallow:true}); }, [search, cardFilter, showSRN, showSTN, kpiSubFilter, statusDistFilter, agingDistFilter]);
   const totalPages = Math.ceil(filteredProjects.length / PER_PAGE);
   const paginated  = filteredProjects.slice((page-1)*PER_PAGE, page*PER_PAGE);

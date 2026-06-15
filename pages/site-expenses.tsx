@@ -36,7 +36,25 @@ export default function SiteExpensesPage() {
   const [search,          setSearch]          = useState("");
   const PER_PAGE = 10;
   const [page, setPage] = useState(1);
-  React.useEffect(() => { if (router.isReady) { const p=Number(router.query.page); if(p&&p>0) setPage(p); } }, [router.isReady]);
+  React.useEffect(() => {
+    if (!router.isReady) return;
+    const hasQuery = Object.keys(router.query).length > 0;
+    const saved = !hasQuery ? sessionStorage.getItem('expensesFilters') : null;
+    if (saved) {
+      const params = Object.fromEntries(new URLSearchParams(saved));
+      sessionStorage.removeItem('expensesFilters');
+      if (params.datePreset) setDatePreset(params.datePreset);
+      if (params.expStatus) setExpStatusFilter(params.expStatus);
+      if (params.expVendor) setExpVendorFilter(decodeURIComponent(params.expVendor));
+      if (params.expPM) setExpPMFilter(decodeURIComponent(params.expPM));
+      if (params.expRegion) setExpRegionFilter(decodeURIComponent(params.expRegion));
+      if (params.expType) setExpTypeFilter(decodeURIComponent(params.expType));
+      if (params.search) setSearch(params.search);
+      if (params.page) setPage(Number(params.page));
+    } else {
+      const p = Number(router.query.page); if(p&&p>0) setPage(p);
+    }
+  }, [router.isReady]);
   const [expStatusFilter, setExpStatusFilter] = useState('');
   const [expVendorFilter, setExpVendorFilter] = useState('');
   const [expPMFilter,     setExpPMFilter]     = useState('');
@@ -365,7 +383,7 @@ export default function SiteExpensesPage() {
                       onMouseLeave={el=>(el.currentTarget as HTMLTableRowElement).style.background=isPending?'#FFFBEB':idx%2===0?"#fff":T.bg}>
                       <td style={{ ...tdS, color:T.textMuted, width:36 }}>{(page-1)*PER_PAGE+idx+1}</td>
                       <td style={{ ...tdS, whiteSpace:"nowrap" as const }}>{fmtD(e.expenseDate)}</td>
-                      <td style={tdS} onClick={()=>e.projectId&&router.push(`/projects/${e.projectId}`)}>
+                      <td style={tdS} onClick={()=>{ if(e.projectId){ const retQ: Record<string,string> = {}; if(datePreset&&datePreset!=='all') retQ.datePreset=datePreset; if(expStatusFilter) retQ.expStatus=expStatusFilter; if(expVendorFilter) retQ.expVendor=encodeURIComponent(expVendorFilter); if(expPMFilter) retQ.expPM=encodeURIComponent(expPMFilter); if(expRegionFilter) retQ.expRegion=encodeURIComponent(expRegionFilter); if(expTypeFilter) retQ.expType=encodeURIComponent(expTypeFilter); if(search) retQ.search=search; if(page>1) retQ.page=String(page); sessionStorage.setItem('expensesFilters', new URLSearchParams(retQ).toString()); router.push(`/projects/${e.projectId}`); }}}>
                         <div style={{ fontWeight:600, fontSize:13, color:T.primary, cursor:'pointer' }}>{proj?.poNo || e.projectId || '—'}</div>
                         {proj?.site && <div style={{ fontSize:10, color:T.textMuted }}>{proj.site}</div>}
                       </td>
