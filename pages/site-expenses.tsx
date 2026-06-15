@@ -34,6 +34,11 @@ export default function SiteExpensesPage() {
   const [selectedVendor,  setSelectedVendor]  = useState("");
   const [selectedProject, setSelectedProject] = useState("");
   const [search,          setSearch]          = useState("");
+  const [expStatusFilter, setExpStatusFilter] = useState('');
+  const [expVendorFilter, setExpVendorFilter] = useState('');
+  const [expPMFilter,     setExpPMFilter]     = useState('');
+  const [expRegionFilter, setExpRegionFilter] = useState('');
+  const [expTypeFilter,   setExpTypeFilter]   = useState('');
   const [toast,           setToast]           = useState<any>(null);
   const [saving,          setSaving]          = useState(false);
   const [adding,          setAdding]          = useState(false);
@@ -110,6 +115,15 @@ export default function SiteExpensesPage() {
         if (datePreset==='lastmonth' && !inRange(e.expenseDate, startOfLastMonth, endOfLastMonth)) return false;
         if (datePreset==='custom' && customFrom && customTo && !inRange(e.expenseDate, new Date(customFrom), new Date(customTo))) return false;
       }
+      // Project-level filters
+      if (expVendorFilter || expPMFilter || expRegionFilter || expTypeFilter) {
+        const fp = (projects as any[]).find((p:any) => p.id === e.projectId);
+        if (expVendorFilter && fp?.vendor !== expVendorFilter) return false;
+        if (expPMFilter     && fp?.pm     !== expPMFilter)     return false;
+        if (expRegionFilter && fp?.region !== expRegionFilter) return false;
+        if (expTypeFilter   && fp?.type   !== expTypeFilter)   return false;
+      }
+      if (expStatusFilter && e.status !== expStatusFilter) return false;
       if (!search) return true;
       const s = search.toLowerCase();
       const eProj = (projects as any[]).find((p:any) => p.id === e.projectId);
@@ -225,6 +239,42 @@ export default function SiteExpensesPage() {
               <DateInput value={customTo} onChange={setCustomTo}
                 style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 10px', fontSize:12, outline:'none' }} />
             </div>
+          )}
+        </div>
+
+        {/* Project Filters */}
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' as const, marginBottom:16, alignItems:'center' }}>
+          <select value={expStatusFilter} onChange={e=>setExpStatusFilter(e.target.value)}
+            style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
+            <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="paid">Paid</option>
+          </select>
+          <select value={expVendorFilter} onChange={e=>setExpVendorFilter(e.target.value)}
+            style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
+            <option value="">All Vendors</option>
+            {Array.from(new Set((projects as any[]).map((p:any)=>p.vendor).filter(Boolean))).sort().map(v=><option key={v as string} value={v as string}>{v as string}</option>)}
+          </select>
+          <select value={expPMFilter} onChange={e=>setExpPMFilter(e.target.value)}
+            style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
+            <option value="">All PMs</option>
+            {Array.from(new Set((projects as any[]).map((p:any)=>p.pm).filter(Boolean))).sort().map(pm=><option key={pm as string} value={pm as string}>{pm as string}</option>)}
+          </select>
+          <select value={expRegionFilter} onChange={e=>setExpRegionFilter(e.target.value)}
+            style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
+            <option value="">All Regions</option>
+            {Array.from(new Set((projects as any[]).map((p:any)=>p.region).filter(Boolean))).sort().map(r=><option key={r as string} value={r as string}>{r as string}</option>)}
+          </select>
+          <select value={expTypeFilter} onChange={e=>setExpTypeFilter(e.target.value)}
+            style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
+            <option value="">All Types</option>
+            {Array.from(new Set((projects as any[]).map((p:any)=>p.type).filter(Boolean))).sort().map(t=><option key={t as string} value={t as string}>{t as string}</option>)}
+          </select>
+          {(expStatusFilter||expVendorFilter||expPMFilter||expRegionFilter||expTypeFilter) && (
+            <button onClick={()=>{setExpStatusFilter('');setExpVendorFilter('');setExpPMFilter('');setExpRegionFilter('');setExpTypeFilter('');}}
+              style={{ fontSize:11, color:'#DC2626', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:6, padding:'5px 10px', cursor:'pointer', fontWeight:600 }}>
+              ✕ Clear Filters
+            </button>
           )}
         </div>
 
