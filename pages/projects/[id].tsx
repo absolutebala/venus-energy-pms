@@ -2170,19 +2170,16 @@ export default function ProjectDetailPage() {
 
   // Doc verifications — stored in projects.doc_verifications JSONB
   const [docVerifications, setDocVerifications] = React.useState<Record<string,string>>({});
-  React.useEffect(() => {
-    if (p?.doc_verifications) setDocVerifications((p as any).doc_verifications || {});
-  }, [(p as any)?.id]);
 
-  const verifyDoc = async (docKey: string) => {
+  const verifyDoc = async (docKey: string, projectId: string) => {
     if (docVerifications[docKey]) return;
     const ts = new Date().toISOString();
     const updated = { ...docVerifications, [docKey]: ts };
     const supabase = createClient();
-    const { error } = await supabase.from('projects').update({ doc_verifications: updated }).eq('id', (p as any).id);
+    const { error } = await supabase.from('projects').update({ doc_verifications: updated }).eq('id', projectId);
     if (!error) {
       setDocVerifications(updated);
-      logActivity((p as any).id, `Document verified: ${docKey} by ${profile?.full_name}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+      logActivity(projectId, `Document verified: ${docKey} by ${profile?.full_name}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
     }
   };
   const canUploadDocs     = !loading && can('sec_work_documents',   'create');
@@ -2441,6 +2438,11 @@ export default function ProjectDetailPage() {
   );
 
   const p = project;
+
+  // Load doc verifications when project loads
+  React.useEffect(() => {
+    if (p?.doc_verifications) setDocVerifications((p as any).doc_verifications || {});
+  }, [p?.id]);
 
   const workDocsList = getProjectDocs((id as string) || '');
   const workDocs: Record<string, any[]> = DOC_TYPES.reduce((acc:any, dt:any) => {
@@ -2886,7 +2888,7 @@ export default function ProjectDetailPage() {
                   {canVerifyDocs && (
                     <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${T.border}` }}>
                       <label style={{ display:'flex', alignItems:'center', gap:8, cursor: docVerifications[doc.key] ? 'default' : 'pointer' }}
-                        onClick={()=>{ if (!docVerifications[doc.key]) verifyDoc(doc.key); }}>
+                        onClick={()=>{ if (!docVerifications[doc.key]) verifyDoc(doc.key, p.id); }}>
                         <div style={{ width:18, height:18, borderRadius:4, border:`2px solid ${docVerifications[doc.key]?T.success:T.border}`,
                           background:docVerifications[doc.key]?T.success:'#fff', display:'flex', alignItems:'center', justifyContent:'center',
                           flexShrink:0, transition:'all 0.15s' }}>
