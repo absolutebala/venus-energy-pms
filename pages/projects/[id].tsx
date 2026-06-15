@@ -2416,6 +2416,13 @@ export default function ProjectDetailPage() {
     if (id) getActivityLog(id as string).then(setActivityEntries);
   }, [id, getActivityLog]);
 
+  // Doc verifications — before ALL early returns
+  React.useEffect(() => {
+    if (dbProject && (dbProject as any).doc_verifications) {
+      setDocVerifications((dbProject as any).doc_verifications || {});
+    }
+  }, [(dbProject as any)?.id]);
+
   if (!router.isReady) return (
     <Layout>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh', flexDirection:'column', gap:16 }}>
@@ -2427,11 +2434,6 @@ export default function ProjectDetailPage() {
 
   // Merge: DB project takes priority over local state
   const project = (dbProject as any) || null;  // Only use live DB data, no seed fallback
-  // Doc verifications effect — must be before any early returns (React rules of hooks)
-  React.useEffect(() => {
-    if (project?.doc_verifications) setDocVerifications((project as any).doc_verifications || {});
-  }, [(project as any)?.id]);
-
   if (!project) return (
     <Layout>
       <div style={{ ...card, textAlign:'center', padding:60, margin:20 }}>
