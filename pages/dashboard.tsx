@@ -1206,6 +1206,9 @@ export default function Dashboard() {
   // Dashboard filters
   const [dashRegion,   setDashRegion]   = React.useState('');
   const [dashType,     setDashType]     = React.useState('');
+  const [dashStatus,   setDashStatus]   = React.useState('');
+  const [dashPM,       setDashPM]       = React.useState('');
+  const [dashVendor,   setDashVendor]   = React.useState('');
   const [dashDateFrom, setDashDateFrom] = React.useState('');
   const [dashDateTo,   setDashDateTo]   = React.useState('');
 
@@ -1223,11 +1226,14 @@ export default function Dashboard() {
     return projectsWithAging.filter((p:any) => {
       if (dashRegion && p.region !== dashRegion) return false;
       if (dashType   && p.type   !== dashType)   return false;
+      if (dashStatus && (p as any).projectStatus !== dashStatus) return false;
+      if (dashPM     && (p as any).pm !== dashPM) return false;
+      if (dashVendor && (p as any).vendor !== dashVendor) return false;
       if (dashDateFrom && p.poDate && p.poDate < dashDateFrom) return false;
       if (dashDateTo   && p.poDate && p.poDate > dashDateTo)   return false;
       return true;
     });
-  }, [dbProjects, dashRegion, dashType, dashDateFrom, dashDateTo]);
+  }, [dbProjects, dashRegion, dashType, dashDateFrom, dashDateTo, dashStatus, dashPM, dashVendor]);
 
   return (
     <Layout>
@@ -1240,6 +1246,10 @@ export default function Dashboard() {
           {/* Filter bar only for admin roles */}
           {['super_admin','region_manager'].includes(role) && (
             <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' as const }}>
+              <select value={dashStatus} onChange={e=>setDashStatus(e.target.value)} style={selStyle}>
+                <option value="">All Statuses</option>
+                {Array.from(new Set((dbProjects as any[]).map((p:any)=>(p as any).projectStatus).filter(Boolean))).sort().map(s=><option key={s as string} value={s as string}>{s as string}</option>)}
+              </select>
               <select value={dashRegion} onChange={e=>setDashRegion(e.target.value)} style={selStyle}>
                 <option value="">All Regions</option>
                 {Array.from(new Set((dbProjects as any[]).map((p:any)=>p.region).filter(Boolean))).sort().map(r=><option key={r as string} value={r as string}>{r as string}</option>)}
@@ -1247,6 +1257,14 @@ export default function Dashboard() {
               <select value={dashType} onChange={e=>setDashType(e.target.value)} style={selStyle}>
                 <option value="">All Types</option>
                 {Array.from(new Set((dbProjects as any[]).filter((p:any)=>!dashRegion||p.region===dashRegion).map((p:any)=>p.type).filter(Boolean))).sort().map(t=><option key={t as string} value={t as string}>{t as string}</option>)}
+              </select>
+              <select value={dashPM} onChange={e=>setDashPM(e.target.value)} style={selStyle}>
+                <option value="">All PMs</option>
+                {Array.from(new Set((dbProjects as any[]).map((p:any)=>(p as any).pm).filter(Boolean))).sort().map(pm=><option key={pm as string} value={pm as string}>{pm as string}</option>)}
+              </select>
+              <select value={dashVendor} onChange={e=>setDashVendor(e.target.value)} style={selStyle}>
+                <option value="">All Vendors</option>
+                {Array.from(new Set((dbProjects as any[]).map((p:any)=>(p as any).vendor).filter(Boolean))).sort().map(v=><option key={v as string} value={v as string}>{v as string}</option>)}
               </select>
               <div style={{ display:'flex', alignItems:'center', gap:4 }}>
                 <span style={{ fontSize:11, color:T.textMuted }}>From</span>
@@ -1258,8 +1276,8 @@ export default function Dashboard() {
                 <DateInput value={dashDateTo} onChange={setDashDateTo}
                   style={{ ...selStyle, width:130, padding:'6px 36px 6px 10px' }} />
               </div>
-              {(dashRegion||dashType||dashDateFrom||dashDateTo) && (
-                <button onClick={()=>{setDashRegion('');setDashType('');setDashDateFrom('');setDashDateTo('');}}
+              {(dashRegion||dashType||dashDateFrom||dashDateTo||dashStatus||dashPM||dashVendor) && (
+                <button onClick={()=>{setDashRegion('');setDashType('');setDashDateFrom('');setDashDateTo('');setDashStatus('');setDashPM('');setDashVendor('');}}
                   style={{ fontSize:11, color:T.danger, background:'#FEF2F2', border:`1px solid #FECACA`, borderRadius:6, padding:'4px 10px', cursor:'pointer' }}>
                   ✕ Clear
                 </button>
