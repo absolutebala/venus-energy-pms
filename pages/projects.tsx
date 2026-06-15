@@ -283,18 +283,19 @@ export default function ProjectsPage() {
   useEffect(() => {
     if (!router.isReady) return;
     const q = router.query;
-    if (q.status   && typeof q.status === 'string') setStatusFilter(STATUS_DISPLAY[q.status as string] || q.status as string);
-    if (q.type     && typeof q.type   === 'string') setTypeFilter(q.type as string);
-    if (q.search   && typeof q.search === 'string') setSearch(q.search as string);
-    if (q.pm       !== undefined) setPmFilter(decodeURIComponent(q.pm as string));
-    if (q.vendor   !== undefined) setVendorFilter(decodeURIComponent(q.vendor as string));
-    if (q.region   !== undefined) setRegionFilter(decodeURIComponent(q.region as string));
-    if (q.noVendor !== undefined) setNoVendorFilter(q.noVendor === '1');
-    if (q.projStatus !== undefined) setProjectStatusFilter(decodeURIComponent(q.projStatus as string));
-    if (q.ageMin)  setAgeMin(Number(q.ageMin));
-    if (q.ageMax)  setAgeMax(Number(q.ageMax));
-    if (q.page)    setPage(Number(q.page));
-  }, [router.isReady, router.asPath]);
+    // Always reset to defaults first, then apply URL values
+    setStatusFilter(q.status ? (STATUS_DISPLAY[q.status as string] || q.status as string) : 'All');
+    setTypeFilter(q.type ? q.type as string : 'All Types');
+    setSearch(q.search ? q.search as string : '');
+    setPmFilter(q.pm ? decodeURIComponent(q.pm as string) : '');
+    setVendorFilter(q.vendor ? decodeURIComponent(q.vendor as string) : '');
+    setRegionFilter(q.region ? decodeURIComponent(q.region as string) : '');
+    setNoVendorFilter(q.noVendor === '1');
+    setProjectStatusFilter(q.projStatus ? decodeURIComponent(q.projStatus as string) : '');
+    if (q.ageMin) setAgeMin(Number(q.ageMin)); else setAgeMin(null);
+    if (q.ageMax) setAgeMax(Number(q.ageMax)); else setAgeMax(null);
+    setPage(q.page ? Number(q.page) : 1);
+  }, [router.isReady, router.query]);
 
   // Sync all filters TO URL whenever they change
   const syncToUrl = (overrides: Record<string,any> = {}) => {
