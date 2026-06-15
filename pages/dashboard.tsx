@@ -491,6 +491,58 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
 
   return (
     <div>
+      {/* ── Project KPI cards ── */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
+        <div onClick={()=>router.push('/projects')}
+          style={{ ...card, padding:'16px 18px', cursor:'pointer', position:'relative' as const, overflow:'hidden', transition:'all 0.15s' }}
+          onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(-1px)'}
+          onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(0)'}>
+          <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:T.primary }} />
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+            <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase' as const, letterSpacing:0.5 }}>Total Projects</div>
+            <div style={{ fontSize:20 }}>📁</div>
+          </div>
+          <div style={{ fontSize:26, fontWeight:700, color:T.text, marginBottom:4 }}>{projects.length}</div>
+          <div style={{ fontSize:11, color:T.textMuted }}>{projects.filter((p:any)=>p.status==='in_progress').length} in progress</div>
+        </div>
+        <div onClick={()=>router.push('/projects?status=Open')}
+          style={{ ...card, padding:'16px 18px', cursor:'pointer', position:'relative' as const, overflow:'hidden', transition:'all 0.15s' }}
+          onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(-1px)'}
+          onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(0)'}>
+          <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:'#059669' }} />
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+            <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase' as const, letterSpacing:0.5 }}>PO Open</div>
+            <div style={{ fontSize:20 }}>🟢</div>
+          </div>
+          <div style={{ fontSize:26, fontWeight:700, color:'#059669', marginBottom:4 }}>{projects.filter((p:any)=>(p as any).poStatus==='Open').length}</div>
+          <div style={{ fontSize:11, color:T.textMuted }}>{Math.round(projects.filter((p:any)=>(p as any).poStatus==='Open').length/Math.max(projects.length,1)*100)}% of total</div>
+        </div>
+        <div onClick={()=>router.push('/projects?status=Closed')}
+          style={{ ...card, padding:'16px 18px', cursor:'pointer', position:'relative' as const, overflow:'hidden', transition:'all 0.15s' }}
+          onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(-1px)'}
+          onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(0)'}>
+          <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:'#DC2626' }} />
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+            <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase' as const, letterSpacing:0.5 }}>PO Closed</div>
+            <div style={{ fontSize:20 }}>🔴</div>
+          </div>
+          <div style={{ fontSize:26, fontWeight:700, color:'#DC2626', marginBottom:4 }}>{projects.filter((p:any)=>(p as any).poStatus==='Closed').length}</div>
+          <div style={{ fontSize:11, color:T.textMuted }}>{Math.round(projects.filter((p:any)=>(p as any).poStatus==='Closed').length/Math.max(projects.length,1)*100)}% of total</div>
+        </div>
+        <div onClick={()=>router.push('/projects')}
+          style={{ ...card, padding:'16px 18px', cursor:'pointer', position:'relative' as const, overflow:'hidden', transition:'all 0.15s' }}
+          onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(-1px)'}
+          onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(0)'}>
+          <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:'#7C3AED' }} />
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+            <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase' as const, letterSpacing:0.5 }}>Total PO Value</div>
+            <div style={{ fontSize:20 }}>💰</div>
+          </div>
+          <div style={{ fontSize:26, fontWeight:700, color:'#7C3AED', marginBottom:4 }}>{fmtCr(projects.reduce((a:number,p:any)=>a+Number(p.poValue||0),0))}</div>
+          <div style={{ fontSize:11, color:T.textMuted }}>across {new Set(projects.map((p:any)=>(p as any).poNo).filter(Boolean)).size} POs</div>
+        </div>
+      </div>
+
       {/* ── Expenses & Invoices cards ── */}
       {(loading || expLoading || invLoading) ? (
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'60px 0', gap:12 }}>
