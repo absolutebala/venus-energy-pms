@@ -294,7 +294,7 @@ export default function ProjectsPage() {
     if (q.ageMin)  setAgeMin(Number(q.ageMin));
     if (q.ageMax)  setAgeMax(Number(q.ageMax));
     if (q.page)    setPage(Number(q.page));
-  }, [router.isReady]);
+  }, [router.isReady, router.asPath]);
 
   // Sync all filters TO URL whenever they change
   const syncToUrl = (overrides: Record<string,any> = {}) => {
