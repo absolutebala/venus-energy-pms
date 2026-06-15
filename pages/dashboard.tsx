@@ -503,7 +503,11 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
             <div style={{ fontSize:20 }}>📁</div>
           </div>
           <div style={{ fontSize:26, fontWeight:700, color:T.text, marginBottom:4 }}>{projects.length}</div>
-          <div style={{ fontSize:11, color:T.textMuted }}>{projects.filter((p:any)=>p.status==='in_progress').length} in progress</div>
+          <div style={{ fontSize:11, color:T.textMuted }}>
+            {projects.filter((p:any)=>(p as any).poStatus==='Open').length} Open · {projects.filter((p:any)=>(p as any).poStatus==='Closed').length} Closed
+            {projects.filter((p:any)=>!['Open','Closed'].includes((p as any).poStatus||'')).length > 0 &&
+              <span style={{ color:'#D97706' }}> · {projects.filter((p:any)=>!['Open','Closed'].includes((p as any).poStatus||'')).length} Other</span>}
+          </div>
         </div>
         <div onClick={()=>router.push('/projects?status=Open')}
           style={{ ...card, padding:'16px 18px', cursor:'pointer', position:'relative' as const, overflow:'hidden', transition:'all 0.15s' }}
@@ -527,7 +531,9 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
             <div style={{ fontSize:20 }}>🔴</div>
           </div>
           <div style={{ fontSize:26, fontWeight:700, color:'#DC2626', marginBottom:4 }}>{projects.filter((p:any)=>(p as any).poStatus==='Closed').length}</div>
-          <div style={{ fontSize:11, color:T.textMuted }}>{Math.round(projects.filter((p:any)=>(p as any).poStatus==='Closed').length/Math.max(projects.length,1)*100)}% of total</div>
+          <div style={{ fontSize:11, color:T.textMuted }}>
+            {(() => { const other = projects.filter((p:any)=>!['Open','Closed'].includes((p as any).poStatus||'')).length; return other > 0 ? <span style={{color:'#D97706'}}>{other} unclassified</span> : <span>{Math.round(projects.filter((p:any)=>(p as any).poStatus==='Closed').length/Math.max(projects.length,1)*100)}% of total</span>; })()}
+          </div>
         </div>
         <div onClick={()=>router.push('/projects')}
           style={{ ...card, padding:'16px 18px', cursor:'pointer', position:'relative' as const, overflow:'hidden', transition:'all 0.15s' }}
