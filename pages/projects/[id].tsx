@@ -2167,7 +2167,26 @@ export default function ProjectDetailPage() {
   const showFinancial     = !loading && can('sec_financial',        'read');
   const showVendor        = !loading && can('sec_vendor_assignment', 'read');
   const showDocs          = !loading && can('sec_work_documents',   'read');
+
+  // Doc verifications — stored in projects.doc_verifications JSONB
+  const [docVerifications, setDocVerifications] = React.useState<Record<string,string>>({});
+  React.useEffect(() => {
+    if (p?.doc_verifications) setDocVerifications((p as any).doc_verifications || {});
+  }, [(p as any)?.id]);
+
+  const verifyDoc = async (docKey: string) => {
+    if (docVerifications[docKey]) return;
+    const ts = new Date().toISOString();
+    const updated = { ...docVerifications, [docKey]: ts };
+    const supabase = createClient();
+    const { error } = await supabase.from('projects').update({ doc_verifications: updated }).eq('id', (p as any).id);
+    if (!error) {
+      setDocVerifications(updated);
+      logActivity((p as any).id, `Document verified: ${docKey} by ${profile?.full_name}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+    }
+  };
   const canUploadDocs     = !loading && can('sec_work_documents',   'create');
+  const canVerifyDocs     = !loading && ['super_admin','project_manager','region_manager'].includes(role);
   const showSTNSRN        = !loading && can('sec_stn_srn',          'read');
   const showBillingReview = !loading && can('sec_billing_review',   'read');
   const showActivityLog   = !loading && can('sec_activity_log',     'read');
@@ -2861,6 +2880,33 @@ export default function ProjectDetailPage() {
 
                   {docs.length === 0 && (
                     <div style={{ textAlign:'center', padding:'12px 0', color:T.textDim, fontSize:12 }}>No files uploaded</div>
+                  )}
+
+                  {/* Verification checkbox */}
+                  {canVerifyDocs && (
+                    <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${T.border}` }}>
+                      <label style={{ display:'flex', alignItems:'center', gap:8, cursor: docVerifications[doc.key] ? 'default' : 'pointer' }}
+                        onClick={()=>{ if (!docVerifications[doc.key]) verifyDoc(doc.key); }}>
+                        <div style={{ width:18, height:18, borderRadius:4, border:`2px solid ${docVerifications[doc.key]?T.success:T.border}`,
+                          background:docVerifications[doc.key]?T.success:'#fff', display:'flex', alignItems:'center', justifyContent:'center',
+                          flexShrink:0, transition:'all 0.15s' }}>
+                          {docVerifications[doc.key] && <span style={{ color:'#fff', fontSize:12, fontWeight:700 }}>✓</span>}
+                        </div>
+                        <span style={{ fontSize:12, fontWeight:600, color:docVerifications[doc.key]?T.success:T.textMuted }}>
+                          {docVerifications[doc.key] ? 'Verified' : 'Mark as Verified'}
+                        </span>
+                      </label>
+                      {docVerifications[doc.key] && (
+                        <div style={{ fontSize:10, color:T.textMuted, marginTop:4, marginLeft:26 }}>
+                          ✓ Verified on {new Date(docVerifications[doc.key]).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})} at {new Date(docVerifications[doc.key]).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {!canVerifyDocs && docVerifications[doc.key] && (
+                    <div style={{ marginTop:8, paddingTop:8, borderTop:`1px solid ${T.border}`, fontSize:10, color:T.success, fontWeight:600 }}>
+                      ✓ Verified on {new Date(docVerifications[doc.key]).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})} at {new Date(docVerifications[doc.key]).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}
+                    </div>
                   )}
 
                   {/* Upload + Delete buttons */}

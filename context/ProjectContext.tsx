@@ -5,6 +5,7 @@ const supabase = createClient();
 
 export interface Project {
   id: string; projectId: string; poNo: string; projectStatus: string; poStatus: string; indusId: string; site: string;
+  doc_verifications?: Record<string,string>;
   region: string; type: string; pm: string; rm: string;
   vendor: string; vendorContact: string; vendorPhone: string; vendorEmail: string;
   status: string; poValue: number; billedAmount: number; paidAmount: number;
@@ -22,6 +23,7 @@ function mapRow(row: any): Project {
     id:            row.id            ?? '',
     projectId:     row.project_id     ?? row.projectId     ?? '',
     projectStatus: row.project_status  ?? row.projectStatus ?? '',
+    doc_verifications: row.doc_verifications ?? {},
     poStatus:      row.po_status       ?? row.poStatus       ?? '',
     poNo:          row.po_no         ?? row.poNo         ?? '',
     indusId:       row.indus_id      ?? row.indusId      ?? '',
