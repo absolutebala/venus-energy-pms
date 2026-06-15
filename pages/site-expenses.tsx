@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import DateInput from '@/components/DateInput';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
+import * as XLSX from 'xlsx';
 import { useExpenses } from '@/context/ExpenseContext';
 import { useProjects } from '@/context/ProjectContext';
 import { createClient } from '@/lib/supabase';
@@ -43,7 +44,7 @@ export default function SiteExpensesPage() {
   // Paid modal state
   const [paidModal,    setPaidModal]    = useState<any>(null);
   const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] });
-  const [datePreset,   setDatePreset]   = useState<string>('today');
+  const [datePreset,   setDatePreset]   = useState<string>('all');
   const [customFrom,   setCustomFrom]   = useState('');
   const [customTo,     setCustomTo]     = useState('');
   const [fromAccounts,  setFromAccounts]  = useState<string[]>([]);
@@ -114,7 +115,10 @@ export default function SiteExpensesPage() {
       return e.projectId?.toLowerCase().includes(s) ||
              e.expenseType?.toLowerCase().includes(s) ||
              e.site?.toLowerCase().includes(s) ||
-             e.paidTxnRef?.toLowerCase().includes(s);
+             e.paidTxnRef?.toLowerCase().includes(s) ||
+             e.remarks?.toLowerCase().includes(s) ||
+             String(e.amount||'').includes(s) ||
+             e.vendor?.toLowerCase().includes(s);
     })
     .sort((a:any, b:any) => {
       if (a.status === 'pending' && b.status !== 'pending') return -1;
@@ -201,7 +205,7 @@ export default function SiteExpensesPage() {
 
         {/* Date Filter */}
         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16, flexWrap:'wrap' as const }}>
-          {([['today','Today'],['week','This Week'],['last7','Last 7 Days'],['month','This Month'],['lastmonth','Last Month'],['all','All'],['custom','Custom']] as [string,string][]).map(([val,label])=>(
+          {([['all','All'],['today','Today'],['week','This Week'],['last7','Last 7 Days'],['month','This Month'],['lastmonth','Last Month'],['custom','Custom']] as [string,string][]).map(([val,label])=>(
             <button key={val} onClick={()=>setDatePreset(val)}
               style={{ background:datePreset===val?T.primary:'#fff', color:datePreset===val?'#fff':T.textMuted,
                 border:`1px solid ${datePreset===val?T.primary:T.border}`, borderRadius:8,
@@ -223,11 +227,37 @@ export default function SiteExpensesPage() {
         {/* All Expenses Table */}
         <div style={card}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-            <div style={{ fontSize:14, fontWeight:700, color:T.text }}>
-              All Expenses <span style={{ fontSize:12, fontWeight:400, color:T.textMuted, marginLeft:8 }}>{allExpenses.length} records</span>
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <div style={{ fontSize:14, fontWeight:700, color:T.text }}>
+                All Expenses <span style={{ fontSize:12, fontWeight:400, color:T.textMuted, marginLeft:8 }}>{allExpenses.length} records</span>
+              </div>
+              {canManage && (
+                <button onClick={()=>{
+                  const rows = allExpenses.map((e:any, idx:number) => ({
+                    'S.No': idx+1,
+                    'Date': e.expenseDate,
+                    'Project ID': e.projectId||'',
+                    'Site': e.site||'',
+                    'Expense Type': e.expenseType||'',
+                    'Amount (₹)': Number(e.amount||0),
+                    'Remarks': e.remarks||'',
+                    'Vendor': e.vendor||'',
+                    'Status': e.status||'',
+                    'Txn Ref': e.paidTxnRef||'',
+                  }));
+                  const ws = XLSX.utils.json_to_sheet(rows);
+                  ws['!cols'] = [{wch:6},{wch:12},{wch:14},{wch:16},{wch:16},{wch:12},{wch:20},{wch:16},{wch:10},{wch:16}];
+                  const wb = XLSX.utils.book_new();
+                  XLSX.utils.book_append_sheet(wb, ws, 'Expenses');
+                  XLSX.writeFile(wb, `Venus_Expenses_${new Date().toISOString().slice(0,10)}.xlsx`);
+                }}
+                  style={{ background:T.primaryLight, color:T.primary, border:`1px solid ${T.primaryMid}`, borderRadius:7, padding:'5px 12px', fontSize:12, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:4 }}>
+                  📥 Excel
+                </button>
+              )}
             </div>
             <input value={search} onChange={e=>setSearch(e.target.value)}
-              placeholder="Search project, type, ref…"
+              placeholder="Search project, type, remarks…"
               style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:"6px 12px", fontSize:13, outline:"none", width:220 }} />
           </div>
           <div style={{ overflowX:"auto" as const }}>
