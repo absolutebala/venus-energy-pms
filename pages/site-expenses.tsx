@@ -33,7 +33,6 @@ export default function SiteExpensesPage() {
 
   const [selectedVendor,  setSelectedVendor]  = useState("");
   const [selectedProject, setSelectedProject] = useState("");
-  const router = useRouter();
   const [search,          setSearch]          = useState("");
   const PER_PAGE = 10;
   const [page, setPage] = useState(1);
