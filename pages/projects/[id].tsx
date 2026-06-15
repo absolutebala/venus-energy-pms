@@ -704,6 +704,8 @@ function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { pr
   const [loading, setLoading] = React.useState(true);
   const [saving,  setSaving]  = React.useState<string|null>(null);
   const [toast,   setToast]   = React.useState<any>(null);
+  const [editId,  setEditId]  = React.useState<string|null>(null);
+  const [editRow, setEditRow] = React.useState<any>({});
 
   React.useEffect(() => {
     if (!projectId) return;
@@ -719,10 +721,13 @@ function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { pr
       });
   }, [projectId]);
 
-  const addPTW = () => setItems(prev => [...prev, {
-    id: `new-${Date.now()}`, ticketId:'', supervisor: vendorContact||'',
-    dateFrom:'', dateTo:'', raiser:'', ptwType:'', ptwStatus:'', isNew: true,
-  }]);
+  const addPTW = () => {
+    const newId = `new-${Date.now()}`;
+    const newItem = { id: newId, ticketId:'', supervisor: vendorContact||'', dateFrom:'', dateTo:'', raiser:'', ptwType:'', ptwStatus:'', isNew: true };
+    setItems(prev => [...prev, newItem]);
+    setEditId(newId);
+    setEditRow({...newItem});
+  };
 
   const removeItem = async (id:string|number) => {
     if (String(id).startsWith('new-')) {
@@ -737,6 +742,33 @@ function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { pr
 
   const update = (id:string|number, field:string, val:string) =>
     setItems(prev => prev.map((item:any) => item.id===id ? {...item,[field]:val} : item));
+
+  const savePTWRow = async (item: any) => {
+    setSaving(item.id);
+    const sb = createClient();
+    const payload = {
+      project_id: projectId, ticket_id: editRow.ticketId, supervisor: editRow.supervisor,
+      date_from: editRow.dateFrom||null, date_to: editRow.dateTo||null,
+      raiser: editRow.raiser||null, ptw_type: editRow.ptwType||null, ptw_status: editRow.ptwStatus||null,
+    };
+    if (item.isNew) {
+      const { data, error } = await sb.from('ptw_items').insert(payload).select().single();
+      if (!error && data) {
+        setItems(prev => prev.map((i:any) => i.id===item.id ? {
+          ...editRow, id:data.id, isNew:false
+        } : i));
+        setToast({ msg:'✅ PTW saved', type:'success' });
+      }
+    } else {
+      const { error } = await sb.from('ptw_items').update(payload).eq('id', item.id);
+      if (!error) {
+        setItems(prev => prev.map((i:any) => i.id===item.id ? {...i, ...editRow} : i));
+        setToast({ msg:'✅ PTW updated', type:'success' });
+      }
+    }
+    setEditId(null); setEditRow({});
+    setSaving(null);
+  };
 
   const saveAllPTW = async () => {
     setSaving('all');
@@ -823,50 +855,51 @@ const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-dig
               return (
                 <tr key={item.id} style={{ borderBottom:`1px solid ${T.border}` }}>
                   <td style={{ padding:'10px', color:T.textMuted, fontSize:12, width:32 }}>{idx+1}</td>
-                  <td style={{ padding:'8px 10px', minWidth:160 }}>
-                    {canEdit ? inp(item.ticketId,'ticketId',item.id,'text','PTW-2025-XXXX')
-                    : <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{item.ticketId||'—'}</span>}
-                  </td>
-                  <td style={{ padding:'8px 10px', minWidth:140 }}>
-                    {canEdit ? inp(item.raiser,'raiser',item.id,'text','Raiser name')
-                    : <span style={{ fontSize:13, color:T.text }}>{item.raiser||'—'}</span>}
-                  </td>
-                  <td style={{ padding:'8px 10px', minWidth:160 }}>
-                    {canEdit ? inp(item.supervisor,'supervisor',item.id,'text','Supervisor name')
-                    : <span style={{ fontSize:13, color:T.text }}>{item.supervisor||'—'}</span>}
-                  </td>
-                  <td style={{ padding:'8px 10px', minWidth:150 }}>
-                    {canEdit
-                      ? <select value={item.ptwType||''} onChange={e=>update(item.id,'ptwType',e.target.value)}
-                          style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }}>
-                          <option value="">Select Type</option>
-                          {['Manual','Electrical','Material Handling','Height','Excavation'].map(t=><option key={t}>{t}</option>)}
-                        </select>
-                      : <span style={{ fontSize:12, color:T.text }}>{item.ptwType||'—'}</span>}
-                  </td>
-                  <td style={{ padding:'8px 10px', width:140 }}>
-                    {canEdit ? inp(item.dateFrom,'dateFrom',item.id,'date')
-                    : <span style={{ fontSize:12, color:T.textMuted }}>{fmt(item.dateFrom)}</span>}
-                  </td>
-                  <td style={{ padding:'8px 10px', width:140 }}>
-                    {canEdit ? inp(item.dateTo,'dateTo',item.id,'date')
-                    : <span style={{ fontSize:12, color:T.textMuted }}>{fmt(item.dateTo)}</span>}
-                  </td>
-                  <td style={{ padding:'8px 10px', minWidth:150 }}>
-                    {canEdit
-                      ? <select value={item.ptwStatus||''} onChange={e=>update(item.id,'ptwStatus',e.target.value)}
-                          style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }}>
-                          <option value="">Select Status</option>
-                          {['TT Rejected','Closed','Rejected','Auto Closed'].map(s=><option key={s}>{s}</option>)}
-                        </select>
-                      : <span style={{ fontSize:11, fontWeight:600, color:'#6B7280', background:'#F3F4F6', padding:'3px 10px', borderRadius:20 }}>{item.ptwStatus||'—'}</span>}
-                  </td>
-                  <td style={{ padding:'8px 10px', width:36 }}>
-                    {canEdit && (
-                      <button onClick={()=>removeItem(item.id)}
-                        style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:16, padding:2 }}>🗑</button>
-                    )}
-                  </td>
+                  {editId === item.id ? (<>
+                    <td style={{ padding:'6px 8px' }}><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editRow.ticketId||''} placeholder="PTW-2025-XXXX" onChange={e=>setEditRow((p:any)=>({...p,ticketId:e.target.value}))} /></td>
+                    <td style={{ padding:'6px 8px' }}><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editRow.raiser||''} placeholder="Raiser" onChange={e=>setEditRow((p:any)=>({...p,raiser:e.target.value}))} /></td>
+                    <td style={{ padding:'6px 8px' }}><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editRow.supervisor||''} placeholder="Supervisor" onChange={e=>setEditRow((p:any)=>({...p,supervisor:e.target.value}))} /></td>
+                    <td style={{ padding:'6px 8px' }}>
+                      <select value={editRow.ptwType||''} onChange={e=>setEditRow((p:any)=>({...p,ptwType:e.target.value}))} style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }}>
+                        <option value="">Select Type</option>
+                        {['Manual','Electrical','Material Handling','Height','Excavation'].map(t=><option key={t}>{t}</option>)}
+                      </select>
+                    </td>
+                    <td style={{ padding:'6px 8px' }}><input type="date" style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editRow.dateFrom||''} onChange={e=>setEditRow((p:any)=>({...p,dateFrom:e.target.value}))} /></td>
+                    <td style={{ padding:'6px 8px' }}><input type="date" style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editRow.dateTo||''} onChange={e=>setEditRow((p:any)=>({...p,dateTo:e.target.value}))} /></td>
+                    <td style={{ padding:'6px 8px' }}>
+                      <select value={editRow.ptwStatus||''} onChange={e=>setEditRow((p:any)=>({...p,ptwStatus:e.target.value}))} style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }}>
+                        <option value="">Select Status</option>
+                        {['TT Rejected','Closed','Rejected','Auto Closed'].map(s=><option key={s}>{s}</option>)}
+                      </select>
+                    </td>
+                    <td style={{ padding:'6px 8px', whiteSpace:'nowrap' as const }}>
+                      <div style={{ display:'flex', gap:4 }}>
+                        <button onClick={()=>savePTWRow(item)} disabled={!!saving}
+                          style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'5px 10px', fontSize:11, fontWeight:600, cursor:'pointer' }}>
+                          {saving===item.id?'…':'💾'}
+                        </button>
+                        <button onClick={()=>{ if(item.isNew) setItems(prev=>prev.filter((i:any)=>i.id!==item.id)); setEditId(null); setEditRow({}); }}
+                          style={{ background:'#fff', color:T.textMuted, border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 10px', fontSize:11, cursor:'pointer' }}>✕</button>
+                        <button onClick={()=>removeItem(item.id)} style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:14 }}>🗑</button>
+                      </div>
+                    </td>
+                  </>) : (<>
+                    <td style={{ padding:'8px 10px' }}><span style={{ fontSize:13, fontWeight:600, color:T.text }}>{item.ticketId||'—'}</span></td>
+                    <td style={{ padding:'8px 10px' }}><span style={{ fontSize:13, color:T.text }}>{item.raiser||'—'}</span></td>
+                    <td style={{ padding:'8px 10px' }}><span style={{ fontSize:13, color:T.text }}>{item.supervisor||'—'}</span></td>
+                    <td style={{ padding:'8px 10px' }}><span style={{ fontSize:12, color:T.text }}>{item.ptwType||'—'}</span></td>
+                    <td style={{ padding:'8px 10px' }}><span style={{ fontSize:12, color:T.textMuted }}>{fmt(item.dateFrom)}</span></td>
+                    <td style={{ padding:'8px 10px' }}><span style={{ fontSize:12, color:T.textMuted }}>{fmt(item.dateTo)}</span></td>
+                    <td style={{ padding:'8px 10px' }}><span style={{ fontSize:11, fontWeight:600, color:'#6B7280', background:'#F3F4F6', padding:'3px 10px', borderRadius:20 }}>{item.ptwStatus||'—'}</span></td>
+                    <td style={{ padding:'8px 10px', whiteSpace:'nowrap' as const }}>
+                      {canAdd && <div style={{ display:'flex', gap:4 }}>
+                        <button onClick={()=>{ setEditId(item.id); setEditRow({...item}); }}
+                          style={{ background:'#F0FDFA', color:'#0D9488', border:'1px solid #99F6E4', borderRadius:6, padding:'4px 8px', fontSize:11, cursor:'pointer' }}>✏️</button>
+                        <button onClick={()=>removeItem(item.id)} style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:14 }}>🗑</button>
+                      </div>}
+                    </td>
+                  </>)}
                 </tr>
               );
             })}
@@ -879,12 +912,7 @@ const fmt = (d:string) => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-dig
           style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8, padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
           + Add PTW
         </button>}
-        {canEdit && items.length > 0 && (
-          <button onClick={saveAllPTW} disabled={!!saving}
-            style={{ background:T.primary, border:'none', borderRadius:8, padding:'8px 18px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:700, opacity:saving?0.7:1 }}>
-            {saving ? 'Saving…' : '💾 Save PTW Records'}
-          </button>
-        )}
+
       </div>
 
       {!canEdit && items.length === 0 && (
