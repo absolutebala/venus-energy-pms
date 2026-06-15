@@ -4,7 +4,6 @@ import DateInput from '@/components/DateInput';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import * as XLSX from 'xlsx';
-import { useRouter } from 'next/router';
 import { useExpenses } from '@/context/ExpenseContext';
 import { useProjects } from '@/context/ProjectContext';
 import { createClient } from '@/lib/supabase';
