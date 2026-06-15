@@ -2427,6 +2427,11 @@ export default function ProjectDetailPage() {
 
   // Merge: DB project takes priority over local state
   const project = (dbProject as any) || null;  // Only use live DB data, no seed fallback
+  // Doc verifications effect — must be before any early returns (React rules of hooks)
+  React.useEffect(() => {
+    if (project?.doc_verifications) setDocVerifications((project as any).doc_verifications || {});
+  }, [(project as any)?.id]);
+
   if (!project) return (
     <Layout>
       <div style={{ ...card, textAlign:'center', padding:60, margin:20 }}>
@@ -2438,11 +2443,6 @@ export default function ProjectDetailPage() {
   );
 
   const p = project;
-
-  // Load doc verifications when project loads
-  React.useEffect(() => {
-    if (p?.doc_verifications) setDocVerifications((p as any).doc_verifications || {});
-  }, [p?.id]);
 
   const workDocsList = getProjectDocs((id as string) || '');
   const workDocs: Record<string, any[]> = DOC_TYPES.reduce((acc:any, dt:any) => {
