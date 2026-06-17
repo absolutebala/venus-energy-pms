@@ -626,7 +626,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
         <div style={card}>
           <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Projects by PM</div>
           <div style={{ display:'flex', flexDirection:'column' as const, gap:6 }}>
-            {Object.entries(pmGroups).slice(0,5).map(([pm,ps]:any)=>(
+            {Object.entries(pmGroups).sort((a:any,b:any)=>b[1].length-a[1].length).map(([pm,ps]:any)=>(
               <div key={pm} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pm || '__unassigned__')}`)}
                 style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', transition:'all 0.15s' }}
                 onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
@@ -647,7 +647,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
         <div style={card}>
           <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Projects by Vendor</div>
           <div style={{ display:'flex', flexDirection:'column' as const, gap:6 }}>
-            {Object.entries(vendorGroups).slice(0,5).map(([v,ps]:any)=>(
+            {Object.entries(vendorGroups).sort((a:any,b:any)=>b[1].length-a[1].length).map(([v,ps]:any)=>(
               <div key={v} onClick={()=>router.push(`/projects?vendor=${encodeURIComponent(v)}`)}
                 style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', transition:'all 0.15s' }}
                 onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
