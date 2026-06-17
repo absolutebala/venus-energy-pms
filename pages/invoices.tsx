@@ -235,7 +235,8 @@ export default function InvoicesPage() {
       'Invoice No':     inv.invoiceNo,
       'Invoice Date':   inv.invoiceDate,
       'Basic Amount':   inv.invoiceAmount,
-      'Tax Amount':     inv.gst,
+      'GST (%)':        inv.invoiceAmount > 0 ? ((inv.gst / inv.invoiceAmount) * 100).toFixed(1) + '%' : '0%',
+      'Tax Amount (₹)':  inv.gst,
       'Total Amount':   inv.totalAmount,
       'Circle':         (projects.find((p:any)=>p.id===inv.projectId) as any)?.region || '',
       'Project Status': (projects.find((p:any)=>p.id===inv.projectId) as any)?.projectStatus || '',
@@ -470,7 +471,7 @@ export default function InvoicesPage() {
                   <th style={thS()}>#</th>
                   {([["poNo","PO No"],["invoiceDate","PO Date"],["invoiceDate","Indus ID"],["invoiceNo","Project ID"],["invoiceNo","Project"],
                      ["invoiceNo","WCC No"],["invoiceNo","Receipt No"],["invoiceNo","Invoice No"],["invoiceDate","Invoice Date"],
-                     ["invoiceAmount","Basic Amt (₹)"],["gst","Tax Amt (₹)"],["totalAmount","Total Amt (₹)"],
+                     ["invoiceAmount","Basic Amt (₹)"],["gst","GST (%)"],["gst","Tax Amt (₹)"],["totalAmount","Total Amt (₹)"],
                      ["invoiceNo","Circle"],["invoiceNo","Project Status"]] as [SortKey,string][])
                     .map(([key, label]) => (
                       <th key={label} style={thS(key)} onClick={() => handleSort(key)}>
@@ -480,9 +481,9 @@ export default function InvoicesPage() {
                 </tr>
               </thead>
               <tbody>
-                {invLoading && <tr><td colSpan={16} style={{ padding:30, textAlign:"center" as const, color:T.textMuted }}>Loading invoices...</td></tr>}
+                {invLoading && <tr><td colSpan={17} style={{ padding:30, textAlign:"center" as const, color:T.textMuted }}>Loading invoices...</td></tr>}
                 {!invLoading && displayInvoices.length === 0 && (
-                  <tr><td colSpan={16} style={{ padding:32, textAlign:"center" as const, color:T.textDim }}>No invoices found</td></tr>
+                  <tr><td colSpan={17} style={{ padding:32, textAlign:"center" as const, color:T.textDim }}>No invoices found</td></tr>
                 )}
                 {paginatedInv.map((inv, idx) => {
                   const proj = projects.find((p:any) => p.id === inv.projectId);
@@ -504,6 +505,9 @@ export default function InvoicesPage() {
                       <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{inv.invoiceNo}</td>
                       <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{fmtDate(inv.invoiceDate)}</td>
                       <td style={{ ...tdS, textAlign:"right" as const, fontWeight:600 }}>{fmt(inv.invoiceAmount)}</td>
+                      <td style={{ ...tdS, textAlign:"right" as const, color:T.textMuted }}>
+                        {inv.invoiceAmount > 0 ? ((inv.gst / inv.invoiceAmount) * 100).toFixed(1) + '%' : '—'}
+                      </td>
                       <td style={{ ...tdS, textAlign:"right" as const, color:T.textMuted }}>{fmt(inv.gst)}</td>
                       <td style={{ ...tdS, textAlign:"right" as const, fontWeight:700, color:T.primary }}>{fmt(inv.totalAmount)}</td>
                       <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{proj ? (proj as any).region || "—" : "—"}</td>
@@ -576,7 +580,7 @@ export default function InvoicesPage() {
               {displayInvoices.length > 0 && (
                 <tfoot>
                   <tr style={{ background:T.primaryLight, fontWeight:700 }}>
-                    <td colSpan={10} style={{ ...tdS, color:T.primary }}>Total</td>
+                    <td colSpan={11} style={{ ...tdS, color:T.primary }}>Total</td>
                     <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>{fmt(totalInvoiced)}</td>
                     <td style={{ ...tdS, textAlign:"right" as const, color:T.textMuted }}>{fmt(totalGST)}</td>
                     <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>{fmt(totalAmount)}</td>
