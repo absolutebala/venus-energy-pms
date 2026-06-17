@@ -508,9 +508,6 @@ export default function InvoicesPage() {
                       <td style={{ ...tdS, textAlign:"right" as const, color:T.textMuted }}>
                         {inv.invoiceAmount > 0 ? ((inv.gst / inv.invoiceAmount) * 100).toFixed(1) + '%' : '—'}
                       </td>
-                      <td style={{ ...tdS, textAlign:"right" as const, color:T.textMuted }}>
-                        {inv.invoiceAmount > 0 ? ((inv.gst / inv.invoiceAmount) * 100).toFixed(1) + '%' : '—'}
-                      </td>
                       <td style={{ ...tdS, textAlign:"right" as const, color:T.textMuted }}>{fmt(inv.gst)}</td>
                       <td style={{ ...tdS, textAlign:"right" as const, fontWeight:700, color:T.primary }}>{fmt(inv.totalAmount)}</td>
                       <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{proj ? (proj as any).region || "—" : "—"}</td>
