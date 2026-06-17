@@ -2664,7 +2664,7 @@ export default function ProjectDetailPage() {
                     {PROJECT_STATUS_OPTIONS.map(opt => {
                       const currentIdx = PROJECT_STATUS_OPTIONS.indexOf(p.projectStatus || '');
                       const optIdx = PROJECT_STATUS_OPTIONS.indexOf(opt);
-                      const isDisabled = currentIdx !== -1 && optIdx < currentIdx;
+                      const isDisabled = role !== 'super_admin' && currentIdx !== -1 && optIdx < currentIdx;
                       return <option key={opt} value={opt} disabled={isDisabled} style={{ color: isDisabled ? '#9CA3AF' : 'inherit' }}>{opt}</option>;
                     })}
                   </select>
