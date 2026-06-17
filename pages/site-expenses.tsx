@@ -63,6 +63,25 @@ export default function SiteExpensesPage() {
   const [toast,           setToast]           = useState<any>(null);
   const [saving,          setSaving]          = useState(false);
   const [adding,          setAdding]          = useState(false);
+  const [editExpId,       setEditExpId]       = useState<string|null>(null);
+  const [editExpRow,      setEditExpRow]      = useState<any>({});
+
+  const saveExpEdit = async () => {
+    if (!editExpId) return;
+    try {
+      await updateExpense(editExpId, {
+        expenseDate: editExpRow.expenseDate,
+        site: editExpRow.site,
+        expenseType: editExpRow.expenseType,
+        amount: Number(editExpRow.amount),
+        remarks: editExpRow.remarks,
+        bankAccount: editExpRow.bankAccount,
+        upiId: editExpRow.upiId,
+      });
+      setEditExpId(null); setEditExpRow({});
+      setToast({ msg:'✅ Expense updated', type:'success' });
+    } catch(err:any) { setToast({ msg:'❌ ' + err.message, type:'error' }); }
+  };
   const [form, setForm] = useState({
     expenseDate:"", site:"", expenseType:"Advance", amount:"", remarks:""
   });
@@ -406,19 +425,53 @@ export default function SiteExpensesPage() {
                           {isPending ? "Pending" : "Paid"}
                         </span>
                       </td>
-                      <td style={{ ...tdS, width:80 }}>
-                        {isPending && canManage && (
-                          <button onClick={ev=>{ ev.stopPropagation(); setPaidModal(e); setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] }); }}
-                            style={{ background:T.success, border:"none", borderRadius:6, padding:"5px 12px",
-                              color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap" as const }}>
-                            💳 Make Payment
-                          </button>
-                        )}
-                        {!isPending && (
-                          <span style={{ fontSize:11, color:T.textDim }}>{e.paidAt ? fmtD(e.paidAt.split("T")[0]) : ""}</span>
-                        )}
+                      <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
+                        <div style={{ display:'flex', gap:4, alignItems:'center' }}>
+                          {canManage && (
+                            <button onClick={ev=>{ ev.stopPropagation(); setEditExpId(editExpId===e.id?null:e.id); setEditExpRow({...e}); }}
+                              style={{ background:editExpId===e.id?T.primary:'#F0FDFA', color:editExpId===e.id?'#fff':'#0D9488',
+                                border:`1px solid #99F6E4`, borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>✏️</button>
+                          )}
+                          {isPending && canManage && (
+                            <button onClick={ev=>{ ev.stopPropagation(); setPaidModal(e); setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] }); }}
+                              style={{ background:T.success, border:"none", borderRadius:6, padding:"5px 12px",
+                                color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap" as const }}>
+                              💳 Make Payment
+                            </button>
+                          )}
+                          {!isPending && (
+                            <span style={{ fontSize:11, color:T.textDim }}>{e.paidAt ? fmtD(e.paidAt.split("T")[0]) : ""}</span>
+                          )}
+                        </div>
                       </td>
                     </tr>
+                    {editExpId === e.id && (
+                      <tr style={{ background:'#F0FDFA' }}>
+                        <td colSpan={12} style={{ padding:14, borderBottom:`1px solid ${T.border}` }}>
+                          <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:10 }}>✏️ Edit Expense</div>
+                          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:8 }}>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Date</div><input type="date" style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.expenseDate||''} onChange={e=>setEditExpRow((p:any)=>({...p,expenseDate:e.target.value}))} /></div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Site</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.site||''} onChange={e=>setEditExpRow((p:any)=>({...p,site:e.target.value}))} /></div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Expense Type</div>
+                              <select style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.expenseType||''} onChange={e=>setEditExpRow((p:any)=>({...p,expenseType:e.target.value}))}>
+                                {['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous'].map(t=><option key={t}>{t}</option>)}
+                              </select>
+                            </div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Amount (₹)</div><input type="number" style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.amount||''} onChange={e=>setEditExpRow((p:any)=>({...p,amount:e.target.value}))} /></div>
+                          </div>
+                          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Remarks</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.remarks||''} onChange={e=>setEditExpRow((p:any)=>({...p,remarks:e.target.value}))} /></div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Bank Account</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.bankAccount||''} onChange={e=>setEditExpRow((p:any)=>({...p,bankAccount:e.target.value}))} /></div>
+                          </div>
+                          <div style={{ display:'flex', gap:8 }}>
+                            <button onClick={saveExpEdit}
+                              style={{ background:T.primary, color:'#fff', border:'none', borderRadius:7, padding:'6px 18px', fontSize:12, fontWeight:600, cursor:'pointer' }}>💾 Save</button>
+                            <button onClick={()=>{ setEditExpId(null); setEditExpRow({}); }}
+                              style={{ background:'#fff', color:T.textMuted, border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 18px', fontSize:12, cursor:'pointer' }}>Cancel</button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                   );
                 })}
               </tbody>
