@@ -396,7 +396,8 @@ export default function SiteExpensesPage() {
                   const proj = (projects as any[]).find(p=>p.id===e.projectId);
                   const isPending = e.status === 'pending';
                   return (
-                    <tr key={e.id}
+                    <React.Fragment key={e.id}>
+                    <tr
                       style={{ background:isPending ? '#FFFBEB' : idx%2===0?"#fff":T.bg, cursor:"pointer" }}
                       onMouseEnter={el=>(el.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
                       onMouseLeave={el=>(el.currentTarget as HTMLTableRowElement).style.background=isPending?'#FFFBEB':idx%2===0?"#fff":T.bg}>
@@ -472,6 +473,7 @@ export default function SiteExpensesPage() {
                         </td>
                       </tr>
                     )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
