@@ -77,6 +77,9 @@ export default function SiteExpensesPage() {
         remarks: editExpRow.remarks,
         bankAccount: editExpRow.bankAccount,
         upiId: editExpRow.upiId,
+        paidTxnRef: editExpRow.paidTxnRef,
+        paidPaymentMode: editExpRow.paidPaymentMode,
+        txnDate: editExpRow.txnDate,
       });
       setEditExpId(null); setEditExpRow({});
       setToast({ msg:'✅ Expense updated', type:'success' });
@@ -460,9 +463,19 @@ export default function SiteExpensesPage() {
                             </div>
                             <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Amount (₹)</div><input type="number" style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.amount||''} onChange={e=>setEditExpRow((p:any)=>({...p,amount:e.target.value}))} /></div>
                           </div>
-                          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>
+                          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:8 }}>
                             <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Remarks</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.remarks||''} onChange={e=>setEditExpRow((p:any)=>({...p,remarks:e.target.value}))} /></div>
                             <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Bank Account</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.bankAccount||''} onChange={e=>setEditExpRow((p:any)=>({...p,bankAccount:e.target.value}))} /></div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>TXN Ref</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.paidTxnRef||''} onChange={e=>setEditExpRow((p:any)=>({...p,paidTxnRef:e.target.value}))} /></div>
+                          </div>
+                          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Payment Mode</div>
+                              <select style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.paidPaymentMode||''} onChange={e=>setEditExpRow((p:any)=>({...p,paidPaymentMode:e.target.value}))}>
+                                <option value="">Select</option>
+                                {['NEFT','RTGS','IMPS','UPI','Cash','Cheque'].map(m=><option key={m}>{m}</option>)}
+                              </select>
+                            </div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>TXN Date</div><input type="date" style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.txnDate||''} onChange={e=>setEditExpRow((p:any)=>({...p,txnDate:e.target.value}))} /></div>
                           </div>
                           <div style={{ display:'flex', gap:8 }}>
                             <button onClick={saveExpEdit}
