@@ -713,7 +713,7 @@ function RegionManagerDashboard({ projects }: { projects: typeof ALL_PROJECTS })
               if (!vendorGroups[v]) vendorGroups[v] = [];
               vendorGroups[v].push(p);
             });
-            return Object.entries(vendorGroups).sort((a,b)=>b[1].length-a[1].length).slice(0,8).map(([vendor,ps])=>(
+            return Object.entries(vendorGroups).sort((a,b)=>b[1].length-a[1].length).map(([vendor,ps])=>(
               <div key={vendor} onClick={()=>router.push(`/projects?vendor=${encodeURIComponent(vendor)}`)}
                 style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', marginBottom:6, transition:'all 0.15s' }}
                 onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
@@ -825,7 +825,7 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
               if (!vendorGroups[v]) vendorGroups[v] = [];
               vendorGroups[v].push(p);
             });
-            return Object.entries(vendorGroups).sort((a,b)=>b[1].length-a[1].length).slice(0,8).map(([vendor,ps])=>(
+            return Object.entries(vendorGroups).sort((a,b)=>b[1].length-a[1].length).map(([vendor,ps])=>(
               <div key={vendor} onClick={()=>router.push(`/projects?vendor=${encodeURIComponent(vendor)}&pm=${encodeURIComponent(pmName)}`)}
                 style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', marginBottom:6, transition:'all 0.15s' }}
                 onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
@@ -848,20 +848,19 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
         <div style={card}>
           <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>My Projects by Status</div>
           {(() => {
-            const statuses = ['in_progress','delayed','completed','billing_review','pending','submitted','pm_approved'];
-            const labels: Record<string,string> = { in_progress:'In Progress', delayed:'Delayed', completed:'Completed', billing_review:'Billing Review', pending:'Pending', submitted:'Submitted', pm_approved:'PM Approved' };
-            const colors: Record<string,string> = { in_progress:'#2563EB', delayed:'#DC2626', completed:'#16A34A', billing_review:'#7C3AED', pending:'#D97706', submitted:'#0D9488', pm_approved:'#0D9488' };
-            return statuses.map(s => {
-              const n = myProjects.filter((p:any)=>p.status===s).length; if(!n) return null;
-              const pct = Math.round(n/myProjects.length*100);
+            const sg: Record<string,number> = {};
+            myProjects.forEach((p:any)=>{ const s=(p as any).projectStatus||'Not Set'; sg[s]=(sg[s]||0)+1; });
+            const sc: Record<string,string> = { 'Work Completed':'#16A34A','WCC Raised':'#0D9488','Invoice Submitted':'#2563EB','PO Amendment Done':'#7C3AED','Not Started':'#6B7280','In Progress':'#D97706','Delayed':'#DC2626' };
+            return Object.entries(sg).sort((a,b)=>b[1]-a[1]).map(([s,n])=>{
+              const c=sc[s]||'#6B7280'; const pct=Math.round(n/Math.max(myProjects.length,1)*100);
               return (
-                <div key={s} onClick={()=>router.push(`/projects?status=${s}&pm=${encodeURIComponent(pmName)}`)} style={{ marginBottom:10, cursor:'pointer' }}>
+                <div key={s} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pmName)}`)} style={{ marginBottom:10, cursor:'pointer' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
-                    <span style={{ fontSize:12, color:T.text }}>{labels[s]}</span>
-                    <span style={{ fontSize:12, fontWeight:700, color:colors[s] }}>{n} ({pct}%)</span>
+                    <span style={{ fontSize:12, color:T.text }}>{s}</span>
+                    <span style={{ fontSize:12, fontWeight:700, color:c }}>{n} ({pct}%)</span>
                   </div>
                   <div style={{ height:6, background:T.border, borderRadius:3 }}>
-                    <div style={{ height:6, width:`${pct}%`, background:colors[s], borderRadius:3, transition:'width 0.3s' }} />
+                    <div style={{ height:6, width:`${pct}%`, background:c, borderRadius:3, transition:'width 0.3s' }} />
                   </div>
                 </div>
               );
