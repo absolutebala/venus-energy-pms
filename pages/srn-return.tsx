@@ -72,7 +72,7 @@ export default function SRNReturnPage() {
   // ── SRN grouped by project ───────────────────────────────────────────────
   const srnGrouped = useMemo(() => {
     const map: Record<string, any[]> = {};
-    for (const item of (roleProjectIds ? srnRawItems.filter((i:any)=>roleProjectIds.has(i.project_id)) : srnRawItems)) {
+    for (const item of srnRawItems) {
       if (!map[item.project_id]) map[item.project_id] = [];
       map[item.project_id].push(item);
     }
@@ -87,7 +87,7 @@ export default function SRNReturnPage() {
   // ── STN grouped by project ───────────────────────────────────────────────
   const stnGrouped = useMemo(() => {
     const map: Record<string, any[]> = {};
-    for (const item of (roleProjectIds ? stnAllItems.filter(i=>roleProjectIds.has(i.projectId)) : stnAllItems)) {
+    for (const item of stnAllItems) {
       if (!map[item.projectId]) map[item.projectId] = [];
       map[item.projectId].push(item);
     }
