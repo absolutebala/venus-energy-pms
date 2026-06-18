@@ -72,7 +72,7 @@ export default function SRNReturnPage() {
   // ── SRN grouped by project ───────────────────────────────────────────────
   const srnGrouped = useMemo(() => {
     const map: Record<string, any[]> = {};
-    for (const item of srnRawItems) {
+    for (const item of (roleProjectIds ? srnRawItems.filter((i:any)=>roleProjectIds.has(i.project_id)) : srnRawItems)) {
       if (!map[item.project_id]) map[item.project_id] = [];
       map[item.project_id].push(item);
     }
@@ -87,7 +87,7 @@ export default function SRNReturnPage() {
   // ── STN grouped by project ───────────────────────────────────────────────
   const stnGrouped = useMemo(() => {
     const map: Record<string, any[]> = {};
-    for (const item of stnAllItems) {
+    for (const item of (roleProjectIds ? stnAllItems.filter(i=>roleProjectIds.has(i.projectId)) : stnAllItems)) {
       if (!map[item.projectId]) map[item.projectId] = [];
       map[item.projectId].push(item);
     }
@@ -115,8 +115,8 @@ export default function SRNReturnPage() {
   const stnByPM = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
     const filtered = kpiSubFilter?.type==='stn'
-      ? stnAllItems.filter(i => kpiSubFilter.status==='pm_rejected' ? i.utilisedStatus==='pm_rejected' : i.utilisedStatus!=='pm_approved')
-      : stnAllItems;
+      ? roleStnItems.filter(i => kpiSubFilter.status==='pm_rejected' ? i.utilisedStatus==='pm_rejected' : i.utilisedStatus!=='pm_approved')
+      : roleStnItems;
     for (const i of filtered) {
       const proj=(projects as any[]).find(p=>p.id===i.projectId); const pm=proj?.pm||'—';
       const isPend=i.utilisedStatus!=='pm_approved'; if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(isPend) r[pm].pending++;
@@ -126,8 +126,8 @@ export default function SRNReturnPage() {
   const stnByRegion = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
     const filtered = kpiSubFilter?.type==='stn'
-      ? stnAllItems.filter(i => kpiSubFilter.status==='pm_rejected' ? i.utilisedStatus==='pm_rejected' : i.utilisedStatus!=='pm_approved')
-      : stnAllItems;
+      ? roleStnItems.filter(i => kpiSubFilter.status==='pm_rejected' ? i.utilisedStatus==='pm_rejected' : i.utilisedStatus!=='pm_approved')
+      : roleStnItems;
     for (const i of filtered) {
       const proj=(projects as any[]).find(p=>p.id===i.projectId); const reg=proj?.region||'—';
       const isPend=i.utilisedStatus!=='pm_approved'; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++;
@@ -155,10 +155,21 @@ export default function SRNReturnPage() {
       for (const i of items) { const isPend=!i.received; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++; }
     } return r;
   }, [srnGrouped, kpiSubFilter]);
-  const stnPendingCount  = stnAllItems.filter(i => i.utilisedStatus !== 'pm_approved').length;
-  const stnRejectedCount = stnAllItems.filter(i => i.utilisedStatus === 'pm_rejected').length;
-  const srnPendingCount  = srnRawItems.filter((i:any) => !i.received).length;
-  const srnRejectedCount = srnRawItems.filter((i:any) => i.received === false && i.pm_comment).length;
+  // Apply role-based filtering to STN and SRN items
+  const roleStnItems = useMemo(() => {
+    if (!roleProjectIds) return stnAllItems;
+    return stnAllItems.filter(i => roleProjectIds.has(i.projectId));
+  }, [stnAllItems, roleProjectIds]);
+
+  const roleSrnItems = useMemo(() => {
+    if (!roleProjectIds) return srnRawItems;
+    return srnRawItems.filter((i:any) => roleProjectIds.has(i.project_id));
+  }, [srnRawItems, roleProjectIds]);
+
+  const stnPendingCount  = roleStnItems.filter(i => i.utilisedStatus !== 'pm_approved').length;
+  const stnRejectedCount = roleStnItems.filter(i => i.utilisedStatus === 'pm_rejected').length;
+  const srnPendingCount  = roleSrnItems.filter((i:any) => !i.received).length;
+  const srnRejectedCount = roleSrnItems.filter((i:any) => i.received === false && i.pm_comment).length;
 
 
   // ── Handle card filter click ─────────────────────────────────────────────
