@@ -8,7 +8,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useProjects } from '@/context/ProjectContext';
 import { useInvoices } from '@/context/InvoiceContext';
 import { useExpenses } from '@/context/ExpenseContext';
-import { useExpenses } from '@/context/ExpenseContext';
 import { useMaterial } from '@/context/MaterialContext';
 import { T, card, badge , fmtINR} from '@/lib/theme';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
