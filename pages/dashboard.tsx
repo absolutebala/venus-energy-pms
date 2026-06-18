@@ -682,18 +682,11 @@ function RegionManagerDashboard({ projects, rmName }: { projects: typeof ALL_PRO
 
   return (
     <div>
-      <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:16 }}>
-        <button onClick={()=>setGlobalView(g=>!g)}
-          style={{ background:globalView?T.primary:T.bg, color:globalView?'#fff':T.text, border:`1px solid ${globalView?T.primary:T.border}`, borderRadius:8, padding:'8px 18px', fontSize:13, fontWeight:600, cursor:'pointer', transition:'all 0.15s' }}>
-          {globalView ? '📍 My Region' : '🌐 Global View'}
-        </button>
-      </div>
-
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-        <KpiCard label={globalView?'All Projects':'My Region Projects'} value={myProjects.length}                              icon="📁" color={T.primary} onClick={()=>router.push('/projects')} />
-        <KpiCard label="Delayed"              value={myProjects.filter(p=>p.status==='delayed').length}           icon="⚠️" color={T.danger}  onClick={()=>router.push('/projects')} />
-        <KpiCard label="Pending Billing"      value={myProjects.filter(p=>p.status==='billing_review').length}    icon="💳" color='#7C3AED'   onClick={()=>router.push('/billing')} />
-        <KpiCard label="Active PMs"           value={myPMs.length}                                                icon="👤" color={T.success} />
+        <KpiCard label="My Region Projects"  value={myProjects.length}                                                                      icon="📁" color={T.primary} onClick={()=>router.push('/projects')} />
+        <KpiCard label="Active PMs"          value={myPMs.length}                                                                           icon="👤" color={T.success} />
+        <KpiCard label="PO Open"             value={myProjects.filter((p:any)=>(p as any).poStatus==='Open').length}                        icon="🟢" color='#059669'   onClick={()=>router.push('/projects?status=PO%20Open')} />
+        <KpiCard label="Yet to Start"        value={myProjects.filter((p:any)=>((p as any).projectStatus||'')==='Yet to Start').length}      icon="🕐" color='#6B7280'   onClick={()=>router.push('/projects')} />
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
