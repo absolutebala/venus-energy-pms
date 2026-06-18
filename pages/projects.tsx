@@ -720,9 +720,11 @@ export default function ProjectsPage() {
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               <div style={{ fontSize:14, fontWeight:600, color:T.text }}>
-                {statusFilter==='All'&&ageMin===null?'All Projects':`Filtered Projects`} · {filtered.length} records
+                {['project_manager','vendor'].includes(profile?.role??'')
+                  ? `My Projects · ${filtered.length} records`
+                  : statusFilter==='All'&&ageMin===null?`All Projects · ${filtered.length} records`:`Filtered Projects · ${filtered.length} records`}
               </div>
-              {['super_admin','rm','pm','vendor'].includes(profile?.role ?? '') && filtered.length > 0 && (
+              {['super_admin','region_manager','project_manager','vendor','accounting_team'].includes(profile?.role ?? '') && filtered.length > 0 && (
                 <button
                   onClick={exportToExcel}
                   title="Export to Excel"
