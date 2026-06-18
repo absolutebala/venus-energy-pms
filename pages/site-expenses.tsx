@@ -310,8 +310,8 @@ export default function SiteExpensesPage() {
 
         {/* Project Filters — cascading */}
         {(() => {
-          // Only projects that have expenses in the current date-filtered set
-          const expenseProjectIds = new Set(expenses.map((e:any) => e.projectId));
+          // Only projects that have expenses in the role-filtered set
+          const expenseProjectIds = new Set(roleFilteredExpenses.map((e:any) => e.projectId));
           // Base: expense-linked projects that match all OTHER active filters
           const cascadeProj = (exclude: string) => (projects as any[]).filter((p:any) => {
             if (!expenseProjectIds.has(p.id)) return false;
