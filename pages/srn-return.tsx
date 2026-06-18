@@ -260,19 +260,56 @@ export default function SRNReturnPage() {
   const isLoading  = loading || projLoading || stnLoading;
 
   const exportSRNToExcel = () => {
-    const rows = filteredProjects.map((proj:any, idx:number) => ({
-      'S.No': idx+1,
-      'Project ID': proj.projectId,
-      'Site': proj.projectName,
-      'PO No': proj.poNo,
-      'Vendor': proj.vendor,
-      'PM': proj.pm,
-      'STN Items': proj.stnItems.length,
-      'SRN Items': proj.srnItems.length,
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'STN-SRN');
+    // STN Sheet
+    const stnRows: any[] = [];
+    let sno = 1;
+    filteredProjects.forEach((proj:any) => {
+      proj.stnItems.forEach((item:any) => {
+        stnRows.push({
+          'S.No': sno++,
+          'Project ID': proj.projectId,
+          'Site': proj.projectName,
+          'PO No': proj.poNo,
+          'Vendor': proj.vendor,
+          'PM': proj.pm,
+          'Region': proj.region,
+          'Description': item.description || '—',
+          'Issued Qty': item.issuedQty ?? '—',
+          'Utilised Qty': item.utilisedQty ?? '—',
+          'Status': item.utilisedStatus || '—',
+          'PM Comment': item.pmComment || '—',
+        });
+      });
+    });
+    const stnWs = XLSX.utils.json_to_sheet(stnRows);
+    XLSX.utils.book_append_sheet(wb, stnWs, 'STN Items');
+
+    // SRN Sheet
+    const srnRows: any[] = [];
+    sno = 1;
+    filteredProjects.forEach((proj:any) => {
+      proj.srnItems.forEach((item:any) => {
+        srnRows.push({
+          'S.No': sno++,
+          'Project ID': proj.projectId,
+          'Site': proj.projectName,
+          'PO No': proj.poNo,
+          'Vendor': proj.vendor,
+          'PM': proj.pm,
+          'Region': proj.region,
+          'Description': item.description || '—',
+          'SRN No': item.srn_no || '—',
+          'Qty': item.quantity ?? '—',
+          'Return Qty': item.return_qty ?? '—',
+          'Received': item.received ? 'Yes' : 'Pending',
+          'PM Comment': item.pm_comment || '—',
+        });
+      });
+    });
+    const srnWs = XLSX.utils.json_to_sheet(srnRows);
+    XLSX.utils.book_append_sheet(wb, srnWs, 'SRN Items');
+
     XLSX.writeFile(wb, `Venus_STN_SRN_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
