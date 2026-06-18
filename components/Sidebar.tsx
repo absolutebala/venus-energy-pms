@@ -129,7 +129,7 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
     );
   };
 
-  const showAdmin = isSuperAdmin || isRM;
+  const showAdmin = isSuperAdmin;
 
   return (
     <div style={{ width: collapsed ? 60 : 220, minHeight:'100vh', background:'#fff',
