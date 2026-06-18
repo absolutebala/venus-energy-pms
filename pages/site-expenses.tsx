@@ -557,8 +557,14 @@ export default function SiteExpensesPage() {
             <div style={{ marginBottom:14 }}>
               <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>TXN Ref *</label>
               <input value={paidForm.txnRef} onChange={e=>setPaidForm(p=>({...p,txnRef:e.target.value}))}
-                placeholder="e.g. NEFT/2026/001234"
-                style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const }} />
+                placeholder="e.g. NEFT2026001234 (min 10 chars)"
+                style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const,
+                  borderColor: paidForm.txnRef && !/^[a-zA-Z0-9]{10,}$/.test(paidForm.txnRef.trim()) ? '#DC2626' : undefined }} />
+              {paidForm.txnRef && !/^[a-zA-Z0-9]{10,}$/.test(paidForm.txnRef.trim()) && (
+                <div style={{ fontSize:11, color:'#DC2626', marginTop:4 }}>
+                  ⚠️ Must be at least 10 alphanumeric characters (no spaces or special characters)
+                </div>
+              )}
             </div>
             <div style={{ marginBottom:14 }}>
               <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Payment Mode *</label>
