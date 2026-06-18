@@ -802,10 +802,10 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
   return (
     <div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-        <KpiCard label="My Projects"      value={myProjects.length}                                    icon="📁" color={T.primary} onClick={()=>router.push('/projects')} />
-        <KpiCard label="Vendor Required"  value={noVendor.length}                                      icon="⚠️" color={T.danger}  onClick={()=>router.push('/projects?noVendor=1')} />
-        <KpiCard label="In Progress"      value={myProjects.filter(p=>p.status==='in_progress').length} icon="⚡" color={T.info}    onClick={()=>router.push('/projects')} />
-        <KpiCard label="Pending Invoice"  value={billing.length}                                        icon="💳" color='#7C3AED'  onClick={()=>router.push('/pm/projects?tab=billing')} />
+        <KpiCard label="My Projects"    value={myProjects.length}                                                              icon="📁" color={T.primary} onClick={()=>router.push('/projects')} />
+        <KpiCard label="Vendor Required" value={noVendor.length}                                                                  icon="⚠️" color={T.danger}  onClick={()=>router.push('/projects?noVendor=1')} />
+        <KpiCard label="PO Open"         value={myProjects.filter((p:any)=>(p as any).poStatus==='Open').length}                   icon="🟢" color='#059669'   onClick={()=>router.push('/projects?status=PO%20Open')} />
+        <KpiCard label="Yet to Start"    value={myProjects.filter((p:any)=>((p as any).projectStatus||'')==='Yet to Start').length} icon="🕐" color='#6B7280'   onClick={()=>router.push('/projects')} />
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
