@@ -621,9 +621,35 @@ export default function SRNReturnPage() {
                     <div style={{ fontSize:14, fontWeight:600, color:Theme.text }}>{project.projectName}</div>
                     {showVendor && <div style={{ fontSize:12, color:Theme.textMuted, marginTop:2 }}>Vendor: {project.vendor} · PM: {project.pm} · Region: {project.region}</div>}
                   </div>
-                  <div style={{ display:'flex', gap:12, alignItems:'center' }}>
+                  <div style={{ display:'flex', gap:8, alignItems:'center' }}>
                     {showSTN && stnItems.length > 0 && <span style={{ fontSize:11, fontWeight:700, color:stnAllDone?'#0D9488':'#D97706', background:stnAllDone?'#F0FDFA':'#FFFBEB', padding:'3px 10px', borderRadius:20 }}>📦 STN: {stnApproved}/{stnItems.length}</span>}
                     {showSRN && srnItems.length > 0 && <span style={{ fontSize:11, fontWeight:700, color:srnAllDone?'#0D9488':'#DC2626', background:srnAllDone?'#F0FDFA':'#FEF2F2', padding:'3px 10px', borderRadius:20 }}>🔄 SRN: {srnReceived}/{srnItems.length}</span>}
+                    <button onClick={e=>{e.stopPropagation();
+                      const wb = XLSX.utils.book_new();
+                      if (stnItems.length > 0) {
+                        const stnRows = stnItems.map((item:any, i:number)=>({
+                          'S.No':i+1,'Project ID':project.projectId,'Site':project.projectName,'PO No':project.poNo,
+                          'Vendor':project.vendor,'PM':project.pm,'Description':item.description||'—',
+                          'Issued Qty':item.issuedQty??'—','Utilised Qty':item.utilisedQty??'—',
+                          'Status':item.utilisedStatus||'—','PM Comment':item.pmComment||'—',
+                        }));
+                        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stnRows), 'STN');
+                      }
+                      if (srnItems.length > 0) {
+                        const srnRows = srnItems.map((item:any, i:number)=>({
+                          'S.No':i+1,'Project ID':project.projectId,'Site':project.projectName,'PO No':project.poNo,
+                          'Vendor':project.vendor,'PM':project.pm,'Description':item.description||'—',
+                          'SRN No':item.srn_no||'—','Qty':item.quantity??'—','Return Qty':item.return_qty??'—',
+                          'Received':item.received?'Yes':'Pending','PM Comment':item.pm_comment||'—',
+                        }));
+                        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(srnRows), 'SRN');
+                      }
+                      XLSX.writeFile(wb, `STN_SRN_${project.projectId}_${new Date().toISOString().slice(0,10)}.xlsx`);
+                    }}
+                      style={{ display:'flex', alignItems:'center', gap:4, padding:'3px 8px', fontSize:11, fontWeight:600,
+                        color:'#166534', background:'#DCFCE7', border:'1px solid #86EFAC', borderRadius:6, cursor:'pointer' }}>
+                      📥
+                    </button>
                   </div>
                 </div>
               </div>
