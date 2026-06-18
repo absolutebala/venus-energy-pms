@@ -62,6 +62,7 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   region_manager: {
+    srn_return:            { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
     sec_project_details:   { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
     sec_financial:         { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_vendor_assignment: { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
@@ -79,6 +80,7 @@ const DEFAULT_SECTION_PERMS: Record<string, Record<string, Record<string, boolea
     sec_activity_log:      { can_read:true,  can_create:false, can_edit:false, can_delete:false },
   },
   project_manager: {
+    srn_return:            { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
     sec_project_details:   { can_read:true,  can_create:false, can_edit:true,  can_delete:false },
     sec_financial:         { can_read:true,  can_create:false, can_edit:false, can_delete:false },
     sec_vendor_assignment: { can_read:true,  can_create:true,  can_edit:true,  can_delete:false },
