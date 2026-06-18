@@ -642,74 +642,6 @@ export default function ReportsPage() {
                       </tbody>
                     </table>
                   </div>
-                </div>
-
-                {/* ── Project List below Financial by Region ── */}
-                <div style={card}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-                    <div style={{ fontSize:14, fontWeight:600, color:T.text }}>Project Financial Details</div>
-                    <button onClick={()=>{
-                      const rows = (rawProjects as any[]).map((p:any,i:number)=>{
-                        const expPaid = expenses.filter((e:any)=>e.projectId===p.id&&e.status==='paid').reduce((a:number,e:any)=>a+Number(e.amount||0),0);
-                        const billed  = invoices.filter((inv:any)=>inv.projectId===p.id&&(inv.invoiceStatus==='Approved'||inv.paymentStatus==='Paid')).reduce((a:number,inv:any)=>a+Number(inv.invoiceAmount||0),0);
-                        const pl      = billed - expPaid;
-                        return {
-                          'S.No': i+1,
-                          'PO Number': p.poNo||'—',
-                          'Project Name': p.site||'—',
-                          'Project ID': p.id,
-                          'Site Name': p.site||'—',
-                          'Project Status': p.projectStatus||'—',
-                          'PO Value (₹)': p.poValue||0,
-                          'Expense Paid (₹)': expPaid,
-                          'Billed Amount (₹)': billed,
-                          'P/L Projection (₹)': pl,
-                        };
-                      });
-                      const ws = XLSX.utils.json_to_sheet(rows);
-                      ws['!cols'] = [{wch:6},{wch:16},{wch:20},{wch:14},{wch:20},{wch:24},{wch:14},{wch:16},{wch:16},{wch:16}];
-                      const wb = XLSX.utils.book_new();
-                      XLSX.utils.book_append_sheet(wb, ws, 'Financial Details');
-                      XLSX.writeFile(wb, `Venus_Financial_${new Date().toISOString().slice(0,10)}.xlsx`);
-                    }}
-                      style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 12px', fontSize:12, fontWeight:600,
-                        color:'#166534', background:'#DCFCE7', border:'1px solid #86EFAC', borderRadius:7, cursor:'pointer' }}>
-                      📥 Excel
-                    </button>
-                  </div>
-                  <div style={{ overflowX:'auto' as const }}>
-                    <table style={{ width:'100%', borderCollapse:'collapse' as const, fontSize:12 }}>
-                      <thead>
-                        <tr style={{ background:T.primaryLight }}>
-                          {['#','PO Number','Project Name','Project ID','Site Name','Project Status','PO Value','Expense Paid','Billed Amount','P/L Projection'].map((h,i)=>(
-                            <th key={i} style={{ padding:'8px 10px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const, color:T.primary, textAlign:i>=6?'right' as const:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(rawProjects as any[]).map((p:any, idx:number)=>{
-                          const expPaid = expenses.filter((e:any)=>e.projectId===p.id&&e.status==='paid').reduce((a:number,e:any)=>a+Number(e.amount||0),0);
-                          const billed  = invoices.filter((inv:any)=>inv.projectId===p.id&&(inv.invoiceStatus==='Approved'||inv.paymentStatus==='Paid')).reduce((a:number,inv:any)=>a+Number(inv.invoiceAmount||0),0);
-                          const pl      = billed - expPaid;
-                          const plColor = pl >= 0 ? T.success : T.danger;
-                          return (
-                            <tr key={p.id} style={{ background:idx%2===0?'#fff':T.bg, borderBottom:`1px solid ${T.border}` }}>
-                              <td style={{ padding:'8px 10px', color:T.textMuted }}>{idx+1}</td>
-                              <td style={{ padding:'8px 10px', fontWeight:600, color:T.primary }}>{p.poNo||'—'}</td>
-                              <td style={{ padding:'8px 10px' }}>{p.site||'—'}</td>
-                              <td style={{ padding:'8px 10px', color:T.textMuted, fontSize:11 }}>{p.id}</td>
-                              <td style={{ padding:'8px 10px' }}>{p.site||'—'}</td>
-                              <td style={{ padding:'8px 10px' }}><span style={{ fontSize:10, fontWeight:600, color:'#6B7280', background:'#F3F4F6', padding:'2px 8px', borderRadius:10 }}>{p.projectStatus||'—'}</span></td>
-                              <td style={{ padding:'8px 10px', textAlign:'right' as const, fontWeight:600 }}>{fmt(p.poValue||0)}</td>
-                              <td style={{ padding:'8px 10px', textAlign:'right' as const, color:T.textMuted }}>{fmt(expPaid)}</td>
-                              <td style={{ padding:'8px 10px', textAlign:'right' as const, color:T.info, fontWeight:600 }}>{fmt(billed)}</td>
-                              <td style={{ padding:'8px 10px', textAlign:'right' as const, fontWeight:700, color:plColor }}>{pl>=0?'+':''}{fmt(pl)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
                   {/* Pagination */}
                   {Math.ceil((rawProjects as any[]).length / FIN_PER_PAGE) > 1 && (
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 4px', borderTop:`1px solid ${T.border}`, marginTop:4 }}>
@@ -730,6 +662,7 @@ export default function ReportsPage() {
                     </div>
                   )}
                 </div>
+
               </div>
             )}
 
