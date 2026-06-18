@@ -258,6 +258,8 @@ export default function ProjectsPage() {
   const [focused,      setFocused]      = useState(false);
   const [ageMin,       setAgeMin]       = useState<number|null>(null);
   const [ageMax,       setAgeMax]       = useState<number|null>(null);
+  const [dateFrom,     setDateFrom]     = useState('');
+  const [dateTo,       setDateTo]       = useState('');
   const [page, setPage] = useState(()=>{
     if (typeof window === 'undefined') return 1;
     const p = parseInt(new URLSearchParams(window.location.search).get('page') || '1');
@@ -345,6 +347,8 @@ export default function ProjectsPage() {
     const p = (projects as any[]).find((x:any)=>x.id===id);
     if (!p) return 0;
     // Aging = days since PO date (or start date, or created_at)
+    if (dateFrom && p.poDate && p.poDate < dateFrom) return false;
+    if (dateTo   && p.poDate && p.poDate > dateTo)   return false;
     const ref = p.poDate || p.startDate || p.createdAt;
     if (!ref) return 0;
     return Math.floor((new Date().getTime() - new Date(ref).getTime()) / 86400000);
@@ -691,8 +695,10 @@ export default function ProjectsPage() {
               <option value="All Types">All Types</option>
               {cascadeTypes.map(t=><option key={t} value={t}>{t}</option>)}
             </select>
+            {(dateFrom||dateTo) && <button onClick={()=>{ setDateFrom(''); setDateTo(''); }}
+              style={{ fontSize:11, color:'#DC2626', background:'none', border:'none', cursor:'pointer', fontWeight:600, whiteSpace:'nowrap' as const }}>✕ Date</button>}
             {hasFilter ? (
-              <button onClick={()=>{ setSearch('');setProjectStatusFilter('');setVendorFilter('');setPmFilter('');setRegionFilter('');setTypeFilter('All Types');setStatusFilter('All');setPage(1); router.replace({pathname:'/projects'},undefined,{shallow:true}); }}
+              <button onClick={()=>{ setSearch('');setProjectStatusFilter('');setVendorFilter('');setPmFilter('');setRegionFilter('');setTypeFilter('All Types');setStatusFilter('All');setPage(1);setDateFrom('');setDateTo(''); router.replace({pathname:'/projects'},undefined,{shallow:true}); }}
                 style={{ background:T.dangerBg, border:`1px solid #FECACA`, borderRadius:8, padding:'8px 14px', color:T.danger, cursor:'pointer', fontSize:12, fontWeight:700, whiteSpace:'nowrap' as const }}>
                 ✕ Clear
               </button>
@@ -700,6 +706,18 @@ export default function ProjectsPage() {
           </div>
           );
         })()}
+
+        {/* Date filter row */}
+        <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:12 }}>
+          <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>PO Date From</span>
+          <DateInput value={dateFrom} onChange={v=>{ setDateFrom(v); setPage(1); }}
+            style={{ border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 10px', fontSize:12, outline:'none' }} />
+          <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>To</span>
+          <DateInput value={dateTo} onChange={v=>{ setDateTo(v); setPage(1); }}
+            style={{ border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 10px', fontSize:12, outline:'none' }} />
+          {(dateFrom||dateTo) && <button onClick={()=>{ setDateFrom(''); setDateTo(''); }}
+            style={{ fontSize:11, color:'#DC2626', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:6, padding:'4px 8px', cursor:'pointer', fontWeight:600 }}>✕ Clear</button>}
+        </div>
 
         <div style={{ display:'flex', gap:8, marginBottom:16, alignItems:'center', justifyContent:'flex-end' }}>
           <input ref={poFileRef} type="file" accept=".pdf,application/pdf" onChange={handlePOUpload} style={{ display:'none' }} />
