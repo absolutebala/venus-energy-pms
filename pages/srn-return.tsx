@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import * as XLSX from 'xlsx';
 import { useProjects } from '@/context/ProjectContext';
 import { usePOItems } from '@/context/POItemContext';
 import { createClient } from '@/lib/supabase';
@@ -258,6 +259,23 @@ export default function SRNReturnPage() {
   const paginated  = filteredProjects.slice((page-1)*PER_PAGE, page*PER_PAGE);
   const isLoading  = loading || projLoading || stnLoading;
 
+  const exportSRNToExcel = () => {
+    const rows = filteredProjects.map((proj:any, idx:number) => ({
+      'S.No': idx+1,
+      'Project ID': proj.projectId,
+      'Site': proj.projectName,
+      'PO No': proj.poNo,
+      'Vendor': proj.vendor,
+      'PM': proj.pm,
+      'STN Items': proj.stnItems.length,
+      'SRN Items': proj.srnItems.length,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'STN-SRN');
+    XLSX.writeFile(wb, `Venus_STN_SRN_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
   const thS: React.CSSProperties = { padding:'9px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase', color:Theme.primary, background:Theme.primaryLight, textAlign:'left' as const, borderBottom:`2px solid ${Theme.primaryMid}`, whiteSpace:'nowrap' as const };
   const tdS: React.CSSProperties = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${Theme.border}`, verticalAlign:'middle' as const };
 
@@ -494,8 +512,9 @@ export default function SRNReturnPage() {
 
         {/* Toggle bar */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-          <div style={{ fontSize:13, color:Theme.textMuted }}>
-            {filteredProjects.length} project{filteredProjects.length!==1?'s':''}
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ fontSize:13, color:Theme.textMuted }}>
+            {['project_manager','vendor'].includes(role)?'My':'All'} Projects: {filteredProjects.length}
             {cardFilter && (
               <span style={{ marginLeft:10, background:Theme.primaryLight, color:Theme.primary,
                 fontSize:11, fontWeight:600, padding:'2px 10px', borderRadius:20 }}>
@@ -503,6 +522,14 @@ export default function SRNReturnPage() {
                 <span onClick={clearCardFilter}
                   style={{ marginLeft:6, cursor:'pointer', color:'#DC2626', fontWeight:700 }}>✕</span>
               </span>
+            )}
+            </div>
+            {['super_admin','region_manager','project_manager','accounting_team'].includes(role) && (
+              <button onClick={exportSRNToExcel}
+                style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', fontSize:12, fontWeight:600,
+                  color:'#166534', background:'#DCFCE7', border:'1px solid #86EFAC', borderRadius:7, cursor:'pointer' }}>
+                📥 Excel
+              </button>
             )}
           </div>
           <div style={{ display:'flex', gap:16, alignItems:'center' }}>

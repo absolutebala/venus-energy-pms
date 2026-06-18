@@ -139,7 +139,23 @@ export default function SiteExpensesPage() {
   React.useEffect(() => { setPage(1); router.replace({query:{...router.query,page:1}},undefined,{shallow:true}); },
     [search, datePreset, expStatusFilter, expVendorFilter, expPMFilter, expRegionFilter, expTypeFilter, customFrom, customTo]);
 
-  const allExpenses = expenses
+  // Role-based filtering
+  const roleFilteredExpenses = React.useMemo(() => {
+    const role = profile?.role || '';
+    const name = profile?.full_name || '';
+    const vendorName = (profile as any)?.vendor_name || '';
+    if (role === 'project_manager') {
+      const myProjectIds = new Set((projects as any[]).filter((p:any)=>p.pm===name).map((p:any)=>p.id));
+      return expenses.filter((e:any) => myProjectIds.has(e.projectId));
+    }
+    if (role === 'vendor') {
+      const myProjectIds = new Set((projects as any[]).filter((p:any)=>p.vendor===vendorName).map((p:any)=>p.id));
+      return expenses.filter((e:any) => myProjectIds.has(e.projectId));
+    }
+    return expenses;
+  }, [expenses, projects, profile?.role, profile?.full_name, (profile as any)?.vendor_name]);
+
+  const allExpenses = roleFilteredExpenses
     .filter((e:any) => {
       // Date filter
       if (datePreset !== 'all') {
@@ -349,7 +365,8 @@ export default function SiteExpensesPage() {
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
             <div style={{ display:'flex', alignItems:'center', gap:12 }}>
               <div style={{ fontSize:14, fontWeight:700, color:T.text }}>
-                All Expenses <span style={{ fontSize:12, fontWeight:400, color:T.textMuted, marginLeft:8 }}>{allExpenses.length} records</span>
+                {['project_manager','vendor'].includes(profile?.role||'') ? 'My Expenses' : 'All Expenses'}
+                <span style={{ fontSize:12, fontWeight:400, color:T.textMuted, marginLeft:8 }}>{allExpenses.length} records</span>
               </div>
               {canManage && (
                 <button onClick={()=>{
