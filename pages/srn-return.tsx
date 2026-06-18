@@ -156,6 +156,16 @@ export default function SRNReturnPage() {
     } return r;
   }, [srnGrouped, kpiSubFilter]);
   // Apply role-based filtering to STN and SRN items
+  const pmName     = profile?.full_name || '';
+  const vendorName = (profile as any)?.vendor_name || '';
+
+  // Role-based project filtering — must be before roleStnItems/roleSrnItems
+  const roleProjectIds = useMemo(() => {
+    if (role === 'project_manager') return new Set(projects.filter((p:any)=>p.pm===pmName).map((p:any)=>p.id));
+    if (role === 'vendor') return new Set(projects.filter((p:any)=>p.vendor===vendorName).map((p:any)=>p.id));
+    return null; // null = no restriction
+  }, [projects, role, pmName, vendorName]);
+
   const roleStnItems = useMemo(() => {
     if (!roleProjectIds) return stnAllItems;
     return stnAllItems.filter(i => roleProjectIds.has(i.projectId));
@@ -186,16 +196,6 @@ export default function SRNReturnPage() {
   const clearCardFilter = () => { setCardFilter(null); setShowSRN(true); setShowSTN(true); };
 
   // ── Combined project list for display ────────────────────────────────────
-  const pmName     = profile?.full_name || '';
-  const vendorName = (profile as any)?.vendor_name || '';
-
-  // Role-based project filtering
-  const roleProjectIds = useMemo(() => {
-    if (role === 'project_manager') return new Set(projects.filter((p:any)=>p.pm===pmName).map((p:any)=>p.id));
-    if (role === 'vendor') return new Set(projects.filter((p:any)=>p.vendor===vendorName).map((p:any)=>p.id));
-    return null; // null = no restriction
-  }, [projects, role, pmName, vendorName]);
-
   const allProjectIds = useMemo(() => {
     const ids = new Set<string>();
     if (showSRN) srnGrouped.forEach(p => { if (!roleProjectIds || roleProjectIds.has(p.projectId)) ids.add(p.projectId); });
