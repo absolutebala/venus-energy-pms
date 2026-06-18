@@ -242,8 +242,8 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Change Password */}
-        <div style={card}>
+        {/* Change Password — SA and Accounting only */}
+        {['super_admin','accounting_team'].includes(profile?.role||'') && <div style={card}>
           <div style={{ fontSize:15, fontWeight:700, color:T.text, marginBottom:4 }}>Change Password</div>
           <div style={{ fontSize:12, color:T.textMuted, marginBottom:20 }}>Use a strong password of at least 8 characters.</div>
 
@@ -296,7 +296,7 @@ export default function ProfilePage() {
               }
             </button>
           </div>
-        </div>
+        </div>}
       </div>
 
       {/* AI Settings — Super Admin only */}
