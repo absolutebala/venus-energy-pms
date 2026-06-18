@@ -1293,6 +1293,7 @@ export default function Dashboard() {
 
   const filteredProjects = React.useMemo(() => {
     return projectsWithAging.filter((p:any) => {
+      if (role === 'region_manager' && name && (p as any).rm !== name) return false;
       if (dashRegion && p.region !== dashRegion) return false;
       if (dashType   && p.type   !== dashType)   return false;
       if (dashStatus && (p as any).projectStatus !== dashStatus) return false;
@@ -1302,7 +1303,7 @@ export default function Dashboard() {
       if (dashDateTo   && p.poDate && p.poDate > dashDateTo)   return false;
       return true;
     });
-  }, [dbProjects, dashRegion, dashType, dashDateFrom, dashDateTo, dashStatus, dashPM, dashVendor]);
+  }, [dbProjects, dashRegion, dashType, dashDateFrom, dashDateTo, dashStatus, dashPM, dashVendor, role, name]);
 
   return (
     <Layout>
