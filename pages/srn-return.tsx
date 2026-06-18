@@ -175,10 +175,20 @@ export default function SRNReturnPage() {
   const clearCardFilter = () => { setCardFilter(null); setShowSRN(true); setShowSTN(true); };
 
   // ── Combined project list for display ────────────────────────────────────
+  const pmName     = profile?.full_name || '';
+  const vendorName = (profile as any)?.vendor_name || '';
+
+  // Role-based project filtering
+  const roleProjectIds = useMemo(() => {
+    if (role === 'project_manager') return new Set(projects.filter((p:any)=>p.pm===pmName).map((p:any)=>p.id));
+    if (role === 'vendor') return new Set(projects.filter((p:any)=>p.vendor===vendorName).map((p:any)=>p.id));
+    return null; // null = no restriction
+  }, [projects, role, pmName, vendorName]);
+
   const allProjectIds = useMemo(() => {
     const ids = new Set<string>();
-    if (showSRN) srnGrouped.forEach(p => ids.add(p.projectId));
-    if (showSTN) stnGrouped.forEach(p => ids.add(p.projectId));
+    if (showSRN) srnGrouped.forEach(p => { if (!roleProjectIds || roleProjectIds.has(p.projectId)) ids.add(p.projectId); });
+    if (showSTN) stnGrouped.forEach(p => { if (!roleProjectIds || roleProjectIds.has(p.projectId)) ids.add(p.projectId); });
     return Array.from(ids);
   }, [srnGrouped, stnGrouped, showSRN, showSTN]);
 

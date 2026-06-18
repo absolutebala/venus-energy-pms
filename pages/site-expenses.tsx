@@ -335,11 +335,11 @@ export default function SiteExpensesPage() {
               <option value="">All Vendors</option>
               {uniq(cascadeProj('vendor').map((p:any)=>p.vendor)).map(v=><option key={v} value={v}>{v}</option>)}
             </select>
-            <select value={expPMFilter} onChange={e=>setExpPMFilter(e.target.value)}
+            {profile?.role !== 'project_manager' && <select value={expPMFilter} onChange={e=>setExpPMFilter(e.target.value)}
               style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
               <option value="">All PMs</option>
               {uniq(cascadeProj('pm').map((p:any)=>p.pm)).map(pm=><option key={pm} value={pm}>{pm}</option>)}
-            </select>
+            </select>}
             <select value={expRegionFilter} onChange={e=>setExpRegionFilter(e.target.value)}
               style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
               <option value="">All Regions</option>

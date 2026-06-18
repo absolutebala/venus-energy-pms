@@ -674,11 +674,13 @@ export default function ProjectsPage() {
               <option value="">All Vendors</option>
               {cascadeVendors.map(v=><option key={v} value={v}>{v}</option>)}
             </select>
+            {profile?.role !== 'project_manager' && (
             <select value={pmFilter} onChange={e=>{setPmFilter(e.target.value);syncToUrl({pmFilter:e.target.value});}}
               style={{ ...inputStyle() }}>
               <option value="">All PMs</option>
               {cascadePMs.map(pm=><option key={pm} value={pm}>{pm}</option>)}
             </select>
+            )}
             <select value={regionFilter} onChange={e=>{setRegionFilter(e.target.value);syncToUrl({regionFilter:e.target.value});}}
               style={{ ...inputStyle() }}>
               <option value="">All Regions</option>
