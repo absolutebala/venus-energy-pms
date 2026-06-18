@@ -789,7 +789,7 @@ export default function ProjectsPage() {
                   const delDate = p.endDate;
                   const delDt   = delDate ? new Date(delDate) : null;
                   const isPast  = delDt && !['completed','not_started'].includes(p.status) ? delDt < new Date() : false;
-                  const ageDays = getAgeDays(p.id);
+                  const ageDays = Number(getAgeDays(p.id));
                   const ageColor= ageDays > 90 ? '#DC2626' : ageDays > 60 ? '#D97706' : '#0D9488';
                   const ageBg   = ageDays > 90 ? '#FEF2F2' : ageDays > 60 ? '#FFFBEB' : '#F0FDFA';
                   return (
