@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useProjects } from '@/context/ProjectContext';
 import { useInvoices } from '@/context/InvoiceContext';
 import { useExpenses } from '@/context/ExpenseContext';
+import { useExpenses } from '@/context/ExpenseContext';
 import { useMaterial } from '@/context/MaterialContext';
 import { T, card, badge , fmtINR} from '@/lib/theme';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
@@ -88,6 +89,9 @@ export default function ReportsPage() {
   const { profile } = useAuth();
   const { projects: rawProjects, loading: projLoading } = useProjects();
   const { invoices, loading: invLoading } = useInvoices();
+  const { expenses } = useExpenses();
+  const [finPage, setFinPage] = React.useState(1);
+  const FIN_PER_PAGE = 10;
   const { expenses } = useExpenses();
   const { allItems: materials, loading: matLoading } = useMaterial();
 
@@ -588,6 +592,72 @@ export default function ReportsPage() {
                         return {
                           'S.No': i+1,
                           'PO Number': p.poNo||'—',
+                          'Project Type': p.type||'—',
+                          'Site Name': p.site||'—',
+                          'Project Status': p.projectStatus||'—',
+                          'PO Value (₹)': p.poValue||0,
+                          'Expense Paid (₹)': expPaid,
+                          'Billed Amount (₹)': billed,
+                          'P/L Projection (₹)': pl,
+                        };
+                      });
+                      const ws = XLSX.utils.json_to_sheet(rows);
+                      ws['!cols'] = [{wch:6},{wch:16},{wch:20},{wch:20},{wch:24},{wch:14},{wch:16},{wch:16},{wch:16}];
+                      const wb = XLSX.utils.book_new();
+                      XLSX.utils.book_append_sheet(wb, ws, 'Financial Details');
+                      XLSX.writeFile(wb, `Venus_Financial_${new Date().toISOString().slice(0,10)}.xlsx`);
+                    }}
+                      style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 12px', fontSize:12, fontWeight:600,
+                        color:'#166534', background:'#DCFCE7', border:'1px solid #86EFAC', borderRadius:7, cursor:'pointer' }}>
+                      📥 Excel
+                    </button>
+                  </div>
+                  <div style={{ overflowX:'auto' as const }}>
+                    <table style={{ width:'100%', borderCollapse:'collapse' as const, fontSize:12 }}>
+                      <thead>
+                        <tr style={{ background:T.primaryLight }}>
+                          {['#','PO Number','Project Type','Site Name','Project Status','PO Value','Expense Paid','Billed Amount','P/L Projection'].map((h,i)=>(
+                            <th key={i} style={{ padding:'8px 10px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const, color:T.primary, textAlign:i>=5?'right' as const:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(rawProjects as any[]).slice((finPage-1)*FIN_PER_PAGE, finPage*FIN_PER_PAGE).map((p:any, idx:number)=>{ const absIdx = (finPage-1)*FIN_PER_PAGE + idx;
+                          const expPaid = expenses.filter((e:any)=>e.projectId===p.id&&e.status==='paid').reduce((a:number,e:any)=>a+Number(e.amount||0),0);
+                          const billed  = invoices.filter((inv:any)=>inv.projectId===p.id&&(inv.invoiceStatus==='Approved'||inv.paymentStatus==='Paid')).reduce((a:number,inv:any)=>a+Number(inv.invoiceAmount||0),0);
+                          const pl      = billed - expPaid;
+                          const plColor = pl >= 0 ? T.success : T.danger;
+                          return (
+                            <tr key={p.id} style={{ background:idx%2===0?'#fff':T.bg, borderBottom:`1px solid ${T.border}` }}>
+                              <td style={{ padding:'8px 10px', color:T.textMuted }}>{absIdx+1}</td>
+                              <td style={{ padding:'8px 10px', fontWeight:600, color:T.primary }}>{p.poNo||'—'}</td>
+                              <td style={{ padding:'8px 10px', fontSize:11 }}>{p.type||'—'}</td>
+                              <td style={{ padding:'8px 10px' }}>{p.site||'—'}</td>
+                              <td style={{ padding:'8px 10px' }}><span style={{ fontSize:10, fontWeight:600, color:'#6B7280', background:'#F3F4F6', padding:'2px 8px', borderRadius:10 }}>{p.projectStatus||'—'}</span></td>
+                              <td style={{ padding:'8px 10px', textAlign:'right' as const, fontWeight:600 }}>{fmt(p.poValue||0)}</td>
+                              <td style={{ padding:'8px 10px', textAlign:'right' as const, color:T.textMuted }}>{fmt(expPaid)}</td>
+                              <td style={{ padding:'8px 10px', textAlign:'right' as const, color:T.info, fontWeight:600 }}>{fmt(billed)}</td>
+                              <td style={{ padding:'8px 10px', textAlign:'right' as const, fontWeight:700, color:plColor }}>{pl>=0?'+':''}{fmt(pl)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* ── Project List below Financial by Region ── */}
+                <div style={card}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+                    <div style={{ fontSize:14, fontWeight:600, color:T.text }}>Project Financial Details</div>
+                    <button onClick={()=>{
+                      const rows = (rawProjects as any[]).map((p:any,i:number)=>{
+                        const expPaid = expenses.filter((e:any)=>e.projectId===p.id&&e.status==='paid').reduce((a:number,e:any)=>a+Number(e.amount||0),0);
+                        const billed  = invoices.filter((inv:any)=>inv.projectId===p.id&&(inv.invoiceStatus==='Approved'||inv.paymentStatus==='Paid')).reduce((a:number,inv:any)=>a+Number(inv.invoiceAmount||0),0);
+                        const pl      = billed - expPaid;
+                        return {
+                          'S.No': i+1,
+                          'PO Number': p.poNo||'—',
                           'Project Name': p.site||'—',
                           'Project ID': p.id,
                           'Site Name': p.site||'—',
@@ -642,6 +712,25 @@ export default function ReportsPage() {
                       </tbody>
                     </table>
                   </div>
+                  {/* Pagination */}
+                  {Math.ceil((rawProjects as any[]).length / FIN_PER_PAGE) > 1 && (
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 4px', borderTop:`1px solid ${T.border}`, marginTop:4 }}>
+                      <div style={{ fontSize:12, color:'#6B7280' }}>
+                        Showing {(finPage-1)*FIN_PER_PAGE+1}–{Math.min(finPage*FIN_PER_PAGE, (rawProjects as any[]).length)} of {(rawProjects as any[]).length} projects
+                      </div>
+                      <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                        <button onClick={()=>setFinPage(n=>Math.max(1,n-1))} disabled={finPage===1}
+                          style={{ padding:'5px 12px', borderRadius:6, border:`1px solid #E5E7EB`, background:'#fff', cursor:finPage===1?'not-allowed':'pointer', fontSize:12, opacity:finPage===1?0.5:1 }}>← Prev</button>
+                        {Array.from({length:Math.ceil((rawProjects as any[]).length/FIN_PER_PAGE)},(_,i)=>i+1).filter(n=>n===1||n===Math.ceil((rawProjects as any[]).length/FIN_PER_PAGE)||Math.abs(n-finPage)<=1).reduce((acc:number[],n,i,arr)=>{ if(i>0&&n-arr[i-1]>1) acc.push(-1); acc.push(n); return acc; },[] as number[]).map((n,i)=>
+                          n===-1 ? <span key={`e${i}`} style={{ fontSize:12, color:'#9CA3AF' }}>…</span>
+                          : <button key={n} onClick={()=>setFinPage(n)}
+                              style={{ padding:'5px 10px', borderRadius:6, border:`1px solid ${finPage===n?T.primary:'#E5E7EB'}`, background:finPage===n?T.primary:'#fff', color:finPage===n?'#fff':'#374151', cursor:'pointer', fontSize:12, fontWeight:finPage===n?700:400, minWidth:32 }}>{n}</button>
+                        )}
+                        <button onClick={()=>setFinPage(n=>Math.min(Math.ceil((rawProjects as any[]).length/FIN_PER_PAGE),n+1))} disabled={finPage>=Math.ceil((rawProjects as any[]).length/FIN_PER_PAGE)}
+                          style={{ padding:'5px 12px', borderRadius:6, border:`1px solid #E5E7EB`, background:'#fff', cursor:finPage>=Math.ceil((rawProjects as any[]).length/FIN_PER_PAGE)?'not-allowed':'pointer', fontSize:12, opacity:finPage>=Math.ceil((rawProjects as any[]).length/FIN_PER_PAGE)?0.5:1 }}>Next →</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
