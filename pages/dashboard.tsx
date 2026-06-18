@@ -674,10 +674,10 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
   );
 }
 
-function RegionManagerDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
+function RegionManagerDashboard({ projects, rmName }: { projects: typeof ALL_PROJECTS; rmName: string }) {
   const router = useRouter();
   const [globalView, setGlobalView] = useState(false);
-  const myProjects = globalView ? projects : projects.filter(p=>p.rm==='Ramesh Kumar');
+  const myProjects = globalView ? projects : projects.filter((p:any)=>p.rm===rmName);
   const myPMs = Array.from(new Set(myProjects.map(p=>p.pm).filter(Boolean))) as string[];
 
   return (
@@ -887,8 +887,9 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
 // ── 4. SITE ENGINEER DASHBOARD ───────────────────────────────────
 function SiteEngineerDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
   const router = useRouter();
-  const myRegion   = 'Tamil Nadu';
-  const myProjects = projects.filter(p=>p.region===myRegion);
+  const { profile: seProfile } = useAuth();
+  const myRegion   = (seProfile as any)?.region || '';
+  const myProjects = myRegion ? projects.filter((p:any)=>p.region===myRegion) : projects;
   const today      = new Date().toLocaleDateString('en-IN',{weekday:'long', day:'2-digit', month:'short', year:'numeric'});
 
   return (
@@ -1362,7 +1363,7 @@ export default function Dashboard() {
         </div>
 
         {role === 'super_admin'     && <SuperAdminDashboard   projects={isLoading ? [] : filteredProjects} loading={isLoading} />}
-        {role === 'region_manager'  && <RegionManagerDashboard projects={isLoading ? [] : filteredProjects} />}
+        {role === 'region_manager'  && <RegionManagerDashboard projects={isLoading ? [] : filteredProjects} rmName={profile?.full_name||''} />}
         {role === 'project_manager' && <ProjectManagerDashboard projects={isLoading ? [] : projectsWithAging} pmName={profile?.full_name||''} />}
         {role === 'site_engineer'   && <SiteEngineerDashboard  projects={isLoading ? [] : projectsWithAging} />}
         {role === 'vendor'          && <VendorDashboard         projects={isLoading ? [] : projectsWithAging} />}
