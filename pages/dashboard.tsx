@@ -677,7 +677,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
 function RegionManagerDashboard({ projects, rmName }: { projects: typeof ALL_PROJECTS; rmName: string }) {
   const router = useRouter();
   const [globalView, setGlobalView] = useState(false);
-  const myProjects = globalView ? projects : projects.filter((p:any)=>p.rm===rmName);
+  const myProjects = projects; // already filtered by rmName in parent filteredProjects
   const myPMs = Array.from(new Set(myProjects.map(p=>p.pm).filter(Boolean))) as string[];
 
   return (
