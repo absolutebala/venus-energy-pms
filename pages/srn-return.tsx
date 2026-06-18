@@ -112,6 +112,27 @@ export default function SRNReturnPage() {
     }
   };
 
+  // Role-based filtering — must be before KPI memos
+  const pmName     = profile?.full_name || '';
+  const vendorName = (profile as any)?.vendor_name || '';
+  const roleProjectIds = useMemo(() => {
+    if (role === 'project_manager') return new Set(projects.filter((p:any)=>p.pm===pmName).map((p:any)=>p.id));
+    if (role === 'vendor') return new Set(projects.filter((p:any)=>p.vendor===vendorName).map((p:any)=>p.id));
+    return null;
+  }, [projects, role, pmName, vendorName]);
+  const roleStnItems = useMemo(() => {
+    if (!roleProjectIds) return stnAllItems;
+    return stnAllItems.filter(i => roleProjectIds.has(i.projectId));
+  }, [stnAllItems, roleProjectIds]);
+  const roleSrnItems = useMemo(() => {
+    if (!roleProjectIds) return srnRawItems;
+    return srnRawItems.filter((i:any) => roleProjectIds.has(i.project_id));
+  }, [srnRawItems, roleProjectIds]);
+  const stnPendingCount  = roleStnItems.filter(i => i.utilisedStatus !== 'pm_approved').length;
+  const stnRejectedCount = roleStnItems.filter(i => i.utilisedStatus === 'pm_rejected').length;
+  const srnPendingCount  = roleSrnItems.filter((i:any) => !i.received).length;
+  const srnRejectedCount = roleSrnItems.filter((i:any) => i.received === false && i.pm_comment).length;
+
   const stnByPM = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
     const filtered = kpiSubFilter?.type==='stn'
@@ -155,31 +176,7 @@ export default function SRNReturnPage() {
       for (const i of items) { const isPend=!i.received; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++; }
     } return r;
   }, [srnGrouped, kpiSubFilter]);
-  // Apply role-based filtering to STN and SRN items
-  const pmName     = profile?.full_name || '';
-  const vendorName = (profile as any)?.vendor_name || '';
 
-  // Role-based project filtering — must be before roleStnItems/roleSrnItems
-  const roleProjectIds = useMemo(() => {
-    if (role === 'project_manager') return new Set(projects.filter((p:any)=>p.pm===pmName).map((p:any)=>p.id));
-    if (role === 'vendor') return new Set(projects.filter((p:any)=>p.vendor===vendorName).map((p:any)=>p.id));
-    return null; // null = no restriction
-  }, [projects, role, pmName, vendorName]);
-
-  const roleStnItems = useMemo(() => {
-    if (!roleProjectIds) return stnAllItems;
-    return stnAllItems.filter(i => roleProjectIds.has(i.projectId));
-  }, [stnAllItems, roleProjectIds]);
-
-  const roleSrnItems = useMemo(() => {
-    if (!roleProjectIds) return srnRawItems;
-    return srnRawItems.filter((i:any) => roleProjectIds.has(i.project_id));
-  }, [srnRawItems, roleProjectIds]);
-
-  const stnPendingCount  = roleStnItems.filter(i => i.utilisedStatus !== 'pm_approved').length;
-  const stnRejectedCount = roleStnItems.filter(i => i.utilisedStatus === 'pm_rejected').length;
-  const srnPendingCount  = roleSrnItems.filter((i:any) => !i.received).length;
-  const srnRejectedCount = roleSrnItems.filter((i:any) => i.received === false && i.pm_comment).length;
 
 
   // ── Handle card filter click ─────────────────────────────────────────────
