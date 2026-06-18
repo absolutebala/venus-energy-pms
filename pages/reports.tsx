@@ -91,7 +91,6 @@ export default function ReportsPage() {
   const { expenses } = useExpenses();
   const [finPage, setFinPage] = React.useState(1);
   const FIN_PER_PAGE = 10;
-  const { expenses } = useExpenses();
   const { allItems: materials, loading: matLoading } = useMaterial();
 
   const [colConfigs,  setColConfigs]  = useState<Record<string,string[]>>({});
