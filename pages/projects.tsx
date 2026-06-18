@@ -5,6 +5,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle , fmtINR} from '@/lib/theme';
 import DateInput from '@/components/DateInput';
+import MultiSelect from '@/components/MultiSelect';
 import { useProjects } from '@/context/ProjectContext';
 import { createClient } from '@/lib/supabase';
 import { useWorkDocs } from '@/context/WorkDocContext';
@@ -266,14 +267,14 @@ export default function ProjectsPage() {
     return p > 0 ? p : 1;
   });
   const PER_PAGE = 10;
-  const [pmFilter,     setPmFilter]     = useState('');
+  const [pmFilter,     setPmFilter]     = useState<string[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [vendorFilter,  setVendorFilter]  = useState('');
+  const [vendorFilter,  setVendorFilter]  = useState<string[]>([]);
   const [showFilters,   setShowFilters]   = useState(false);
-  const [projectStatusFilter, setProjectStatusFilter] = useState('');
+  const [projectStatusFilter, setProjectStatusFilter] = useState<string[]>([]);
   // filterVendors and filterPMs now computed as cascading useMemos below
-  const [regionFilter,  setRegionFilter]  = useState('');
+  const [regionFilter,  setRegionFilter]  = useState<string[]>([]);
   const [noVendorFilter, setNoVendorFilter] = useState(false);
 
   // Redirect PM
@@ -297,11 +298,11 @@ export default function ProjectsPage() {
     setStatusFilter(params.status ? (STATUS_DISPLAY[params.status] || params.status) : 'All');
     setTypeFilter(params.type ? params.type : 'All Types');
     setSearch(params.search ? params.search : '');
-    setPmFilter(params.pm ? decodeURIComponent(params.pm) : '');
-    setVendorFilter(params.vendor ? decodeURIComponent(params.vendor) : '');
-    setRegionFilter(params.region ? decodeURIComponent(params.region) : '');
+    setPmFilter(params.pm ? decodeURIComponent(params.pm).split(',').filter(Boolean) : []);
+    setVendorFilter(params.vendor ? decodeURIComponent(params.vendor).split(',').filter(Boolean) : []);
+    setRegionFilter(params.region ? decodeURIComponent(params.region).split(',').filter(Boolean) : []);
     setNoVendorFilter(params.noVendor === '1');
-    setProjectStatusFilter(params.projStatus ? decodeURIComponent(params.projStatus) : '');
+    setProjectStatusFilter(params.projStatus ? decodeURIComponent(params.projStatus).split(',').filter(Boolean) : []);
     if (params.ageMin) setAgeMin(Number(params.ageMin)); else setAgeMin(null);
     if (params.ageMax) setAgeMax(Number(params.ageMax)); else setAgeMax(null);
     setPage(params.page ? Number(params.page) : 1);
@@ -322,11 +323,11 @@ export default function ProjectsPage() {
     if (sf  && sf  !== 'All')        q.status     = sf;
     if (tf  && tf  !== 'All Types')  q.type       = tf;
     if (sr)                           q.search     = sr;
-    if (pm)                           q.pm         = encodeURIComponent(pm);
-    if (vf)                           q.vendor     = encodeURIComponent(vf);
-    if (rf)                           q.region     = encodeURIComponent(rf);
+    if (pm.length)                    q.pm         = encodeURIComponent(pm.join(','));
+    if (vf.length)                    q.vendor     = encodeURIComponent(vf.join(','));
+    if (rf.length)                    q.region     = encodeURIComponent(rf.join(','));
     if (nv)                           q.noVendor   = '1';
-    if (psf)                          q.projStatus = encodeURIComponent(psf);
+    if (psf.length)                   q.projStatus = encodeURIComponent(psf.join(','));
     if (pg > 1)                       q.page       = String(pg);
     router.replace({ pathname:'/projects', query:q }, undefined, { shallow:true });
   };
@@ -363,11 +364,11 @@ export default function ProjectsPage() {
     if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
     if (ageMin !== null && p.aging < ageMin) return false;
     if (ageMax !== null && ageMax < 999 && p.aging > ageMax) return false;
-    if (pmFilter) { const _pm = (p as any).pm; if (pmFilter === '__unassigned__') { if (_pm) return false; } else if (_pm !== pmFilter) return false; }
-    if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
-    if (regionFilter && (p as any).region !== regionFilter) return false;
+    if (pmFilter.length) { const _pm = (p as any).pm||''; if (!pmFilter.includes(_pm)) return false; }
+    if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'')) return false;
+    if (regionFilter.length && !regionFilter.includes((p as any).region||'')) return false;
     if (noVendorFilter && (p as any).vendor) return false;
-    if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
+    if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'')) return false;
     return searchMatch(p);
   });
 
@@ -387,9 +388,9 @@ export default function ProjectsPage() {
         return ((p as any).projectStatus || '') === statusFilter;
       }
       if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
-      if (pmFilter) { const _pm = (p as any).pm; if (pmFilter === '__unassigned__') { if (_pm) return false; } else if (_pm !== pmFilter) return false; }
-      if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
-      if (regionFilter && (p as any).region !== regionFilter) return false;
+      if (pmFilter.length) { const _pm = (p as any).pm||''; if (!pmFilter.includes(_pm)) return false; }
+      if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'')) return false;
+      if (regionFilter.length && !regionFilter.includes((p as any).region||'')) return false;
       return true;
     })
   , [roleFilteredProjects, statusFilter, typeFilter, pmFilter, projectStatusFilter, regionFilter]);
@@ -403,9 +404,9 @@ export default function ProjectsPage() {
         return ((p as any).projectStatus || '') === statusFilter;
       }
       if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
-      if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
-      if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
-      if (regionFilter && (p as any).region !== regionFilter) return false;
+      if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'')) return false;
+      if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'')) return false;
+      if (regionFilter.length && !regionFilter.includes((p as any).region||'')) return false;
       return true;
     })
   , [roleFilteredProjects, statusFilter, typeFilter, vendorFilter, projectStatusFilter, regionFilter]);
@@ -419,9 +420,9 @@ export default function ProjectsPage() {
         return ((p as any).projectStatus || '') === statusFilter;
       }
       if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
-      if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
-      if (pmFilter) { const _pm = (p as any).pm; if (pmFilter === '__unassigned__') { if (_pm) return false; } else if (_pm !== pmFilter) return false; }
-      if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
+      if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'')) return false;
+      if (pmFilter.length) { const _pm = (p as any).pm||''; if (!pmFilter.includes(_pm)) return false; }
+      if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'')) return false;
       return true;
     })
   , [roleFilteredProjects, statusFilter, typeFilter, vendorFilter, pmFilter, projectStatusFilter]);
@@ -434,10 +435,10 @@ export default function ProjectsPage() {
         if (statusFilter === 'Not Set')   return !(p as any).projectStatus;
         return ((p as any).projectStatus || '') === statusFilter;
       }
-      if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
-      if (pmFilter) { const _pm = (p as any).pm; if (pmFilter === '__unassigned__') { if (_pm) return false; } else if (_pm !== pmFilter) return false; }
-      if (projectStatusFilter && ((p as any).projectStatus || '') !== projectStatusFilter) return false;
-      if (regionFilter && (p as any).region !== regionFilter) return false;
+      if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'')) return false;
+      if (pmFilter.length) { const _pm = (p as any).pm||''; if (!pmFilter.includes(_pm)) return false; }
+      if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'')) return false;
+      if (regionFilter.length && !regionFilter.includes((p as any).region||'')) return false;
       return true;
     })
   , [roleFilteredProjects, statusFilter, vendorFilter, pmFilter, projectStatusFilter, regionFilter]);
@@ -445,9 +446,9 @@ export default function ProjectsPage() {
   const projectsForStatusFilter = React.useMemo(() =>
     roleFilteredProjects.filter((p:any) => {
       if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
-      if (vendorFilter && (p as any).vendor !== vendorFilter) return false;
-      if (pmFilter) { const _pm = (p as any).pm; if (pmFilter === '__unassigned__') { if (_pm) return false; } else if (_pm !== pmFilter) return false; }
-      if (regionFilter && (p as any).region !== regionFilter) return false;
+      if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'')) return false;
+      if (pmFilter.length) { const _pm = (p as any).pm||''; if (!pmFilter.includes(_pm)) return false; }
+      if (regionFilter.length && !regionFilter.includes((p as any).region||'')) return false;
       return true;
     })
   , [roleFilteredProjects, typeFilter, vendorFilter, pmFilter, regionFilter]);
@@ -668,37 +669,17 @@ export default function ProjectsPage() {
             <input value={search} onChange={e=>{ setSearch(e.target.value); syncToUrl({search:e.target.value}); }} onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
               placeholder="Project name, PO no, Indus ID, site…"
               style={{ ...inputStyle(focused) }} />
-            <select value={projectStatusFilter} onChange={e=>{setProjectStatusFilter(e.target.value);setPage(1);}}
-              style={{ ...inputStyle() }}>
-              <option value="">All Statuses</option>
-              {cascadeStatuses.map(s=><option key={s} value={s}>{s}</option>)}
-            </select>
-            <select value={vendorFilter} onChange={e=>{setVendorFilter(e.target.value);syncToUrl({vendorFilter:e.target.value});}}
-              style={{ ...inputStyle() }}>
-              <option value="">All Vendors</option>
-              {cascadeVendors.map(v=><option key={v} value={v}>{v}</option>)}
-            </select>
+            <MultiSelect options={cascadeStatuses} value={projectStatusFilter} onChange={v=>{setProjectStatusFilter(v);setPage(1);}} placeholder="All Statuses" style={{ ...inputStyle(), padding:'6px 32px 6px 10px' }} />
+            <MultiSelect options={cascadeVendors} value={vendorFilter} onChange={v=>{setVendorFilter(v);syncToUrl({vendorFilter:v});}} placeholder="All Vendors" style={{ ...inputStyle(), padding:'6px 32px 6px 10px' }} />
             {profile?.role !== 'project_manager' && (
-            <select value={pmFilter} onChange={e=>{setPmFilter(e.target.value);syncToUrl({pmFilter:e.target.value});}}
-              style={{ ...inputStyle() }}>
-              <option value="">All PMs</option>
-              {cascadePMs.map(pm=><option key={pm} value={pm}>{pm}</option>)}
-            </select>
+              <MultiSelect options={cascadePMs} value={pmFilter} onChange={v=>{setPmFilter(v);syncToUrl({pmFilter:v});}} placeholder="All PMs" style={{ ...inputStyle(), padding:'6px 32px 6px 10px' }} />
             )}
-            <select value={regionFilter} onChange={e=>{setRegionFilter(e.target.value);syncToUrl({regionFilter:e.target.value});}}
-              style={{ ...inputStyle() }}>
-              <option value="">All Regions</option>
-              {cascadeRegions.map(r=><option key={r} value={r}>{r}</option>)}
-            </select>
-            <select value={typeFilter} onChange={e=>{ setTypeFilter(e.target.value); syncToUrl({typeFilter:e.target.value}); }}
-              style={{ ...inputStyle() }}>
-              <option value="All Types">All Types</option>
-              {cascadeTypes.map(t=><option key={t} value={t}>{t}</option>)}
-            </select>
+            <MultiSelect options={cascadeRegions} value={regionFilter} onChange={v=>{setRegionFilter(v);syncToUrl({regionFilter:v});}} placeholder="All Regions" style={{ ...inputStyle(), padding:'6px 32px 6px 10px' }} />
+            <MultiSelect options={cascadeTypes} value={typeFilter==='All Types'?[]:typeFilter.split?.(',')||[]} onChange={v=>{const t=v.length?v.join(','):'All Types';setTypeFilter(t);syncToUrl({typeFilter:t});}} placeholder="All Types" style={{ ...inputStyle(), padding:'6px 32px 6px 10px' }} />
             {(dateFrom||dateTo) && <button onClick={()=>{ setDateFrom(''); setDateTo(''); }}
               style={{ fontSize:11, color:'#DC2626', background:'none', border:'none', cursor:'pointer', fontWeight:600, whiteSpace:'nowrap' as const }}>✕ Date</button>}
             {hasFilter ? (
-              <button onClick={()=>{ setSearch('');setProjectStatusFilter('');setVendorFilter('');setPmFilter('');setRegionFilter('');setTypeFilter('All Types');setStatusFilter('All');setPage(1);setDateFrom('');setDateTo(''); router.replace({pathname:'/projects'},undefined,{shallow:true}); }}
+              <button onClick={()=>{ setSearch('');setProjectStatusFilter([]);setVendorFilter([]);setPmFilter([]);setRegionFilter([]);setTypeFilter('All Types');setStatusFilter('All');setPage(1);setDateFrom('');setDateTo(''); router.replace({pathname:'/projects'},undefined,{shallow:true}); }}
                 style={{ background:T.dangerBg, border:`1px solid #FECACA`, borderRadius:8, padding:'8px 14px', color:T.danger, cursor:'pointer', fontSize:12, fontWeight:700, whiteSpace:'nowrap' as const }}>
                 ✕ Clear
               </button>
