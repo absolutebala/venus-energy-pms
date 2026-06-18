@@ -237,6 +237,7 @@ export default function SiteExpensesPage() {
 
   const handleMarkPaid = async () => {
     if (!paidForm.txnRef) { setToast({ msg:"TXN Ref is required", type:"error" }); return; }
+    if (!/^[a-zA-Z0-9]{10,}$/.test(paidForm.txnRef.trim())) { setToast({ msg:"TXN Ref must be at least 10 alphanumeric characters (no spaces or special characters)", type:"error" }); return; }
     setPaidSaving(true);
     try {
       await updateExpense(paidModal.id, {
