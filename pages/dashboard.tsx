@@ -452,6 +452,35 @@ function STNSRNSummary() {
 
 // ── 2. REGION MANAGER DASHBOARD ──────────────────────────────────
 
+function ProjectTypeDistribution({ projects }: { projects: any[] }) {
+  const router = useRouter();
+  const typeGroups: Record<string, number> = {};
+  projects.forEach((p:any) => { const t = p.type || 'Not Set'; typeGroups[t] = (typeGroups[t]||0) + 1; });
+  const sorted = Object.entries(typeGroups).sort((a,b)=>b[1]-a[1]);
+  const colors = ['#0D9488','#2563EB','#D97706','#7C3AED','#DC2626','#059669','#DB2777','#0891B2','#65A30D','#9333EA'];
+  return (
+    <div style={{ ...card, marginBottom:20, marginTop:8 }}>
+      <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>📐 Project Type Distribution</div>
+      {sorted.length === 0 && <div style={{ fontSize:12, color:T.textMuted, textAlign:'center', padding:20 }}>No data</div>}
+      {sorted.map(([t,n],i)=>{
+        const pct = Math.round(n/Math.max(projects.length,1)*100);
+        const c = colors[i % colors.length];
+        return (
+          <div key={t} onClick={()=>router.push(`/projects?type=${encodeURIComponent(t)}`)} style={{ marginBottom:10, cursor:'pointer' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
+              <span style={{ fontSize:12, color:T.text }}>{t}</span>
+              <span style={{ fontSize:12, fontWeight:700, color:c }}>{n} ({pct}%)</span>
+            </div>
+            <div style={{ height:6, background:T.border, borderRadius:3 }}>
+              <div style={{ height:6, width:`${pct}%`, background:c, borderRadius:3 }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function SuperAdminDashboard({ projects: propProjects, loading=false }: { projects: any[]; loading?: boolean }) {
   const projects = propProjects;
   const router = useRouter();
@@ -665,11 +694,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
       </div>
 
 
-      {/* STN/SRN Summary */}
-      <div style={{ ...card, marginBottom:20, marginTop:8 }}>
-        <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>📦 STN / SRN Summary</div>
-        <STNSRNSummary />
-      </div>
+      <ProjectTypeDistribution projects={projects} />
       </>}
     </div>
   );
@@ -781,6 +806,7 @@ function RegionManagerDashboard({ projects, rmName }: { projects: typeof ALL_PRO
           </div>
         ))}
       </div>
+      <ProjectTypeDistribution projects={myProjects} />
     </div>
   );
 }
@@ -874,6 +900,7 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
           </div>
         ))}
       </div>
+      <ProjectTypeDistribution projects={myProjects} />
     </div>
   );
 }
@@ -920,6 +947,7 @@ function SiteEngineerDashboard({ projects }: { projects: typeof ALL_PROJECTS }) 
         </tbody></table>
         {myProjects.length === 0 && <div style={{ textAlign:'center', padding:40, color:T.textDim }}>No projects in your region.</div>}
       </div>
+      <ProjectTypeDistribution projects={myProjects} />
     </div>
   );
 }
@@ -1038,6 +1066,7 @@ function VendorProjectsPanel({ projects }: { projects: any[] }) {
           </div>
         </div>
       </div>
+      <ProjectTypeDistribution projects={myProjects} />
     </>
   );
 }
@@ -1093,6 +1122,7 @@ function ViewerDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
           </tbody></table>
         </div>
       </div>
+      <ProjectTypeDistribution projects={projects} />
     </div>
   );
 }
@@ -1219,6 +1249,7 @@ function AccountingDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
           </tbody>
         </table>
       </div>
+      <ProjectTypeDistribution projects={projects} />
     </div>
   );
 }
