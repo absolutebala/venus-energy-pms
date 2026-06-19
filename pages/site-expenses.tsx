@@ -46,10 +46,10 @@ export default function SiteExpensesPage() {
       sessionStorage.removeItem('expensesFilters');
       if (params.datePreset) setDatePreset(params.datePreset);
       if (params.expStatus) setExpStatusFilter(params.expStatus);
-      if (params.expVendor) setExpVendorFilter(decodeURIComponent(params.expVendor));
-      if (params.expPM) setExpPMFilter(decodeURIComponent(params.expPM));
-      if (params.expRegion) setExpRegionFilter(decodeURIComponent(params.expRegion));
-      if (params.expType) setExpTypeFilter(decodeURIComponent(params.expType));
+      if (params.expVendor) setExpVendorFilter(decodeURIComponent(params.expVendor).split(',').filter(Boolean));
+      if (params.expPM) setExpPMFilter(decodeURIComponent(params.expPM).split(',').filter(Boolean));
+      if (params.expRegion) setExpRegionFilter(decodeURIComponent(params.expRegion).split(',').filter(Boolean));
+      if (params.expType) setExpTypeFilter(decodeURIComponent(params.expType).split(',').filter(Boolean));
       if (params.search) setSearch(params.search);
       if (params.page) setPage(Number(params.page));
     } else {
