@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import DateInput from '@/components/DateInput';
+import MultiSelect from '@/components/MultiSelect';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useInvoices } from '@/context/InvoiceContext';
@@ -69,10 +70,10 @@ export default function InvoicesPage() {
   const [datePreset,  setDatePreset]  = useState('all');
   const [customFrom,  setCustomFrom]  = useState('');
   const [customTo,    setCustomTo]    = useState('');
-  const [invVendor,   setInvVendor]   = useState('');
-  const [invPM,       setInvPM]       = useState('');
-  const [invRegion,   setInvRegion]   = useState('');
-  const [invType,     setInvType]     = useState('');
+  const [invVendor,   setInvVendor]   = useState<string[]>([]);
+  const [invPM,       setInvPM]       = useState<string[]>([]);
+  const [invRegion,   setInvRegion]   = useState<string[]>([]);
+  const [invType,     setInvType]     = useState<string[]>([]);
   const [invPage,     setInvPage]     = useState(1);
   const INV_PER_PAGE = 10;
   const canExport = !authLoading && (profile?.role === 'super_admin' || profile?.role === 'accounting_team');
@@ -133,10 +134,10 @@ export default function InvoicesPage() {
       return true;
     }).filter(i => {
       const proj = (projects as any[]).find((p:any) => p.id === i.projectId);
-      if (invVendor && proj?.vendor !== invVendor) return false;
-      if (invPM     && proj?.pm     !== invPM)     return false;
-      if (invRegion && proj?.region !== invRegion) return false;
-      if (invType   && proj?.type   !== invType)   return false;
+      if (invVendor.length && !invVendor.includes(proj?.vendor||'')) return false;
+      if (invPM.length     && !invPM.includes(proj?.pm||''))     return false;
+      if (invRegion.length && !invRegion.includes(proj?.region||'')) return false;
+      if (invType.length   && !invType.includes(proj?.type||''))   return false;
       return true;
     });
   }, [invoices, datePreset, customFrom, customTo, invVendor, invPM, invRegion, invType, projects]);
@@ -302,37 +303,25 @@ export default function InvoicesPage() {
           const cascadeProj = (exclude: string) => (projects as any[]).filter((p:any) => {
             const hasInv = invoices.some(i => i.projectId === p.id);
             if (!hasInv) return false;
-            if (exclude!=='vendor' && invVendor && p.vendor !== invVendor) return false;
-            if (exclude!=='pm'     && invPM     && p.pm     !== invPM)     return false;
-            if (exclude!=='region' && invRegion && p.region !== invRegion) return false;
-            if (exclude!=='type'   && invType   && p.type   !== invType)   return false;
+            if (exclude!=='vendor' && invVendor.length && !invVendor.includes(p.vendor||'')) return false;
+            if (exclude!=='pm'     && invPM.length     && !invPM.includes(p.pm||''))     return false;
+            if (exclude!=='region' && invRegion.length && !invRegion.includes(p.region||'')) return false;
+            if (exclude!=='type'   && invType.length   && !invType.includes(p.type||''))   return false;
             return true;
           });
           const uniq = (arr: any[]) => Array.from(new Set(arr.filter(Boolean))).sort() as string[];
           return (
           <div style={{ display:'flex', gap:8, flexWrap:'wrap' as const, marginBottom:16, alignItems:'center' }}>
-            <select value={invVendor} onChange={e=>setInvVendor(e.target.value)}
-              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
-              <option value="">All Vendors</option>
-              {uniq(cascadeProj('vendor').map((p:any)=>p.vendor)).map(v=><option key={v} value={v}>{v}</option>)}
-            </select>
-            <select value={invPM} onChange={e=>setInvPM(e.target.value)}
-              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
-              <option value="">All PMs</option>
-              {uniq(cascadeProj('pm').map((p:any)=>p.pm)).map(pm=><option key={pm} value={pm}>{pm}</option>)}
-            </select>
-            <select value={invRegion} onChange={e=>setInvRegion(e.target.value)}
-              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
-              <option value="">All Regions</option>
-              {uniq(cascadeProj('region').map((p:any)=>p.region)).map(r=><option key={r} value={r}>{r}</option>)}
-            </select>
-            <select value={invType} onChange={e=>setInvType(e.target.value)}
-              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
-              <option value="">All Types</option>
-              {uniq(cascadeProj('type').map((p:any)=>p.type)).map(t=><option key={t} value={t}>{t}</option>)}
-            </select>
-            {(invVendor||invPM||invRegion||invType) && (
-              <button onClick={()=>{ setInvVendor(''); setInvPM(''); setInvRegion(''); setInvType(''); }}
+            <MultiSelect options={uniq(cascadeProj('vendor').map((p:any)=>p.vendor))} value={invVendor} onChange={setInvVendor} placeholder="All Vendors"
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 32px 6px 10px', fontSize:12 }} />
+            <MultiSelect options={uniq(cascadeProj('pm').map((p:any)=>p.pm))} value={invPM} onChange={setInvPM} placeholder="All PMs"
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 32px 6px 10px', fontSize:12 }} />
+            <MultiSelect options={uniq(cascadeProj('region').map((p:any)=>p.region))} value={invRegion} onChange={setInvRegion} placeholder="All Regions"
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 32px 6px 10px', fontSize:12 }} />
+            <MultiSelect options={uniq(cascadeProj('type').map((p:any)=>p.type))} value={invType} onChange={setInvType} placeholder="All Types"
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 32px 6px 10px', fontSize:12 }} />
+            {(invVendor.length||invPM.length||invRegion.length||invType.length) && (
+              <button onClick={()=>{ setInvVendor([]); setInvPM([]); setInvRegion([]); setInvType([]); }}
                 style={{ fontSize:11, color:'#DC2626', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:6, padding:'5px 10px', cursor:'pointer', fontWeight:600 }}>
                 ✕ Clear
               </button>
