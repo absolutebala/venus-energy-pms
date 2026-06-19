@@ -227,14 +227,14 @@ export default function InvoicesPage() {
     const rows = displayInvoices.map((inv, idx) => ({
       'S.No':           idx + 1,
       'PO No':          (inv as any).poNo || '',
-      'PO Date':        (projects.find((p:any)=>p.id===inv.projectId) as any)?.poDate || '',
+      'PO Date':        (projects.find((p:any)=>p.id===inv.projectId) as any)?.poDate ? new Date((projects.find((p:any)=>p.id===inv.projectId) as any).poDate) : '',
       'Indus ID':       (projects.find((p:any)=>p.id===inv.projectId) as any)?.indusId || '',
       'Project ID':     inv.projectId || '',
       'Project':        (projects.find((p:any)=>p.id===inv.projectId) as any)?.site || '',
       'WCC No':         (inv as any).wccNo || '',
       'Receipt No':     (inv as any).receiptNo || '',
       'Invoice No':     inv.invoiceNo,
-      'Invoice Date':   inv.invoiceDate,
+      'Invoice Date':   inv.invoiceDate ? new Date(inv.invoiceDate) : '',
       'Basic Amount':   inv.invoiceAmount,
       'GST (%)':        inv.invoiceAmount > 0 ? ((inv.gst / inv.invoiceAmount) * 100).toFixed(1) + '%' : '0%',
       'Tax Amount (₹)':  inv.gst,
@@ -243,10 +243,12 @@ export default function InvoicesPage() {
       'Project Status': (projects.find((p:any)=>p.id===inv.projectId) as any)?.projectStatus || '',
       'Invoice Status': inv.invoiceStatus,
       'Payment Status': inv.paymentStatus,
-      'Due Date':       inv.dueDate || '',
+      'Due Date':       inv.dueDate ? new Date(inv.dueDate) : '',
     }));
-    const ws = XLSX.utils.json_to_sheet(rows);
+    const ws = XLSX.utils.json_to_sheet(rows, { cellDates: true, dateNF: 'dd-mm-yyyy' });
     ws['!cols'] = [{wch:6},{wch:16},{wch:14},{wch:16},{wch:14},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14}];
+    // Enable AutoFilter on header row
+    if (ws['!ref']) ws['!autofilter'] = { ref: ws['!ref'] };
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Invoices');
     const date = new Date().toISOString().slice(0,10);
