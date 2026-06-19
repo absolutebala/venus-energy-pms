@@ -661,7 +661,9 @@ export default function ProjectsPage() {
 
         {/* Filters */}
         {(() => {
-          const hasFilter = false;
+          const hasFilter = Boolean(search || statusFilter!=='All' || (typeFilter!=='All Types') ||
+            pmFilter.length || vendorFilter.length || regionFilter.length || projectStatusFilter.length ||
+            dateFrom || dateTo);
           const _dis = (key: string) => { const m: Record<string,any> = {search,projectStatusFilter,vendorFilter,pmFilter,regionFilter}; return hasFilter && !m[key]; };
           const disStyle = { opacity:0.4, pointerEvents:'none' as const };
           return (
@@ -676,8 +678,6 @@ export default function ProjectsPage() {
             )}
             <MultiSelect options={cascadeRegions} value={regionFilter} onChange={v=>{setRegionFilter(v);syncToUrl({regionFilter:v});}} placeholder="All Regions" style={{ ...inputStyle(), padding:'6px 32px 6px 10px' }} />
             <MultiSelect options={cascadeTypes} value={typeFilter==='All Types'?[]:typeFilter.split?.(',')||[]} onChange={v=>{const t=v.length?v.join(','):'All Types';setTypeFilter(t);syncToUrl({typeFilter:t});}} placeholder="All Types" style={{ ...inputStyle(), padding:'6px 32px 6px 10px' }} />
-            {(dateFrom||dateTo) && <button onClick={()=>{ setDateFrom(''); setDateTo(''); }}
-              style={{ fontSize:11, color:'#DC2626', background:'none', border:'none', cursor:'pointer', fontWeight:600, whiteSpace:'nowrap' as const }}>✕ Date</button>}
             {hasFilter ? (
               <button onClick={()=>{ setSearch('');setProjectStatusFilter([]);setVendorFilter([]);setPmFilter([]);setRegionFilter([]);setTypeFilter('All Types');setStatusFilter('All');setPage(1);setDateFrom('');setDateTo(''); router.replace({pathname:'/projects'},undefined,{shallow:true}); }}
                 style={{ background:T.dangerBg, border:`1px solid #FECACA`, borderRadius:8, padding:'8px 14px', color:T.danger, cursor:'pointer', fontSize:12, fontWeight:700, whiteSpace:'nowrap' as const }}>
