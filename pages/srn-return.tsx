@@ -80,7 +80,7 @@ export default function SRNReturnPage() {
       const proj = (projects as any[]).find(p => p.id === projectId);
       return { projectId, projectName: proj?.site || proj?.projectName || projectId,
         poNo: proj?.poNo || '—', vendor: proj?.vendor || '—',
-        pm: proj?.pm || '—', region: proj?.region || '—', srnItems };
+        pm: proj?.pm || '—', region: proj?.region || '—', indusId: proj?.indusId || '—', srnItems };
     });
   }, [srnRawItems, projects]);
 
@@ -95,7 +95,7 @@ export default function SRNReturnPage() {
       const proj = (projects as any[]).find(p => p.id === projectId);
       return { projectId, projectName: proj?.site || proj?.projectName || projectId,
         poNo: proj?.poNo || '—', vendor: proj?.vendor || '—',
-        pm: proj?.pm || '—', region: proj?.region || '—', stnItems };
+        pm: proj?.pm || '—', region: proj?.region || '—', indusId: proj?.indusId || '—', stnItems };
     });
   }, [stnAllItems, projects]);
 
@@ -286,8 +286,8 @@ export default function SRNReturnPage() {
       proj.stnItems.forEach((item:any) => {
         stnRows.push({
           'S.No': sno++,
-          'Project ID': proj.projectId,
-          'Site': proj.projectName,
+          'Indus ID': proj.indusId || '—',
+          'Site Name': proj.projectName,
           'PO No': proj.poNo,
           'Vendor': proj.vendor,
           'PM': proj.pm,
@@ -296,7 +296,8 @@ export default function SRNReturnPage() {
           'Issued Qty': item.issuedQty ?? '—',
           'Utilised Qty': item.utilisedQty ?? '—',
           'Status': item.utilisedStatus || '—',
-          'PM Comment': item.pmComment || '—',
+          'Gate Entry No': item.gateEntryNo || '—',
+          'Vehicle No': item.vehicleNo || '—',
         });
       });
     });
@@ -310,18 +311,18 @@ export default function SRNReturnPage() {
       proj.srnItems.forEach((item:any) => {
         srnRows.push({
           'S.No': sno++,
-          'Project ID': proj.projectId,
-          'Site': proj.projectName,
+          'Indus ID': proj.indusId || '—',
+          'Site Name': proj.projectName,
           'PO No': proj.poNo,
           'Vendor': proj.vendor,
           'PM': proj.pm,
           'Region': proj.region,
           'Description': item.description || '—',
-          'SRN No': item.srn_no || '—',
-          'Qty': item.quantity ?? '—',
-          'Return Qty': item.return_qty ?? '—',
-          'Received': item.received ? 'Yes' : 'Pending',
-          'PM Comment': item.pm_comment || '—',
+          'Issued Qty': item.quantity ?? '—',
+          'Utilised Qty': item.return_qty ?? '—',
+          'Status': item.received ? 'Received' : 'Pending',
+          'Gate Entry No': item.gate_entry_no || '—',
+          'Vehicle No': item.vehicle_no || '—',
         });
       });
     });
@@ -646,19 +647,19 @@ export default function SRNReturnPage() {
                       const wb = XLSX.utils.book_new();
                       if (stnItems.length > 0) {
                         const stnRows = stnItems.map((item:any, i:number)=>({
-                          'S.No':i+1,'Project ID':project.projectId,'Site':project.projectName,'PO No':project.poNo,
-                          'Vendor':project.vendor,'PM':project.pm,'Description':item.description||'—',
+                          'S.No':i+1,'Site Name':project.projectName,'PO No':project.poNo,
+                          'Indus ID':project.indusId||'—','Vendor':project.vendor,'PM':project.pm,'Region':project.region,'Description':item.description||'—',
                           'Issued Qty':item.issuedQty??'—','Utilised Qty':item.utilisedQty??'—',
-                          'Status':item.utilisedStatus||'—','PM Comment':item.pmComment||'—',
+                          'Status':item.utilisedStatus||'—','Gate Entry No':item.gateEntryNo||'—','Vehicle No':item.vehicleNo||'—',
                         }));
                         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stnRows), 'STN');
                       }
                       if (srnItems.length > 0) {
                         const srnRows = srnItems.map((item:any, i:number)=>({
-                          'S.No':i+1,'Project ID':project.projectId,'Site':project.projectName,'PO No':project.poNo,
-                          'Vendor':project.vendor,'PM':project.pm,'Description':item.description||'—',
-                          'SRN No':item.srn_no||'—','Qty':item.quantity??'—','Return Qty':item.return_qty??'—',
-                          'Received':item.received?'Yes':'Pending','PM Comment':item.pm_comment||'—',
+                          'S.No':i+1,'Site Name':project.projectName,'PO No':project.poNo,
+                          'Indus ID':project.indusId||'—','Vendor':project.vendor,'PM':project.pm,'Region':project.region,'Description':item.description||'—',
+                          'Issued Qty':item.quantity??'—','Utilised Qty':item.return_qty??'—',
+                          'Status':item.received?'Received':'Pending','Gate Entry No':item.gate_entry_no||'—','Vehicle No':item.vehicle_no||'—',
                         }));
                         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(srnRows), 'SRN');
                       }
