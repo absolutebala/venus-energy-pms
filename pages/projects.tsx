@@ -662,7 +662,7 @@ export default function ProjectsPage() {
         {/* Filters */}
         {(() => {
           const hasFilter = false;
-          const _dis = (key: string) => { const m: Record<string,string> = {search,projectStatusFilter,vendorFilter,pmFilter,regionFilter}; return hasFilter && !m[key]; };
+          const _dis = (key: string) => { const m: Record<string,any> = {search,projectStatusFilter,vendorFilter,pmFilter,regionFilter}; return hasFilter && !m[key]; };
           const disStyle = { opacity:0.4, pointerEvents:'none' as const };
           return (
           <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr 1fr 1fr 1fr auto', gap:8, marginBottom:16, alignItems:'center' }}>
