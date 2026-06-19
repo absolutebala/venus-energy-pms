@@ -1233,6 +1233,7 @@ export default function Dashboard() {
   const isLoading = loading || projectsLoading || !minLoadDone;
   const role = (!loading && profile?.role) || '';
   const name = profile?.full_name?.split(' ')[0] || 'User';
+  const fullName = profile?.full_name || '';
 
   const greetings: Record<string,string> = {
     super_admin:     `Welcome back, ${name} 👋`,
@@ -1294,7 +1295,7 @@ export default function Dashboard() {
 
   const filteredProjects = React.useMemo(() => {
     return projectsWithAging.filter((p:any) => {
-      if (role === 'region_manager' && name && (p as any).rm !== name) return false;
+      if (role === 'region_manager' && fullName && (p as any).rm !== fullName) return false;
       if (dashRegion.length && !dashRegion.includes(p.region||'')) return false;
       if (dashType.length   && !dashType.includes(p.type||''))   return false;
       if (dashStatus.length && !dashStatus.includes((p as any).projectStatus||'')) return false;
@@ -1304,7 +1305,7 @@ export default function Dashboard() {
       if (dashDateTo   && p.poDate && p.poDate > dashDateTo)   return false;
       return true;
     });
-  }, [dbProjects, dashRegion, dashType, dashDateFrom, dashDateTo, dashStatus, dashPM, dashVendor, role, name]);
+  }, [dbProjects, dashRegion, dashType, dashDateFrom, dashDateTo, dashStatus, dashPM, dashVendor, role, fullName]);
 
   return (
     <Layout>
