@@ -32,7 +32,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (!rows.length) return res.status(400).json({ error: 'Excel file is empty' });
 
-    // Find PO Number and PO Status columns (case-insensitive)
     const firstRow = rows[0];
     const keys = Object.keys(firstRow);
     const poNumKey    = keys.find(k => k.toLowerCase().replace(/\s+/g,'').includes('ponumber') || k.toLowerCase().replace(/\s+/g,'').includes('pono'));
@@ -42,32 +41,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: `Could not find required columns. Found: ${keys.join(', ')}. Expected "PO Number" and "PO Status".` });
     }
 
-    let totalUpdated = 0;
-    let totalPoNumbers = 0;
+    // Build poNo -> status map, dedupe
+    const poMap = new Map<string, string>();
+    for (const row of rows) {
+      const poNo = String(row[poNumKey] || '').trim();
+      const poStatus = String(row[poStatusKey] || '').trim();
+      if (poNo && poStatus) poMap.set(poNo, poStatus);
+    }
+
+    const totalPoNumbers = poMap.size;
     const notFound: string[] = [];
     const results: { poNo: string; status: string; projectsUpdated: number }[] = [];
+    let totalUpdated = 0;
 
-    for (const row of rows) {
-      const poNo     = String(row[poNumKey] || '').trim();
-      const poStatus = String(row[poStatusKey] || '').trim();
-      if (!poNo || !poStatus) continue;
+    // Group PO numbers by status so we can do one bulk update per status value
+    const statusGroups = new Map<string, string[]>();
+    for (const [poNo, status] of poMap.entries()) {
+      if (!statusGroups.has(status)) statusGroups.set(status, []);
+      statusGroups.get(status)!.push(poNo);
+    }
 
-      totalPoNumbers++;
+    // Process each status group with chunked .in() updates (Supabase can handle large .in() arrays)
+    const CHUNK_SIZE = 200;
+    for (const [status, poNos] of statusGroups.entries()) {
+      for (let i = 0; i < poNos.length; i += CHUNK_SIZE) {
+        const chunk = poNos.slice(i, i + CHUNK_SIZE);
+        const { data, error } = await admin
+          .from('projects')
+          .update({ po_status: status })
+          .in('po_no', chunk)
+          .select('id, po_no');
 
-      // Update all projects with this PO number
-      const { data, error } = await admin
-        .from('projects')
-        .update({ po_status: poStatus })
-        .eq('po_no', poNo)
-        .select('id');
+        if (error) {
+          chunk.forEach(p => notFound.push(p));
+          continue;
+        }
 
-      if (error) { notFound.push(poNo); continue; }
-
-      const count = data?.length || 0;
-      if (count === 0) notFound.push(poNo);
-      else {
-        totalUpdated += count;
-        results.push({ poNo, status: poStatus, projectsUpdated: count });
+        const updatedPoNos = new Set((data || []).map((d: any) => d.po_no));
+        for (const poNo of chunk) {
+          const count = (data || []).filter((d: any) => d.po_no === poNo).length;
+          if (count === 0) notFound.push(poNo);
+          else {
+            totalUpdated += count;
+            results.push({ poNo, status, projectsUpdated: count });
+          }
+        }
       }
     }
 
