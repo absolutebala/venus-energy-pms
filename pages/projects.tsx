@@ -490,6 +490,8 @@ export default function ProjectsPage() {
       'Site Name':       clean(p.site),
       'Project Status':  clean(p.projectStatus),
       'Delivery Date':   p.endDate ? new Date(p.endDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '',
+      'Circle':          clean(p.region),
+      'PM':              clean(p.pm),
     }));
 
     const ws = XLSX.utils.json_to_sheet(rows);
