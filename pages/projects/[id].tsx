@@ -408,9 +408,8 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
   const saveEdit = async (id: string) => {
     setSaving(true);
     try {
-      const amt = calcAmount(editRow.quantity, editRow.rate);
-      await updateItem(id, { ...editRow, quantity:Number(editRow.quantity), rate:Number(editRow.rate),
-        gstRate:Number(editRow.gstRate||18), amount:amt,
+      await updateItem(id, { ...editRow, quantity:Number(editRow.quantity),
+        gstRate:Number(editRow.gstRate||18), amount:Number(editRow.amount)||0,
         utilisedQty: editRow.utilisedQty !== undefined && editRow.utilisedQty !== '' ? Number(editRow.utilisedQty) : undefined } as any);
       setEditId(null);
       logActivity(projectId, `PO Item updated`, poProfile?.full_name||'', poProfile?.role||'').catch(console.error);
