@@ -2249,6 +2249,7 @@ export default function ProjectDetailPage() {
   const { getByProject: getProjectDocs, addDoc, deleteDoc: deleteWorkDoc, getDocStatus } = useWorkDocs();
   const { getByProject: getActivityLog, logActivity } = useActivity();
   const dbProject = id ? getProject(id as string) : undefined;
+  const { logActivity: logActivityMain } = useActivity();
   const seedFallback = (Array.isArray(SEED_PROJECTS)?SEED_PROJECTS:[]).find((p:any)=>p.id===id);
   const [projects, setProjects] = useState<Record<string,any>>({});
   React.useEffect(() => {
@@ -2657,7 +2658,11 @@ export default function ProjectDetailPage() {
                 <div style={{ minWidth:200 }}>
                   <select
                     value={p.projectStatus || ''}
-                    onChange={e => ctxUpdateProject(p.id, { projectStatus: e.target.value } as any, profile?.full_name ?? undefined)}
+                    onChange={e => {
+                      const newStatus = e.target.value;
+                      ctxUpdateProject(p.id, { projectStatus: newStatus } as any, profile?.full_name ?? undefined);
+                      logActivityMain(p.id, `Project status changed to "${newStatus}"`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+                    }}
                     style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 12px', fontSize:13, outline:'none', background:'#fff', minWidth:220, cursor:'pointer' }}>
                     <option value="">— Set Project Status —</option>
                     {PROJECT_STATUS_OPTIONS.map(opt => {
