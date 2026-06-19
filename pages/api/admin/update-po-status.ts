@@ -56,14 +56,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Group PO numbers by status so we can do one bulk update per status value
     const statusGroups = new Map<string, string[]>();
-    for (const [poNo, status] of poMap.entries()) {
+    for (const [poNo, status] of Array.from(poMap.entries())) {
       if (!statusGroups.has(status)) statusGroups.set(status, []);
       statusGroups.get(status)!.push(poNo);
     }
 
     // Process each status group with chunked .in() updates (Supabase can handle large .in() arrays)
     const CHUNK_SIZE = 200;
-    for (const [status, poNos] of statusGroups.entries()) {
+    for (const [status, poNos] of Array.from(statusGroups.entries())) {
       for (let i = 0; i < poNos.length; i += CHUNK_SIZE) {
         const chunk = poNos.slice(i, i + CHUNK_SIZE);
         const { data, error } = await admin
