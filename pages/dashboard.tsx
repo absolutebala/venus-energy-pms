@@ -1066,7 +1066,7 @@ function VendorProjectsPanel({ projects }: { projects: any[] }) {
           </div>
         </div>
       </div>
-      <ProjectTypeDistribution projects={myProjects} />
+      <ProjectTypeDistribution projects={projects} />
     </>
   );
 }
