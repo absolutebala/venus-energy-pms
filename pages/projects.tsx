@@ -602,7 +602,7 @@ export default function ProjectsPage() {
                   </span>
                 </div>
               </div>
-              <button onClick={()=>{ setPmFilter(''); setVendorFilter(''); router.replace({pathname:'/projects'},undefined,{shallow:true}); }}
+              <button onClick={()=>{ setPmFilter([]); setVendorFilter([]); router.replace({pathname:'/projects'},undefined,{shallow:true}); }}
                 style={{ background:T.primary, border:'none', borderRadius:8, padding:'7px 16px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:600, flexShrink:0, marginLeft:12 }}>
                 × Clear Filter
               </button>
