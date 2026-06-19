@@ -781,11 +781,11 @@ export default function ProjectsPage() {
                         if (statusFilter && statusFilter !== 'All') retQ.status = statusFilter;
                         if (typeFilter && typeFilter !== 'All Types') retQ.type = typeFilter;
                         if (search) retQ.search = search;
-                        if (pmFilter) retQ.pm = encodeURIComponent(pmFilter);
-                        if (vendorFilter) retQ.vendor = encodeURIComponent(vendorFilter);
-                        if (regionFilter) retQ.region = encodeURIComponent(regionFilter);
+                        if (pmFilter.length) retQ.pm = encodeURIComponent(pmFilter.join(','));
+                        if (vendorFilter.length) retQ.vendor = encodeURIComponent(vendorFilter.join(','));
+                        if (regionFilter.length) retQ.region = encodeURIComponent(regionFilter.join(','));
                         if (noVendorFilter) retQ.noVendor = '1';
-                        if (projectStatusFilter) retQ.projStatus = encodeURIComponent(projectStatusFilter);
+                        if (projectStatusFilter.length) retQ.projStatus = encodeURIComponent(projectStatusFilter.join(','));
                         if (page > 1) retQ.page = String(page);
                         const qs = new URLSearchParams(retQ).toString();
                         // Store in sessionStorage as fallback
