@@ -49,14 +49,14 @@ export default function MultiSelect({ options, value, onChange, placeholder = 'A
       <div onClick={() => setOpen(o => !o)} style={baseStyle}>
         {label}
         <span style={{ position: 'absolute' as const, right: 8, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: T.textMuted, pointerEvents: 'none' }}>
-          {open ? '\u25b2' : '\u25bc'}
+          {open ? '▲' : '▼'}
         </span>
       </div>
       {value.length > 0 && (
         <span onClick={e => { e.stopPropagation(); onChange([]); }}
           style={{ position: 'absolute' as const, right: 24, top: '50%', transform: 'translateY(-50%)',
             fontSize: 13, color: '#DC2626', cursor: 'pointer', zIndex: 1, fontWeight: 700, lineHeight: '1' }}>
-          \u00d7
+          ×
         </span>
       )}
       {open && (
@@ -75,7 +75,7 @@ export default function MultiSelect({ options, value, onChange, placeholder = 'A
                 border: `2px solid ${value.includes(opt) ? T.primary : T.border}`,
                 background: value.includes(opt) ? T.primary : '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {value.includes(opt) && <span style={{ color: '#fff', fontSize: 10, fontWeight: 700 }}>\u2713</span>}
+                {value.includes(opt) && <span style={{ color: '#fff', fontSize: 10, fontWeight: 700 }}>✓</span>}
               </div>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{opt}</span>
             </div>
