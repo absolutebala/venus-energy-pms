@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import DateInput from '@/components/DateInput';
+import MultiSelect from '@/components/MultiSelect';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import * as XLSX from 'xlsx';
@@ -56,10 +57,10 @@ export default function SiteExpensesPage() {
     }
   }, [router.isReady]);
   const [expStatusFilter, setExpStatusFilter] = useState('');
-  const [expVendorFilter, setExpVendorFilter] = useState('');
-  const [expPMFilter,     setExpPMFilter]     = useState('');
-  const [expRegionFilter, setExpRegionFilter] = useState('');
-  const [expTypeFilter,   setExpTypeFilter]   = useState('');
+  const [expVendorFilter, setExpVendorFilter] = useState<string[]>([]);
+  const [expPMFilter,     setExpPMFilter]     = useState<string[]>([]);
+  const [expRegionFilter, setExpRegionFilter] = useState<string[]>([]);
+  const [expTypeFilter,   setExpTypeFilter]   = useState<string[]>([]);
   const [toast,           setToast]           = useState<any>(null);
   const [saving,          setSaving]          = useState(false);
   const [adding,          setAdding]          = useState(false);
@@ -179,12 +180,12 @@ export default function SiteExpensesPage() {
         if (datePreset==='custom' && customFrom && customTo && !inRange(e.expenseDate, new Date(customFrom), new Date(customTo))) return false;
       }
       // Project-level filters
-      if (expVendorFilter || expPMFilter || expRegionFilter || expTypeFilter) {
+      if (expVendorFilter.length || expPMFilter.length || expRegionFilter.length || expTypeFilter.length) {
         const fp = (projects as any[]).find((p:any) => p.id === e.projectId);
-        if (expVendorFilter && fp?.vendor !== expVendorFilter) return false;
-        if (expPMFilter     && fp?.pm     !== expPMFilter)     return false;
-        if (expRegionFilter && fp?.region !== expRegionFilter) return false;
-        if (expTypeFilter   && fp?.type   !== expTypeFilter)   return false;
+        if (expVendorFilter.length && !expVendorFilter.includes(fp?.vendor||'')) return false;
+        if (expPMFilter.length     && !expPMFilter.includes(fp?.pm||''))     return false;
+        if (expRegionFilter.length && !expRegionFilter.includes(fp?.region||'')) return false;
+        if (expTypeFilter.length   && !expTypeFilter.includes(fp?.type||''))   return false;
       }
       if (expStatusFilter && e.status !== expStatusFilter) return false;
       if (!search) return true;
@@ -316,10 +317,10 @@ export default function SiteExpensesPage() {
           // Base: expense-linked projects that match all OTHER active filters
           const cascadeProj = (exclude: string) => (projects as any[]).filter((p:any) => {
             if (!expenseProjectIds.has(p.id)) return false;
-            if (exclude!=='vendor' && expVendorFilter && p.vendor !== expVendorFilter) return false;
-            if (exclude!=='pm'     && expPMFilter     && p.pm     !== expPMFilter)     return false;
-            if (exclude!=='region' && expRegionFilter && p.region !== expRegionFilter) return false;
-            if (exclude!=='type'   && expTypeFilter   && p.type   !== expTypeFilter)   return false;
+            if (exclude!=='vendor' && expVendorFilter.length && !expVendorFilter.includes(p.vendor||'')) return false;
+            if (exclude!=='pm'     && expPMFilter.length     && !expPMFilter.includes(p.pm||''))     return false;
+            if (exclude!=='region' && expRegionFilter.length && !expRegionFilter.includes(p.region||'')) return false;
+            if (exclude!=='type'   && expTypeFilter.length   && !expTypeFilter.includes(p.type||''))   return false;
             return true;
           });
           const uniq = (arr: any[]) => Array.from(new Set(arr.filter(Boolean))).sort() as string[];
@@ -331,28 +332,18 @@ export default function SiteExpensesPage() {
               <option value="pending">Pending</option>
               <option value="paid">Paid</option>
             </select>
-            <select value={expVendorFilter} onChange={e=>setExpVendorFilter(e.target.value)}
-              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
-              <option value="">All Vendors</option>
-              {uniq(cascadeProj('vendor').map((p:any)=>p.vendor)).map(v=><option key={v} value={v}>{v}</option>)}
-            </select>
-            {profile?.role !== 'project_manager' && <select value={expPMFilter} onChange={e=>setExpPMFilter(e.target.value)}
-              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
-              <option value="">All PMs</option>
-              {uniq(cascadeProj('pm').map((p:any)=>p.pm)).map(pm=><option key={pm} value={pm}>{pm}</option>)}
-            </select>}
-            <select value={expRegionFilter} onChange={e=>setExpRegionFilter(e.target.value)}
-              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
-              <option value="">All Regions</option>
-              {uniq(cascadeProj('region').map((p:any)=>p.region)).map(r=><option key={r} value={r}>{r}</option>)}
-            </select>
-            <select value={expTypeFilter} onChange={e=>setExpTypeFilter(e.target.value)}
-              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 12px', fontSize:12, outline:'none', background:'#fff', cursor:'pointer' }}>
-              <option value="">All Types</option>
-              {uniq(cascadeProj('type').map((p:any)=>p.type)).map(t=><option key={t} value={t}>{t}</option>)}
-            </select>
-            {(expStatusFilter||expVendorFilter||expPMFilter||expRegionFilter||expTypeFilter) && (
-              <button onClick={()=>{setExpStatusFilter('');setExpVendorFilter('');setExpPMFilter('');setExpRegionFilter('');setExpTypeFilter('');}}
+            <MultiSelect options={uniq(cascadeProj('vendor').map((p:any)=>p.vendor))} value={expVendorFilter} onChange={setExpVendorFilter} placeholder="All Vendors"
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 32px 6px 10px', fontSize:12 }} />
+            {profile?.role !== 'project_manager' && (
+              <MultiSelect options={uniq(cascadeProj('pm').map((p:any)=>p.pm))} value={expPMFilter} onChange={setExpPMFilter} placeholder="All PMs"
+                style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 32px 6px 10px', fontSize:12 }} />
+            )}
+            <MultiSelect options={uniq(cascadeProj('region').map((p:any)=>p.region))} value={expRegionFilter} onChange={setExpRegionFilter} placeholder="All Regions"
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 32px 6px 10px', fontSize:12 }} />
+            <MultiSelect options={uniq(cascadeProj('type').map((p:any)=>p.type))} value={expTypeFilter} onChange={setExpTypeFilter} placeholder="All Types"
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 32px 6px 10px', fontSize:12 }} />
+            {(expStatusFilter||expVendorFilter.length||expPMFilter.length||expRegionFilter.length||expTypeFilter.length) && (
+              <button onClick={()=>{setExpStatusFilter('');setExpVendorFilter([]);setExpPMFilter([]);setExpRegionFilter([]);setExpTypeFilter([]);}}
                 style={{ fontSize:11, color:'#DC2626', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:6, padding:'5px 10px', cursor:'pointer', fontWeight:600 }}>
                 ✕ Clear
               </button>
