@@ -707,12 +707,6 @@ export default function ProjectsPage() {
               style={{ ...btnSecondary, display:'flex', alignItems:'center', gap:6 }}>
               📊 Update PO Status
             </button>
-            <button onClick={()=>poFileRef.current?.click()} disabled={extracting}
-              style={{ ...btnSecondary, display:'flex', alignItems:'center', gap:6, opacity:extracting?0.7:1, cursor:extracting?'not-allowed':'pointer' }}>
-              {extracting
-                ? <><div style={{ width:13,height:13,border:'2px solid #CBD5E1',borderTopColor:T.primary,borderRadius:'50%',animation:'spin 0.7s linear infinite' }} />Extracting…</>
-                : '📎 Upload PO'}
-            </button>
             <button onClick={openNewProjectModal} style={{ ...btnPrimary }}>{'+ New Project'}</button>
           </>}
         </div>
