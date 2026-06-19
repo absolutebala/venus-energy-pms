@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase';
 import { T, card, badge , fmtINR} from '@/lib/theme';
 import DateInput from '@/components/DateInput';
+import MultiSelect from '@/components/MultiSelect';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 // ── Shared mock data ──────────────────────────────────────────────
@@ -1255,11 +1256,11 @@ export default function Dashboard() {
   const selStyle: React.CSSProperties = { background:'#fff', border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 10px', fontSize:12, color:T.text, outline:'none', cursor:'pointer' };
 
   // Dashboard filters
-  const [dashRegion,   setDashRegion]   = React.useState('');
-  const [dashType,     setDashType]     = React.useState('');
-  const [dashStatus,   setDashStatus]   = React.useState('');
-  const [dashPM,       setDashPM]       = React.useState('');
-  const [dashVendor,   setDashVendor]   = React.useState('');
+  const [dashRegion,   setDashRegion]   = React.useState<string[]>([]);
+  const [dashType,     setDashType]     = React.useState<string[]>([]);
+  const [dashStatus,   setDashStatus]   = React.useState<string[]>([]);
+  const [dashPM,       setDashPM]       = React.useState<string[]>([]);
+  const [dashVendor,   setDashVendor]   = React.useState<string[]>([]);
   const [dashDateFrom, setDashDateFrom] = React.useState('');
   const [dashDateTo,   setDashDateTo]   = React.useState('');
 
@@ -1275,11 +1276,11 @@ export default function Dashboard() {
 
   // Cascade filter helpers — each excludes its own key
   const cascadeFor = React.useCallback((exclude: string) => (dbProjects as any[]).filter((p:any) => {
-    if (exclude!=='status' && dashStatus && (p as any).projectStatus !== dashStatus) return false;
-    if (exclude!=='region' && dashRegion && p.region !== dashRegion) return false;
-    if (exclude!=='type'   && dashType   && p.type   !== dashType)   return false;
-    if (exclude!=='pm'     && dashPM     && (p as any).pm !== dashPM) return false;
-    if (exclude!=='vendor' && dashVendor && (p as any).vendor !== dashVendor) return false;
+    if (exclude!=='status' && dashStatus.length && !dashStatus.includes((p as any).projectStatus||'')) return false;
+    if (exclude!=='region' && dashRegion.length && !dashRegion.includes(p.region||'')) return false;
+    if (exclude!=='type'   && dashType.length   && !dashType.includes(p.type||''))   return false;
+    if (exclude!=='pm'     && dashPM.length     && !dashPM.includes((p as any).pm||'')) return false;
+    if (exclude!=='vendor' && dashVendor.length && !dashVendor.includes((p as any).vendor||'')) return false;
     if (dashDateFrom && p.poDate && p.poDate < dashDateFrom) return false;
     if (dashDateTo   && p.poDate && p.poDate > dashDateTo)   return false;
     return true;
@@ -1294,11 +1295,11 @@ export default function Dashboard() {
   const filteredProjects = React.useMemo(() => {
     return projectsWithAging.filter((p:any) => {
       if (role === 'region_manager' && name && (p as any).rm !== name) return false;
-      if (dashRegion && p.region !== dashRegion) return false;
-      if (dashType   && p.type   !== dashType)   return false;
-      if (dashStatus && (p as any).projectStatus !== dashStatus) return false;
-      if (dashPM     && (p as any).pm !== dashPM) return false;
-      if (dashVendor && (p as any).vendor !== dashVendor) return false;
+      if (dashRegion.length && !dashRegion.includes(p.region||'')) return false;
+      if (dashType.length   && !dashType.includes(p.type||''))   return false;
+      if (dashStatus.length && !dashStatus.includes((p as any).projectStatus||'')) return false;
+      if (dashPM.length     && !dashPM.includes((p as any).pm||'')) return false;
+      if (dashVendor.length && !dashVendor.includes((p as any).vendor||'')) return false;
       if (dashDateFrom && p.poDate && p.poDate < dashDateFrom) return false;
       if (dashDateTo   && p.poDate && p.poDate > dashDateTo)   return false;
       return true;
@@ -1316,26 +1317,11 @@ export default function Dashboard() {
           {/* Filter bar only for admin roles */}
           {['super_admin','region_manager'].includes(role) && (
             <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' as const }}>
-              <select value={dashStatus} onChange={e=>setDashStatus(e.target.value)} style={selStyle}>
-                <option value="">All Statuses</option>
-                {dashStatusOpts.map(s=><option key={s} value={s}>{s}</option>)}
-              </select>
-              <select value={dashRegion} onChange={e=>setDashRegion(e.target.value)} style={selStyle}>
-                <option value="">All Regions</option>
-                {dashRegionOpts.map(r=><option key={r} value={r}>{r}</option>)}
-              </select>
-              <select value={dashType} onChange={e=>setDashType(e.target.value)} style={selStyle}>
-                <option value="">All Types</option>
-                {dashTypeOpts.map(t=><option key={t} value={t}>{t}</option>)}
-              </select>
-              <select value={dashPM} onChange={e=>setDashPM(e.target.value)} style={selStyle}>
-                <option value="">All PMs</option>
-                {dashPMOpts.map(pm=><option key={pm} value={pm}>{pm}</option>)}
-              </select>
-              <select value={dashVendor} onChange={e=>setDashVendor(e.target.value)} style={selStyle}>
-                <option value="">All Vendors</option>
-                {dashVendorOpts.map(v=><option key={v} value={v}>{v}</option>)}
-              </select>
+              <MultiSelect options={dashStatusOpts} value={dashStatus} onChange={setDashStatus} placeholder="All Statuses" style={selStyle} />
+              <MultiSelect options={dashRegionOpts} value={dashRegion} onChange={setDashRegion} placeholder="All Regions" style={selStyle} />
+              <MultiSelect options={dashTypeOpts} value={dashType} onChange={setDashType} placeholder="All Types" style={selStyle} />
+              <MultiSelect options={dashPMOpts} value={dashPM} onChange={setDashPM} placeholder="All PMs" style={selStyle} />
+              <MultiSelect options={dashVendorOpts} value={dashVendor} onChange={setDashVendor} placeholder="All Vendors" style={selStyle} />
               <div style={{ display:'flex', alignItems:'center', gap:4 }}>
                 <span style={{ fontSize:11, color:T.textMuted }}>From</span>
                 <DateInput value={dashDateFrom} onChange={setDashDateFrom}
@@ -1346,8 +1332,8 @@ export default function Dashboard() {
                 <DateInput value={dashDateTo} onChange={setDashDateTo}
                   style={{ ...selStyle, width:130, padding:'6px 36px 6px 10px' }} />
               </div>
-              {(dashRegion||dashType||dashDateFrom||dashDateTo||dashStatus||dashPM||dashVendor) && (
-                <button onClick={()=>{setDashRegion('');setDashType('');setDashDateFrom('');setDashDateTo('');setDashStatus('');setDashPM('');setDashVendor('');}}
+              {(dashRegion.length||dashType.length||dashDateFrom||dashDateTo||dashStatus.length||dashPM.length||dashVendor.length) && (
+                <button onClick={()=>{setDashRegion([]);setDashType([]);setDashDateFrom('');setDashDateTo('');setDashStatus([]);setDashPM([]);setDashVendor([]);}}
                   style={{ fontSize:11, color:T.danger, background:'#FEF2F2', border:`1px solid #FECACA`, borderRadius:6, padding:'4px 10px', cursor:'pointer' }}>
                   ✕ Clear
                 </button>
