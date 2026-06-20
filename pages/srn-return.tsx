@@ -80,7 +80,7 @@ export default function SRNReturnPage() {
       const proj = (projects as any[]).find(p => p.id === projectId);
       return { projectId, projectName: proj?.site || proj?.projectName || projectId,
         poNo: proj?.poNo || '—', vendor: proj?.vendor || '—',
-        pm: proj?.pm || '—', region: proj?.region || '—', indusId: proj?.indusId || '—', srnItems };
+        pm: proj?.pm || '—', region: proj?.region || '—', indusId: proj?.indusId || '—', type: proj?.type || '—', srnItems };
     });
   }, [srnRawItems, projects]);
 
@@ -95,7 +95,7 @@ export default function SRNReturnPage() {
       const proj = (projects as any[]).find(p => p.id === projectId);
       return { projectId, projectName: proj?.site || proj?.projectName || projectId,
         poNo: proj?.poNo || '—', vendor: proj?.vendor || '—',
-        pm: proj?.pm || '—', region: proj?.region || '—', indusId: proj?.indusId || '—', stnItems };
+        pm: proj?.pm || '—', region: proj?.region || '—', indusId: proj?.indusId || '—', type: proj?.type || '—', stnItems };
     });
   }, [stnAllItems, projects]);
 
@@ -464,9 +464,13 @@ export default function SRNReturnPage() {
           ];
           const statusColors: Record<string,string> = { 'Work Completed':'#16A34A','WCC Raised':'#0D9488','Invoice Submitted':'#2563EB','PO Amendment Done':'#7C3AED','Not Started':'#6B7280','In Progress':'#D97706','Delayed':'#DC2626' };
 
-          // STN projects
-          const stnProjects = stnGrouped.map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
-          const srnProjects = srnGrouped.map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
+          // STN/SRN projects — respect search box filter
+          const stnProjects = stnGrouped
+            .filter((g:any) => !search || g.projectId.toLowerCase().includes(search.toLowerCase()) || (g.projectName||'').toLowerCase().includes(search.toLowerCase()) || (g.poNo||'').toLowerCase().includes(search.toLowerCase()))
+            .map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
+          const srnProjects = srnGrouped
+            .filter((g:any) => !search || g.projectId.toLowerCase().includes(search.toLowerCase()) || (g.projectName||'').toLowerCase().includes(search.toLowerCase()) || (g.poNo||'').toLowerCase().includes(search.toLowerCase()))
+            .map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
 
           const stnStatusGroups: Record<string,number> = {};
           stnProjects.forEach((p:any) => { const s=p.projectStatus||'Not Set'; stnStatusGroups[s]=(stnStatusGroups[s]||0)+1; });
@@ -635,7 +639,8 @@ export default function SRNReturnPage() {
                         style={{ fontWeight:700, color:Theme.primary, fontSize:14, textDecoration:'none' }}>
                         {project.projectId}
                       </Link>
-                      <span style={{ fontSize:12, color:Theme.textMuted }}>{project.poNo}</span>
+                      <span style={{ fontSize:12, color:Theme.textMuted }}>{project.indusId}</span>
+                      <span style={{ fontSize:11, color:Theme.textMuted, background:'#F3F4F6', padding:'1px 8px', borderRadius:10 }}>{project.type}</span>
                     </div>
                     <div style={{ fontSize:14, fontWeight:600, color:Theme.text }}>{project.projectName}</div>
                     {showVendor && <div style={{ fontSize:12, color:Theme.textMuted, marginTop:2 }}>Vendor: {project.vendor} · PM: {project.pm} · Region: {project.region}</div>}
