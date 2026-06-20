@@ -486,7 +486,7 @@ function ProjectTypeDistribution({ projects }: { projects: any[] }) {
   );
 }
 
-function SuperAdminDashboard({ projects: propProjects, loading=false }: { projects: any[]; loading?: boolean }) {
+function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilters }: { projects: any[]; loading?: boolean; activeFilters?: Record<string,string[]> }) {
   const projects = propProjects;
   const router = useRouter();
   const { expenses, loading: expLoading } = useExpenses();
@@ -523,6 +523,19 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
   const invDraft       = filteredInvoices.filter((i:any)=>i.invoiceStatus==='Draft').length;
   const invSubmitted   = filteredInvoices.filter((i:any)=>i.invoiceStatus==='Submitted').length;
   const invTotalValue  = filteredInvoices.reduce((a:number,i:any)=>a+Number(i.invoiceAmount||0),0);
+
+  const buildProjectsLink = (extra: Record<string,string>) => {
+    const q: Record<string,string> = {};
+    const af = activeFilters || {};
+    if (af.status?.length) q.projStatus = af.status.join(',');
+    if (af.region?.length) q.region     = af.region.join(',');
+    if (af.type?.length)   q.type       = af.type.join(',');
+    if (af.pm?.length)     q.pm         = af.pm.join(',');
+    if (af.vendor?.length) q.vendor     = af.vendor.join(',');
+    Object.assign(q, extra);
+    const qs = new URLSearchParams(q).toString();
+    return `/projects?${qs}`;
+  };
 
   return (
     <div>
@@ -619,13 +632,13 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
           <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
             <ResponsiveContainer width={110} height={110}>
               <PieChart><Pie data={statusData} cx="50%" cy="50%" innerRadius={28} outerRadius={50} dataKey="value" paddingAngle={3}
-                onClick={(e:any)=>router.push(`/projects?status=${e.status}`)}>
+                onClick={(e:any)=>router.push(buildProjectsLink({ projStatus: e.status }))}>
                 {statusData.map((d:any,i:number)=><Cell key={i} fill={d.color} cursor="pointer" />)}
               </Pie><Tooltip contentStyle={{ fontSize:12 }} /></PieChart>
             </ResponsiveContainer>
           </div>
           {statusData.map((d:any,i:number)=>(
-            <div key={i} onClick={()=>router.push(`/projects?status=${d.status}`)}
+            <div key={i} onClick={()=>router.push(buildProjectsLink({ projStatus: d.status }))}
               style={{ display:'flex', alignItems:'center', gap:8, marginBottom:7, cursor:'pointer', padding:'3px 5px', borderRadius:5 }}
               onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}
               onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='transparent'}>
@@ -643,7 +656,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
             return regionData.map((d:any,i:number)=>{
               const pct = Math.round(d.value/totalRegion*100);
               return (
-                <div key={i} onClick={()=>router.push('/projects?region=' + encodeURIComponent(d.name))} style={{ marginBottom:10, cursor:'pointer' }}>
+                <div key={i} onClick={()=>router.push(buildProjectsLink({ region: d.name }))} style={{ marginBottom:10, cursor:'pointer' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
                     <span style={{ fontSize:12, color:T.text }}>{d.name}</span>
                     <span style={{ fontSize:12, fontWeight:700, color:d.color }}>{d.value} ({pct}%)</span>
@@ -1378,7 +1391,8 @@ export default function Dashboard() {
           )}
         </div>
 
-        {role === 'super_admin'     && <SuperAdminDashboard   projects={isLoading ? [] : filteredProjects} loading={isLoading} />}
+        {role === 'super_admin'     && <SuperAdminDashboard   projects={isLoading ? [] : filteredProjects} loading={isLoading}
+          activeFilters={{ status:dashStatus, region:dashRegion, type:dashType, pm:dashPM, vendor:dashVendor }} />}
         {role === 'region_manager'  && <RegionManagerDashboard projects={isLoading ? [] : filteredProjects} rmName={profile?.full_name||''} />}
         {role === 'project_manager' && <ProjectManagerDashboard projects={isLoading ? [] : projectsWithAging} pmName={profile?.full_name||''} />}
         {role === 'site_engineer'   && <SiteEngineerDashboard  projects={isLoading ? [] : projectsWithAging} />}
