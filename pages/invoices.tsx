@@ -74,6 +74,7 @@ export default function InvoicesPage() {
   const [invPM,       setInvPM]       = useState<string[]>([]);
   const [invRegion,   setInvRegion]   = useState<string[]>([]);
   const [invType,     setInvType]     = useState<string[]>([]);
+  const [invPayStatus, setInvPayStatus] = useState<string[]>([]);
   const [invPage,     setInvPage]     = useState(1);
   const INV_PER_PAGE = 10;
   const canExport = !authLoading && (profile?.role === 'super_admin' || profile?.role === 'accounting_team');
@@ -138,9 +139,10 @@ export default function InvoicesPage() {
       if (invPM.length     && !invPM.includes(proj?.pm||'— Unassigned —'))     return false;
       if (invRegion.length && !invRegion.includes(proj?.region||'— Unassigned —')) return false;
       if (invType.length   && !invType.includes(proj?.type||'— Unassigned —'))   return false;
+      if (invPayStatus.length && !invPayStatus.includes(i.paymentStatus||'')) return false;
       return true;
     });
-  }, [invoices, datePreset, customFrom, customTo, invVendor, invPM, invRegion, invType, projects]);
+  }, [invoices, datePreset, customFrom, customTo, invVendor, invPM, invRegion, invType, invPayStatus, projects]);
 
   const pendingApproval = dateFilteredInvoices.filter(i => ["Submitted","Under Review"].includes(i.invoiceStatus));
   const pendingPayment  = dateFilteredInvoices.filter(i => i.paymentStatus === "Pending");
@@ -322,8 +324,10 @@ export default function InvoicesPage() {
               style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 32px 6px 10px', fontSize:12 }} />
             <MultiSelect options={['— Unassigned —', ...uniq(cascadeProj('type').map((p:any)=>p.type))]} value={invType} onChange={setInvType} placeholder="All Types"
               style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 32px 6px 10px', fontSize:12 }} />
-            {(invVendor.length>0||invPM.length>0||invRegion.length>0||invType.length>0) && (
-              <button onClick={()=>{ setInvVendor([]); setInvPM([]); setInvRegion([]); setInvType([]); }}
+            <MultiSelect options={['Pending','Paid']} value={invPayStatus} onChange={setInvPayStatus} placeholder="All Payment Status"
+              style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 32px 6px 10px', fontSize:12 }} />
+            {(invVendor.length>0||invPM.length>0||invRegion.length>0||invType.length>0||invPayStatus.length>0) && (
+              <button onClick={()=>{ setInvVendor([]); setInvPM([]); setInvRegion([]); setInvType([]); setInvPayStatus([]); }}
                 style={{ fontSize:11, color:'#DC2626', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:6, padding:'5px 10px', cursor:'pointer', fontWeight:600 }}>
                 ✕ Clear
               </button>
