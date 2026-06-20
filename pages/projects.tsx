@@ -584,7 +584,7 @@ export default function ProjectsPage() {
         )}
 
         {/* PM / Vendor filter banner */}
-        {(pmFilter || vendorFilter) && (
+        {(pmFilter.length > 0 || vendorFilter.length > 0) && (
           <div style={{ background:T.primaryLight, border:`1.5px solid ${T.primaryMid}`, borderRadius:12, padding:'16px 20px', marginBottom:16 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
               <div>
