@@ -456,27 +456,32 @@ function ProjectTypeDistribution({ projects }: { projects: any[] }) {
   const router = useRouter();
   const typeGroups: Record<string, number> = {};
   projects.forEach((p:any) => { const t = p.type || 'Not Set'; typeGroups[t] = (typeGroups[t]||0) + 1; });
-  const sorted = Object.entries(typeGroups).sort((a,b)=>b[1]-a[1]);
   const colors = ['#0D9488','#2563EB','#D97706','#7C3AED','#DC2626','#059669','#DB2777','#0891B2','#65A30D','#9333EA'];
+  const typeData = Object.entries(typeGroups).map(([name,value],i)=>({ name, value, color: colors[i % colors.length] })).filter(d=>d.value>0).sort((a,b)=>b.value-a.value);
   return (
     <div style={{ ...card, marginBottom:20, marginTop:8 }}>
       <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:14 }}>📐 Project Type Distribution</div>
-      {sorted.length === 0 && <div style={{ fontSize:12, color:T.textMuted, textAlign:'center', padding:20 }}>No data</div>}
-      {sorted.map(([t,n],i)=>{
-        const pct = Math.round(n/Math.max(projects.length,1)*100);
-        const c = colors[i % colors.length];
-        return (
-          <div key={t} onClick={()=>router.push(`/projects?type=${encodeURIComponent(t)}`)} style={{ marginBottom:10, cursor:'pointer' }}>
-            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
-              <span style={{ fontSize:12, color:T.text }}>{t}</span>
-              <span style={{ fontSize:12, fontWeight:700, color:c }}>{n} ({pct}%)</span>
-            </div>
-            <div style={{ height:6, background:T.border, borderRadius:3 }}>
-              <div style={{ height:6, width:`${pct}%`, background:c, borderRadius:3 }} />
-            </div>
-          </div>
-        );
-      })}
+      {typeData.length === 0 && <div style={{ fontSize:12, color:T.textMuted, textAlign:'center', padding:20 }}>No data</div>}
+      {typeData.length > 0 && (
+        <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
+          <ResponsiveContainer width={110} height={110}>
+            <PieChart><Pie data={typeData} cx="50%" cy="50%" innerRadius={28} outerRadius={50} dataKey="value" paddingAngle={3}
+              onClick={(e:any)=>router.push(`/projects?type=${encodeURIComponent(e.name)}`)}>
+              {typeData.map((d:any,i:number)=><Cell key={i} fill={d.color} cursor="pointer" />)}
+            </Pie><Tooltip contentStyle={{ fontSize:12 }} /></PieChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+      {typeData.map((d:any,i:number)=>(
+        <div key={i} onClick={()=>router.push(`/projects?type=${encodeURIComponent(d.name)}`)}
+          style={{ display:'flex', alignItems:'center', gap:8, marginBottom:7, cursor:'pointer', padding:'3px 5px', borderRadius:5 }}
+          onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}
+          onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='transparent'}>
+          <div style={{ width:8, height:8, borderRadius:2, background:d.color, flexShrink:0 }} />
+          <span style={{ fontSize:12, color:T.textMuted, flex:1 }}>{d.name}</span>
+          <span style={{ fontSize:12, fontWeight:700, color:T.text }}>{d.value}</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -656,7 +661,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
           <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Projects by PM</div>
           <div style={{ display:'flex', flexDirection:'column' as const, gap:6 }}>
             {Object.entries(pmGroups).sort((a:any,b:any)=>b[1].length-a[1].length).map(([pm,ps]:any)=>(
-              <div key={pm} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pm || '__unassigned__')}`)}
+              <div key={pm} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pm || '— Unassigned —')}`)}
                 style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', transition:'all 0.15s' }}
                 onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
                 onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>

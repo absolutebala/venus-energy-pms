@@ -589,7 +589,7 @@ export default function ProjectsPage() {
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
               <div>
                 <div style={{ fontSize:15, fontWeight:700, color:T.primary, marginBottom:4 }}>
-                  {pmFilter.length ? `📋 Projects assigned to: ${pmFilter.includes('__unassigned__') ? 'Unassigned' : pmFilter.join(', ')}` : `🏢 Projects for vendor: ${vendorFilter.join(', ')}`}
+                  {pmFilter.length ? `📋 Projects assigned to: ${pmFilter.includes('— Unassigned —') ? 'Unassigned' : pmFilter.join(', ')}` : `🏢 Projects for vendor: ${vendorFilter.join(', ')}`}
                 </div>
                 <div style={{ display:'flex', gap:12, flexWrap:'wrap' as const }}>
                   <span style={{ fontSize:12, color:T.textMuted }}>{filtered.length} project(s)</span>
