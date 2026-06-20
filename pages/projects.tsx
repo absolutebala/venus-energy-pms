@@ -690,27 +690,28 @@ export default function ProjectsPage() {
           );
         })()}
 
-        {/* Date filter row */}
-        <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:12 }}>
-          <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>Completion Date From</span>
-          <DateInput value={dateFrom} onChange={v=>{ setDateFrom(v); setPage(1); }}
-            style={{ border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 10px', fontSize:12, outline:'none' }} />
-          <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>To</span>
-          <DateInput value={dateTo} onChange={v=>{ setDateTo(v); setPage(1); }}
-            style={{ border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 10px', fontSize:12, outline:'none' }} />
-          {(dateFrom||dateTo) && <button onClick={()=>{ setDateFrom(''); setDateTo(''); }}
-            style={{ fontSize:11, color:'#DC2626', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:6, padding:'4px 8px', cursor:'pointer', fontWeight:600 }}>✕ Clear</button>}
-        </div>
-
-        <div style={{ display:'flex', gap:8, marginBottom:16, alignItems:'center', justifyContent:'flex-end' }}>
-          <input ref={poFileRef} type="file" accept=".pdf,application/pdf" onChange={handlePOUpload} style={{ display:'none' }} />
-          {profile?.role === 'super_admin' && <>
-            <button onClick={()=>{ setPoStatusResult(null); setPoStatusFile(null); setShowPoStatusModal(true); }}
-              style={{ ...btnSecondary, display:'flex', alignItems:'center', gap:6 }}>
-              📊 Update PO Status
-            </button>
-            <button onClick={openNewProjectModal} style={{ ...btnPrimary }}>{'+ New Project'}</button>
-          </>}
+        {/* Date filter + action buttons row */}
+        <div style={{ display:'flex', gap:8, alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap' as const }}>
+          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>Completion Date From</span>
+            <DateInput value={dateFrom} onChange={v=>{ setDateFrom(v); setPage(1); }}
+              style={{ border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 10px', fontSize:12, outline:'none' }} />
+            <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>To</span>
+            <DateInput value={dateTo} onChange={v=>{ setDateTo(v); setPage(1); }}
+              style={{ border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 10px', fontSize:12, outline:'none' }} />
+            {(dateFrom||dateTo) && <button onClick={()=>{ setDateFrom(''); setDateTo(''); }}
+              style={{ fontSize:11, color:'#DC2626', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:6, padding:'4px 8px', cursor:'pointer', fontWeight:600 }}>✕ Clear</button>}
+          </div>
+          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            <input ref={poFileRef} type="file" accept=".pdf,application/pdf" onChange={handlePOUpload} style={{ display:'none' }} />
+            {profile?.role === 'super_admin' && <>
+              <button onClick={()=>{ setPoStatusResult(null); setPoStatusFile(null); setShowPoStatusModal(true); }}
+                style={{ ...btnSecondary, display:'flex', alignItems:'center', gap:6 }}>
+                📊 Update PO Status
+              </button>
+              <button onClick={openNewProjectModal} style={{ ...btnPrimary }}>{'+ New Project'}</button>
+            </>}
+          </div>
         </div>
 
         <div style={card}>
