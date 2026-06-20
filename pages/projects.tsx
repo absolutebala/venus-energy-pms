@@ -348,8 +348,8 @@ export default function ProjectsPage() {
     const p = (projects as any[]).find((x:any)=>x.id===id);
     if (!p) return 0;
     // Aging = days since PO date (or start date, or created_at)
-    if (dateFrom && p.poDate && p.poDate < dateFrom) return false;
-    if (dateTo   && p.poDate && p.poDate > dateTo)   return false;
+    if (dateFrom && p.endDate && p.endDate < dateFrom) return false;
+    if (dateTo   && p.endDate && p.endDate > dateTo)   return false;
     const ref = p.poDate || p.startDate || p.createdAt;
     if (!ref) return 0;
     return Math.floor((new Date().getTime() - new Date(ref).getTime()) / 86400000);
@@ -692,7 +692,7 @@ export default function ProjectsPage() {
 
         {/* Date filter row */}
         <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:12 }}>
-          <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>PO Date From</span>
+          <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>Completion Date From</span>
           <DateInput value={dateFrom} onChange={v=>{ setDateFrom(v); setPage(1); }}
             style={{ border:`1px solid ${T.border}`, borderRadius:7, padding:'6px 10px', fontSize:12, outline:'none' }} />
           <span style={{ fontSize:12, color:T.textMuted, fontWeight:600 }}>To</span>
