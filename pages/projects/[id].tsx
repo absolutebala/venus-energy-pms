@@ -1242,7 +1242,7 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
 }
 
 // ── Independent SRN Section Component ────────────────────────────────────────
-function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; role:string; onAllReceived:(v:boolean)=>void }) {
+function SRNSectionNew({ projectId, role, onAllReceived, canAdd: canAddApplicable=true }: { projectId:string; role:string; onAllReceived:(v:boolean)=>void; canAdd?:boolean }) {
   const { profile } = useAuth();
   const { updateProject: updateProj } = useProjects();
   const { logActivity: logSRNAct } = useActivity();
@@ -1274,7 +1274,7 @@ function SRNSectionNew({ projectId, role, onAllReceived }: { projectId:string; r
   }, [items, onAllReceived]);
 
   const isPM    = ['project_manager','super_admin','region_manager'].includes(role);
-  const canAdd  = ['super_admin','vendor','pm'].includes(role);
+  const canAdd  = ['super_admin','vendor','pm'].includes(role) && canAddApplicable;
   const canEdit = ['super_admin','pm','rm','project_manager','super_admin','region_manager'].includes(role);
   const [editId,  setEditId]  = React.useState<string|null>(null);
   const [editRow, setEditRow] = React.useState<any>({});
@@ -2250,6 +2250,24 @@ export default function ProjectDetailPage() {
   const { getByProject: getActivityLog, logActivity } = useActivity();
   const dbProject = id ? getProject(id as string) : undefined;
   const { logActivity: logActivityMain } = useActivity();
+  const [stnApplicable, setStnApplicable] = React.useState(true);
+  const [srnApplicable, setSrnApplicable] = React.useState(true);
+  const [ptwApplicable, setPtwApplicable] = React.useState(true);
+  React.useEffect(() => {
+    if (dbProject) {
+      setStnApplicable((dbProject as any).stn_applicable !== false);
+      setSrnApplicable((dbProject as any).srn_applicable !== false);
+      setPtwApplicable((dbProject as any).ptw_applicable !== false);
+    }
+  }, [dbProject?.id]);
+
+  const toggleApplicable = async (field: 'stn_applicable'|'srn_applicable'|'ptw_applicable', value: boolean) => {
+    if (field==='stn_applicable') setStnApplicable(value);
+    if (field==='srn_applicable') setSrnApplicable(value);
+    if (field==='ptw_applicable') setPtwApplicable(value);
+    const supabase = createClient();
+    await supabase.from('projects').update({ [field]: value }).eq('id', (dbProject as any)?.id);
+  };
   const seedFallback = (Array.isArray(SEED_PROJECTS)?SEED_PROJECTS:[]).find((p:any)=>p.id===id);
   const [projects, setProjects] = useState<Record<string,any>>({});
   React.useEffect(() => {
@@ -2599,9 +2617,12 @@ export default function ProjectDetailPage() {
     updateStatus('completed', '✅ Billing complete! Project marked as Completed.');
   };
 
-  const sectionTitle = (icon:string, title:string, sectionKey:string, canEditSection=true, locked?:React.ReactNode) => (
+  const sectionTitle = (icon:string, title:string, sectionKey:string, canEditSection=true, locked?:React.ReactNode, applicableCheckbox?:React.ReactNode) => (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, paddingBottom:10, borderBottom:`2px solid ${T.primaryMid}` }}>
-      <div style={{ fontSize:15, fontWeight:700, color:T.primary }}>{icon} {title}</div>
+      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+        <div style={{ fontSize:15, fontWeight:700, color:T.primary }}>{icon} {title}</div>
+        {applicableCheckbox}
+      </div>
       <div style={{ display:'flex', gap:8, alignItems:'center' }}>
         {locked}
         {canEditSection && notEditing && (
@@ -2868,15 +2889,29 @@ export default function ProjectDetailPage() {
 
         {/* ── STN ── */}
         <div style={{ ...card, marginBottom:16 }}>
-          {sectionTitle('📋','STN', 'poitems', role!=='vendor' && canEdit)}
-          <POItemsSection projectId={p.id} editing={editing('poitems')} canAdd={canEdit} isVendorRole={role==='vendor'} />
+          {sectionTitle('📋','STN', 'poitems', role!=='vendor' && canEdit, undefined,
+            ['super_admin','region_manager'].includes(role) && (
+              <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
+                <input type="checkbox" checked={stnApplicable} onChange={e=>toggleApplicable('stn_applicable', e.target.checked)} />
+                Applicable
+              </label>
+            )
+          )}
+          <POItemsSection projectId={p.id} editing={editing('poitems')} canAdd={canEdit && stnApplicable} isVendorRole={role==='vendor'} />
         </div>
 
         {/* ── SRN ── */}
         {showSTNSRN && (
           <div style={{ ...card, marginBottom:16 }}>
-            {sectionTitle('📦','SRN — Store Return Note', 'srndetail', false)}
-            <SRNSectionNew projectId={p.id} role={role} onAllReceived={setSrnAllApproved} />
+            {sectionTitle('📦','SRN — Store Return Note', 'srndetail', false, undefined,
+              ['super_admin','region_manager'].includes(role) && (
+                <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
+                  <input type="checkbox" checked={srnApplicable} onChange={e=>toggleApplicable('srn_applicable', e.target.checked)} />
+                  Applicable
+                </label>
+              )
+            )}
+            <SRNSectionNew projectId={p.id} role={role} onAllReceived={setSrnAllApproved} canAdd={srnApplicable} />
           </div>
         )}
 
@@ -2892,8 +2927,15 @@ export default function ProjectDetailPage() {
 
         {/* ── PTW — Permit to Work ── */}
         {showPTW && <div style={{ ...card, marginBottom:16 }}>
-          {sectionTitle('🔑','PTW — Permit to Work', 'ptw', canEditPTW)}
-          <PTWSectionCard projectId={p.id} vendorContact={p.vendorContact||''} canEdit={editing('ptw') && canEditPTW} canAdd={canEditPTW} />
+          {sectionTitle('🔑','PTW — Permit to Work', 'ptw', canEditPTW, undefined,
+            ['super_admin','region_manager'].includes(role) && (
+              <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
+                <input type="checkbox" checked={ptwApplicable} onChange={e=>toggleApplicable('ptw_applicable', e.target.checked)} />
+                Applicable
+              </label>
+            )
+          )}
+          <PTWSectionCard projectId={p.id} vendorContact={p.vendorContact||''} canEdit={editing('ptw') && canEditPTW} canAdd={canEditPTW && ptwApplicable} />
         </div>}
 
 
