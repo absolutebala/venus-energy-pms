@@ -364,11 +364,11 @@ export default function ProjectsPage() {
     if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
     if (ageMin !== null && p.aging < ageMin) return false;
     if (ageMax !== null && ageMax < 999 && p.aging > ageMax) return false;
-    if (pmFilter.length) { const _pm = (p as any).pm||''; if (!pmFilter.includes(_pm)) return false; }
-    if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'')) return false;
-    if (regionFilter.length && !regionFilter.includes((p as any).region||'')) return false;
+    if (pmFilter.length) { const _pm = (p as any).pm||'— Unassigned —'; if (!pmFilter.includes(_pm)) return false; }
+    if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'— Unassigned —')) return false;
+    if (regionFilter.length && !regionFilter.includes((p as any).region||'— Unassigned —')) return false;
     if (noVendorFilter && (p as any).vendor) return false;
-    if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'')) return false;
+    if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'— Unassigned —')) return false;
     return searchMatch(p);
   });
 
@@ -388,9 +388,9 @@ export default function ProjectsPage() {
         return ((p as any).projectStatus || '') === statusFilter;
       }
       if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
-      if (pmFilter.length) { const _pm = (p as any).pm||''; if (!pmFilter.includes(_pm)) return false; }
-      if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'')) return false;
-      if (regionFilter.length && !regionFilter.includes((p as any).region||'')) return false;
+      if (pmFilter.length) { const _pm = (p as any).pm||'— Unassigned —'; if (!pmFilter.includes(_pm)) return false; }
+      if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'— Unassigned —')) return false;
+      if (regionFilter.length && !regionFilter.includes((p as any).region||'— Unassigned —')) return false;
       return true;
     })
   , [roleFilteredProjects, statusFilter, typeFilter, pmFilter, projectStatusFilter, regionFilter]);
@@ -404,9 +404,9 @@ export default function ProjectsPage() {
         return ((p as any).projectStatus || '') === statusFilter;
       }
       if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
-      if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'')) return false;
-      if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'')) return false;
-      if (regionFilter.length && !regionFilter.includes((p as any).region||'')) return false;
+      if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'— Unassigned —')) return false;
+      if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'— Unassigned —')) return false;
+      if (regionFilter.length && !regionFilter.includes((p as any).region||'— Unassigned —')) return false;
       return true;
     })
   , [roleFilteredProjects, statusFilter, typeFilter, vendorFilter, projectStatusFilter, regionFilter]);
@@ -420,9 +420,9 @@ export default function ProjectsPage() {
         return ((p as any).projectStatus || '') === statusFilter;
       }
       if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
-      if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'')) return false;
-      if (pmFilter.length) { const _pm = (p as any).pm||''; if (!pmFilter.includes(_pm)) return false; }
-      if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'')) return false;
+      if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'— Unassigned —')) return false;
+      if (pmFilter.length) { const _pm = (p as any).pm||'— Unassigned —'; if (!pmFilter.includes(_pm)) return false; }
+      if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'— Unassigned —')) return false;
       return true;
     })
   , [roleFilteredProjects, statusFilter, typeFilter, vendorFilter, pmFilter, projectStatusFilter]);
@@ -435,10 +435,10 @@ export default function ProjectsPage() {
         if (statusFilter === 'Not Set')   return !(p as any).projectStatus;
         return ((p as any).projectStatus || '') === statusFilter;
       }
-      if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'')) return false;
-      if (pmFilter.length) { const _pm = (p as any).pm||''; if (!pmFilter.includes(_pm)) return false; }
-      if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'')) return false;
-      if (regionFilter.length && !regionFilter.includes((p as any).region||'')) return false;
+      if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'— Unassigned —')) return false;
+      if (pmFilter.length) { const _pm = (p as any).pm||'— Unassigned —'; if (!pmFilter.includes(_pm)) return false; }
+      if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'— Unassigned —')) return false;
+      if (regionFilter.length && !regionFilter.includes((p as any).region||'— Unassigned —')) return false;
       return true;
     })
   , [roleFilteredProjects, statusFilter, vendorFilter, pmFilter, projectStatusFilter, regionFilter]);
@@ -446,18 +446,18 @@ export default function ProjectsPage() {
   const projectsForStatusFilter = React.useMemo(() =>
     roleFilteredProjects.filter((p:any) => {
       if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
-      if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'')) return false;
-      if (pmFilter.length) { const _pm = (p as any).pm||''; if (!pmFilter.includes(_pm)) return false; }
-      if (regionFilter.length && !regionFilter.includes((p as any).region||'')) return false;
+      if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'— Unassigned —')) return false;
+      if (pmFilter.length) { const _pm = (p as any).pm||'— Unassigned —'; if (!pmFilter.includes(_pm)) return false; }
+      if (regionFilter.length && !regionFilter.includes((p as any).region||'— Unassigned —')) return false;
       return true;
     })
   , [roleFilteredProjects, typeFilter, vendorFilter, pmFilter, regionFilter]);
 
-  const cascadeVendors    = Array.from(new Set(projectsForVendorFilter.map((p:any)=>p.vendor||'').filter(Boolean))).sort();
-  const cascadePMs        = Array.from(new Set(projectsForPMFilter.map((p:any)=>p.pm||'').filter(Boolean))).sort();
-  const cascadeRegions    = Array.from(new Set(projectsForRegionFilter.map((p:any)=>p.region||'').filter(Boolean))).sort();
+  const cascadeVendors    = ['— Unassigned —', ...Array.from(new Set(projectsForVendorFilter.map((p:any)=>p.vendor||'').filter(Boolean))).sort()];
+  const cascadePMs        = ['— Unassigned —', ...Array.from(new Set(projectsForPMFilter.map((p:any)=>p.pm||'').filter(Boolean))).sort()];
+  const cascadeRegions    = ['— Unassigned —', ...Array.from(new Set(projectsForRegionFilter.map((p:any)=>p.region||'').filter(Boolean))).sort()];
   const cascadeTypes      = Array.from(new Set(projectsForTypeFilter.map((p:any)=>p.type||'').filter(Boolean))).sort();
-  const cascadeStatuses   = Array.from(new Set(projectsForStatusFilter.map((p:any)=>p.projectStatus||'').filter(Boolean))).sort();
+  const cascadeStatuses   = ['— Unassigned —', ...Array.from(new Set(projectsForStatusFilter.map((p:any)=>p.projectStatus||'').filter(Boolean))).sort()];
 
   const activeFilterCount = [projectStatusFilter, vendorFilter, pmFilter, regionFilter].filter(Boolean).length;
 
