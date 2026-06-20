@@ -229,7 +229,7 @@ export default function InvoicesPage() {
       'PO No':          (inv as any).poNo || '',
       'PO Date':        (projects.find((p:any)=>p.id===inv.projectId) as any)?.poDate ? new Date((projects.find((p:any)=>p.id===inv.projectId) as any).poDate) : '',
       'Indus ID':       (projects.find((p:any)=>p.id===inv.projectId) as any)?.indusId || '',
-      'Project ID':     inv.projectId || '',
+      'Project ID':     (projects.find((p:any)=>p.id===inv.projectId) as any)?.projectId || '',
       'Project':        (projects.find((p:any)=>p.id===inv.projectId) as any)?.site || '',
       'WCC No':         (inv as any).wccNo || '',
       'Receipt No':     (inv as any).receiptNo || '',
@@ -489,7 +489,7 @@ export default function InvoicesPage() {
                       <td style={{ ...tdS, fontWeight:700, color:T.primary, whiteSpace:"nowrap" as const }}>{inv.poNo || "—"}</td>
                       <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{proj ? fmtDate((proj as any).poDate) : "—"}</td>
                       <td style={{ ...tdS, color:T.textMuted }}>{proj ? (proj as any).indusId || "—" : "—"}</td>
-                      <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{proj ? (proj as any).id || "—" : "—"}</td>
+                      <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{proj ? (proj as any).projectId || "—" : "—"}</td>
                       <td style={{ ...tdS, maxWidth:120 }}><div style={{ fontSize:12, color:T.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{proj ? (proj as any).site || "—" : "—"}</div></td>
                       <td style={tdS}>{(inv as any).wccNo || "—"}</td>
                       <td style={tdS}>{(inv as any).receiptNo || "—"}</td>
