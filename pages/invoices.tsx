@@ -322,7 +322,7 @@ export default function InvoicesPage() {
               style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 32px 6px 10px', fontSize:12 }} />
             <MultiSelect options={['— Unassigned —', ...uniq(cascadeProj('type').map((p:any)=>p.type))]} value={invType} onChange={setInvType} placeholder="All Types"
               style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'6px 32px 6px 10px', fontSize:12 }} />
-            {(invVendor.length||invPM.length||invRegion.length||invType.length) && (
+            {(invVendor.length>0||invPM.length>0||invRegion.length>0||invType.length>0) && (
               <button onClick={()=>{ setInvVendor([]); setInvPM([]); setInvRegion([]); setInvType([]); }}
                 style={{ fontSize:11, color:'#DC2626', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:6, padding:'5px 10px', cursor:'pointer', fontWeight:600 }}>
                 ✕ Clear
