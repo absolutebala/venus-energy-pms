@@ -443,6 +443,39 @@ export default function InvoicesPage() {
           </div>
         )}
 
+        {/* Region-wise Distribution */}
+        {(() => {
+          const regionGroups: Record<string, { count:number; amount:number }> = {};
+          displayInvoices.forEach((inv:any) => {
+            const proj = (projects as any[]).find(p=>p.id===inv.projectId);
+            const region = proj?.region || '— Unassigned —';
+            if (!regionGroups[region]) regionGroups[region] = { count:0, amount:0 };
+            regionGroups[region].count++;
+            regionGroups[region].amount += Number(inv.totalAmount||0);
+          });
+          const sorted = Object.entries(regionGroups).sort((a,b)=>b[1].count-a[1].count);
+          if (sorted.length === 0) return null;
+          return (
+            <div style={{ ...card, marginBottom:16 }}>
+              <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:12 }}>📍 Region-wise Distribution</div>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:10 }}>
+                {sorted.map(([region, data])=>(
+                  <div key={region} onClick={()=>setInvRegion([region])}
+                    style={{ padding:'10px 14px', background:T.bg, borderRadius:8, cursor:'pointer' }}
+                    onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
+                    onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
+                    <div style={{ fontSize:12, fontWeight:600, color:T.text, marginBottom:4 }}>{region}</div>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline' }}>
+                      <span style={{ fontSize:18, fontWeight:800, color:T.primary }}>{data.count}</span>
+                      <span style={{ fontSize:11, color:T.textMuted }}>{fmt(data.amount)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Invoice Table */}
         <div style={card}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
