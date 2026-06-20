@@ -1307,30 +1307,30 @@ export default function Dashboard() {
 
   // Cascade filter helpers — each excludes its own key
   const cascadeFor = React.useCallback((exclude: string) => (dbProjects as any[]).filter((p:any) => {
-    if (exclude!=='status' && dashStatus.length && !dashStatus.includes((p as any).projectStatus||'')) return false;
-    if (exclude!=='region' && dashRegion.length && !dashRegion.includes(p.region||'')) return false;
-    if (exclude!=='type'   && dashType.length   && !dashType.includes(p.type||''))   return false;
-    if (exclude!=='pm'     && dashPM.length     && !dashPM.includes((p as any).pm||'')) return false;
-    if (exclude!=='vendor' && dashVendor.length && !dashVendor.includes((p as any).vendor||'')) return false;
+    if (exclude!=='status' && dashStatus.length && !dashStatus.includes((p as any).projectStatus||'— Unassigned —')) return false;
+    if (exclude!=='region' && dashRegion.length && !dashRegion.includes(p.region||'— Unassigned —')) return false;
+    if (exclude!=='type'   && dashType.length   && !dashType.includes(p.type||'— Unassigned —'))   return false;
+    if (exclude!=='pm'     && dashPM.length     && !dashPM.includes((p as any).pm||'— Unassigned —')) return false;
+    if (exclude!=='vendor' && dashVendor.length && !dashVendor.includes((p as any).vendor||'— Unassigned —')) return false;
     if (dashDateFrom && p.poDate && p.poDate < dashDateFrom) return false;
     if (dashDateTo   && p.poDate && p.poDate > dashDateTo)   return false;
     return true;
   }), [dbProjects, dashStatus, dashRegion, dashType, dashPM, dashVendor, dashDateFrom, dashDateTo]);
   const uniqSorted = (arr: any[]) => Array.from(new Set(arr.filter(Boolean))).sort() as string[];
-  const dashStatusOpts = React.useMemo(() => uniqSorted(cascadeFor('status').map((p:any)=>(p as any).projectStatus)), [cascadeFor]);
-  const dashRegionOpts = React.useMemo(() => uniqSorted(cascadeFor('region').map((p:any)=>p.region)), [cascadeFor]);
-  const dashTypeOpts   = React.useMemo(() => uniqSorted(cascadeFor('type').map((p:any)=>p.type)), [cascadeFor]);
-  const dashPMOpts     = React.useMemo(() => uniqSorted(cascadeFor('pm').map((p:any)=>(p as any).pm)), [cascadeFor]);
-  const dashVendorOpts = React.useMemo(() => uniqSorted(cascadeFor('vendor').map((p:any)=>(p as any).vendor)), [cascadeFor]);
+  const dashStatusOpts = React.useMemo(() => ['— Unassigned —', ...uniqSorted(cascadeFor('status').map((p:any)=>(p as any).projectStatus))], [cascadeFor]);
+  const dashRegionOpts = React.useMemo(() => ['— Unassigned —', ...uniqSorted(cascadeFor('region').map((p:any)=>p.region))], [cascadeFor]);
+  const dashTypeOpts   = React.useMemo(() => ['— Unassigned —', ...uniqSorted(cascadeFor('type').map((p:any)=>p.type))], [cascadeFor]);
+  const dashPMOpts     = React.useMemo(() => ['— Unassigned —', ...uniqSorted(cascadeFor('pm').map((p:any)=>(p as any).pm))], [cascadeFor]);
+  const dashVendorOpts = React.useMemo(() => ['— Unassigned —', ...uniqSorted(cascadeFor('vendor').map((p:any)=>(p as any).vendor))], [cascadeFor]);
 
   const filteredProjects = React.useMemo(() => {
     return projectsWithAging.filter((p:any) => {
       if (role === 'region_manager' && fullName && (p as any).rm !== fullName) return false;
-      if (dashRegion.length && !dashRegion.includes(p.region||'')) return false;
-      if (dashType.length   && !dashType.includes(p.type||''))   return false;
-      if (dashStatus.length && !dashStatus.includes((p as any).projectStatus||'')) return false;
-      if (dashPM.length     && !dashPM.includes((p as any).pm||'')) return false;
-      if (dashVendor.length && !dashVendor.includes((p as any).vendor||'')) return false;
+      if (dashRegion.length && !dashRegion.includes(p.region||'— Unassigned —')) return false;
+      if (dashType.length   && !dashType.includes(p.type||'— Unassigned —'))   return false;
+      if (dashStatus.length && !dashStatus.includes((p as any).projectStatus||'— Unassigned —')) return false;
+      if (dashPM.length     && !dashPM.includes((p as any).pm||'— Unassigned —')) return false;
+      if (dashVendor.length && !dashVendor.includes((p as any).vendor||'— Unassigned —')) return false;
       if (dashDateFrom && p.poDate && p.poDate < dashDateFrom) return false;
       if (dashDateTo   && p.poDate && p.poDate > dashDateTo)   return false;
       return true;
