@@ -633,24 +633,23 @@ function SuperAdminDashboard({ projects: propProjects, loading=false }: { projec
         {/* Region Distribution */}
         <div style={card}>
           <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Region Distribution</div>
-          <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
-            <ResponsiveContainer width={110} height={110}>
-              <PieChart><Pie data={regionData} cx='50%' cy='50%' innerRadius={28} outerRadius={50} dataKey='value' paddingAngle={3}
-                onClick={(e:any)=>router.push('/projects?region=' + encodeURIComponent(e.name))}>
-                {regionData.map((d:any,i:number)=><Cell key={i} fill={d.color} cursor='pointer' />)}
-              </Pie><Tooltip contentStyle={{ fontSize:12 }} /></PieChart>
-            </ResponsiveContainer>
-          </div>
-          {regionData.map((d:any,i:number)=>(
-            <div key={i} onClick={()=>router.push('/projects?region=' + encodeURIComponent(d.name))}
-              style={{ display:'flex', alignItems:'center', gap:8, marginBottom:7, cursor:'pointer', padding:'3px 5px', borderRadius:5 }}
-              onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}
-              onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background='transparent'}>
-              <div style={{ width:8, height:8, borderRadius:2, background:d.color, flexShrink:0 }} />
-              <span style={{ fontSize:12, color:T.textMuted, flex:1 }}>{d.name}</span>
-              <span style={{ fontSize:12, fontWeight:700, color:T.text }}>{d.value}</span>
-            </div>
-          ))}
+          {(() => {
+            const totalRegion = regionData.reduce((a:number,d:any)=>a+d.value,0) || 1;
+            return regionData.map((d:any,i:number)=>{
+              const pct = Math.round(d.value/totalRegion*100);
+              return (
+                <div key={i} onClick={()=>router.push('/projects?region=' + encodeURIComponent(d.name))} style={{ marginBottom:10, cursor:'pointer' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
+                    <span style={{ fontSize:12, color:T.text }}>{d.name}</span>
+                    <span style={{ fontSize:12, fontWeight:700, color:d.color }}>{d.value} ({pct}%)</span>
+                  </div>
+                  <div style={{ height:6, background:T.border, borderRadius:3 }}>
+                    <div style={{ height:6, width:`${pct}%`, background:d.color, borderRadius:3, transition:'width 0.3s' }} />
+                  </div>
+                </div>
+              );
+            });
+          })()}
         </div>
         {/* Projects by PM */}
         <div style={card}>
