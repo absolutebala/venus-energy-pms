@@ -253,6 +253,7 @@ export default function ProjectsPage() {
       .then(({ data }) => { if (data) setDrafts(data); });
   }, []);
   const [toast, setToast] = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
+  const [showExportWarning, setShowExportWarning] = useState(false);
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc');
   const [poPopover, setPoPopover] = useState<string|null>(null);
@@ -482,7 +483,7 @@ export default function ProjectsPage() {
       dateFrom || dateTo
     );
     if (!hasAnyFilter) {
-      setToast({ msg: '⚠️ Cannot download all records. Please select at least one filter first.', type: 'error' });
+      setShowExportWarning(true);
       return;
     }
     // Helper: clean string — removes hidden chars, trims whitespace
@@ -491,7 +492,7 @@ export default function ProjectsPage() {
     const rows = filtered.map((p: any, idx: number) => ({
       'S.No.':           idx + 1,
       'PO Number':       p.poNo ? Number(p.poNo) : '',
-      'PO Date':         p.poDate ? new Date(p.poDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '',
+      'PO Date':         p.poDate ? new Date(p.poDate) : '',
       'PO Count':        projects.filter((p2: any) => p2.poNo === p.poNo).length,
       'Aging (Days)':    getAgeDays(p.id),
       'PO Status':       clean(p.poStatus),
@@ -500,12 +501,12 @@ export default function ProjectsPage() {
       'Indus ID':        clean(p.indusId),
       'Site Name':       clean(p.site),
       'Project Status':  clean(p.projectStatus),
-      'Delivery Date':   p.endDate ? new Date(p.endDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '',
+      'Delivery Date':   p.endDate ? new Date(p.endDate) : '',
       'Circle':          clean(p.region),
       'PM':              clean(p.pm),
     }));
 
-    const ws = XLSX.utils.json_to_sheet(rows);
+    const ws = XLSX.utils.json_to_sheet(rows, { cellDates: true, dateNF: 'dd-mm-yyyy' });
 
     // Ensure all cells are clean — strip hidden chars, set correct types
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
@@ -545,6 +546,8 @@ export default function ProjectsPage() {
       { wch: 18 },  // Project Status
       { wch: 14 },  // Delivery Date
     ];
+
+    ws['!autofilter'] = { ref: ws['!ref'] };
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Projects');
@@ -1002,6 +1005,19 @@ export default function ProjectsPage() {
         </div>
       )}
 
+      {showExportWarning && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.5)', zIndex:1100, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+          <div style={{ background:'#fff', borderRadius:14, padding:28, width:'100%', maxWidth:380, boxShadow:'0 20px 60px rgba(0,0,0,0.2)', textAlign:'center' as const }}>
+            <div style={{ fontSize:36, marginBottom:10 }}>⚠️</div>
+            <div style={{ fontSize:15, fontWeight:700, color:T.text, marginBottom:8 }}>Cannot download all records</div>
+            <div style={{ fontSize:13, color:T.textMuted, marginBottom:20 }}>Please select at least one filter before exporting to Excel.</div>
+            <button onClick={()=>setShowExportWarning(false)}
+              style={{ ...btnPrimary, padding:'8px 28px' }}>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
       {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
     </Layout>
   );
