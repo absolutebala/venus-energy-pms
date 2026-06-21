@@ -56,6 +56,9 @@ export default function VendorsPage() {
   const [newBankFile, setNewBankFile] = useState<File|null>(null);
   const [bankUploading, setBankUploading] = useState(false);
   const [bankErr, setBankErr] = useState('');
+  const [upiAccounts, setUpiAccounts] = useState<any[]>([]);
+  const [newUpiId, setNewUpiId] = useState('');
+  const [upiErr, setUpiErr] = useState('');
   const { upload } = useUpload();
   const { profile } = useAuth();
   const [editVendor, setEditVendor]   = useState<any>(null);
@@ -103,6 +106,30 @@ export default function VendorsPage() {
     setNewBankNo(''); setNewBankFile(null); setBankErr('');
     const { data } = await supabase.from('vendor_bank_accounts').select('*').eq('vendor_id', v.id).order('created_at');
     setBankAccounts(data || []);
+    const { data: upiData } = await supabase.from('vendor_upi_accounts').select('*').eq('vendor_id', v.id).order('created_at');
+    setUpiAccounts(upiData || []);
+    setNewUpiId(''); setUpiErr('');
+  };
+
+  const addUpiAccount = async () => {
+    if (!newUpiId.trim()) { setUpiErr('UPI ID is required'); return; }
+    setUpiErr('');
+    try {
+      const { data, error } = await supabase.from('vendor_upi_accounts').insert({
+        vendor_id: editVendor.id, upi_id: newUpiId.trim(), created_by: profile?.full_name || '',
+      }).select().single();
+      if (error) throw new Error(error.message);
+      setUpiAccounts(prev => [...prev, data]);
+      setNewUpiId('');
+    } catch(err:any) {
+      setUpiErr(err.message || 'Failed to add UPI account');
+    }
+  };
+
+  const deleteUpiAccount = async (id: string) => {
+    if (!window.confirm('Delete this UPI account?')) return;
+    await supabase.from('vendor_upi_accounts').delete().eq('id', id);
+    setUpiAccounts(prev => prev.filter(u => u.id !== id));
   };
 
   const addBankAccount = async () => {
@@ -158,8 +185,9 @@ export default function VendorsPage() {
         await fetchVendors();
         // Switch into edit mode for the newly created vendor so bank accounts can be added
         setEditVendor(data);
-        setBankAccounts([]);
+        setBankAccounts([]); setUpiAccounts([]);
         setNewBankNo(''); setNewBankFile(null); setBankErr('');
+        setNewUpiId(''); setUpiErr('');
       }
     } catch(err: any) {
       setToast({ msg:'❌ ' + err.message, type:'error' });
@@ -365,6 +393,28 @@ export default function VendorsPage() {
                 {bankErr && <div style={{ fontSize:11, color:T.danger, marginTop:6 }}>{bankErr}</div>}
               </div>
             )}
+
+            {editVendor && (
+              <div style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:14, marginBottom:14 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:10 }}>📱 UPI Accounts</div>
+                {upiAccounts.length === 0 && (
+                  <div style={{ fontSize:12, color:T.textMuted, marginBottom:10 }}>No UPI accounts added yet.</div>
+                )}
+                {upiAccounts.map((u:any) => (
+                  <div key={u.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 10px', background:T.bg, borderRadius:6, marginBottom:6 }}>
+                    <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{u.upi_id}</div>
+                    <button onClick={() => deleteUpiAccount(u.id)} style={{ background:'none', border:'none', color:T.danger, cursor:'pointer', fontSize:14 }}>🗑</button>
+                  </div>
+                ))}
+                <div style={{ display:'flex', gap:8, marginTop:10 }}>
+                  <input value={newUpiId} onChange={e=>setNewUpiId(e.target.value)} placeholder="e.g. name@upi"
+                    style={{ ...inputStyle(), flex:1, boxSizing:'border-box' as const }} />
+                  <button onClick={addUpiAccount} style={{ ...btnPrimary, fontSize:12, whiteSpace:'nowrap' as const }}>+ Add</button>
+                </div>
+                {upiErr && <div style={{ fontSize:11, color:T.danger, marginTop:6 }}>{upiErr}</div>}
+              </div>
+            )}
+
             <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:8 }}>
               <button onClick={() => setShowModal(false)} style={btnSecondary}>Cancel</button>
               <button onClick={handleSave} disabled={saving} style={{ ...btnPrimary, opacity:saving?0.8:1, minWidth:130 }}>
