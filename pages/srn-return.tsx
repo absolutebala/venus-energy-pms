@@ -464,13 +464,20 @@ export default function SRNReturnPage() {
           ];
           const statusColors: Record<string,string> = { 'Work Completed':'#16A34A','WCC Raised':'#0D9488','Invoice Submitted':'#2563EB','PO Amendment Done':'#7C3AED','Not Started':'#6B7280','In Progress':'#D97706','Delayed':'#DC2626' };
 
-          // STN/SRN projects — respect search box filter
-          const stnProjects = stnGrouped
-            .filter((g:any) => !search || g.projectId.toLowerCase().includes(search.toLowerCase()) || (g.projectName||'').toLowerCase().includes(search.toLowerCase()) || (g.poNo||'').toLowerCase().includes(search.toLowerCase()))
-            .map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
-          const srnProjects = srnGrouped
-            .filter((g:any) => !search || g.projectId.toLowerCase().includes(search.toLowerCase()) || (g.projectName||'').toLowerCase().includes(search.toLowerCase()) || (g.poNo||'').toLowerCase().includes(search.toLowerCase()))
-            .map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
+          // STN/SRN projects — respect search box AND PM/Region card filter
+          const matchesCommon = (g:any) => {
+            if (search) {
+              const s = search.toLowerCase();
+              if (!(g.projectId.toLowerCase().includes(s) || (g.projectName||'').toLowerCase().includes(s) || (g.poNo||'').toLowerCase().includes(s))) return false;
+            }
+            if (cardFilter) {
+              const val = cardFilter.field === 'pm' ? g.pm : g.region;
+              if (val !== cardFilter.value) return false;
+            }
+            return true;
+          };
+          const stnProjects = stnGrouped.filter(matchesCommon).map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
+          const srnProjects = srnGrouped.filter(matchesCommon).map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
 
           const stnStatusGroups: Record<string,number> = {};
           stnProjects.forEach((p:any) => { const s=p.projectStatus||'Not Set'; stnStatusGroups[s]=(stnStatusGroups[s]||0)+1; });
@@ -637,7 +644,7 @@ export default function SRNReturnPage() {
                     <div style={{ display:'flex', gap:10, alignItems:'center', marginBottom:4 }}>
                       <Link href={`/projects/${project.projectId}`}
                         style={{ fontWeight:700, color:Theme.primary, fontSize:14, textDecoration:'none' }}>
-                        {project.projectId}
+                        {project.poNo}
                       </Link>
                       <span style={{ fontSize:12, color:Theme.textMuted }}>{project.indusId}</span>
                       <span style={{ fontSize:11, color:Theme.textMuted, background:'#F3F4F6', padding:'1px 8px', borderRadius:10 }}>{project.type}</span>
