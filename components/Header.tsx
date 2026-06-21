@@ -53,8 +53,6 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [search, setSearch] = useState('');
-  const [focused, setFocused] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const menuRef  = useRef<HTMLDivElement>(null);
 
@@ -319,22 +317,6 @@ export default function Header() {
       {/* Page title */}
       <div style={{ fontWeight: 700, fontSize: 16, color: T.text, flex: 1 }}>{title}</div>
 
-      {/* Search */}
-      <div style={{ position: 'relative', width: 260 }}>
-        <div style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: T.textMuted }}>
-          <Info size={14} strokeWidth={1.75} />
-        </div>
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          placeholder="Search projects, sites..."
-          style={{ width: '100%', paddingLeft: 32, paddingRight: 12, height: 34,
-            border: `1px solid ${focused ? T.primary : T.border}`, borderRadius: 8,
-            fontSize: 13, outline: 'none', background: T.bg, boxSizing: 'border-box' as const,
-            color: T.text }} />
-      </div>
 
       {/* Notification bell */}
       <div ref={notifRef} style={{ position: 'relative' }}>
