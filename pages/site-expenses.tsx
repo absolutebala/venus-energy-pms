@@ -99,6 +99,7 @@ export default function SiteExpensesPage() {
 
   // Paid modal state
   const [paidModal,    setPaidModal]    = useState<any>(null);
+  const [showExportWarning, setShowExportWarning] = useState(false);
   const [paidModalPassbook, setPaidModalPassbook] = useState<{url:string;filename:string}|null>(null);
   const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] });
   const [datePreset,   setDatePreset]   = useState<string>('all');
@@ -370,9 +371,14 @@ export default function SiteExpensesPage() {
               </div>
               {canManage && (
                 <button onClick={()=>{
+                  const hasAnyFilter = Boolean(
+                    expVendorFilter.length || expPMFilter.length || expRegionFilter.length || expTypeFilter.length ||
+                    datePreset !== 'all'
+                  );
+                  if (!hasAnyFilter) { setShowExportWarning(true); return; }
                   const rows = allExpenses.map((e:any, idx:number) => ({
                     'S.No': idx+1,
-                    'Date': e.expenseDate,
+                    'Date': e.expenseDate ? new Date(e.expenseDate) : '',
                     'PO Number': (projects as any[]).find((p:any)=>p.id===e.projectId)?.poNo || e.projectId || '',
                     'Indus ID': (projects as any[]).find((p:any)=>p.id===e.projectId)?.indusId || '',
                     'Site': e.site||'',
@@ -383,8 +389,9 @@ export default function SiteExpensesPage() {
                     'Status': e.status||'',
                     'Txn Ref': e.paidTxnRef||'',
                   }));
-                  const ws = XLSX.utils.json_to_sheet(rows);
+                  const ws = XLSX.utils.json_to_sheet(rows, { cellDates: true, dateNF: 'dd-mm-yyyy' });
                   ws['!cols'] = [{wch:6},{wch:12},{wch:14},{wch:16},{wch:16},{wch:12},{wch:20},{wch:16},{wch:10},{wch:16}];
+                  ws['!autofilter'] = { ref: ws['!ref'] || 'A1' };
                   const wb = XLSX.utils.book_new();
                   XLSX.utils.book_append_sheet(wb, ws, 'Expenses');
                   XLSX.writeFile(wb, `Venus_Expenses_${new Date().toISOString().slice(0,10)}.xlsx`);
@@ -632,6 +639,19 @@ export default function SiteExpensesPage() {
         </div>
       )}
 
+      {showExportWarning && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.5)', zIndex:1100, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+          <div style={{ background:'#fff', borderRadius:14, padding:28, width:'100%', maxWidth:380, boxShadow:'0 20px 60px rgba(0,0,0,0.2)', textAlign:'center' as const }}>
+            <div style={{ fontSize:36, marginBottom:10 }}>⚠️</div>
+            <div style={{ fontSize:15, fontWeight:700, color:T.text, marginBottom:8 }}>Cannot download all records</div>
+            <div style={{ fontSize:13, color:T.textMuted, marginBottom:20 }}>Please select at least one filter before exporting to Excel.</div>
+            <button onClick={()=>setShowExportWarning(false)}
+              style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 28px', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
       {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
     </Layout>
   );
