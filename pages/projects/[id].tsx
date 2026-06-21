@@ -1632,6 +1632,10 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
 
 
   const saveEdit = async () => {
+    if (!editRow.bankAccount || !editRow.bankAccount.trim()) {
+      setToast({ msg:'❌ Bank Account No is required', type:'error' });
+      return;
+    }
     setSaving(true);
     try {
       await updateExpense(editId!, {
@@ -1800,7 +1804,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
             </div>
           </div>
           <div style={{ display:'flex', gap:10 }}>
-            <button onClick={saveNew} disabled={saving||!newRow.expenseDate||!newRow.amount||!(newRow as any).bankAccount}
+            <button onClick={()=>{ if(!(newRow as any).bankAccount?.trim()){ setToast({msg:'❌ Bank Account No is required', type:'error'}); return; } saveNew(); }} disabled={saving||!newRow.expenseDate||!newRow.amount}
               style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px',
                 cursor:'pointer', fontSize:13, fontWeight:600, opacity:saving||!newRow.expenseDate||!newRow.amount?0.5:1 }}>
               {saving?'Saving…':'📤 Request'}

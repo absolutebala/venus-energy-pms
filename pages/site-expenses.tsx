@@ -69,6 +69,10 @@ export default function SiteExpensesPage() {
 
   const saveExpEdit = async () => {
     if (!editExpId) return;
+    if (!editExpRow.bankAccount || !editExpRow.bankAccount.trim()) {
+      setToast({ msg:'❌ Bank Account No is required', type:'error' });
+      return;
+    }
     try {
       await updateExpense(editExpId, {
         expenseDate: editExpRow.expenseDate,
