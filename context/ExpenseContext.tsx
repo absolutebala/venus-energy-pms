@@ -57,11 +57,14 @@ const CAMEL_TO_SNAKE: Record<string,string> = {
   bankAccount:'bank_account', bankAccountId:'bank_account_id', upiId:'upi_id', upiAccountId:'upi_account_id', paidFromAccount:'paid_from_account', paidToAccount:'paid_to_account',
 };
 
+const UUID_COLS = new Set(['bank_account_id', 'upi_account_id']);
+
 function mapToDb(exp: Partial<Expense>): Record<string, any> {
   const db: Record<string, any> = {};
   for (const [key, val] of Object.entries(exp)) {
     const dbKey = CAMEL_TO_SNAKE[key] || key;
     if (!VALID_DB_COLS.has(dbKey)) continue;
+    if (UUID_COLS.has(dbKey) && val === '') { db[dbKey] = null; continue; }
     db[dbKey] = (dbKey === 'expense_date' && val === '') ? null : val;
   }
   return db;
