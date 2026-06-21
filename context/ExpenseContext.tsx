@@ -43,7 +43,8 @@ function mapRow(row: any): Expense {
 const VALID_DB_COLS = new Set([
   'txn_ref','expense_date','site','expense_type','amount',
   'payment_mode','project_id','po_no','remarks','created_by',
-  'status','paid_txn_ref','paid_payment_mode','paid_at','txn_date','txn_date',
+  'status','paid_txn_ref','paid_payment_mode','paid_at','txn_date',
+  'bank_account','upi_id','paid_from_account','paid_to_account',
 ]);
 
 const CAMEL_TO_SNAKE: Record<string,string> = {

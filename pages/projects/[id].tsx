@@ -1779,7 +1779,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
             {([['Date *','expenseDate','date',''],
                ['Amount (₹) *','amount','number',''],['Vendor','site','text',''],
                ['Remarks','remarks','text',''],
-               ['Bank Account No','bankAccount','text','e.g. 1234567890'],
+               ['Bank Account No *','bankAccount','text','e.g. 1234567890'],
                ['UPI ID','upiId','text','e.g. name@upi']] as [string,string,string,string][]).map(([l,f,t,ph])=>(
               <div key={f}>
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{l}</label>
@@ -1800,7 +1800,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
             </div>
           </div>
           <div style={{ display:'flex', gap:10 }}>
-            <button onClick={saveNew} disabled={saving||!newRow.expenseDate||!newRow.amount}
+            <button onClick={saveNew} disabled={saving||!newRow.expenseDate||!newRow.amount||!(newRow as any).bankAccount}
               style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px',
                 cursor:'pointer', fontSize:13, fontWeight:600, opacity:saving||!newRow.expenseDate||!newRow.amount?0.5:1 }}>
               {saving?'Saving…':'📤 Request'}
