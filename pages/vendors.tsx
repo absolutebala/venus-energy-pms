@@ -58,12 +58,6 @@ export default function VendorsPage() {
   const [bankErr, setBankErr] = useState('');
   const { upload } = useUpload();
   const { profile } = useAuth();
-  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
-  const [newBankNo, setNewBankNo] = useState('');
-  const [newBankFile, setNewBankFile] = useState<File|null>(null);
-  const [bankUploading, setBankUploading] = useState(false);
-  const [bankErr, setBankErr] = useState('');
-  const { upload } = useUpload();
   const [editVendor, setEditVendor]   = useState<any>(null);
   const [form, setForm]               = useState(emptyForm());
   const [saving, setSaving]           = useState(false);
