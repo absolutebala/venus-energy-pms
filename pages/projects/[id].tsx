@@ -1664,6 +1664,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
   const tdS: React.CSSProperties  = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${T.border}`, verticalAlign:'middle' as const };
 
   const totalAmount = items.reduce((a, e) => a + e.amount, 0);
+  const [bankAccountErr, setBankAccountErr] = React.useState(false);
 
   const saveNew = async () => {
     if (!newRow.expenseDate || !newRow.amount) return;
@@ -1783,7 +1784,6 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
             {([['Date *','expenseDate','date',''],
                ['Amount (₹) *','amount','number',''],['Vendor','site','text',''],
                ['Remarks','remarks','text',''],
-               ['Bank Account No *','bankAccount','text','e.g. 1234567890'],
                ['UPI ID','upiId','text','e.g. name@upi']] as [string,string,string,string][]).map(([l,f,t,ph])=>(
               <div key={f}>
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{l}</label>
@@ -1796,6 +1796,13 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
               </div>
             ))}
             <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Bank Account No *</label>
+              <input type="text" value={(newRow as any).bankAccount||''} placeholder="e.g. 1234567890"
+                onChange={e=>{ setNewRow(p=>({...p,bankAccount:e.target.value})); if(e.target.value.trim()) setBankAccountErr(false); }}
+                style={{ ...inpS, borderColor: bankAccountErr ? '#DC2626' : inpS.borderColor, background: bankAccountErr ? '#FEF2F2' : inpS.background }} />
+              {bankAccountErr && <div style={{ fontSize:11, color:'#DC2626', marginTop:4 }}>Bank Account No is required</div>}
+            </div>
+            <div>
               <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Expense Type</label>
               <select value={newRow.expenseType} onChange={async e=>{ if(e.target.value==='__new__'){ const v=window.prompt('Enter new expense type:'); if(v&&v.trim()){ await addExpenseType(v.trim()); setNewRow(p=>({...p,expenseType:v.trim()})); } } else setNewRow(p=>({...p,expenseType:e.target.value})); }} style={{ ...inpS, cursor:'pointer' }}>
                 {expenseTypes.map(t=><option key={t}>{t}</option>)}
@@ -1804,7 +1811,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
             </div>
           </div>
           <div style={{ display:'flex', gap:10 }}>
-            <button onClick={()=>{ if(!(newRow as any).bankAccount?.trim()){ setToast({msg:'❌ Bank Account No is required', type:'error'}); return; } saveNew(); }} disabled={saving||!newRow.expenseDate||!newRow.amount}
+            <button onClick={()=>{ if(!(newRow as any).bankAccount?.trim()){ setBankAccountErr(true); return; } setBankAccountErr(false); saveNew(); }} disabled={saving||!newRow.expenseDate||!newRow.amount}
               style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px',
                 cursor:'pointer', fontSize:13, fontWeight:600, opacity:saving||!newRow.expenseDate||!newRow.amount?0.5:1 }}>
               {saving?'Saving…':'📤 Request'}
