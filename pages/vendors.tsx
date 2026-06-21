@@ -4,6 +4,9 @@ import { useProjects } from '@/context/ProjectContext';
 const supabase = createClient();
 import Layout from '@/components/Layout';
 import Modal from '@/components/Modal';
+import { useUpload } from '@/lib/useUpload';
+import { useAuth } from '@/context/AuthContext';
+import { useUpload } from '@/lib/useUpload';
 import Toast from '@/components/Toast';
 import { T, card, btnPrimary, btnSecondary, btnDanger, th, td, inputStyle, badge , fmtINR} from '@/lib/theme';
 
@@ -49,6 +52,19 @@ export default function VendorsPage() {
   const [search, setSearch]           = useState('');
   const [focused, setFocused]         = useState(false);
   const [showModal, setShowModal]     = useState(false);
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+  const [newBankNo, setNewBankNo] = useState('');
+  const [newBankFile, setNewBankFile] = useState<File|null>(null);
+  const [bankUploading, setBankUploading] = useState(false);
+  const [bankErr, setBankErr] = useState('');
+  const { upload } = useUpload();
+  const { profile } = useAuth();
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+  const [newBankNo, setNewBankNo] = useState('');
+  const [newBankFile, setNewBankFile] = useState<File|null>(null);
+  const [bankUploading, setBankUploading] = useState(false);
+  const [bankErr, setBankErr] = useState('');
+  const { upload } = useUpload();
   const [editVendor, setEditVendor]   = useState<any>(null);
   const [form, setForm]               = useState(emptyForm());
   const [saving, setSaving]           = useState(false);
@@ -88,7 +104,43 @@ export default function VendorsPage() {
   );
 
   const openNew  = () => { setForm(emptyForm()); setEditVendor(null); setShowModal(true); };
-  const openEdit = (v: any) => { setForm({ name:v.name, contact:v.contact, phone:v.phone, email:v.email, gst:v.gst }); setEditVendor(v); setShowModal(true); };
+  const openEdit = async (v: any) => {
+    setForm({ name:v.name, contact:v.contact, phone:v.phone, email:v.email, gst:v.gst });
+    setEditVendor(v); setShowModal(true);
+    setNewBankNo(''); setNewBankFile(null); setBankErr('');
+    const { data } = await supabase.from('vendor_bank_accounts').select('*').eq('vendor_id', v.id).order('created_at');
+    setBankAccounts(data || []);
+  };
+
+  const addBankAccount = async () => {
+    if (!newBankNo.trim()) { setBankErr('Account number is required'); return; }
+    if (!newBankFile) { setBankErr('Passbook copy is required'); return; }
+    setBankErr('');
+    setBankUploading(true);
+    try {
+      const result = await upload(newBankFile, `vendors/${editVendor.id}/passbooks`);
+      const { data, error } = await supabase.from('vendor_bank_accounts').insert({
+        vendor_id: editVendor.id,
+        account_no: newBankNo.trim(),
+        passbook_url: result.publicUrl,
+        passbook_filename: result.fileName,
+        created_by: profile?.full_name || '',
+      }).select().single();
+      if (error) throw new Error(error.message);
+      setBankAccounts(prev => [...prev, data]);
+      setNewBankNo(''); setNewBankFile(null);
+    } catch(err:any) {
+      setBankErr(err.message || 'Upload failed');
+    } finally {
+      setBankUploading(false);
+    }
+  };
+
+  const deleteBankAccount = async (id: string) => {
+    if (!window.confirm('Delete this bank account?')) return;
+    await supabase.from('vendor_bank_accounts').delete().eq('id', id);
+    setBankAccounts(prev => prev.filter(b => b.id !== id));
+  };
 
   const handleSave = async () => {
     if (!form.name) { setToast({ msg:'Vendor name is required.', type:'error' }); return; }
@@ -102,15 +154,20 @@ export default function VendorsPage() {
         const { error } = await supabase.from('vendors').update(payload).eq('id', editVendor.id);
         if (error) throw new Error(error.message);
         setToast({ msg:'Vendor updated successfully!', type:'success' });
+        await fetchVendors();
+        setShowModal(false); setForm(emptyForm()); setEditVendor(null);
       } else {
-        const { error } = await supabase.from('vendors').insert({
+        const { data, error } = await supabase.from('vendors').insert({
           ...payload, is_active: true, invite_status: 'not_sent',
-        });
+        }).select().single();
         if (error) throw new Error(error.message);
-        setToast({ msg:`Vendor "${form.name}" added successfully!`, type:'success' });
+        setToast({ msg:`Vendor "${form.name}" added! You can now add bank accounts below.`, type:'success' });
+        await fetchVendors();
+        // Switch into edit mode for the newly created vendor so bank accounts can be added
+        setEditVendor(data);
+        setBankAccounts([]);
+        setNewBankNo(''); setNewBankFile(null); setBankErr('');
       }
-      await fetchVendors();
-      setShowModal(false); setForm(emptyForm()); setEditVendor(null);
     } catch(err: any) {
       setToast({ msg:'❌ ' + err.message, type:'error' });
     } finally {
@@ -279,6 +336,40 @@ export default function VendorsPage() {
             {!editVendor && (
               <div style={{ background:T.infoBg, border:`1px solid #BFDBFE`, borderRadius:8, padding:'10px 14px', marginBottom:14, fontSize:12, color:T.info }}>
                 ℹ️ Vendor credentials are created from User Management.
+              </div>
+            )}
+
+            {editVendor && (
+              <div style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:14, marginBottom:14 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:10 }}>🏦 Bank Accounts</div>
+                {bankAccounts.length === 0 && (
+                  <div style={{ fontSize:12, color:T.textMuted, marginBottom:10 }}>No bank accounts added yet.</div>
+                )}
+                {bankAccounts.map((b:any) => (
+                  <div key={b.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 10px', background:T.bg, borderRadius:6, marginBottom:6 }}>
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:600, color:T.text }}>{b.account_no}</div>
+                      <a href={b.passbook_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:11, color:T.primary, textDecoration:'underline' }}>
+                        📄 {b.passbook_filename || 'View Passbook'}
+                      </a>
+                    </div>
+                    <button onClick={() => deleteBankAccount(b.id)} style={{ background:'none', border:'none', color:T.danger, cursor:'pointer', fontSize:14 }}>🗑</button>
+                  </div>
+                ))}
+                <div style={{ display:'flex', gap:8, marginTop:10, alignItems:'flex-start' }}>
+                  <input value={newBankNo} onChange={e=>setNewBankNo(e.target.value)} placeholder="Account Number"
+                    style={{ ...inputStyle(), flex:1, boxSizing:'border-box' as const }} />
+                  <label style={{ ...btnSecondary, cursor:'pointer', whiteSpace:'nowrap' as const, fontSize:12 }}>
+                    {newBankFile ? '✓ ' + newBankFile.name.slice(0,15) : '📎 Passbook *'}
+                    <input type="file" accept="image/*,.pdf" style={{ display:'none' }}
+                      onChange={e=>setNewBankFile(e.target.files?.[0] || null)} />
+                  </label>
+                  <button onClick={addBankAccount} disabled={bankUploading}
+                    style={{ ...btnPrimary, fontSize:12, whiteSpace:'nowrap' as const, opacity:bankUploading?0.7:1 }}>
+                    {bankUploading ? 'Uploading…' : '+ Add'}
+                  </button>
+                </div>
+                {bankErr && <div style={{ fontSize:11, color:T.danger, marginTop:6 }}>{bankErr}</div>}
               </div>
             )}
             <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:8 }}>
