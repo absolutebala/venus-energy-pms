@@ -116,7 +116,7 @@ export function POItemProvider({ children }: { children: React.ReactNode }) {
     const payload = mapToDb(updates);
     const { error } = await supabase.from('po_items').update(payload).eq('id', id);
     if (error) throw new Error(error.message);
-    setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates, amount: (updates.quantity??i.quantity) * (updates.rate??i.rate) } : i));
+    setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
   }, []);
 
   const deleteItem = useCallback(async (id: string) => {
