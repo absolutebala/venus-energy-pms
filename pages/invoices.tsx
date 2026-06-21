@@ -78,6 +78,7 @@ export default function InvoicesPage() {
   const [invPage,     setInvPage]     = useState(1);
   const INV_PER_PAGE = 10;
   const canExport = !authLoading && (profile?.role === 'super_admin' || profile?.role === 'accounting_team');
+  const [showExportWarning, setShowExportWarning] = useState(false);
   const [newInv,      setNewInv]      = useState({
     invoiceNo:"", invoiceDate:"", invoiceAmount:"",
     gst:"", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
@@ -226,6 +227,11 @@ export default function InvoicesPage() {
   };
 
   const exportToExcel = () => {
+    const hasAnyFilter = Boolean(
+      invVendor.length || invPM.length || invRegion.length || invType.length || invPayStatus.length ||
+      datePreset !== 'all' || poSearch
+    );
+    if (!hasAnyFilter) { setShowExportWarning(true); return; }
     const rows = displayInvoices.map((inv, idx) => ({
       'S.No':           idx + 1,
       'PO No':          (inv as any).poNo || '',
@@ -638,6 +644,19 @@ export default function InvoicesPage() {
           )}
         </div>
       </div>
+      {showExportWarning && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.5)', zIndex:1100, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+          <div style={{ background:'#fff', borderRadius:14, padding:28, width:'100%', maxWidth:380, boxShadow:'0 20px 60px rgba(0,0,0,0.2)', textAlign:'center' as const }}>
+            <div style={{ fontSize:36, marginBottom:10 }}>⚠️</div>
+            <div style={{ fontSize:15, fontWeight:700, color:T.text, marginBottom:8 }}>Cannot download all records</div>
+            <div style={{ fontSize:13, color:T.textMuted, marginBottom:20 }}>Please select at least one filter before exporting to Excel.</div>
+            <button onClick={()=>setShowExportWarning(false)}
+              style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 28px', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
       {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </Layout>
   );
