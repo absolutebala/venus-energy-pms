@@ -1612,6 +1612,10 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
   const [newBankAcctErr, setNewBankAcctErr] = React.useState('');
   const [newBankAcctUploading, setNewBankAcctUploading] = React.useState(false);
   const { upload: uploadBankFile } = useUpload();
+  const [vendorUpiAccounts, setVendorUpiAccounts] = React.useState<any[]>([]);
+  const [showNewUpiInput, setShowNewUpiInput] = React.useState(false);
+  const [newUpiAcctId, setNewUpiAcctId] = React.useState('');
+  const [newUpiAcctErr, setNewUpiAcctErr] = React.useState('');
 
   React.useEffect(() => {
     const proj = (allProjectsForExp as any[]).find(p => p.id === projectId);
@@ -1623,8 +1627,31 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
       if (!vendorRow) return;
       const { data: accounts } = await sb2.from('vendor_bank_accounts').select('*').eq('vendor_id', vendorRow.id).order('created_at');
       setVendorBankAccounts(accounts || []);
+      const { data: upiAccts } = await sb2.from('vendor_upi_accounts').select('*').eq('vendor_id', vendorRow.id).order('created_at');
+      setVendorUpiAccounts(upiAccts || []);
     })();
   }, [projectId, allProjectsForExp]);
+
+  const addNewUpiAccountFromExpense = async () => {
+    if (!newUpiAcctId.trim()) { setNewUpiAcctErr('UPI ID is required'); return; }
+    setNewUpiAcctErr('');
+    const proj = (allProjectsForExp as any[]).find(p => p.id === projectId);
+    const vendorName = proj?.vendor;
+    const sb2 = createClient();
+    const { data: vendorRow } = await sb2.from('vendors').select('id').eq('name', vendorName).maybeSingle();
+    if (!vendorRow) { setNewUpiAcctErr('Vendor not found'); return; }
+    try {
+      const { data, error } = await sb2.from('vendor_upi_accounts').insert({
+        vendor_id: vendorRow.id, upi_id: newUpiAcctId.trim(),
+      }).select().single();
+      if (error) throw new Error(error.message);
+      setVendorUpiAccounts(prev => [...prev, data]);
+      setNewRow((p:any)=>({ ...p, upiId: data.upi_id, upiAccountId: data.id, bankAccount: '', bankAccountId: '' }));
+      setShowNewUpiInput(false); setNewUpiAcctId('');
+    } catch(err:any) {
+      setNewUpiAcctErr(err.message || 'Failed to add');
+    }
+  };
 
   const addNewBankAccountFromExpense = async () => {
     if (!newBankAcctNo.trim()) { setNewBankAcctErr('Account number is required'); return; }
@@ -1723,7 +1750,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
     setSaving(true);
     try {
       await addExpense({
-        txnRef: newRow.txnRef, expenseDate: newRow.expenseDate, site: newRow.site, bankAccount: (newRow as any).bankAccount || '', bankAccountId: (newRow as any).bankAccountId || '', upiId: (newRow as any).upiId || '',
+        txnRef: newRow.txnRef, expenseDate: newRow.expenseDate, site: newRow.site, bankAccount: (newRow as any).bankAccount || '', bankAccountId: (newRow as any).bankAccountId || '', upiId: (newRow as any).upiId || '', upiAccountId: (newRow as any).upiAccountId || '',
         expenseType: newRow.expenseType, amount: Number(newRow.amount),
         paymentMode: newRow.paymentMode, remarks: newRow.remarks,
         projectId, poNo: '', createdBy: profile?.full_name || '', status: 'pending',
@@ -1855,13 +1882,13 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
               </div>
             ))}
             <div>
-              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Bank Account No *</label>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Bank Account No</label>
               {!showNewBankInput ? (
                 <select value={(newRow as any).bankAccount||''}
                   onChange={e=>{
                     if (e.target.value === '__new__') { setShowNewBankInput(true); return; }
                     const acct = vendorBankAccounts.find((b:any)=>b.account_no===e.target.value);
-                    setNewRow(p=>({...p, bankAccount: e.target.value, bankAccountId: acct?.id||'' }));
+                    setNewRow(p=>({...p, bankAccount: e.target.value, bankAccountId: acct?.id||'', upiId:'', upiAccountId:'' }));
                     if (e.target.value.trim()) setBankAccountErr(false);
                   }}
                   style={{ ...inpS, cursor:'pointer', borderColor: bankAccountErr ? '#DC2626' : inpS.borderColor, background: bankAccountErr ? '#FEF2F2' : inpS.background }}>
@@ -1890,7 +1917,40 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                   {newBankAcctErr && <div style={{ fontSize:11, color:'#DC2626', marginTop:4 }}>{newBankAcctErr}</div>}
                 </div>
               )}
-              {bankAccountErr && <div style={{ fontSize:11, color:'#DC2626', marginTop:4 }}>Bank Account No is required</div>}
+              {bankAccountErr && <div style={{ fontSize:11, color:'#DC2626', marginTop:4 }}>Please select a Bank Account or UPI Account</div>}
+            </div>
+            <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>UPI Account</label>
+              {!showNewUpiInput ? (
+                <select value={(newRow as any).upiId||''}
+                  onChange={e=>{
+                    if (e.target.value === '__new__') { setShowNewUpiInput(true); return; }
+                    const acct = vendorUpiAccounts.find((u:any)=>u.upi_id===e.target.value);
+                    setNewRow(p=>({...p, upiId: e.target.value, upiAccountId: acct?.id||'', bankAccount:'', bankAccountId:'' }));
+                    if (e.target.value.trim()) setBankAccountErr(false);
+                  }}
+                  style={{ ...inpS, cursor:'pointer' }}>
+                  <option value="">— Select UPI —</option>
+                  {vendorUpiAccounts.map((u:any)=><option key={u.id} value={u.upi_id}>{u.upi_id}</option>)}
+                  <option value="__new__">+ Add New UPI...</option>
+                </select>
+              ) : (
+                <div style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:10, background:T.bg }}>
+                  <input value={newUpiAcctId} onChange={e=>setNewUpiAcctId(e.target.value)} placeholder="e.g. name@upi"
+                    style={{ ...inpS, width:'100%', boxSizing:'border-box' as const, marginBottom:6 }} />
+                  <div style={{ display:'flex', gap:6 }}>
+                    <button onClick={addNewUpiAccountFromExpense}
+                      style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'5px 12px', fontSize:11, cursor:'pointer' }}>
+                      + Add
+                    </button>
+                    <button onClick={()=>{ setShowNewUpiInput(false); setNewUpiAcctId(''); setNewUpiAcctErr(''); }}
+                      style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 12px', fontSize:11, cursor:'pointer' }}>
+                      Cancel
+                    </button>
+                  </div>
+                  {newUpiAcctErr && <div style={{ fontSize:11, color:'#DC2626', marginTop:4 }}>{newUpiAcctErr}</div>}
+                </div>
+              )}
             </div>
             <div>
               <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Expense Type</label>
@@ -1901,7 +1961,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
             </div>
           </div>
           <div style={{ display:'flex', gap:10 }}>
-            <button onClick={()=>{ if(!(newRow as any).bankAccount?.trim()){ setBankAccountErr(true); return; } setBankAccountErr(false); saveNew(); }} disabled={saving||!newRow.expenseDate||!newRow.amount}
+            <button onClick={()=>{ if(!(newRow as any).bankAccount?.trim() && !(newRow as any).upiId?.trim()){ setBankAccountErr(true); return; } setBankAccountErr(false); saveNew(); }} disabled={saving||!newRow.expenseDate||!newRow.amount}
               style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px',
                 cursor:'pointer', fontSize:13, fontWeight:600, opacity:saving||!newRow.expenseDate||!newRow.amount?0.5:1 }}>
               {saving?'Saving…':'📤 Request'}
