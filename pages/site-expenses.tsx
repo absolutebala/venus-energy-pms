@@ -27,7 +27,7 @@ const TYPE_COLORS: Record<string,string> = {
 export default function SiteExpensesPage() {
   const router = useRouter();
   const { profile, can, loading: authLoading } = useAuth();
-  const { expenses, loading: expLoading, addExpense, updateExpense } = useExpenses();
+  const { expenses, loading: expLoading, addExpense, updateExpense, deleteExpense } = useExpenses();
   const { projects } = useProjects();
   const canAdd    = !authLoading && can("site_expenses", "create");
   const canManage = !authLoading && can("site_expenses", "edit");
@@ -451,6 +451,10 @@ export default function SiteExpensesPage() {
                             <button onClick={ev=>{ ev.stopPropagation(); setEditExpId(editExpId===e.id?null:e.id); setEditExpRow({...e}); }}
                               style={{ background:editExpId===e.id?T.primary:'#F0FDFA', color:editExpId===e.id?'#fff':'#0D9488',
                                 border:`1px solid #99F6E4`, borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>✏️</button>
+                          )}
+                          {canManage && (
+                            <button onClick={async ev=>{ ev.stopPropagation(); if(window.confirm('Delete this expense permanently?')){ try { await deleteExpense(e.id); setToast({ msg:'✅ Expense deleted', type:'success' }); } catch(err:any){ setToast({ msg:'❌ '+err.message, type:'error' }); } } }}
+                              style={{ background:'#FEF2F2', color:'#DC2626', border:'1px solid #FECACA', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>🗑</button>
                           )}
                           {isPending && canManage && (
                             <button onClick={ev=>{ ev.stopPropagation(); setPaidModal(e); setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] }); }}
