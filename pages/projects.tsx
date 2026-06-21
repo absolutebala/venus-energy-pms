@@ -5,6 +5,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle , fmtINR} from '@/lib/theme';
 import DateInput from '@/components/DateInput';
+import Toast from '@/components/Toast';
 import MultiSelect from '@/components/MultiSelect';
 import { useProjects } from '@/context/ProjectContext';
 import { createClient } from '@/lib/supabase';
@@ -251,6 +252,7 @@ export default function ProjectsPage() {
     sb.from('project_drafts').select('*').order('updated_at', { ascending: false })
       .then(({ data }) => { if (data) setDrafts(data); });
   }, []);
+  const [toast, setToast] = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc');
   const [poPopover, setPoPopover] = useState<string|null>(null);
@@ -474,6 +476,15 @@ export default function ProjectsPage() {
 
   // ── Export filtered projects to Excel ──────────────────────────────────────
   const exportToExcel = () => {
+    const hasAnyFilter = Boolean(
+      search || (statusFilter !== 'All') || (typeFilter !== 'All Types') ||
+      pmFilter.length || vendorFilter.length || regionFilter.length || projectStatusFilter.length ||
+      dateFrom || dateTo
+    );
+    if (!hasAnyFilter) {
+      setToast({ msg: '⚠️ Cannot download all records. Please select at least one filter first.', type: 'error' });
+      return;
+    }
     // Helper: clean string — removes hidden chars, trims whitespace
     const clean = (v: any): string => v == null ? '' : String(v).replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ').trim();
 
@@ -991,6 +1002,7 @@ export default function ProjectsPage() {
         </div>
       )}
 
+      {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
     </Layout>
   );
 }
