@@ -99,6 +99,7 @@ export default function SiteExpensesPage() {
 
   // Paid modal state
   const [paidModal,    setPaidModal]    = useState<any>(null);
+  const [paidModalPassbook, setPaidModalPassbook] = useState<{url:string;filename:string}|null>(null);
   const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] });
   const [datePreset,   setDatePreset]   = useState<string>('all');
   const [customFrom,   setCustomFrom]   = useState('');
@@ -457,7 +458,15 @@ export default function SiteExpensesPage() {
                               style={{ background:'#FEF2F2', color:'#DC2626', border:'1px solid #FECACA', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>🗑</button>
                           )}
                           {isPending && canManage && (
-                            <button onClick={ev=>{ ev.stopPropagation(); setPaidModal(e); setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] }); }}
+                            <button onClick={async ev=>{
+                              ev.stopPropagation();
+                              setPaidModal(e); setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] });
+                              setPaidModalPassbook(null);
+                              if ((e as any).bankAccountId) {
+                                const { data } = await createClient().from('vendor_bank_accounts').select('passbook_url,passbook_filename').eq('id', (e as any).bankAccountId).maybeSingle();
+                                if (data) setPaidModalPassbook({ url: data.passbook_url, filename: data.passbook_filename || 'Passbook' });
+                              }
+                            }}
                               style={{ background:T.success, border:"none", borderRadius:6, padding:"5px 12px",
                                 color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap" as const }}>
                               💳 Make Payment
@@ -547,8 +556,9 @@ export default function SiteExpensesPage() {
 
       {/* Paid Modal */}
       {paidModal && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(15,23,42,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center" }}>
-          <div style={{ background:T.surface, borderRadius:16, padding:28, width:"100%", maxWidth:420, boxShadow:"0 20px 60px rgba(0,0,0,0.18)" }}>
+        <div style={{ position:"fixed", inset:0, background:"rgba(15,23,42,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+          <div style={{ background:T.surface, borderRadius:16, padding:0, width:"100%", maxWidth: paidModalPassbook ? 880 : 420, maxHeight:"90vh", boxShadow:"0 20px 60px rgba(0,0,0,0.18)", display:"flex", overflow:"hidden" }}>
+            <div style={{ flex: paidModalPassbook ? '0 0 420px' : '1', padding:28, overflowY:'auto' as const, maxHeight:"90vh" }}>
             <h3 style={{ fontSize:16, fontWeight:700, color:T.text, marginBottom:6 }}>✓ Mark as Paid</h3>
             <p style={{ fontSize:13, color:T.textMuted, marginBottom:20 }}>
               {paidModal.expenseType} — {fmt(paidModal.amount)} · Project {paidModal.projectId}
@@ -602,6 +612,22 @@ export default function SiteExpensesPage() {
                 {paidSaving ? "Saving…" : "✓ Confirm Paid"}
               </button>
             </div>
+            </div>
+            {paidModalPassbook && (
+              <div style={{ flex:1, background:T.bg, borderLeft:`1px solid ${T.border}`, display:'flex', flexDirection:'column' as const, maxHeight:"90vh" }}>
+                <div style={{ padding:'14px 18px', borderBottom:`1px solid ${T.border}`, fontSize:13, fontWeight:700, color:T.text, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <span>📄 Bank Passbook — {paidModal.bankAccount || 'N/A'}</span>
+                  <a href={paidModalPassbook.url} target="_blank" rel="noopener noreferrer" style={{ fontSize:11, color:T.primary }}>Open ↗</a>
+                </div>
+                <div style={{ flex:1, overflow:'auto' as const, display:'flex', alignItems:'center', justifyContent:'center', padding:10 }}>
+                  {paidModalPassbook.url.toLowerCase().endsWith('.pdf') ? (
+                    <iframe src={paidModalPassbook.url} style={{ width:'100%', height:'100%', border:'none', minHeight:500 }} />
+                  ) : (
+                    <img src={paidModalPassbook.url} alt="Passbook" style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain' as const, borderRadius:8 }} />
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

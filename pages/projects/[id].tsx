@@ -1723,7 +1723,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
     setSaving(true);
     try {
       await addExpense({
-        txnRef: newRow.txnRef, expenseDate: newRow.expenseDate, site: newRow.site, bankAccount: (newRow as any).bankAccount || '', upiId: (newRow as any).upiId || '',
+        txnRef: newRow.txnRef, expenseDate: newRow.expenseDate, site: newRow.site, bankAccount: (newRow as any).bankAccount || '', bankAccountId: (newRow as any).bankAccountId || '', upiId: (newRow as any).upiId || '',
         expenseType: newRow.expenseType, amount: Number(newRow.amount),
         paymentMode: newRow.paymentMode, remarks: newRow.remarks,
         projectId, poNo: '', createdBy: profile?.full_name || '', status: 'pending',
