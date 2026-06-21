@@ -547,7 +547,7 @@ export default function ProjectsPage() {
       { wch: 14 },  // Delivery Date
     ];
 
-    ws['!autofilter'] = { ref: ws['!ref'] };
+    ws['!autofilter'] = { ref: ws['!ref'] || 'A1' };
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Projects');
