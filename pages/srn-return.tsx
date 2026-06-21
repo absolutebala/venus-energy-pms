@@ -31,6 +31,7 @@ export default function SRNReturnPage() {
   const [showSTN, setShowSTN] = useState(true);
   // cardFilter: { type:'stn'|'srn', field:'pm'|'region', value:string } | null
   const [cardFilter, setCardFilter] = useState<{type:string;field:string;value:string}|null>(null);
+  const [showExportWarning, setShowExportWarning] = useState(false);
 
   const role       = profile?.role || 'viewer';
   const isPM       = ['project_manager','super_admin','region_manager'].includes(role);
@@ -278,6 +279,8 @@ export default function SRNReturnPage() {
   const isLoading  = loading || projLoading || stnLoading;
 
   const exportSRNToExcel = () => {
+    const hasAnyFilter = Boolean(search || cardFilter || kpiSubFilter || statusDistFilter || agingDistFilter);
+    if (!hasAnyFilter) { setShowExportWarning(true); return; }
     const wb = XLSX.utils.book_new();
     // STN Sheet
     const stnRows: any[] = [];
@@ -882,6 +885,20 @@ export default function SRNReturnPage() {
                 ✗ Confirm
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showExportWarning && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.5)', zIndex:1100, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+          <div style={{ background:'#fff', borderRadius:14, padding:28, width:'100%', maxWidth:380, boxShadow:'0 20px 60px rgba(0,0,0,0.2)', textAlign:'center' as const }}>
+            <div style={{ fontSize:36, marginBottom:10 }}>⚠️</div>
+            <div style={{ fontSize:15, fontWeight:700, color:Theme.text, marginBottom:8 }}>Cannot download all records</div>
+            <div style={{ fontSize:13, color:Theme.textMuted, marginBottom:20 }}>Please select at least one filter before exporting to Excel.</div>
+            <button onClick={()=>setShowExportWarning(false)}
+              style={{ background:Theme.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 28px', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+              OK
+            </button>
           </div>
         </div>
       )}
