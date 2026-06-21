@@ -1604,6 +1604,55 @@ function SRNSectionNew({ projectId, role, onAllReceived, canAdd: canAddApplicabl
 }
 
 function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boolean }) {
+  const { projects: allProjectsForExp } = useProjects();
+  const [vendorBankAccounts, setVendorBankAccounts] = React.useState<any[]>([]);
+  const [showNewBankInput, setShowNewBankInput] = React.useState(false);
+  const [newBankAcctNo, setNewBankAcctNo] = React.useState('');
+  const [newBankAcctFile, setNewBankAcctFile] = React.useState<File|null>(null);
+  const [newBankAcctErr, setNewBankAcctErr] = React.useState('');
+  const [newBankAcctUploading, setNewBankAcctUploading] = React.useState(false);
+  const { upload: uploadBankFile } = useUpload();
+
+  React.useEffect(() => {
+    const proj = (allProjectsForExp as any[]).find(p => p.id === projectId);
+    const vendorName = proj?.vendor;
+    if (!vendorName) return;
+    const sb2 = createClient();
+    (async () => {
+      const { data: vendorRow } = await sb2.from('vendors').select('id').eq('name', vendorName).maybeSingle();
+      if (!vendorRow) return;
+      const { data: accounts } = await sb2.from('vendor_bank_accounts').select('*').eq('vendor_id', vendorRow.id).order('created_at');
+      setVendorBankAccounts(accounts || []);
+    })();
+  }, [projectId, allProjectsForExp]);
+
+  const addNewBankAccountFromExpense = async () => {
+    if (!newBankAcctNo.trim()) { setNewBankAcctErr('Account number is required'); return; }
+    if (!newBankAcctFile) { setNewBankAcctErr('Passbook copy is required'); return; }
+    setNewBankAcctErr('');
+    const proj = (allProjectsForExp as any[]).find(p => p.id === projectId);
+    const vendorName = proj?.vendor;
+    const sb2 = createClient();
+    const { data: vendorRow } = await sb2.from('vendors').select('id').eq('name', vendorName).maybeSingle();
+    if (!vendorRow) { setNewBankAcctErr('Vendor not found'); return; }
+    setNewBankAcctUploading(true);
+    try {
+      const result = await uploadBankFile(newBankAcctFile, `vendors/${vendorRow.id}/passbooks`);
+      const { data, error } = await sb2.from('vendor_bank_accounts').insert({
+        vendor_id: vendorRow.id, account_no: newBankAcctNo.trim(),
+        passbook_url: result.publicUrl, passbook_filename: result.fileName,
+      }).select().single();
+      if (error) throw new Error(error.message);
+      setVendorBankAccounts(prev => [...prev, data]);
+      setNewRow((p:any)=>({ ...p, bankAccount: data.account_no, bankAccountId: data.id }));
+      setShowNewBankInput(false); setNewBankAcctNo(''); setNewBankAcctFile(null);
+    } catch(err:any) {
+      setNewBankAcctErr(err.message || 'Upload failed');
+    } finally {
+      setNewBankAcctUploading(false);
+    }
+  };
+
   const { getByProject, addExpense, updateExpense, deleteExpense, loading } = useExpenses();
   const { profile } = useAuth();
   const { logActivity: logExpenseActivity } = useActivity();
@@ -1807,9 +1856,40 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
             ))}
             <div>
               <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Bank Account No *</label>
-              <input type="text" value={(newRow as any).bankAccount||''} placeholder="e.g. 1234567890"
-                onChange={e=>{ setNewRow(p=>({...p,bankAccount:e.target.value})); if(e.target.value.trim()) setBankAccountErr(false); }}
-                style={{ ...inpS, borderColor: bankAccountErr ? '#DC2626' : inpS.borderColor, background: bankAccountErr ? '#FEF2F2' : inpS.background }} />
+              {!showNewBankInput ? (
+                <select value={(newRow as any).bankAccount||''}
+                  onChange={e=>{
+                    if (e.target.value === '__new__') { setShowNewBankInput(true); return; }
+                    const acct = vendorBankAccounts.find((b:any)=>b.account_no===e.target.value);
+                    setNewRow(p=>({...p, bankAccount: e.target.value, bankAccountId: acct?.id||'' }));
+                    if (e.target.value.trim()) setBankAccountErr(false);
+                  }}
+                  style={{ ...inpS, cursor:'pointer', borderColor: bankAccountErr ? '#DC2626' : inpS.borderColor, background: bankAccountErr ? '#FEF2F2' : inpS.background }}>
+                  <option value="">— Select Account —</option>
+                  {vendorBankAccounts.map((b:any)=><option key={b.id} value={b.account_no}>{b.account_no}</option>)}
+                  <option value="__new__">+ Add New Account...</option>
+                </select>
+              ) : (
+                <div style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:10, background:T.bg }}>
+                  <input value={newBankAcctNo} onChange={e=>setNewBankAcctNo(e.target.value)} placeholder="Account Number"
+                    style={{ ...inpS, width:'100%', boxSizing:'border-box' as const, marginBottom:6 }} />
+                  <label style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, color:T.primary, cursor:'pointer', marginBottom:6 }}>
+                    {newBankAcctFile ? '✓ ' + newBankAcctFile.name.slice(0,18) : '📎 Upload Passbook *'}
+                    <input type="file" accept="image/*,.pdf" style={{ display:'none' }} onChange={e=>setNewBankAcctFile(e.target.files?.[0]||null)} />
+                  </label>
+                  <div style={{ display:'flex', gap:6 }}>
+                    <button onClick={addNewBankAccountFromExpense} disabled={newBankAcctUploading}
+                      style={{ background:T.primary, color:'#fff', border:'none', borderRadius:6, padding:'5px 12px', fontSize:11, cursor:'pointer' }}>
+                      {newBankAcctUploading?'Uploading…':'+ Add'}
+                    </button>
+                    <button onClick={()=>{ setShowNewBankInput(false); setNewBankAcctNo(''); setNewBankAcctFile(null); setNewBankAcctErr(''); }}
+                      style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 12px', fontSize:11, cursor:'pointer' }}>
+                      Cancel
+                    </button>
+                  </div>
+                  {newBankAcctErr && <div style={{ fontSize:11, color:'#DC2626', marginTop:4 }}>{newBankAcctErr}</div>}
+                </div>
+              )}
               {bankAccountErr && <div style={{ fontSize:11, color:'#DC2626', marginTop:4 }}>Bank Account No is required</div>}
             </div>
             <div>
