@@ -67,12 +67,15 @@ export default function SiteExpensesPage() {
   const [editExpId,       setEditExpId]       = useState<string|null>(null);
   const [editExpRow,      setEditExpRow]      = useState<any>({});
 
+  const [editExpBankErr, setEditExpBankErr] = useState(false);
+
   const saveExpEdit = async () => {
     if (!editExpId) return;
     if (!editExpRow.bankAccount || !editExpRow.bankAccount.trim()) {
-      setToast({ msg:'❌ Bank Account No is required', type:'error' });
+      setEditExpBankErr(true);
       return;
     }
+    setEditExpBankErr(false);
     try {
       await updateExpense(editExpId, {
         expenseDate: editExpRow.expenseDate,
@@ -478,7 +481,9 @@ export default function SiteExpensesPage() {
                           </div>
                           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:8 }}>
                             <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Remarks</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.remarks||''} onChange={e=>setEditExpRow((p:any)=>({...p,remarks:e.target.value}))} /></div>
-                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Bank Account</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.bankAccount||''} onChange={e=>setEditExpRow((p:any)=>({...p,bankAccount:e.target.value}))} /></div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Bank Account *</div><input style={{ border:`1px solid ${editExpBankErr?'#DC2626':T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none', background: editExpBankErr ? '#FEF2F2' : '#fff' }} value={editExpRow.bankAccount||''} onChange={e=>{ setEditExpRow((p:any)=>({...p,bankAccount:e.target.value})); if(e.target.value.trim()) setEditExpBankErr(false); }} />
+                              {editExpBankErr && <div style={{ fontSize:11, color:'#DC2626', marginTop:4 }}>Bank Account No is required</div>}
+                            </div>
                             <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>TXN Ref</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, width:'100%', outline:'none' }} value={editExpRow.paidTxnRef||''} onChange={e=>setEditExpRow((p:any)=>({...p,paidTxnRef:e.target.value}))} /></div>
                           </div>
                           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>

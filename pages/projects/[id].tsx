@@ -1631,11 +1631,14 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
   };
 
 
+  const [editBankAccountErr, setEditBankAccountErr] = React.useState(false);
+
   const saveEdit = async () => {
     if (!editRow.bankAccount || !editRow.bankAccount.trim()) {
-      setToast({ msg:'❌ Bank Account No is required', type:'error' });
+      setEditBankAccountErr(true);
       return;
     }
+    setEditBankAccountErr(false);
     setSaving(true);
     try {
       await updateExpense(editId!, {
@@ -1740,12 +1743,19 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
                       <div style={{ fontSize:13, fontWeight:600, color:T.primary, marginBottom:12 }}>Edit Expense</div>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
                         {([['Date *','expenseDate','date'],['Amount (₹) *','amount','number'],['Vendor','site','text'],
-                           ['Remarks','remarks','text'],['Bank Account No','bankAccount','text'],['UPI ID','upiId','text']] as [string,string,string][]).map(([l,f,t])=>(
+                           ['Remarks','remarks','text'],['UPI ID','upiId','text']] as [string,string,string][]).map(([l,f,t])=>(
                           <div key={f}>
                             <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{l}</label>
                             <input type={t} value={(editRow as any)[f]||''} onChange={e=>setEditRow((p:any)=>({...p,[f]:e.target.value}))} style={{ ...inpS, width:'100%', boxSizing:'border-box' as const }} />
                           </div>
                         ))}
+                        <div>
+                          <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Bank Account No *</label>
+                          <input type="text" value={(editRow as any).bankAccount||''}
+                            onChange={e=>{ setEditRow((p:any)=>({...p,bankAccount:e.target.value})); if(e.target.value.trim()) setEditBankAccountErr(false); }}
+                            style={{ ...inpS, width:'100%', boxSizing:'border-box' as const, borderColor: editBankAccountErr ? '#DC2626' : inpS.borderColor, background: editBankAccountErr ? '#FEF2F2' : '#fff' }} />
+                          {editBankAccountErr && <div style={{ fontSize:11, color:'#DC2626', marginTop:4 }}>Bank Account No is required</div>}
+                        </div>
                         <div>
                           <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Expense Type</label>
                           <select value={editRow.expenseType||''} onChange={async e=>{ if(e.target.value==='__new__'){ const v=window.prompt('Enter new expense type:'); if(v&&v.trim()){ await addExpenseType(v.trim()); setEditRow((p:any)=>({...p,expenseType:v.trim()})); } } else setEditRow((p:any)=>({...p,expenseType:e.target.value})); }} style={{ ...inpS, width:'100%' }}>
