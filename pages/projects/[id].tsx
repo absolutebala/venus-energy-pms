@@ -1691,7 +1691,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
   const [editRow,  setEditRow]  = React.useState<any>({});
   const [toast,    setToast]    = React.useState<any>(null);
   const [newRow,   setNewRow]   = React.useState({
-    txnRef:'', expenseDate:'', site:'', expenseType:'Advance', amount:'', paymentMode:'', remarks:'', bankAccount:'', upiId:''
+    txnRef:'', expenseDate: new Date().toISOString().split('T')[0], site:'', expenseType:'Advance', amount:'', paymentMode:'', remarks:'', bankAccount:'', upiId:''
   });
   const [expenseTypes, setExpenseTypes] = React.useState<string[]>(['Advance','Material Purchase','Labour Charge','Transport','Equipment Rental','Miscellaneous']);
   React.useEffect(() => {
@@ -1869,8 +1869,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:12 }}>
             {([['Date *','expenseDate','date',''],
                ['Amount (₹) *','amount','number',''],['Vendor','site','text',''],
-               ['Remarks','remarks','text',''],
-               ['UPI ID','upiId','text','e.g. name@upi']] as [string,string,string,string][]).map(([l,f,t,ph])=>(
+               ['Remarks','remarks','text','']] as [string,string,string,string][]).map(([l,f,t,ph])=>(
               <div key={f}>
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{l}</label>
                 {t === 'date' ? (
