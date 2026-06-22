@@ -158,25 +158,25 @@ export default function SRNReturnPage() {
 
   const srnByPM = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
-    for (const proj of srnGrouped) {
-      const pm=proj.pm||'—';
-      const items = kpiSubFilter?.type==='srn'
-        ? proj.srnItems.filter((i:any) => kpiSubFilter.status==='rejected' ? (i.received===false&&i.pm_comment) : !i.received)
-        : proj.srnItems;
-      for (const i of items) { const isPend=!i.received; if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(isPend) r[pm].pending++; }
+    const filtered = kpiSubFilter?.type==='srn'
+      ? roleSrnItems.filter((i:any) => kpiSubFilter.status==='rejected' ? (i.received===false&&i.pm_comment) : !i.received)
+      : roleSrnItems;
+    for (const i of filtered) {
+      const proj=(projects as any[]).find((p:any)=>p.id===i.project_id); const pm=proj?.pm||'—';
+      const isPend=!i.received; if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(isPend) r[pm].pending++;
     } return r;
-  }, [srnGrouped, kpiSubFilter]);
+  }, [roleSrnItems, projects, kpiSubFilter]);
 
   const srnByRegion = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
-    for (const proj of srnGrouped) {
-      const reg=proj.region||'—';
-      const items = kpiSubFilter?.type==='srn'
-        ? proj.srnItems.filter((i:any) => kpiSubFilter.status==='rejected' ? (i.received===false&&i.pm_comment) : !i.received)
-        : proj.srnItems;
-      for (const i of items) { const isPend=!i.received; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++; }
+    const filtered = kpiSubFilter?.type==='srn'
+      ? roleSrnItems.filter((i:any) => kpiSubFilter.status==='rejected' ? (i.received===false&&i.pm_comment) : !i.received)
+      : roleSrnItems;
+    for (const i of filtered) {
+      const proj=(projects as any[]).find((p:any)=>p.id===i.project_id); const reg=proj?.region||'—';
+      const isPend=!i.received; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++;
     } return r;
-  }, [srnGrouped, kpiSubFilter]);
+  }, [roleSrnItems, projects, kpiSubFilter]);
 
 
 
@@ -468,19 +468,19 @@ export default function SRNReturnPage() {
           const statusColors: Record<string,string> = { 'Work Completed':'#16A34A','WCC Raised':'#0D9488','Invoice Submitted':'#2563EB','PO Amendment Done':'#7C3AED','Not Started':'#6B7280','In Progress':'#D97706','Delayed':'#DC2626' };
 
           // STN/SRN projects — respect search box AND PM/Region card filter
-          const matchesCommon = (g:any) => {
+          const matchesCommon = (g:any, sectionType: 'stn'|'srn') => {
             if (search) {
               const s = search.toLowerCase();
               if (!(g.projectId.toLowerCase().includes(s) || (g.projectName||'').toLowerCase().includes(s) || (g.poNo||'').toLowerCase().includes(s))) return false;
             }
-            if (cardFilter) {
+            if (cardFilter && cardFilter.type === sectionType) {
               const val = cardFilter.field === 'pm' ? g.pm : g.region;
               if (val !== cardFilter.value) return false;
             }
             return true;
           };
-          const stnProjects = stnGrouped.filter(matchesCommon).map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
-          const srnProjects = srnGrouped.filter(matchesCommon).map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
+          const stnProjects = stnGrouped.filter((g:any)=>matchesCommon(g,'stn')).map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
+          const srnProjects = srnGrouped.filter((g:any)=>matchesCommon(g,'srn')).map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
 
           const stnStatusGroups: Record<string,number> = {};
           stnProjects.forEach((p:any) => { const s=p.projectStatus||'Not Set'; stnStatusGroups[s]=(stnStatusGroups[s]||0)+1; });
