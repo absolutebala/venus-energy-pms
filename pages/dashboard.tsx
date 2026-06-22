@@ -745,7 +745,7 @@ function RegionManagerDashboard({ projects, rmName }: { projects: typeof ALL_PRO
           {(() => {
             const vendorGroups: Record<string,any[]> = {};
             myProjects.forEach((p:any) => {
-              const v = (p as any).vendor || 'Unassigned';
+              const v = (p as any).vendor || '— Unassigned —';
               if (!vendorGroups[v]) vendorGroups[v] = [];
               vendorGroups[v].push(p);
             });
@@ -858,7 +858,7 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
           {(() => {
             const vendorGroups: Record<string,any[]> = {};
             myProjects.forEach((p:any) => {
-              const v = (p as any).vendor || 'Unassigned';
+              const v = (p as any).vendor || '— Unassigned —';
               if (!vendorGroups[v]) vendorGroups[v] = [];
               vendorGroups[v].push(p);
             });
