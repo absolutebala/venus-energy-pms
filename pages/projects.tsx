@@ -511,12 +511,17 @@ export default function ProjectsPage() {
     // Ensure all cells are clean — strip hidden chars, set correct types
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
     const numCols = ['S.No.', 'PO Number', 'PO Count', 'Aging (Days)'];
+    const dateCols = ['PO Date', 'Delivery Date'];
     const headerRow = rows.length > 0 ? Object.keys(rows[0]) : [];
     for (let r = 1; r <= range.e.r; r++) {
       for (let c = 0; c <= range.e.c; c++) {
         const addr = XLSX.utils.encode_cell({ r, c });
         if (!ws[addr]) continue;
         const colName = headerRow[c];
+        if (dateCols.includes(colName)) {
+          // Leave date cells untouched — already set as real dates by cellDates:true
+          continue;
+        }
         if (numCols.includes(colName)) {
           // Force numeric type
           ws[addr].t = 'n';
