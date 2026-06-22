@@ -3050,7 +3050,7 @@ export default function ProjectDetailPage() {
         {/* ── STN ── */}
         <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('📋','STN', 'poitems', role!=='vendor' && canEdit, undefined,
-            ['super_admin','region_manager'].includes(role) && (
+            ['super_admin','region_manager','project_manager'].includes(role) && (
               <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
                 <input type="checkbox" checked={stnApplicable} onChange={e=>toggleApplicable('stn_applicable', e.target.checked)} />
                 Applicable
@@ -3064,7 +3064,7 @@ export default function ProjectDetailPage() {
         {showSTNSRN && (
           <div style={{ ...card, marginBottom:16 }}>
             {sectionTitle('📦','SRN — Store Return Note', 'srndetail', false, undefined,
-              ['super_admin','region_manager'].includes(role) && (
+              ['super_admin','region_manager','project_manager'].includes(role) && (
                 <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
                   <input type="checkbox" checked={srnApplicable} onChange={e=>toggleApplicable('srn_applicable', e.target.checked)} />
                   Applicable
@@ -3088,7 +3088,7 @@ export default function ProjectDetailPage() {
         {/* ── PTW — Permit to Work ── */}
         {showPTW && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('🔑','PTW — Permit to Work', 'ptw', canEditPTW, undefined,
-            ['super_admin','region_manager'].includes(role) && (
+            ['super_admin','region_manager','project_manager'].includes(role) && (
               <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
                 <input type="checkbox" checked={ptwApplicable} onChange={e=>toggleApplicable('ptw_applicable', e.target.checked)} />
                 Applicable
