@@ -364,7 +364,7 @@ export default function ProjectsPage() {
     if (statusFilter === 'PO Unclassified') return !['Open','Closed'].includes((p as any).poStatus||'');
     if (statusFilter === 'Not Set') return !(p as any).projectStatus;
     if (statusFilter !== 'All') return ((p as any).projectStatus || '') === statusFilter;
-    if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
+    if (typeFilter !== 'All Types' && !typeFilter.split(',').includes(p.type)) return false;
     if (ageMin !== null && p.aging < ageMin) return false;
     if (ageMax !== null && ageMax < 999 && p.aging > ageMax) return false;
     if (pmFilter.length) { const _pm = (p as any).pm||'— Unassigned —'; if (!pmFilter.includes(_pm)) return false; }
@@ -390,7 +390,7 @@ export default function ProjectsPage() {
         if (statusFilter === 'Not Set')   return !(p as any).projectStatus;
         return ((p as any).projectStatus || '') === statusFilter;
       }
-      if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
+      if (typeFilter !== 'All Types' && !typeFilter.split(',').includes(p.type)) return false;
       if (pmFilter.length) { const _pm = (p as any).pm||'— Unassigned —'; if (!pmFilter.includes(_pm)) return false; }
       if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'— Unassigned —')) return false;
       if (regionFilter.length && !regionFilter.includes((p as any).region||'— Unassigned —')) return false;
@@ -406,7 +406,7 @@ export default function ProjectsPage() {
         if (statusFilter === 'Not Set')   return !(p as any).projectStatus;
         return ((p as any).projectStatus || '') === statusFilter;
       }
-      if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
+      if (typeFilter !== 'All Types' && !typeFilter.split(',').includes(p.type)) return false;
       if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'— Unassigned —')) return false;
       if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'— Unassigned —')) return false;
       if (regionFilter.length && !regionFilter.includes((p as any).region||'— Unassigned —')) return false;
@@ -422,7 +422,7 @@ export default function ProjectsPage() {
         if (statusFilter === 'Not Set')   return !(p as any).projectStatus;
         return ((p as any).projectStatus || '') === statusFilter;
       }
-      if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
+      if (typeFilter !== 'All Types' && !typeFilter.split(',').includes(p.type)) return false;
       if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'— Unassigned —')) return false;
       if (pmFilter.length) { const _pm = (p as any).pm||'— Unassigned —'; if (!pmFilter.includes(_pm)) return false; }
       if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'— Unassigned —')) return false;
@@ -448,7 +448,7 @@ export default function ProjectsPage() {
 
   const projectsForStatusFilter = React.useMemo(() =>
     roleFilteredProjects.filter((p:any) => {
-      if (typeFilter !== 'All Types' && p.type !== typeFilter) return false;
+      if (typeFilter !== 'All Types' && !typeFilter.split(',').includes(p.type)) return false;
       if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'— Unassigned —')) return false;
       if (pmFilter.length) { const _pm = (p as any).pm||'— Unassigned —'; if (!pmFilter.includes(_pm)) return false; }
       if (regionFilter.length && !regionFilter.includes((p as any).region||'— Unassigned —')) return false;
