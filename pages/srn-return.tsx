@@ -374,7 +374,7 @@ export default function SRNReturnPage() {
           <div>
             <div style={{ fontSize:22, fontWeight:800, color:Theme.text }}>STN / SRN Status</div>
             <div style={{ fontSize:13, color:Theme.textMuted, marginTop:2 }}>
-              {isLoading ? 'Loading...' : `${filteredProjects.length} projects · ${stnAllItems.length} STN items · ${srnRawItems.length} SRN items`}
+              {isLoading ? 'Loading...' : `${filteredProjects.length} projects · ${roleStnItems.length} STN items · ${roleSrnItems.length} SRN items`}
             </div>
           </div>
           <input value={search} onChange={e=>setSearch(e.target.value)}
@@ -393,7 +393,7 @@ export default function SRNReturnPage() {
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:16 }}>
               <div style={{ background:Theme.primaryLight, borderRadius:8, padding:'10px 14px' }}>
                 <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>Total Items</div>
-                <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{stnAllItems.length}</div>
+                <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{roleStnItems.length}</div>
               </div>
               <div onClick={()=>toggleKpiSub('stn','pm_rejected')} style={{ background:kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='pm_rejected'?'#FEE2E2':'#FEF2F2', borderRadius:8, padding:'10px 14px', cursor:'pointer',
                 border:kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='pm_rejected'?'2px solid #DC2626':'2px solid transparent', transition:'all 0.15s' }}>
@@ -429,7 +429,7 @@ export default function SRNReturnPage() {
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:16 }}>
               <div style={{ background:Theme.primaryLight, borderRadius:8, padding:'10px 14px' }}>
                 <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>Total Items</div>
-                <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{srnRawItems.length}</div>
+                <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{roleSrnItems.length}</div>
               </div>
               <div onClick={()=>toggleKpiSub('srn','rejected')} style={{ background:kpiSubFilter?.type==='srn'&&kpiSubFilter?.status==='rejected'?'#FEE2E2':'#FEF2F2', borderRadius:8, padding:'10px 14px', cursor:'pointer',
                 border:kpiSubFilter?.type==='srn'&&kpiSubFilter?.status==='rejected'?'2px solid #DC2626':'2px solid transparent', transition:'all 0.15s' }}>
