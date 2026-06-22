@@ -117,6 +117,21 @@ export default function InvoicesPage() {
     ? projects.find((p:any) => matchesPO(p.poNo, poSearch) || p.id.toLowerCase().includes(poSearch.toLowerCase()))
     : null;
 
+  // Direct invoice-level search: Invoice No, PO No, or Indus ID
+  const searchMatchedInvoiceIds = React.useMemo(() => {
+    if (!poSearch || poSearch.length < 2) return null;
+    const sn = normalize(poSearch);
+    const matched = new Set<string>();
+    invoices.forEach((inv:any) => {
+      const proj = (projects as any[]).find((p:any) => p.id === inv.projectId);
+      const invoiceNoMatch = normalize(inv.invoiceNo || '').includes(sn);
+      const poNoMatch = matchesPO(inv.poNo || proj?.poNo || '', poSearch);
+      const indusIdMatch = normalize(proj?.indusId || '').includes(sn);
+      if (invoiceNoMatch || poNoMatch || indusIdMatch) matched.add(inv.id);
+    });
+    return matched;
+  }, [poSearch, invoices, projects]);
+
   const today = new Date();
 
   // Apply date filter — must be before KPI calcs
@@ -150,8 +165,8 @@ export default function InvoicesPage() {
   const overdue         = dateFilteredInvoices.filter(i => i.paymentStatus !== "Paid" && i.dueDate && new Date(i.dueDate) < today);
 
   const displayInvoices = useMemo(() => {
-    let list = poSearch && matchedProject
-      ? dateFilteredInvoices.filter(i => i.projectId === (matchedProject as any).id)
+    let list = poSearch && searchMatchedInvoiceIds
+      ? dateFilteredInvoices.filter(i => searchMatchedInvoiceIds.has(i.id))
       : [...dateFilteredInvoices];
     if (cardFilter === "pendingApproval") list = list.filter(i => ["Submitted","Under Review"].includes(i.invoiceStatus));
     if (cardFilter === "pendingPayment")  list = list.filter(i => i.paymentStatus === "Pending");
@@ -162,7 +177,7 @@ export default function InvoicesPage() {
       return sortDir === "asc" ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
     });
     return list;
-  }, [dateFilteredInvoices, poSearch, matchedProject, cardFilter, sortKey, sortDir]);
+  }, [dateFilteredInvoices, poSearch, searchMatchedInvoiceIds, cardFilter, sortKey, sortDir]);
 
   // Reset page on filter change
   React.useEffect(() => { setInvPage(1); }, [datePreset, customFrom, customTo, invVendor, invPM, invRegion, invType, cardFilter, poSearch]);
@@ -344,7 +359,7 @@ export default function InvoicesPage() {
 
         {/* PO Search */}
         <div style={{ ...card, marginBottom:16 }}>
-          <div style={{ fontSize:13, fontWeight:600, color:T.text, marginBottom:10 }}>🔍 Search by PO Number or Project ID</div>
+          <div style={{ fontSize:13, fontWeight:600, color:T.text, marginBottom:10 }}>🔍 Search by Invoice No, PO Number, or Indus ID</div>
           <div style={{ display:"flex", gap:10, alignItems:"center" }}>
             <input value={poInput} onChange={e => { setPoInput(e.target.value); setPoSearch(e.target.value); }}
               placeholder="e.g. PO-2025-001 or VE-2025-001"
