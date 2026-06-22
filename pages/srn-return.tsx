@@ -167,6 +167,45 @@ export default function SRNReturnPage() {
     } return r;
   }, [roleSrnItems, projects, kpiSubFilter]);
 
+  const combinedByPM = useMemo(() => {
+    const r:Record<string,{total:number;pending:number}> = {};
+    for (const i of roleStnItems) {
+      const proj=(projects as any[]).find((p:any)=>p.id===i.projectId); const pm=proj?.pm||'—';
+      if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(i.utilisedStatus!=='pm_approved') r[pm].pending++;
+    }
+    for (const i of roleSrnItems) {
+      const proj=(projects as any[]).find((p:any)=>p.id===i.project_id); const pm=proj?.pm||'—';
+      if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(!i.received) r[pm].pending++;
+    }
+    return r;
+  }, [roleStnItems, roleSrnItems, projects]);
+
+  const combinedByVendor = useMemo(() => {
+    const r:Record<string,{total:number;pending:number}> = {};
+    for (const i of roleStnItems) {
+      const proj=(projects as any[]).find((p:any)=>p.id===i.projectId); const v=proj?.vendor||'—';
+      if(!r[v]) r[v]={total:0,pending:0}; r[v].total++; if(i.utilisedStatus!=='pm_approved') r[v].pending++;
+    }
+    for (const i of roleSrnItems) {
+      const proj=(projects as any[]).find((p:any)=>p.id===i.project_id); const v=proj?.vendor||'—';
+      if(!r[v]) r[v]={total:0,pending:0}; r[v].total++; if(!i.received) r[v].pending++;
+    }
+    return r;
+  }, [roleStnItems, roleSrnItems, projects]);
+
+  const combinedByRegion = useMemo(() => {
+    const r:Record<string,{total:number;pending:number}> = {};
+    for (const i of roleStnItems) {
+      const proj=(projects as any[]).find((p:any)=>p.id===i.projectId); const reg=proj?.region||'—';
+      if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(i.utilisedStatus!=='pm_approved') r[reg].pending++;
+    }
+    for (const i of roleSrnItems) {
+      const proj=(projects as any[]).find((p:any)=>p.id===i.project_id); const reg=proj?.region||'—';
+      if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(!i.received) r[reg].pending++;
+    }
+    return r;
+  }, [roleStnItems, roleSrnItems, projects]);
+
   const srnByRegion = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
     const filtered = kpiSubFilter?.type==='srn'
@@ -180,18 +219,16 @@ export default function SRNReturnPage() {
 
 
 
-  // ── Handle card filter click ─────────────────────────────────────────────
-  const handleCardClick = (type: string, field: string, value: string) => {
-    if (cardFilter?.type===type && cardFilter?.field===field && cardFilter?.value===value) {
-      setCardFilter(null); setShowSRN(true); setShowSTN(true);
+  // ── Handle global card filter click (By PM / By Vendor / By Region) ─────
+  const handleCardClick = (field: string, value: string) => {
+    if (cardFilter?.field===field && cardFilter?.value===value) {
+      setCardFilter(null);
     } else {
-      setCardFilter({ type, field, value });
-      setShowSRN(type === 'srn');
-      setShowSTN(type === 'stn');
-      setKpiSubFilter(null); // clear rejected/pending filter when switching to PM/Region filter
+      setCardFilter({ type:'global', field, value });
+      setKpiSubFilter(null);
     }
   };
-  const clearCardFilter = () => { setCardFilter(null); setShowSRN(true); setShowSTN(true); };
+  const clearCardFilter = () => { setCardFilter(null); };
 
   // ── Combined project list for display ────────────────────────────────────
   const allProjectIds = useMemo(() => {
@@ -208,9 +245,9 @@ export default function SRNReturnPage() {
       const proj = srnProj || stnProj!;
       return { ...proj, srnItems: srnProj?.srnItems || [], stnItems: stnProj?.stnItems || [] };
     }).filter(proj => {
-      // Apply card filter
+      // Apply card filter (By PM / By Vendor / By Region — global)
       if (cardFilter) {
-        const val = cardFilter.field === 'pm' ? proj.pm : proj.region;
+        const val = cardFilter.field === 'pm' ? proj.pm : cardFilter.field === 'vendor' ? proj.vendor : proj.region;
         if (val !== cardFilter.value) return false;
       }
       // Apply statusDistFilter
@@ -339,7 +376,7 @@ export default function SRNReturnPage() {
   const tdS: React.CSSProperties = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${Theme.border}`, verticalAlign:'middle' as const };
 
   // ── Breakdown table component ─────────────────────────────────────────────
-  const BreakdownTable = ({ data, color, type, field }: { data:Record<string,{total:number;pending:number}>; color:string; type:string; field:string }) => (
+  const BreakdownTable = ({ data, color, field }: { data:Record<string,{total:number;pending:number}>; color:string; field:string }) => (
     <table style={{ width:'100%', borderCollapse:'collapse' as const, fontSize:11 }}>
       <thead>
         <tr>
@@ -350,9 +387,9 @@ export default function SRNReturnPage() {
       </thead>
       <tbody>
         {Object.entries(data).sort((a,b)=>b[1].pending-a[1].pending).map(([name,v])=>{
-          const isActive = cardFilter?.type===type && cardFilter?.field===field && cardFilter?.value===name;
+          const isActive = cardFilter?.field===field && cardFilter?.value===name;
           return (
-            <tr key={name} onClick={()=>handleCardClick(type, field, name)}
+            <tr key={name} onClick={()=>handleCardClick(field, name)}
               style={{ cursor:'pointer', background:isActive?`${color}15`:'transparent', transition:'background 0.1s' }}
               onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=`${color}10`}
               onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=isActive?`${color}15`:'transparent'}>
@@ -408,16 +445,6 @@ export default function SRNReturnPage() {
                 {kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='pending_approval' && <div style={{ fontSize:10, color:'#D97706', marginTop:2 }}>● Filtered</div>}
               </div>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-              <div>
-                <div style={{ fontSize:10, fontWeight:700, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:6 }}>By PM</div>
-                <BreakdownTable data={stnByPM} color="#D97706" type="stn" field="pm" />
-              </div>
-              <div>
-                <div style={{ fontSize:10, fontWeight:700, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:6 }}>By Region</div>
-                <BreakdownTable data={stnByRegion} color="#D97706" type="stn" field="region" />
-              </div>
-            </div>
           </div>
 
           {/* SRN Card */}
@@ -444,16 +471,24 @@ export default function SRNReturnPage() {
                 {kpiSubFilter?.type==='srn'&&kpiSubFilter?.status==='pending' && <div style={{ fontSize:10, color:'#D97706', marginTop:2 }}>● Filtered</div>}
               </div>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-              <div>
-                <div style={{ fontSize:10, fontWeight:700, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:6 }}>By PM</div>
-                <BreakdownTable data={srnByPM} color="#DC2626" type="srn" field="pm" />
-              </div>
-              <div>
-                <div style={{ fontSize:10, fontWeight:700, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:6 }}>By Region</div>
-                <BreakdownTable data={srnByRegion} color="#DC2626" type="srn" field="region" />
-              </div>
+          </div>
+        </div>
+
+        {/* Global By PM / By Vendor / By Region Cards */}
+        <div style={{ display:'grid', gridTemplateColumns: role==='project_manager' ? '1fr 1fr' : '1fr 1fr 1fr', gap:14, marginBottom:20 }}>
+          {role !== 'project_manager' && (
+            <div style={{ ...card, padding:'16px 18px' }}>
+              <div style={{ fontSize:13, fontWeight:700, color:Theme.text, marginBottom:10 }}>👤 By PM</div>
+              <BreakdownTable data={combinedByPM} color={Theme.primary} field="pm" />
             </div>
+          )}
+          <div style={{ ...card, padding:'16px 18px' }}>
+            <div style={{ fontSize:13, fontWeight:700, color:Theme.text, marginBottom:10 }}>🏢 By Vendor</div>
+            <BreakdownTable data={combinedByVendor} color={Theme.primary} field="vendor" />
+          </div>
+          <div style={{ ...card, padding:'16px 18px' }}>
+            <div style={{ fontSize:13, fontWeight:700, color:Theme.text, marginBottom:10 }}>📍 By Region</div>
+            <BreakdownTable data={combinedByRegion} color={Theme.primary} field="region" />
           </div>
         </div>
 
@@ -468,19 +503,19 @@ export default function SRNReturnPage() {
           const statusColors: Record<string,string> = { 'Work Completed':'#16A34A','WCC Raised':'#0D9488','Invoice Submitted':'#2563EB','PO Amendment Done':'#7C3AED','Not Started':'#6B7280','In Progress':'#D97706','Delayed':'#DC2626' };
 
           // STN/SRN projects — respect search box AND PM/Region card filter
-          const matchesCommon = (g:any, sectionType: 'stn'|'srn') => {
+          const matchesCommon = (g:any) => {
             if (search) {
               const s = search.toLowerCase();
               if (!(g.projectId.toLowerCase().includes(s) || (g.projectName||'').toLowerCase().includes(s) || (g.poNo||'').toLowerCase().includes(s))) return false;
             }
-            if (cardFilter && cardFilter.type === sectionType) {
-              const val = cardFilter.field === 'pm' ? g.pm : g.region;
+            if (cardFilter) {
+              const val = cardFilter.field === 'pm' ? g.pm : cardFilter.field === 'vendor' ? g.vendor : g.region;
               if (val !== cardFilter.value) return false;
             }
             return true;
           };
-          const stnProjects = stnGrouped.filter((g:any)=>matchesCommon(g,'stn')).map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
-          const srnProjects = srnGrouped.filter((g:any)=>matchesCommon(g,'srn')).map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
+          const stnProjects = stnGrouped.filter(matchesCommon).map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
+          const srnProjects = srnGrouped.filter(matchesCommon).map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
 
           const stnStatusGroups: Record<string,number> = {};
           stnProjects.forEach((p:any) => { const s=p.projectStatus||'Not Set'; stnStatusGroups[s]=(stnStatusGroups[s]||0)+1; });
@@ -604,17 +639,17 @@ export default function SRNReturnPage() {
           </div>
           <div style={{ display:'flex', gap:16, alignItems:'center' }}>
             <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:600,
-              color:showSTN?Theme.primary:Theme.textMuted, cursor:cardFilter?'not-allowed':'pointer',
+              color:showSTN?Theme.primary:Theme.textMuted, cursor:'pointer',
               opacity:cardFilter?0.5:1 }}>
-              <input type="checkbox" checked={showSTN} disabled={!!cardFilter}
+              <input type="checkbox" checked={showSTN}
                 onChange={e=>setShowSTN(e.target.checked)}
                 style={{ accentColor:Theme.primary, width:15, height:15 }} />
               📦 STN
             </label>
             <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, fontWeight:600,
-              color:showSRN?'#DC2626':Theme.textMuted, cursor:cardFilter?'not-allowed':'pointer',
+              color:showSRN?'#DC2626':Theme.textMuted, cursor:'pointer',
               opacity:cardFilter?0.5:1 }}>
-              <input type="checkbox" checked={showSRN} disabled={!!cardFilter}
+              <input type="checkbox" checked={showSRN}
                 onChange={e=>setShowSRN(e.target.checked)}
                 style={{ accentColor:'#DC2626', width:15, height:15 }} />
               🔄 SRN
