@@ -114,8 +114,11 @@ export function POItemProvider({ children }: { children: React.ReactNode }) {
 
   const updateItem = useCallback(async (id: string, updates: Partial<POItem>) => {
     const payload = mapToDb(updates);
-    const { error } = await supabase.from('po_items').update(payload).eq('id', id);
+    const { data, error } = await supabase.from('po_items').update(payload).eq('id', id).select();
     if (error) throw new Error(error.message);
+    if (!data || data.length === 0) {
+      throw new Error('Update was not saved — you may not have permission to edit this item.');
+    }
     setItems(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
   }, []);
 

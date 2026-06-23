@@ -135,7 +135,7 @@ export default function SRNReturnPage() {
     if (!roleProjectIds) return srnRawItems;
     return srnRawItems.filter((i:any) => roleProjectIds.has(i.project_id));
   }, [srnRawItems, roleProjectIds]);
-  const stnPendingCount  = roleStnItems.filter(i => i.utilisedStatus !== 'pm_approved').length;
+  const stnPendingCount  = roleStnItems.filter(i => i.utilisedStatus === 'submitted').length;
   const stnRejectedCount = roleStnItems.filter(i => i.utilisedStatus === 'pm_rejected').length;
   const srnPendingCount  = roleSrnItems.filter((i:any) => !i.received).length;
   const srnRejectedCount = roleSrnItems.filter((i:any) => i.received === false && i.pm_comment).length;
@@ -143,22 +143,22 @@ export default function SRNReturnPage() {
   const stnByPM = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
     const filtered = kpiSubFilter?.type==='stn'
-      ? roleStnItems.filter(i => kpiSubFilter.status==='pm_rejected' ? i.utilisedStatus==='pm_rejected' : i.utilisedStatus!=='pm_approved')
+      ? roleStnItems.filter(i => kpiSubFilter.status==='pm_rejected' ? i.utilisedStatus==='pm_rejected' : i.utilisedStatus==='submitted')
       : roleStnItems;
     for (const i of filtered) {
       const proj=(projects as any[]).find(p=>p.id===i.projectId); const pm=proj?.pm||'—';
-      const isPend=i.utilisedStatus!=='pm_approved'; if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(isPend) r[pm].pending++;
+      const isPend=i.utilisedStatus==='submitted'; if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(isPend) r[pm].pending++;
     } return r;
   }, [stnAllItems, projects, kpiSubFilter]);
 
   const stnByRegion = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
     const filtered = kpiSubFilter?.type==='stn'
-      ? roleStnItems.filter(i => kpiSubFilter.status==='pm_rejected' ? i.utilisedStatus==='pm_rejected' : i.utilisedStatus!=='pm_approved')
+      ? roleStnItems.filter(i => kpiSubFilter.status==='pm_rejected' ? i.utilisedStatus==='pm_rejected' : i.utilisedStatus==='submitted')
       : roleStnItems;
     for (const i of filtered) {
       const proj=(projects as any[]).find(p=>p.id===i.projectId); const reg=proj?.region||'—';
-      const isPend=i.utilisedStatus!=='pm_approved'; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++;
+      const isPend=i.utilisedStatus==='submitted'; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++;
     } return r;
   }, [stnAllItems, projects, kpiSubFilter]);
 
@@ -177,7 +177,7 @@ export default function SRNReturnPage() {
     const r:Record<string,{total:number;pending:number}> = {};
     for (const i of roleStnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.projectId); const pm=proj?.pm||'—';
-      if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(i.utilisedStatus!=='pm_approved') r[pm].pending++;
+      if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(i.utilisedStatus==='submitted') r[pm].pending++;
     }
     for (const i of roleSrnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.project_id); const pm=proj?.pm||'—';
@@ -190,7 +190,7 @@ export default function SRNReturnPage() {
     const r:Record<string,{total:number;pending:number}> = {};
     for (const i of roleStnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.projectId); const v=proj?.vendor||'—';
-      if(!r[v]) r[v]={total:0,pending:0}; r[v].total++; if(i.utilisedStatus!=='pm_approved') r[v].pending++;
+      if(!r[v]) r[v]={total:0,pending:0}; r[v].total++; if(i.utilisedStatus==='submitted') r[v].pending++;
     }
     for (const i of roleSrnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.project_id); const v=proj?.vendor||'—';
@@ -203,7 +203,7 @@ export default function SRNReturnPage() {
     const r:Record<string,{total:number;pending:number}> = {};
     for (const i of roleStnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.projectId); const reg=proj?.region||'—';
-      if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(i.utilisedStatus!=='pm_approved') r[reg].pending++;
+      if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(i.utilisedStatus==='submitted') r[reg].pending++;
     }
     for (const i of roleSrnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.project_id); const reg=proj?.region||'—';
@@ -280,7 +280,7 @@ export default function SRNReturnPage() {
       if (kpiSubFilter) {
         if (kpiSubFilter.type === 'stn') {
           const match = proj.stnItems.some((i:any) =>
-            kpiSubFilter.status === 'pm_rejected' ? i.utilisedStatus === 'pm_rejected' : i.utilisedStatus !== 'pm_approved'
+            kpiSubFilter.status === 'pm_rejected' ? i.utilisedStatus === 'pm_rejected' : i.utilisedStatus === 'submitted'
           );
           if (!match) return false;
         } else {
