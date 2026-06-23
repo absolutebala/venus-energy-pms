@@ -673,12 +673,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
       )}
 
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:14 }}>
-        {isVendorRole && items.some((i:any)=>i.utilisedStatus==='pending'||i.utilisedStatus==='pm_rejected') && (
-        <button onClick={()=>items.filter((i:any)=>i.utilisedStatus==='pending'||i.utilisedStatus==='pm_rejected').forEach(i=>submitUtilisation(i,'submitted'))}
-          style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:10 }}>
-          📤 Submit All Utilisation
-        </button>
-      )}
+
       {canAdd && !adding && (
           <button onClick={()=>setAdding(true)}
             style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8,
