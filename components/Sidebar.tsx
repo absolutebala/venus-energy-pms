@@ -27,8 +27,11 @@ const SA_NAV: NavItem[] = [
 ];
 
 const VENDOR_NAV: NavItem[] = [
-  { href:'/dashboard', label:'Dashboard',    icon:<LayoutDashboard {...iconProps} />, module:'dashboard' },
-  { href:'/projects',  label:'My Projects', icon:<FolderOpen {...iconProps} />,      module:'projects'  },
+  { href:'/dashboard',     label:'Dashboard',       icon:<LayoutDashboard {...iconProps} />, module:'dashboard'     },
+  { href:'/projects',      label:'My Projects',     icon:<FolderOpen {...iconProps} />,      module:'projects'      },
+  { href:'/srn-return',    label:'STN / SRN Status',icon:<Package {...iconProps} />,          module:'srn_return'    },
+  { href:'/site-expenses', label:'Expenses',        icon:<Wallet {...iconProps} />,           module:'site_expenses' },
+  { href:'/invoices',      label:'Invoices',        icon:<FileText {...iconProps} />,         module:'invoices'      },
 ];
 
 const PM_NAV: NavItem[] = [
