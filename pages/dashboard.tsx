@@ -729,7 +729,7 @@ function RegionManagerDashboard({ projects, rmName }: { projects: typeof ALL_PRO
         <KpiCard label="My Region Projects"  value={myProjects.length}                                                                      icon="📁" color={T.primary} onClick={()=>router.push('/projects')} />
         <KpiCard label="Active PMs"          value={myPMs.length}                                                                           icon="👤" color={T.success} />
         <KpiCard label="PO Open"             value={myProjects.filter((p:any)=>(p as any).poStatus==='Open').length}                        icon="🟢" color='#059669'   onClick={()=>router.push('/projects?status=PO%20Open')} />
-        <KpiCard label="Yet to Start"        value={myProjects.filter((p:any)=>((p as any).projectStatus||'')==='Yet to Start').length}      icon="🕐" color='#6B7280'   onClick={()=>router.push('/projects')} />
+        <KpiCard label="Yet to Start"        value={myProjects.filter((p:any)=>((p as any).projectStatus||'')==='Yet to Start').length}      icon="🕐" color='#6B7280'   onClick={()=>router.push(`/projects?projStatus=${encodeURIComponent("Yet to Start")}`)} />
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
@@ -814,8 +814,8 @@ function RegionManagerDashboard({ projects, rmName }: { projects: typeof ALL_PRO
 
       {/* Aging Distribution */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-        {[{label:'0–30d',color:'#0D9488',f:(p:any)=>p.aging<=30},{label:'31–60d',color:'#D97706',f:(p:any)=>p.aging>30&&p.aging<=60},{label:'61–90d',color:'#DC2626',f:(p:any)=>p.aging>60&&p.aging<=90},{label:'90d+',color:'#7C3AED',f:(p:any)=>p.aging>90}].map(b=>(
-          <div key={b.label} onClick={()=>router.push('/projects')}
+        {[{label:'0–30d',color:'#0D9488',f:(p:any)=>p.aging<=30,min:0,max:30},{label:'31–60d',color:'#D97706',f:(p:any)=>p.aging>30&&p.aging<=60,min:31,max:60},{label:'61–90d',color:'#DC2626',f:(p:any)=>p.aging>60&&p.aging<=90,min:61,max:90},{label:'90d+',color:'#7C3AED',f:(p:any)=>p.aging>90,min:91,max:999}].map(b=>(
+          <div key={b.label} onClick={()=>router.push(`/projects?ageMin=${b.min}&ageMax=${b.max}`)}
             style={{ ...card, padding:'14px 16px', cursor:'pointer', borderLeft:`4px solid ${b.color}` }}>
             <div style={{ fontSize:10, fontWeight:600, color:b.color, textTransform:'uppercase' as const, marginBottom:4 }}>{b.label}</div>
             <div style={{ fontSize:24, fontWeight:800, color:b.color }}>{myProjects.filter(b.f).length}</div>
@@ -842,7 +842,7 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
         <KpiCard label="My Projects"    value={myProjects.length}                                                              icon="📁" color={T.primary} onClick={()=>router.push('/projects')} />
         <KpiCard label="Vendor Required" value={noVendor.length}                                                                  icon="⚠️" color={T.danger}  onClick={()=>router.push('/projects?noVendor=1')} />
         <KpiCard label="PO Open"         value={myProjects.filter((p:any)=>(p as any).poStatus==='Open').length}                   icon="🟢" color='#059669'   onClick={()=>router.push('/projects?status=PO%20Open')} />
-        <KpiCard label="Yet to Start"    value={myProjects.filter((p:any)=>((p as any).projectStatus||'')==='Yet to Start').length} icon="🕐" color='#6B7280'   onClick={()=>router.push('/projects')} />
+        <KpiCard label="Yet to Start"    value={myProjects.filter((p:any)=>((p as any).projectStatus||'')==='Yet to Start').length} icon="🕐" color='#6B7280'   onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pmName)}&projStatus=${encodeURIComponent("Yet to Start")}`)} />
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
@@ -891,7 +891,7 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
             return Object.entries(sg).sort((a,b)=>b[1]-a[1]).map(([s,n])=>{
               const c=sc[s]||'#6B7280'; const pct=Math.round(n/Math.max(myProjects.length,1)*100);
               return (
-                <div key={s} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pmName)}`)} style={{ marginBottom:10, cursor:'pointer' }}>
+                <div key={s} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pmName)}&projStatus=${encodeURIComponent(s)}`)} style={{ marginBottom:10, cursor:'pointer' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
                     <span style={{ fontSize:12, color:T.text }}>{s}</span>
                     <span style={{ fontSize:12, fontWeight:700, color:c }}>{n} ({pct}%)</span>
@@ -998,7 +998,7 @@ function VendorDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
 
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
         <KpiCard label="My Projects"    value={myProjects.length}                                      icon="📁" color={T.primary} onClick={()=>router.push('/projects')} />
-        <KpiCard label="Docs Pending"   value={docsPending}                                            icon="📂" color={T.warning} onClick={()=>router.push('/projects')} />
+        <KpiCard label="Docs Pending"   value={docsPending}                                            icon="📂" color={T.warning} />
         <KpiCard label="Submitted"      value={submitted}                                              icon="📤" color={T.info}    />
         <KpiCard label="Completed"      value={myProjects.filter(p=>p.status==='completed').length}    icon="✅" color={T.success} />
       </div>
