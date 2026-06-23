@@ -115,7 +115,13 @@ export default function SRNReturnPage() {
 
   // Role-based filtering — must be before KPI memos
   const pmName     = profile?.full_name || '';
-  const vendorName = (profile as any)?.vendor_name || '';
+  const [vendorName, setVendorName] = React.useState('');
+  React.useEffect(() => {
+    if (!(profile as any)?.vendor_id) return;
+    const sb2 = createClient();
+    sb2.from('vendors').select('name').eq('id', (profile as any).vendor_id).single()
+      .then(({data}) => { if (data?.name) setVendorName(data.name); });
+  }, [profile]);
   const roleProjectIds = useMemo(() => {
     if (role === 'project_manager') return new Set(projects.filter((p:any)=>p.pm===pmName).map((p:any)=>p.id));
     if (role === 'vendor') return new Set(projects.filter((p:any)=>p.vendor===vendorName).map((p:any)=>p.id));
