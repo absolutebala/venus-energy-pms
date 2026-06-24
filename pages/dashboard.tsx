@@ -648,27 +648,8 @@ function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilt
             </div>
           ))}
         </div>
-        {/* Region Distribution */}
-        <div style={card}>
-          <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Region Distribution</div>
-          {(() => {
-            const totalRegion = regionData.reduce((a:number,d:any)=>a+d.value,0) || 1;
-            return regionData.map((d:any,i:number)=>{
-              const pct = Math.round(d.value/totalRegion*100);
-              return (
-                <div key={i} onClick={()=>router.push(buildProjectsLink({ region: d.name }))} style={{ marginBottom:10, cursor:'pointer' }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
-                    <span style={{ fontSize:12, color:T.text }}>{d.name}</span>
-                    <span style={{ fontSize:12, fontWeight:700, color:d.color }}>{d.value} ({pct}%)</span>
-                  </div>
-                  <div style={{ height:6, background:T.border, borderRadius:3 }}>
-                    <div style={{ height:6, width:`${pct}%`, background:d.color, borderRadius:3, transition:'width 0.3s' }} />
-                  </div>
-                </div>
-              );
-            });
-          })()}
-        </div>
+        {/* Project Type Distribution */}
+        <ProjectTypeDistribution projects={projects} />
         {/* Projects by PM */}
         <div style={card}>
           <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Projects by PM</div>
@@ -710,8 +691,27 @@ function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilt
         </div>
       </div>
 
-
-      <ProjectTypeDistribution projects={projects} />
+      {/* Region Distribution */}
+      <div style={{ ...card, marginBottom:20, marginTop:8 }}>
+        <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>Region Distribution</div>
+        {(() => {
+          const totalRegion = regionData.reduce((a:number,d:any)=>a+d.value,0) || 1;
+          return regionData.map((d:any,i:number)=>{
+            const pct = Math.round(d.value/totalRegion*100);
+            return (
+              <div key={i} onClick={()=>router.push(buildProjectsLink({ region: d.name }))} style={{ marginBottom:10, cursor:'pointer' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
+                  <span style={{ fontSize:12, color:T.text }}>{d.name}</span>
+                  <span style={{ fontSize:12, fontWeight:700, color:d.color }}>{d.value} ({pct}%)</span>
+                </div>
+                <div style={{ height:6, background:T.border, borderRadius:3 }}>
+                  <div style={{ height:6, width:`${pct}%`, background:d.color, borderRadius:3, transition:'width 0.3s' }} />
+                </div>
+              </div>
+            );
+          });
+        })()}
+      </div>
       </>}
     </div>
   );
