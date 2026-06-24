@@ -2836,8 +2836,9 @@ export default function ProjectDetailPage() {
                     value={p.projectStatus || ''}
                     onChange={e => {
                       const newStatus = e.target.value;
+                      const prevStatus = p.projectStatus || '';
                       ctxUpdateProject(p.id, { projectStatus: newStatus } as any, profile?.full_name ?? undefined);
-                      logActivityMain(p.id, `Project status changed to "${newStatus}"`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+                      logActivityMain(p.id, `Project status changed from "${prevStatus||'—'}" to "${newStatus}"`, profile?.full_name||'', profile?.role||'', prevStatus, newStatus).catch(()=>{});
                     }}
                     style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 12px', fontSize:13, outline:'none', background:'#fff', minWidth:220, cursor:'pointer' }}>
                     <option value="">— Set Project Status —</option>

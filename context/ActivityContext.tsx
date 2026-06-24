@@ -6,22 +6,28 @@ const supabase = createClient();
 export interface ActivityEntry {
   id: string; projectId: string; action: string;
   byName: string; byRole: string; createdAt: string;
+  previousStatus?: string | null; currentStatus?: string | null;
 }
 
 function mapRow(row: any): ActivityEntry {
   return {
-    id:        row.id         ?? '',
-    projectId: row.project_id ?? '',
-    action:    row.action     ?? '',
-    byName:    row.by_name    ?? '',
-    byRole:    row.by_role    ?? '',
-    createdAt: row.created_at ?? '',
+    id:             row.id              ?? '',
+    projectId:      row.project_id      ?? '',
+    action:         row.action          ?? '',
+    byName:         row.by_name         ?? '',
+    byRole:         row.by_role         ?? '',
+    createdAt:      row.created_at      ?? '',
+    previousStatus: row.previous_status ?? null,
+    currentStatus:  row.current_status  ?? null,
   };
 }
 
 interface ActivityContextType {
   getByProject: (projectId: string) => Promise<ActivityEntry[]>;
-  logActivity: (projectId: string, action: string, byName: string, byRole: string) => Promise<void>;
+  logActivity: (
+    projectId: string, action: string, byName: string, byRole: string,
+    previousStatus?: string, currentStatus?: string
+  ) => Promise<void>;
 }
 
 const ActivityContext = createContext<ActivityContextType>({
@@ -40,9 +46,14 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
     return (data || []).map(mapRow);
   }, []);
 
-  const logActivity = useCallback(async (projectId: string, action: string, byName: string, byRole: string) => {
+  const logActivity = useCallback(async (
+    projectId: string, action: string, byName: string, byRole: string,
+    previousStatus?: string, currentStatus?: string
+  ) => {
     await supabase.from('activity_log').insert({
       project_id: projectId, action, by_name: byName, by_role: byRole,
+      previous_status: previousStatus ?? null,
+      current_status: currentStatus ?? null,
     });
   }, []);
 
