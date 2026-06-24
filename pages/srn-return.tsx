@@ -31,6 +31,7 @@ export default function SRNReturnPage() {
   const [showSTN, setShowSTN] = useState(true);
   // cardFilter: { type:'stn'|'srn', field:'pm'|'region', value:string } | null
   const [cardFilter, setCardFilter] = useState<{type:string;field:string;value:string}|null>(null);
+  const [pendingOnly, setPendingOnly] = useState(false);
   const [showExportWarning, setShowExportWarning] = useState(false);
 
   const role       = profile?.role || 'viewer';
@@ -256,13 +257,22 @@ export default function SRNReturnPage() {
   // ── Handle global card filter click (By PM / By Vendor / By Region) ─────
   const handleCardClick = (type: string, field: string, value: string) => {
     if (cardFilter?.type===type && cardFilter?.field===field && cardFilter?.value===value) {
-      setCardFilter(null);
+      setCardFilter(null); setPendingOnly(false);
     } else {
       setCardFilter({ type, field, value });
-      setKpiSubFilter(null);
+      setKpiSubFilter(null); setPendingOnly(false);
     }
   };
-  const clearCardFilter = () => { setCardFilter(null); };
+  const clearCardFilter = () => { setCardFilter(null); setPendingOnly(false); };
+
+  // Pending count for the currently selected card filter row (matches the BreakdownTable's own pending number)
+  const cardFilterPendingCount = useMemo(() => {
+    if (!cardFilter) return 0;
+    const dataMap = cardFilter.type === 'stn'
+      ? (cardFilter.field === 'pm' ? combinedByPMSTN : cardFilter.field === 'vendor' ? combinedByVendorSTN : combinedByRegionSTN)
+      : (cardFilter.field === 'pm' ? combinedByPMSRN : cardFilter.field === 'vendor' ? combinedByVendorSRN : combinedByRegionSRN);
+    return dataMap[cardFilter.value]?.pending || 0;
+  }, [cardFilter, combinedByPMSTN, combinedByVendorSTN, combinedByRegionSTN, combinedByPMSRN, combinedByVendorSRN, combinedByRegionSRN]);
 
   // ── Combined project list for display ────────────────────────────────────
   const allProjectIds = useMemo(() => {
@@ -283,6 +293,16 @@ export default function SRNReturnPage() {
       if (cardFilter) {
         const val = cardFilter.field === 'pm' ? proj.pm : cardFilter.field === 'vendor' ? proj.vendor : proj.region;
         if (val !== cardFilter.value) return false;
+      }
+      // Apply Pending-only toggle (narrows the active card filter selection to pending items of that type)
+      if (cardFilter && pendingOnly) {
+        if (cardFilter.type === 'stn') {
+          const hasPending = proj.stnItems.some((i:any) => i.utilisedStatus === 'submitted');
+          if (!hasPending) return false;
+        } else if (cardFilter.type === 'srn') {
+          const hasPending = proj.srnItems.some((i:any) => !i.received);
+          if (!hasPending) return false;
+        }
       }
       // Apply statusDistFilter
       if (statusDistFilter) {
@@ -326,7 +346,7 @@ export default function SRNReturnPage() {
              proj.poNo.toLowerCase().includes(s) ||
              proj.vendor.toLowerCase().includes(s);
     });
-  }, [allProjectIds, srnGrouped, stnGrouped, cardFilter, search, kpiSubFilter, statusDistFilter, agingDistFilter, projects]);
+  }, [allProjectIds, srnGrouped, stnGrouped, cardFilter, pendingOnly, search, kpiSubFilter, statusDistFilter, agingDistFilter, projects]);
 
   // ── Pagination ───────────────────────────────────────────────────────────
   const PER_PAGE = 10;
@@ -344,7 +364,7 @@ export default function SRNReturnPage() {
       const p = Number(router.query.page); if(p&&p>0) setPage(p);
     }
   }, [router.isReady]);
-  React.useEffect(() => { setPage(1); router.replace({query:{...router.query,page:1}},undefined,{shallow:true}); }, [search, cardFilter, showSRN, showSTN, kpiSubFilter, statusDistFilter, agingDistFilter]);
+  React.useEffect(() => { setPage(1); router.replace({query:{...router.query,page:1}},undefined,{shallow:true}); }, [search, cardFilter, pendingOnly, showSRN, showSTN, kpiSubFilter, statusDistFilter, agingDistFilter]);
   const totalPages = Math.ceil(filteredProjects.length / PER_PAGE);
   const paginated  = filteredProjects.slice((page-1)*PER_PAGE, page*PER_PAGE);
   const isLoading  = loading || projLoading || stnLoading;
@@ -508,39 +528,41 @@ export default function SRNReturnPage() {
           </div>
         </div>
 
-        {/* STN — By PM / By Vendor / By Region */}
-        <div style={{ display:'grid', gridTemplateColumns: role==='project_manager' ? '1fr 1fr' : '1fr 1fr 1fr', gap:14, marginBottom:14 }}>
-          {role !== 'project_manager' && (
+        {/* STN (left column) / SRN (right column) — By PM / By Vendor / By Region stacked within each */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20, alignItems:'start' }}>
+          {/* STN column */}
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            {role !== 'project_manager' && (
+              <div style={{ ...card, padding:'16px 18px' }}>
+                <div style={{ fontSize:13, fontWeight:700, color:'#D97706', marginBottom:10 }}>📦 STN — By PM</div>
+                <BreakdownTable data={combinedByPMSTN} color="#D97706" field="pm" type="stn" />
+              </div>
+            )}
             <div style={{ ...card, padding:'16px 18px' }}>
-              <div style={{ fontSize:13, fontWeight:700, color:'#D97706', marginBottom:10 }}>📦 STN — By PM</div>
-              <BreakdownTable data={combinedByPMSTN} color="#D97706" field="pm" type="stn" />
+              <div style={{ fontSize:13, fontWeight:700, color:'#D97706', marginBottom:10 }}>📦 STN — By Vendor</div>
+              <BreakdownTable data={combinedByVendorSTN} color="#D97706" field="vendor" type="stn" />
             </div>
-          )}
-          <div style={{ ...card, padding:'16px 18px' }}>
-            <div style={{ fontSize:13, fontWeight:700, color:'#D97706', marginBottom:10 }}>📦 STN — By Vendor</div>
-            <BreakdownTable data={combinedByVendorSTN} color="#D97706" field="vendor" type="stn" />
-          </div>
-          <div style={{ ...card, padding:'16px 18px' }}>
-            <div style={{ fontSize:13, fontWeight:700, color:'#D97706', marginBottom:10 }}>📦 STN — By Region</div>
-            <BreakdownTable data={combinedByRegionSTN} color="#D97706" field="region" type="stn" />
-          </div>
-        </div>
-
-        {/* SRN — By PM / By Vendor / By Region */}
-        <div style={{ display:'grid', gridTemplateColumns: role==='project_manager' ? '1fr 1fr' : '1fr 1fr 1fr', gap:14, marginBottom:20 }}>
-          {role !== 'project_manager' && (
             <div style={{ ...card, padding:'16px 18px' }}>
-              <div style={{ fontSize:13, fontWeight:700, color:'#DC2626', marginBottom:10 }}>🔄 SRN — By PM</div>
-              <BreakdownTable data={combinedByPMSRN} color="#DC2626" field="pm" type="srn" />
+              <div style={{ fontSize:13, fontWeight:700, color:'#D97706', marginBottom:10 }}>📦 STN — By Region</div>
+              <BreakdownTable data={combinedByRegionSTN} color="#D97706" field="region" type="stn" />
             </div>
-          )}
-          <div style={{ ...card, padding:'16px 18px' }}>
-            <div style={{ fontSize:13, fontWeight:700, color:'#DC2626', marginBottom:10 }}>🔄 SRN — By Vendor</div>
-            <BreakdownTable data={combinedByVendorSRN} color="#DC2626" field="vendor" type="srn" />
           </div>
-          <div style={{ ...card, padding:'16px 18px' }}>
-            <div style={{ fontSize:13, fontWeight:700, color:'#DC2626', marginBottom:10 }}>🔄 SRN — By Region</div>
-            <BreakdownTable data={combinedByRegionSRN} color="#DC2626" field="region" type="srn" />
+          {/* SRN column */}
+          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+            {role !== 'project_manager' && (
+              <div style={{ ...card, padding:'16px 18px' }}>
+                <div style={{ fontSize:13, fontWeight:700, color:'#DC2626', marginBottom:10 }}>🔄 SRN — By PM</div>
+                <BreakdownTable data={combinedByPMSRN} color="#DC2626" field="pm" type="srn" />
+              </div>
+            )}
+            <div style={{ ...card, padding:'16px 18px' }}>
+              <div style={{ fontSize:13, fontWeight:700, color:'#DC2626', marginBottom:10 }}>🔄 SRN — By Vendor</div>
+              <BreakdownTable data={combinedByVendorSRN} color="#DC2626" field="vendor" type="srn" />
+            </div>
+            <div style={{ ...card, padding:'16px 18px' }}>
+              <div style={{ fontSize:13, fontWeight:700, color:'#DC2626', marginBottom:10 }}>🔄 SRN — By Region</div>
+              <BreakdownTable data={combinedByRegionSRN} color="#DC2626" field="region" type="srn" />
+            </div>
           </div>
         </div>
 
@@ -686,6 +708,14 @@ export default function SRNReturnPage() {
                 style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', fontSize:12, fontWeight:600,
                   color:'#166534', background:'#DCFCE7', border:'1px solid #86EFAC', borderRadius:7, cursor:'pointer' }}>
                 📥 Excel
+              </button>
+            )}
+            {cardFilter && (
+              <button onClick={()=>setPendingOnly(p=>!p)}
+                style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', fontSize:12, fontWeight:600,
+                  color: pendingOnly ? '#fff' : '#92400E', background: pendingOnly ? '#D97706' : '#FFFBEB',
+                  border:'1px solid #D97706', borderRadius:7, cursor:'pointer' }}>
+                ⏳ Pending ({cardFilterPendingCount})
               </button>
             )}
           </div>
