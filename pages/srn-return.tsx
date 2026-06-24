@@ -222,6 +222,24 @@ export default function SRNReturnPage() {
     return r;
   }, [roleSrnItems, projects]);
 
+  const combinedByPMSTN = useMemo(() => {
+    const r:Record<string,{total:number;pending:number}> = {};
+    for (const i of roleStnItems) {
+      const proj=(projects as any[]).find((p:any)=>p.id===i.projectId); const pm=proj?.pm||'—';
+      if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(i.utilisedStatus==='submitted') r[pm].pending++;
+    }
+    return r;
+  }, [roleStnItems, projects]);
+
+  const combinedByPMSRN = useMemo(() => {
+    const r:Record<string,{total:number;pending:number}> = {};
+    for (const i of roleSrnItems) {
+      const proj=(projects as any[]).find((p:any)=>p.id===i.project_id); const pm=proj?.pm||'—';
+      if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(!i.received) r[pm].pending++;
+    }
+    return r;
+  }, [roleSrnItems, projects]);
+
   const srnByRegion = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
     const filtered = kpiSubFilter?.type==='srn'
@@ -490,18 +508,14 @@ export default function SRNReturnPage() {
           </div>
         </div>
 
-        {/* By PM (global — combined STN+SRN) */}
-        {role !== 'project_manager' && (
-          <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:14, marginBottom:14 }}>
+        {/* STN — By PM / By Vendor / By Region */}
+        <div style={{ display:'grid', gridTemplateColumns: role==='project_manager' ? '1fr 1fr' : '1fr 1fr 1fr', gap:14, marginBottom:14 }}>
+          {role !== 'project_manager' && (
             <div style={{ ...card, padding:'16px 18px' }}>
-              <div style={{ fontSize:13, fontWeight:700, color:Theme.text, marginBottom:10 }}>👤 By PM</div>
-              <BreakdownTable data={combinedByPM} color={Theme.primary} field="pm" type="global" />
+              <div style={{ fontSize:13, fontWeight:700, color:'#D97706', marginBottom:10 }}>📦 STN — By PM</div>
+              <BreakdownTable data={combinedByPMSTN} color="#D97706" field="pm" type="stn" />
             </div>
-          </div>
-        )}
-
-        {/* STN — By Vendor / By Region */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
+          )}
           <div style={{ ...card, padding:'16px 18px' }}>
             <div style={{ fontSize:13, fontWeight:700, color:'#D97706', marginBottom:10 }}>📦 STN — By Vendor</div>
             <BreakdownTable data={combinedByVendorSTN} color="#D97706" field="vendor" type="stn" />
@@ -512,8 +526,14 @@ export default function SRNReturnPage() {
           </div>
         </div>
 
-        {/* SRN — By Vendor / By Region */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
+        {/* SRN — By PM / By Vendor / By Region */}
+        <div style={{ display:'grid', gridTemplateColumns: role==='project_manager' ? '1fr 1fr' : '1fr 1fr 1fr', gap:14, marginBottom:20 }}>
+          {role !== 'project_manager' && (
+            <div style={{ ...card, padding:'16px 18px' }}>
+              <div style={{ fontSize:13, fontWeight:700, color:'#DC2626', marginBottom:10 }}>🔄 SRN — By PM</div>
+              <BreakdownTable data={combinedByPMSRN} color="#DC2626" field="pm" type="srn" />
+            </div>
+          )}
           <div style={{ ...card, padding:'16px 18px' }}>
             <div style={{ fontSize:13, fontWeight:700, color:'#DC2626', marginBottom:10 }}>🔄 SRN — By Vendor</div>
             <BreakdownTable data={combinedByVendorSRN} color="#DC2626" field="vendor" type="srn" />
