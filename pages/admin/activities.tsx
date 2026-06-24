@@ -45,7 +45,7 @@ export default function ActivitiesPage() {
         indusId: proj?.indusId || '—',
         site: proj?.site || proj?.projectName || '—',
         projectName: proj?.type || '—',
-        projectId: r.project_id || '—',
+        projectId: proj?.projectId || '—',
         poNo: proj?.poNo || '—',
         pm: proj?.pm || '—',
         previousStatus: r.previous_status || '—',
@@ -75,7 +75,7 @@ export default function ActivitiesPage() {
       'Indus ID': e.indusId,
       'Site Name': e.site,
       'Project Name': e.projectName,
-      'Project No': e.projectId,
+      'Project ID': e.projectId,
       'PO No': e.poNo,
       'PM Name': e.pm,
       'Previous Status': e.previousStatus,
@@ -156,7 +156,7 @@ export default function ActivitiesPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse' as const }}>
                 <thead>
                   <tr>
-                    {['Indus ID', 'Site Name', 'Project Name', 'Project No', 'PO No', 'PM Name', 'Previous Status', 'Current Status', 'Circle', 'Action', 'By', 'Date'].map((h, i) => (
+                    {['Indus ID', 'Site Name', 'Project Name', 'Project ID', 'PO No', 'PM Name', 'Previous Status', 'Current Status', 'Circle', 'Action', 'By', 'Date'].map((h, i) => (
                       <th key={i} style={thS}>{h}</th>
                     ))}
                   </tr>
