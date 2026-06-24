@@ -186,31 +186,41 @@ export default function SRNReturnPage() {
     return r;
   }, [roleStnItems, roleSrnItems, projects]);
 
-  const combinedByVendor = useMemo(() => {
+  const combinedByVendorSTN = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
     for (const i of roleStnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.projectId); const v=proj?.vendor||'—';
       if(!r[v]) r[v]={total:0,pending:0}; r[v].total++; if(i.utilisedStatus==='submitted') r[v].pending++;
     }
+    return r;
+  }, [roleStnItems, projects]);
+
+  const combinedByVendorSRN = useMemo(() => {
+    const r:Record<string,{total:number;pending:number}> = {};
     for (const i of roleSrnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.project_id); const v=proj?.vendor||'—';
       if(!r[v]) r[v]={total:0,pending:0}; r[v].total++; if(!i.received) r[v].pending++;
     }
     return r;
-  }, [roleStnItems, roleSrnItems, projects]);
+  }, [roleSrnItems, projects]);
 
-  const combinedByRegion = useMemo(() => {
+  const combinedByRegionSTN = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
     for (const i of roleStnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.projectId); const reg=proj?.region||'—';
       if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(i.utilisedStatus==='submitted') r[reg].pending++;
     }
+    return r;
+  }, [roleStnItems, projects]);
+
+  const combinedByRegionSRN = useMemo(() => {
+    const r:Record<string,{total:number;pending:number}> = {};
     for (const i of roleSrnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.project_id); const reg=proj?.region||'—';
       if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(!i.received) r[reg].pending++;
     }
     return r;
-  }, [roleStnItems, roleSrnItems, projects]);
+  }, [roleSrnItems, projects]);
 
   const srnByRegion = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
@@ -226,11 +236,11 @@ export default function SRNReturnPage() {
 
 
   // ── Handle global card filter click (By PM / By Vendor / By Region) ─────
-  const handleCardClick = (field: string, value: string) => {
-    if (cardFilter?.field===field && cardFilter?.value===value) {
+  const handleCardClick = (type: string, field: string, value: string) => {
+    if (cardFilter?.type===type && cardFilter?.field===field && cardFilter?.value===value) {
       setCardFilter(null);
     } else {
-      setCardFilter({ type:'global', field, value });
+      setCardFilter({ type, field, value });
       setKpiSubFilter(null);
     }
   };
@@ -382,20 +392,20 @@ export default function SRNReturnPage() {
   const tdS: React.CSSProperties = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${Theme.border}`, verticalAlign:'middle' as const };
 
   // ── Breakdown table component ─────────────────────────────────────────────
-  const BreakdownTable = ({ data, color, field }: { data:Record<string,{total:number;pending:number}>; color:string; field:string }) => (
+  const BreakdownTable = ({ data, color, field, type }: { data:Record<string,{total:number;pending:number}>; color:string; field:string; type:string }) => (
     <table style={{ width:'100%', borderCollapse:'collapse' as const, fontSize:11 }}>
       <thead>
         <tr>
           <th style={{ textAlign:'left' as const, padding:'4px 6px', color:Theme.textMuted, fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Name</th>
           <th style={{ textAlign:'right' as const, padding:'4px 6px', color:Theme.textMuted, fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Total</th>
-          <th style={{ textAlign:'right' as const, padding:'4px 6px', color:Theme.textMuted, fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Pending Items (STN/SRN)</th>
+          <th style={{ textAlign:'right' as const, padding:'4px 6px', color:Theme.textMuted, fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>{type==='global' ? 'Pending Items (STN/SRN)' : 'Pending'}</th>
         </tr>
       </thead>
       <tbody>
         {Object.entries(data).sort((a,b)=>b[1].pending-a[1].pending).map(([name,v])=>{
-          const isActive = cardFilter?.field===field && cardFilter?.value===name;
+          const isActive = cardFilter?.type===type && cardFilter?.field===field && cardFilter?.value===name;
           return (
-            <tr key={name} onClick={()=>handleCardClick(field, name)}
+            <tr key={name} onClick={()=>handleCardClick(type, field, name)}
               style={{ cursor:'pointer', background:isActive?`${color}15`:'transparent', transition:'background 0.1s' }}
               onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=`${color}10`}
               onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=isActive?`${color}15`:'transparent'}>
@@ -480,21 +490,37 @@ export default function SRNReturnPage() {
           </div>
         </div>
 
-        {/* Global By PM / By Vendor / By Region Cards */}
-        <div style={{ display:'grid', gridTemplateColumns: role==='project_manager' ? '1fr 1fr' : '1fr 1fr 1fr', gap:14, marginBottom:20 }}>
-          {role !== 'project_manager' && (
+        {/* By PM (global — combined STN+SRN) */}
+        {role !== 'project_manager' && (
+          <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:14, marginBottom:14 }}>
             <div style={{ ...card, padding:'16px 18px' }}>
               <div style={{ fontSize:13, fontWeight:700, color:Theme.text, marginBottom:10 }}>👤 By PM</div>
-              <BreakdownTable data={combinedByPM} color={Theme.primary} field="pm" />
+              <BreakdownTable data={combinedByPM} color={Theme.primary} field="pm" type="global" />
             </div>
-          )}
+          </div>
+        )}
+
+        {/* STN — By Vendor / By Region */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
           <div style={{ ...card, padding:'16px 18px' }}>
-            <div style={{ fontSize:13, fontWeight:700, color:Theme.text, marginBottom:10 }}>🏢 By Vendor</div>
-            <BreakdownTable data={combinedByVendor} color={Theme.primary} field="vendor" />
+            <div style={{ fontSize:13, fontWeight:700, color:'#D97706', marginBottom:10 }}>📦 STN — By Vendor</div>
+            <BreakdownTable data={combinedByVendorSTN} color="#D97706" field="vendor" type="stn" />
           </div>
           <div style={{ ...card, padding:'16px 18px' }}>
-            <div style={{ fontSize:13, fontWeight:700, color:Theme.text, marginBottom:10 }}>📍 By Region</div>
-            <BreakdownTable data={combinedByRegion} color={Theme.primary} field="region" />
+            <div style={{ fontSize:13, fontWeight:700, color:'#D97706', marginBottom:10 }}>📦 STN — By Region</div>
+            <BreakdownTable data={combinedByRegionSTN} color="#D97706" field="region" type="stn" />
+          </div>
+        </div>
+
+        {/* SRN — By Vendor / By Region */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
+          <div style={{ ...card, padding:'16px 18px' }}>
+            <div style={{ fontSize:13, fontWeight:700, color:'#DC2626', marginBottom:10 }}>🔄 SRN — By Vendor</div>
+            <BreakdownTable data={combinedByVendorSRN} color="#DC2626" field="vendor" type="srn" />
+          </div>
+          <div style={{ ...card, padding:'16px 18px' }}>
+            <div style={{ fontSize:13, fontWeight:700, color:'#DC2626', marginBottom:10 }}>🔄 SRN — By Region</div>
+            <BreakdownTable data={combinedByRegionSRN} color="#DC2626" field="region" type="srn" />
           </div>
         </div>
 
@@ -509,19 +535,19 @@ export default function SRNReturnPage() {
           const statusColors: Record<string,string> = { 'Work Completed':'#16A34A','WCC Raised':'#0D9488','Invoice Submitted':'#2563EB','PO Amendment Done':'#7C3AED','Not Started':'#6B7280','In Progress':'#D97706','Delayed':'#DC2626' };
 
           // STN/SRN projects — respect search box AND PM/Region card filter
-          const matchesCommon = (g:any) => {
+          const matchesCommon = (g:any, sectionType:'stn'|'srn') => {
             if (search) {
               const s = search.toLowerCase();
               if (!(g.projectId.toLowerCase().includes(s) || (g.projectName||'').toLowerCase().includes(s) || (g.poNo||'').toLowerCase().includes(s))) return false;
             }
-            if (cardFilter) {
+            if (cardFilter && (cardFilter.type === 'global' || cardFilter.type === sectionType)) {
               const val = cardFilter.field === 'pm' ? g.pm : cardFilter.field === 'vendor' ? g.vendor : g.region;
               if (val !== cardFilter.value) return false;
             }
             return true;
           };
-          const stnProjects = stnGrouped.filter(matchesCommon).map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
-          const srnProjects = srnGrouped.filter(matchesCommon).map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
+          const stnProjects = stnGrouped.filter(g=>matchesCommon(g,'stn')).map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
+          const srnProjects = srnGrouped.filter(g=>matchesCommon(g,'srn')).map(g => (projects as any[]).find(p => p.id === g.projectId)).filter(Boolean);
 
           const stnStatusGroups: Record<string,number> = {};
           stnProjects.forEach((p:any) => { const s=p.projectStatus||'Not Set'; stnStatusGroups[s]=(stnStatusGroups[s]||0)+1; });
