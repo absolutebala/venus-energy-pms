@@ -1364,7 +1364,7 @@ export default function Dashboard() {
             <p style={{ fontSize:13, color:T.textMuted, margin:'4px 0 0' }}>{subtitles[role] || ''}</p>
           </div>
           {/* Filter bar only for admin roles */}
-          {['super_admin','region_manager'].includes(role) && (
+          {['super_admin','region_manager','project_manager'].includes(role) && (
             <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' as const }}>
               <MultiSelect options={dashStatusOpts} value={dashStatus} onChange={setDashStatus} placeholder="All Statuses" style={selStyle} />
               <MultiSelect options={dashRegionOpts} value={dashRegion} onChange={setDashRegion} placeholder="All Regions" style={selStyle} />
@@ -1394,7 +1394,7 @@ export default function Dashboard() {
         {role === 'super_admin'     && <SuperAdminDashboard   projects={isLoading ? [] : filteredProjects} loading={isLoading}
           activeFilters={{ status:dashStatus, region:dashRegion, type:dashType, pm:dashPM, vendor:dashVendor }} />}
         {role === 'region_manager'  && <RegionManagerDashboard projects={isLoading ? [] : filteredProjects} rmName={profile?.full_name||''} />}
-        {role === 'project_manager' && <ProjectManagerDashboard projects={isLoading ? [] : projectsWithAging} pmName={profile?.full_name||''} />}
+        {role === 'project_manager' && <ProjectManagerDashboard projects={isLoading ? [] : filteredProjects} pmName={profile?.full_name||''} />}
         {role === 'site_engineer'   && <SiteEngineerDashboard  projects={isLoading ? [] : projectsWithAging} />}
         {role === 'vendor'          && <VendorDashboard         projects={isLoading ? [] : projectsWithAging} />}
         {role === 'viewer'          && <ViewerDashboard         projects={isLoading ? [] : projectsWithAging} />}
