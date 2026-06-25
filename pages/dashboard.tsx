@@ -1324,7 +1324,13 @@ export default function Dashboard() {
   }, [dbProjects]);
 
   // Cascade filter helpers — each excludes its own key
-  const cascadeFor = React.useCallback((exclude: string) => (dbProjects as any[]).filter((p:any) => {
+  // For a PM login, scope the base project pool to their own projects so every filter option
+  // (status, region, vendor, type) only ever lists values relevant to that PM.
+  const cascadeBase = React.useMemo(() => {
+    if (role === 'project_manager' && fullName) return (dbProjects as any[]).filter((p:any) => p.pm === fullName);
+    return dbProjects as any[];
+  }, [dbProjects, role, fullName]);
+  const cascadeFor = React.useCallback((exclude: string) => cascadeBase.filter((p:any) => {
     if (exclude!=='status' && dashStatus.length && !dashStatus.includes((p as any).projectStatus||'— Unassigned —')) return false;
     if (exclude!=='region' && dashRegion.length && !dashRegion.includes(p.region||'— Unassigned —')) return false;
     if (exclude!=='type'   && dashType.length   && !dashType.includes(p.type||'— Unassigned —'))   return false;
@@ -1333,7 +1339,7 @@ export default function Dashboard() {
     if (dashDateFrom && p.poDate && p.poDate < dashDateFrom) return false;
     if (dashDateTo   && p.poDate && p.poDate > dashDateTo)   return false;
     return true;
-  }), [dbProjects, dashStatus, dashRegion, dashType, dashPM, dashVendor, dashDateFrom, dashDateTo]);
+  }), [cascadeBase, dashStatus, dashRegion, dashType, dashPM, dashVendor, dashDateFrom, dashDateTo]);
   const uniqSorted = (arr: any[]) => Array.from(new Set(arr.filter(Boolean))).sort() as string[];
   const dashStatusOpts = React.useMemo(() => ['— Unassigned —', ...uniqSorted(cascadeFor('status').map((p:any)=>(p as any).projectStatus))], [cascadeFor]);
   const dashRegionOpts = React.useMemo(() => ['— Unassigned —', ...uniqSorted(cascadeFor('region').map((p:any)=>p.region))], [cascadeFor]);
