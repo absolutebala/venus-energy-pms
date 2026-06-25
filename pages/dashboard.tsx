@@ -1388,7 +1388,7 @@ export default function Dashboard() {
                 <DateInput value={dashDateTo} onChange={setDashDateTo}
                   style={{ ...selStyle, width:130, padding:'6px 36px 6px 10px' }} />
               </div>
-              {(dashRegion.length||dashType.length||dashDateFrom||dashDateTo||dashStatus.length||dashPM.length||dashVendor.length) && (
+              {Boolean(dashRegion.length||dashType.length||dashDateFrom||dashDateTo||dashStatus.length||dashPM.length||dashVendor.length) && (
                 <button onClick={()=>{setDashRegion([]);setDashType([]);setDashDateFrom('');setDashDateTo('');setDashStatus([]);setDashPM([]);setDashVendor([]);}}
                   style={{ fontSize:11, color:T.danger, background:'#FEF2F2', border:`1px solid #FECACA`, borderRadius:6, padding:'4px 10px', cursor:'pointer' }}>
                   ✕ Clear
