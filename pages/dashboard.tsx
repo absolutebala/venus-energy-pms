@@ -845,13 +845,25 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
         <KpiCard label="Yet to Start"    value={myProjects.filter((p:any)=>((p as any).projectStatus||'')==='Yet to Start').length} icon="🕐" color='#6B7280'   onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pmName)}&projStatus=${encodeURIComponent("Yet to Start")}`)} />
       </div>
 
+      {/* Aging Distribution — moved to top */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
+        {[{label:'0–30d',color:'#0D9488',f:(p:any)=>p.aging<=30},{label:'31–60d',color:'#D97706',f:(p:any)=>p.aging>30&&p.aging<=60},{label:'61–90d',color:'#DC2626',f:(p:any)=>p.aging>60&&p.aging<=90},{label:'90d+',color:'#7C3AED',f:(p:any)=>p.aging>90}].map(b=>(
+          <div key={b.label} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pmName)}`)}
+            style={{ ...card, padding:'14px 16px', cursor:'pointer', borderLeft:`4px solid ${b.color}` }}>
+            <div style={{ fontSize:10, fontWeight:600, color:b.color, textTransform:'uppercase' as const, marginBottom:4 }}>{b.label}</div>
+            <div style={{ fontSize:24, fontWeight:800, color:b.color }}>{myProjects.filter(b.f).length}</div>
+            <div style={{ fontSize:10, color:T.textMuted }}>projects</div>
+          </div>
+        ))}
+      </div>
+
       <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
         <AlertBanner count={noVendor.length}  msg={`${noVendor.length} project(s) need a vendor assigned before work can begin`}  color={T.danger}  link="/pm/projects" />
         <AlertBanner count={myProjects.filter(p=>p.status==='delayed').length} msg="Projects are delayed — review and take action" color={T.warning} link="/pm/projects" />
         <AlertBanner count={billing.length}   msg="Projects completed and waiting for billing invoice"                             color='#7C3AED'   link="/pm/projects" />
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:14, marginBottom:20, alignItems:'start' }}>
         {/* Projects by Vendor */}
         <div style={card}>
           <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>My Projects by Vendor</div>
@@ -904,20 +916,9 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
             });
           })()}
         </div>
+        {/* Project Type Distribution */}
+        <ProjectTypeDistribution projects={myProjects} />
       </div>
-
-      {/* Aging Distribution */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-        {[{label:'0–30d',color:'#0D9488',f:(p:any)=>p.aging<=30},{label:'31–60d',color:'#D97706',f:(p:any)=>p.aging>30&&p.aging<=60},{label:'61–90d',color:'#DC2626',f:(p:any)=>p.aging>60&&p.aging<=90},{label:'90d+',color:'#7C3AED',f:(p:any)=>p.aging>90}].map(b=>(
-          <div key={b.label} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pmName)}`)}
-            style={{ ...card, padding:'14px 16px', cursor:'pointer', borderLeft:`4px solid ${b.color}` }}>
-            <div style={{ fontSize:10, fontWeight:600, color:b.color, textTransform:'uppercase' as const, marginBottom:4 }}>{b.label}</div>
-            <div style={{ fontSize:24, fontWeight:800, color:b.color }}>{myProjects.filter(b.f).length}</div>
-            <div style={{ fontSize:10, color:T.textMuted }}>projects</div>
-          </div>
-        ))}
-      </div>
-      <ProjectTypeDistribution projects={myProjects} />
     </div>
   );
 }
