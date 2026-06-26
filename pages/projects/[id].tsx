@@ -2426,8 +2426,15 @@ export default function ProjectDetailPage() {
     if (field==='stn_applicable') setStnApplicable(value);
     if (field==='srn_applicable') setSrnApplicable(value);
     if (field==='ptw_applicable') setPtwApplicable(value);
-    const supabase = createClient();
-    await supabase.from('projects').update({ [field]: value }).eq('id', (dbProject as any)?.id);
+    try {
+      await ctxUpdateProject((dbProject as any)?.id, { [field]: value } as any, profile?.full_name ?? undefined);
+    } catch (err:any) {
+      // Roll back the optimistic toggle if the save failed
+      if (field==='stn_applicable') setStnApplicable(!value);
+      if (field==='srn_applicable') setSrnApplicable(!value);
+      if (field==='ptw_applicable') setPtwApplicable(!value);
+      console.error('Failed to save applicable toggle:', err);
+    }
   };
   const seedFallback = (Array.isArray(SEED_PROJECTS)?SEED_PROJECTS:[]).find((p:any)=>p.id===id);
   const [projects, setProjects] = useState<Record<string,any>>({});

@@ -76,6 +76,7 @@ const DB_COLUMNS = new Set([
   'status','po_value','billed_amount','paid_amount','progress',
   'po_date','start_date','end_date','ptw_ticket_id','ptw_supervisor',
   'ptw_date_from','ptw_date_to','work_scope','remarks','safety_photos','site_photos','jmr_document','at_certificate','noc_document','drawing_document','ptw_document',
+  'stn_applicable','srn_applicable','ptw_applicable',
   'updated_at','updated_by',
 ]);
 
