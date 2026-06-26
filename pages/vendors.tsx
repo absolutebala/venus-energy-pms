@@ -6,6 +6,7 @@ import Layout from '@/components/Layout';
 import Modal from '@/components/Modal';
 import { useUpload } from '@/lib/useUpload';
 import { useAuth } from '@/context/AuthContext';
+import { useActivity } from '@/context/ActivityContext';
 import Toast from '@/components/Toast';
 import { T, card, btnPrimary, btnSecondary, btnDanger, th, td, inputStyle, badge , fmtINR} from '@/lib/theme';
 
@@ -61,6 +62,7 @@ export default function VendorsPage() {
   const [upiErr, setUpiErr] = useState('');
   const { upload } = useUpload();
   const { profile } = useAuth();
+  const { logActivity } = useActivity();
   const [editVendor, setEditVendor]   = useState<any>(null);
   const [form, setForm]               = useState(emptyForm());
   const [saving, setSaving]           = useState(false);
@@ -120,6 +122,7 @@ export default function VendorsPage() {
       }).select().single();
       if (error) throw new Error(error.message);
       setUpiAccounts(prev => [...prev, data]);
+      logActivity(`vendor:${editVendor.id}`, `UPI account ${newUpiId.trim()} added for vendor ${editVendor.name}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
       setNewUpiId('');
     } catch(err:any) {
       setUpiErr(err.message || 'Failed to add UPI account');
@@ -128,8 +131,16 @@ export default function VendorsPage() {
 
   const deleteUpiAccount = async (id: string) => {
     if (!window.confirm('Delete this UPI account?')) return;
-    await supabase.from('vendor_upi_accounts').delete().eq('id', id);
+    const acct = upiAccounts.find((u:any) => u.id === id);
+    const { error } = await supabase.from('vendor_upi_accounts').delete().eq('id', id);
+    if (error) {
+      setToast({ msg: error.code === '23503'
+        ? '❌ Cannot delete — this UPI account is still linked to one or more expenses. Reassign those expenses first.'
+        : '❌ Delete failed: ' + error.message, type:'error' });
+      return;
+    }
     setUpiAccounts(prev => prev.filter(u => u.id !== id));
+    logActivity(`vendor:${editVendor.id}`, `UPI account ${acct?.upi_id||id} deleted for vendor ${editVendor.name}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
   };
 
   const addBankAccount = async () => {
@@ -148,6 +159,7 @@ export default function VendorsPage() {
       }).select().single();
       if (error) throw new Error(error.message);
       setBankAccounts(prev => [...prev, data]);
+      logActivity(`vendor:${editVendor.id}`, `Bank account ${newBankNo.trim()} added for vendor ${editVendor.name}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
       setNewBankNo(''); setNewBankFile(null);
     } catch(err:any) {
       setBankErr(err.message || 'Upload failed');
@@ -158,8 +170,16 @@ export default function VendorsPage() {
 
   const deleteBankAccount = async (id: string) => {
     if (!window.confirm('Delete this bank account?')) return;
-    await supabase.from('vendor_bank_accounts').delete().eq('id', id);
+    const acct = bankAccounts.find((b:any) => b.id === id);
+    const { error } = await supabase.from('vendor_bank_accounts').delete().eq('id', id);
+    if (error) {
+      setToast({ msg: error.code === '23503'
+        ? '❌ Cannot delete — this bank account is still linked to one or more expenses. Reassign those expenses first.'
+        : '❌ Delete failed: ' + error.message, type:'error' });
+      return;
+    }
     setBankAccounts(prev => prev.filter(b => b.id !== id));
+    logActivity(`vendor:${editVendor.id}`, `Bank account ${acct?.account_no||id} deleted for vendor ${editVendor.name}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
   };
 
   const handleSave = async () => {
