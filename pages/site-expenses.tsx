@@ -568,7 +568,7 @@ export default function SiteExpensesPage() {
             <div style={{ flex: paidModalPassbook ? '0 0 420px' : '1', padding:28, overflowY:'auto' as const, maxHeight:"90vh" }}>
             <h3 style={{ fontSize:16, fontWeight:700, color:T.text, marginBottom:6 }}>✓ Mark as Paid</h3>
             <p style={{ fontSize:13, color:T.textMuted, marginBottom:20 }}>
-              {paidModal.expenseType} — {fmt(paidModal.amount)} · Project {paidModal.projectId}
+              {paidModal.expenseType} — {fmt(paidModal.amount)} · PO: {(projects as any[]).find(p=>p.id===paidModal.projectId)?.poNo || paidModal.projectId} · Project ID: {(projects as any[]).find(p=>p.id===paidModal.projectId)?.projectId || '—'}
             </p>
             <div style={{ marginBottom:14 }}>
               <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Transaction Date</label>

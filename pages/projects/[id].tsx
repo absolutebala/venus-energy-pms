@@ -1878,16 +1878,16 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
             <div>
               <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Bank Account No</label>
               {!showNewBankInput ? (
-                <select value={(newRow as any).bankAccount||''}
+                <select value={(newRow as any).bankAccountId||''}
                   onChange={e=>{
                     if (e.target.value === '__new__') { setShowNewBankInput(true); return; }
-                    const acct = vendorBankAccounts.find((b:any)=>b.account_no===e.target.value);
-                    setNewRow(p=>({...p, bankAccount: e.target.value, bankAccountId: acct?.id||'', upiId:'', upiAccountId:'' }));
+                    const acct = vendorBankAccounts.find((b:any)=>b.id===e.target.value);
+                    setNewRow(p=>({...p, bankAccount: acct?.account_no||'', bankAccountId: e.target.value, upiId:'', upiAccountId:'' }));
                     if (e.target.value.trim()) setBankAccountErr(false);
                   }}
                   style={{ ...inpS, cursor:'pointer', borderColor: bankAccountErr ? '#DC2626' : inpS.borderColor, background: bankAccountErr ? '#FEF2F2' : inpS.background }}>
                   <option value="">— Select Account —</option>
-                  {vendorBankAccounts.map((b:any)=><option key={b.id} value={b.account_no}>{b.account_no}</option>)}
+                  {vendorBankAccounts.map((b:any)=><option key={b.id} value={b.id}>{b.account_no}</option>)}
                   <option value="__new__">+ Add New Account...</option>
                 </select>
               ) : (
@@ -1916,16 +1916,16 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
             <div>
               <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>UPI Account</label>
               {!showNewUpiInput ? (
-                <select value={(newRow as any).upiId||''}
+                <select value={(newRow as any).upiAccountId||''}
                   onChange={e=>{
                     if (e.target.value === '__new__') { setShowNewUpiInput(true); return; }
-                    const acct = vendorUpiAccounts.find((u:any)=>u.upi_id===e.target.value);
-                    setNewRow(p=>({...p, upiId: e.target.value, upiAccountId: acct?.id||'', bankAccount:'', bankAccountId:'' }));
+                    const acct = vendorUpiAccounts.find((u:any)=>u.id===e.target.value);
+                    setNewRow(p=>({...p, upiId: acct?.upi_id||'', upiAccountId: e.target.value, bankAccount:'', bankAccountId:'' }));
                     if (e.target.value.trim()) setBankAccountErr(false);
                   }}
                   style={{ ...inpS, cursor:'pointer' }}>
                   <option value="">— Select UPI —</option>
-                  {vendorUpiAccounts.map((u:any)=><option key={u.id} value={u.upi_id}>{u.upi_id}</option>)}
+                  {vendorUpiAccounts.map((u:any)=><option key={u.id} value={u.id}>{u.upi_id}</option>)}
                   <option value="__new__">+ Add New UPI...</option>
                 </select>
               ) : (
