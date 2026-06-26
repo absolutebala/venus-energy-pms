@@ -693,7 +693,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
   );
 }
 
-function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { projectId:string; vendorContact:string; canEdit:boolean; canAdd?:boolean }) {
+function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true, onCountChange }: { projectId:string; vendorContact:string; canEdit:boolean; canAdd?:boolean; onCountChange?:(n:number)=>void }) {
   const [items,   setItems]   = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [saving,  setSaving]  = React.useState<string|null>(null);
@@ -714,6 +714,8 @@ function PTWSectionCard({ projectId, vendorContact, canEdit, canAdd=true }: { pr
         setLoading(false);
       });
   }, [projectId]);
+
+  React.useEffect(() => { onCountChange?.(items.filter((i:any)=>!i.isNew).length); }, [items, onCountChange]);
 
   const addPTW = () => {
     const newId = `new-${Date.now()}`;
@@ -1237,7 +1239,7 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
 }
 
 // ── Independent SRN Section Component ────────────────────────────────────────
-function SRNSectionNew({ projectId, role, onAllReceived, canAdd: canAddApplicable=true }: { projectId:string; role:string; onAllReceived:(v:boolean)=>void; canAdd?:boolean }) {
+function SRNSectionNew({ projectId, role, onAllReceived, onCountChange, canAdd: canAddApplicable=true }: { projectId:string; role:string; onAllReceived:(v:boolean)=>void; onCountChange?:(n:number)=>void; canAdd?:boolean }) {
   const { profile } = useAuth();
   const { updateProject: updateProj } = useProjects();
   const { logActivity: logSRNAct } = useActivity();
@@ -1267,6 +1269,8 @@ function SRNSectionNew({ projectId, role, onAllReceived, canAdd: canAddApplicabl
     const allReceived = items.length > 0 && items.every((i:any) => i.received === true);
     onAllReceived(allReceived);
   }, [items, onAllReceived]);
+
+  React.useEffect(() => { onCountChange?.(items.length); }, [items, onCountChange]);
 
   const isPM    = ['project_manager','super_admin','region_manager'].includes(role);
   const canAdd  = ['super_admin','vendor','pm'].includes(role) && canAddApplicable;
@@ -2408,6 +2412,8 @@ export default function ProjectDetailPage() {
   const [stnApplicable, setStnApplicable] = React.useState(true);
   const [srnApplicable, setSrnApplicable] = React.useState(true);
   const [ptwApplicable, setPtwApplicable] = React.useState(true);
+  const [srnItemCount, setSrnItemCount] = React.useState(0);
+  const [ptwItemCount, setPtwItemCount] = React.useState(0);
   React.useEffect(() => {
     if (dbProject) {
       setStnApplicable((dbProject as any).stn_applicable !== false);
@@ -3048,7 +3054,9 @@ export default function ProjectDetailPage() {
           {sectionTitle('📋','STN', 'poitems', role!=='vendor' && canEdit, undefined,
             ['super_admin','region_manager','project_manager'].includes(role) && (
               <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
-                <input type="checkbox" checked={stnApplicable} onChange={e=>toggleApplicable('stn_applicable', e.target.checked)} />
+                <input type="checkbox" checked={stnApplicable} disabled={getSTNItems(p.id).length > 0}
+                  title={getSTNItems(p.id).length > 0 ? 'Cannot change — STN items already exist for this project' : undefined}
+                  onChange={e=>toggleApplicable('stn_applicable', e.target.checked)} />
                 Applicable
               </label>
             )
@@ -3062,12 +3070,14 @@ export default function ProjectDetailPage() {
             {sectionTitle('📦','SRN — Store Return Note', 'srndetail', false, undefined,
               ['super_admin','region_manager','project_manager'].includes(role) && (
                 <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
-                  <input type="checkbox" checked={srnApplicable} onChange={e=>toggleApplicable('srn_applicable', e.target.checked)} />
+                  <input type="checkbox" checked={srnApplicable} disabled={srnItemCount > 0}
+                    title={srnItemCount > 0 ? 'Cannot change — SRN items already exist for this project' : undefined}
+                    onChange={e=>toggleApplicable('srn_applicable', e.target.checked)} />
                   Applicable
                 </label>
               )
             )}
-            <SRNSectionNew projectId={p.id} role={role} onAllReceived={setSrnAllApproved} canAdd={srnApplicable} />
+            <SRNSectionNew projectId={p.id} role={role} onAllReceived={setSrnAllApproved} onCountChange={setSrnItemCount} canAdd={srnApplicable} />
           </div>
         )}
 
@@ -3086,12 +3096,14 @@ export default function ProjectDetailPage() {
           {sectionTitle('🔑','PTW — Permit to Work', 'ptw', canEditPTW, undefined,
             ['super_admin','region_manager','project_manager'].includes(role) && (
               <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
-                <input type="checkbox" checked={ptwApplicable} onChange={e=>toggleApplicable('ptw_applicable', e.target.checked)} />
+                <input type="checkbox" checked={ptwApplicable} disabled={ptwItemCount > 0}
+                  title={ptwItemCount > 0 ? 'Cannot change — PTW records already exist for this project' : undefined}
+                  onChange={e=>toggleApplicable('ptw_applicable', e.target.checked)} />
                 Applicable
               </label>
             )
           )}
-          <PTWSectionCard projectId={p.id} vendorContact={p.vendorContact||''} canEdit={editing('ptw') && canEditPTW} canAdd={canEditPTW && ptwApplicable} />
+          <PTWSectionCard projectId={p.id} vendorContact={p.vendorContact||''} canEdit={editing('ptw') && canEditPTW} canAdd={canEditPTW && ptwApplicable} onCountChange={setPtwItemCount} />
         </div>}
 
 
