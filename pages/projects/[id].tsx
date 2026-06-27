@@ -2142,7 +2142,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
       });
       setNewRow({ invoiceNo:'', invoiceDate:'', invoiceAmount:'',
         gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo,
-        wccNo:'', receiptNo:'', investor:'' });
+        wccNo:'', receiptNo:'', investor:'', investor1Incentive:'' });
       setAdding(false);
       logActivity(projectId, `Invoice ${newRow.invoiceNo} added`, profile?.full_name||'', profile?.role||'').catch(console.error);
       setToast({ msg:'✅ Invoice saved', type:'success' });
