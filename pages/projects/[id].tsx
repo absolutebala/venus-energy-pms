@@ -2006,6 +2006,34 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0 }: { p
       if (data) setInvSettings(data);
     });
   }, []);
+  const { profile: invProfile } = useAuth();
+  const isInvSuperAdmin = invProfile?.role === 'super_admin';
+  const [showInvSettings, setShowInvSettings] = React.useState(false);
+  const [invSettingsForm, setInvSettingsForm] = React.useState(invSettings);
+  const [invSettingsSaving, setInvSettingsSaving] = React.useState(false);
+  const openInvSettings = () => { setInvSettingsForm(invSettings); setShowInvSettings(true); };
+  const saveInvSettings = async () => {
+    setInvSettingsSaving(true);
+    try {
+      const payload = {
+        investor1_profit1_pct: Number((invSettingsForm as any).investor1_profit1_pct) || 0,
+        investor1_profit2_pct: Number((invSettingsForm as any).investor1_profit2_pct) || 0,
+        investor2_profit1_pct: Number((invSettingsForm as any).investor2_profit1_pct) || 0,
+        investor2_profit2_pct: Number((invSettingsForm as any).investor2_profit2_pct) || 0,
+        updated_by: invProfile?.full_name || '',
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await createClient().from('invoice_settings').update(payload).eq('id', 1);
+      if (error) throw new Error(error.message);
+      setInvSettings(prev => ({ ...prev, ...payload }));
+      setShowInvSettings(false);
+      setToast({ msg:'✅ Invoice settings updated', type:'success' });
+    } catch (err:any) {
+      setToast({ msg:'❌ ' + err.message, type:'error' });
+    } finally {
+      setInvSettingsSaving(false);
+    }
+  };
   const calcInvestor1 = (amt: number) => {
     const profit1 = amt * (Number(invSettings.investor1_profit1_pct) || 0) / 100;
     const profit2 = amt * (Number(invSettings.investor1_profit2_pct) || 0) / 100;
@@ -2373,14 +2401,23 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0 }: { p
         </div>
       )}
 
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:14 }}>
-        {canAdd && !adding && (
-          <button onClick={()=>setAdding(true)}
-            style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8,
-              padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
-            + Add Invoice
-          </button>
-        )}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:14, gap:10 }}>
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          {canAdd && !adding && (
+            <button onClick={()=>setAdding(true)}
+              style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8,
+                padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
+              + Add Invoice
+            </button>
+          )}
+          {isInvSuperAdmin && (
+            <button onClick={openInvSettings} title="Invoice Settings"
+              style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8,
+                padding:'8px 10px', cursor:'pointer', fontSize:13 }}>
+              ⚙️
+            </button>
+          )}
+        </div>
         {items.length > 0 && (
           <div style={{ marginLeft:'auto', fontSize:13, fontWeight:700, color:T.primary,
             background:T.primaryLight, padding:'8px 18px', borderRadius:8 }}>
@@ -2388,6 +2425,61 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0 }: { p
           </div>
         )}
       </div>
+
+      {showInvSettings && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.5)', zIndex:1100, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+          onClick={()=>setShowInvSettings(false)}>
+          <div style={{ background:'#fff', borderRadius:14, padding:28, width:'100%', maxWidth:440, boxShadow:'0 20px 60px rgba(0,0,0,0.2)' }}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{ fontSize:16, fontWeight:700, color:T.text, marginBottom:4 }}>⚙️ Invoice Settings</div>
+            <div style={{ fontSize:12, color:T.textMuted, marginBottom:18 }}>Profit percentages used to auto-calculate Investor fields on new invoices.</div>
+
+            <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 1</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:18 }}>
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Profit 1 (%)</label>
+                <input type="number" value={(invSettingsForm as any).investor1_profit1_pct}
+                  onChange={e=>setInvSettingsForm((p:any)=>({...p, investor1_profit1_pct:e.target.value}))}
+                  style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Profit 2 (%)</label>
+                <input type="number" value={(invSettingsForm as any).investor1_profit2_pct}
+                  onChange={e=>setInvSettingsForm((p:any)=>({...p, investor1_profit2_pct:e.target.value}))}
+                  style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
+              </div>
+            </div>
+
+            <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 2</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:20 }}>
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Profit 1 (%)</label>
+                <input type="number" value={(invSettingsForm as any).investor2_profit1_pct}
+                  onChange={e=>setInvSettingsForm((p:any)=>({...p, investor2_profit1_pct:e.target.value}))}
+                  style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Profit 2 (%)</label>
+                <input type="number" value={(invSettingsForm as any).investor2_profit2_pct}
+                  onChange={e=>setInvSettingsForm((p:any)=>({...p, investor2_profit2_pct:e.target.value}))}
+                  style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
+              </div>
+            </div>
+
+            <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+              <button onClick={()=>setShowInvSettings(false)}
+                style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 18px', fontSize:13, cursor:'pointer', color:T.text }}>
+                Cancel
+              </button>
+              <button onClick={saveInvSettings} disabled={invSettingsSaving}
+                style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', fontSize:13, fontWeight:600, cursor:'pointer', opacity:invSettingsSaving?0.7:1 }}>
+                {invSettingsSaving ? 'Saving…' : '💾 Save Settings'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && <Toast message={toast.msg} type={toast.type} onClose={()=>setToast(null)} />}
     </div>
   );
