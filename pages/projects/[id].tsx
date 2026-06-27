@@ -2059,6 +2059,9 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
         dueDate: editInvRow.dueDate, invoiceStatus: editInvRow.invoiceStatus,
         paymentStatus: editInvRow.paymentStatus,
         wccNo: editInvRow.wccNo||'', receiptNo: editInvRow.receiptNo||'',
+        basicPaymentNo: editInvRow.basicPaymentNo||'', basicPaymentDate: editInvRow.basicPaymentDate||'',
+        taxPaymentNo: editInvRow.taxPaymentNo||'', taxPaymentDate: editInvRow.taxPaymentDate||'',
+        tds: Number(editInvRow.tds)||0, remarks: editInvRow.remarks||'',
         investor: editInvRow.investor || '',
         ...(editInvRow.investor === 'Investor 1' ? {
           investor1PaidAmount: editInv1.paidAmount, investor1Profit1: editInv1.profit1,
@@ -2130,6 +2133,9 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
         invoiceStatus: newRow.invoiceStatus, paymentStatus: newRow.paymentStatus,
         dueDate: newRow.dueDate, poNo: newRow.poNo || projectPoNo,
         projectId, createdBy: profile?.full_name || '',
+        basicPaymentNo: (newRow as any).basicPaymentNo||'', basicPaymentDate: (newRow as any).basicPaymentDate||'',
+        taxPaymentNo: (newRow as any).taxPaymentNo||'', taxPaymentDate: (newRow as any).taxPaymentDate||'',
+        tds: Number((newRow as any).tds)||0, remarks: (newRow as any).remarks||'',
         investor: newRow.investor || '',
         ...(newRow.investor === 'Investor 1' ? {
           investor1PaidAmount: inv1.paidAmount, investor1Profit1: inv1.profit1,
@@ -2223,6 +2229,18 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                             {['Draft','Submitted','Approved','Rejected','Paid'].map(s=><option key={s}>{s}</option>)}
                           </select>
                         </div>
+                      </div>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:12 }}>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Basic Payment No</div><input style={inpS} value={editInvRow.basicPaymentNo||''} onChange={e=>setEditInvRow((p:any)=>({...p,basicPaymentNo:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Basic Payment Date</div><DateInput value={editInvRow.basicPaymentDate||''} onChange={v=>setEditInvRow((p:any)=>({...p,basicPaymentDate:v}))} style={inpS} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Tax Payment No</div><input style={inpS} value={editInvRow.taxPaymentNo||''} onChange={e=>setEditInvRow((p:any)=>({...p,taxPaymentNo:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Tax Payment Date</div><DateInput value={editInvRow.taxPaymentDate||''} onChange={v=>setEditInvRow((p:any)=>({...p,taxPaymentDate:v}))} style={inpS} /></div>
+                      </div>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:12 }}>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>TDS (₹)</div><input type="number" style={inpS} value={editInvRow.tds||''} onChange={e=>setEditInvRow((p:any)=>({...p,tds:e.target.value}))} /></div>
+                        <div style={{ gridColumn:'span 3' }}><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Remarks</div><input style={inpS} value={editInvRow.remarks||''} onChange={e=>setEditInvRow((p:any)=>({...p,remarks:e.target.value}))} /></div>
+                      </div>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:8 }}>
                         <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Investor</div>
                           <select style={inpS} value={editInvRow.investor||''} onChange={e=>setEditInvRow((p:any)=>({...p,investor:e.target.value}))}>
                             <option value="">— None —</option>
@@ -2325,7 +2343,10 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                ['Invoice Date *','invoiceDate','date',''],
                ['Due Date','dueDate','date',''],['Basic Amount (₹) *','invoiceAmount','number',''],
                ['WCC No','wccNo','text',''],['Receipt No','receiptNo','text',''],
-               ['GST (%)','gst','number','']] as [string,string,string,string][]).map(([label,field,type,ph])=>(
+               ['GST (%)','gst','number',''],
+               ['Basic Payment No','basicPaymentNo','text',''],['Basic Payment Date','basicPaymentDate','date',''],
+               ['Tax Payment No','taxPaymentNo','text',''],['Tax Payment Date','taxPaymentDate','date',''],
+               ['TDS (₹)','tds','number',''],['Remarks','remarks','text','']] as [string,string,string,string][]).map(([label,field,type,ph])=>(
               <div key={field}>
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</label>
                 {type === 'date' ? (
