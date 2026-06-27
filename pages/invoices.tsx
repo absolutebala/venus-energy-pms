@@ -127,19 +127,6 @@ export default function InvoicesPage() {
     }
   };
 
-  // Resolve the project linked to the invoice form in progress (mirrors saveInvoice's own lookup)
-  const formLinkedProject = matchedProject || projects.find((p: any) => matchesPO(p.poNo, newInv.poNo));
-  const formInvoiceAmt = Number(newInv.invoiceAmount) || 0;
-  const investor1Calc = {
-    paidAmount: Number((formLinkedProject as any)?.paidAmount) || 0,
-    profit1: formInvoiceAmt * (Number(invSettings.investor1_profit1_pct) || 0) / 100,
-    profit2: formInvoiceAmt * (Number(invSettings.investor1_profit2_pct) || 0) / 100,
-  };
-  const investor1OtherExpenses = formInvoiceAmt - investor1Calc.paidAmount - investor1Calc.profit1 - investor1Calc.profit2;
-  const investor2Calc = {
-    profit1: formInvoiceAmt * (Number(invSettings.investor2_profit1_pct) || 0) / 100,
-    profit2: formInvoiceAmt * (Number(invSettings.investor2_profit2_pct) || 0) / 100,
-  };
 
   const saveInvEdit = async () => {
     if (!editInvId) return;
@@ -172,6 +159,20 @@ export default function InvoicesPage() {
   const matchedProject = poSearch
     ? projects.find((p:any) => matchesPO(p.poNo, poSearch) || p.id.toLowerCase().includes(poSearch.toLowerCase()))
     : null;
+
+  // Resolve the project linked to the invoice form in progress (mirrors saveInvoice's own lookup)
+  const formLinkedProject = matchedProject || projects.find((p: any) => matchesPO(p.poNo, newInv.poNo));
+  const formInvoiceAmt = Number(newInv.invoiceAmount) || 0;
+  const investor1Calc = {
+    paidAmount: Number((formLinkedProject as any)?.paidAmount) || 0,
+    profit1: formInvoiceAmt * (Number(invSettings.investor1_profit1_pct) || 0) / 100,
+    profit2: formInvoiceAmt * (Number(invSettings.investor1_profit2_pct) || 0) / 100,
+  };
+  const investor1OtherExpenses = formInvoiceAmt - investor1Calc.paidAmount - investor1Calc.profit1 - investor1Calc.profit2;
+  const investor2Calc = {
+    profit1: formInvoiceAmt * (Number(invSettings.investor2_profit1_pct) || 0) / 100,
+    profit2: formInvoiceAmt * (Number(invSettings.investor2_profit2_pct) || 0) / 100,
+  };
 
   // Direct invoice-level search: Invoice No, PO No, or Indus ID
   const searchMatchedInvoiceIds = React.useMemo(() => {
