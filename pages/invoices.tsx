@@ -52,7 +52,7 @@ export default function InvoicesPage() {
   const router = useRouter();
   const { profile, can, loading: authLoading } = useAuth();
   const { invoices, loading: invLoading, addInvoice, updateInvoice } = useInvoices();
-  const { projects } = useProjects();
+  const { projects, updateProject: ctxUpdateProjectInv } = useProjects();
   const canCreate  = !authLoading && can("invoices", "create");
   const canApprove = !authLoading && (profile?.role === 'super_admin' || profile?.role === 'accounting_team');
 
@@ -86,46 +86,14 @@ export default function InvoicesPage() {
     wccNo:"", receiptNo:"", investor:"",
   });
 
-  // ── Invoice Settings (admin-only Profit% config) ─────────────────────────
+  // ── Invoice Settings (admin-only Profit% config) — PER PROJECT, scoped to whichever project is matched
   const isSuperAdmin = !authLoading && profile?.role === 'super_admin';
-  const [invSettings, setInvSettings] = useState({
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsForm, setSettingsForm] = useState({
     investor1_profit1_pct: 5, investor1_profit2_pct: 5,
     investor2_profit1_pct: 5, investor2_profit2_pct: 95,
   });
-  const [showSettings, setShowSettings] = useState(false);
-  const [settingsForm, setSettingsForm] = useState(invSettings);
   const [settingsSaving, setSettingsSaving] = useState(false);
-
-  useEffect(() => {
-    createClient().from('invoice_settings').select('*').eq('id', 1).single().then(({ data }) => {
-      if (data) { setInvSettings(data); setSettingsForm(data); }
-    });
-  }, []);
-
-  const openSettings = () => { setSettingsForm(invSettings); setShowSettings(true); };
-
-  const saveInvoiceSettings = async () => {
-    setSettingsSaving(true);
-    try {
-      const payload = {
-        investor1_profit1_pct: Number((settingsForm as any).investor1_profit1_pct) || 0,
-        investor1_profit2_pct: Number((settingsForm as any).investor1_profit2_pct) || 0,
-        investor2_profit1_pct: Number((settingsForm as any).investor2_profit1_pct) || 0,
-        investor2_profit2_pct: Number((settingsForm as any).investor2_profit2_pct) || 0,
-        updated_by: profile?.full_name || '',
-        updated_at: new Date().toISOString(),
-      };
-      const { error } = await createClient().from('invoice_settings').update(payload).eq('id', 1);
-      if (error) throw new Error(error.message);
-      setInvSettings(prev => ({ ...prev, ...payload }));
-      setShowSettings(false);
-      setToast({ msg: '✅ Invoice settings updated', type: 'success' });
-    } catch (err: any) {
-      setToast({ msg: '❌ ' + err.message, type: 'error' });
-    } finally {
-      setSettingsSaving(false);
-    }
-  };
 
 
   const saveInvEdit = async () => {
@@ -162,6 +130,32 @@ export default function InvoicesPage() {
 
   // Resolve the project linked to the invoice form in progress (mirrors saveInvoice's own lookup)
   const formLinkedProject = matchedProject || projects.find((p: any) => matchesPO(p.poNo, newInv.poNo));
+  const invSettings = {
+    investor1_profit1_pct: Number((formLinkedProject as any)?.investor1_profit1_pct ?? 5),
+    investor1_profit2_pct: Number((formLinkedProject as any)?.investor1_profit2_pct ?? 5),
+    investor2_profit1_pct: Number((formLinkedProject as any)?.investor2_profit1_pct ?? 5),
+    investor2_profit2_pct: Number((formLinkedProject as any)?.investor2_profit2_pct ?? 95),
+  };
+  const openSettings = () => { setSettingsForm(invSettings); setShowSettings(true); };
+  const saveInvoiceSettings = async () => {
+    if (!(formLinkedProject as any)?.id) return;
+    setSettingsSaving(true);
+    try {
+      const payload = {
+        investor1_profit1_pct: Number((settingsForm as any).investor1_profit1_pct) || 0,
+        investor1_profit2_pct: Number((settingsForm as any).investor1_profit2_pct) || 0,
+        investor2_profit1_pct: Number((settingsForm as any).investor2_profit1_pct) || 0,
+        investor2_profit2_pct: Number((settingsForm as any).investor2_profit2_pct) || 0,
+      };
+      await ctxUpdateProjectInv((formLinkedProject as any).id, payload as any, profile?.full_name || undefined);
+      setShowSettings(false);
+      setToast({ msg: '✅ Invoice settings updated for this project', type: 'success' });
+    } catch (err: any) {
+      setToast({ msg: '❌ ' + err.message, type: 'error' });
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
   const formInvoiceAmt = Number(newInv.invoiceAmount) || 0;
   const investor1Calc = {
     paidAmount: Number((formLinkedProject as any)?.paidAmount) || 0,
@@ -361,12 +355,6 @@ export default function InvoicesPage() {
             </div>
           </div>
           <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' as const }}>
-            {isSuperAdmin && (
-              <button onClick={openSettings} title="Invoice Settings"
-                style={{ ...btnSecondary, fontSize:12, display:'flex', alignItems:'center', gap:6, padding:'8px 10px' }}>
-                ⚙️
-              </button>
-            )}
             {canExport && (
               <button onClick={exportToExcel}
                 style={{ ...btnSecondary, fontSize:12, display:'flex', alignItems:'center', gap:6 }}>
@@ -487,7 +475,15 @@ export default function InvoicesPage() {
         {/* Add Invoice Form */}
         {showForm && canCreate && (
           <div style={{ ...card, marginBottom:16, border:`1.5px solid ${T.primaryMid}`, background:T.primaryLight }}>
-            <div style={{ fontSize:14, fontWeight:700, color:T.primary, marginBottom:14 }}>+ New Invoice</div>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
+              <div style={{ fontSize:14, fontWeight:700, color:T.primary }}>+ New Invoice</div>
+              {isSuperAdmin && formLinkedProject && (
+                <button onClick={openSettings} title="Invoice Settings for this project"
+                  style={{ background:'#fff', border:`1px solid ${T.border}`, borderRadius:6, padding:'4px 8px', cursor:'pointer', fontSize:12 }}>
+                  ⚙️
+                </button>
+              )}
+            </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:12 }}>
               {([["PO Number","poNo","text","PO-2025-XXX"],["Invoice No *","invoiceNo","text","INV-2025-XXX"],
                  ["Invoice Date *","invoiceDate","date",""],["Due Date","dueDate","date",""],
@@ -787,8 +783,8 @@ export default function InvoicesPage() {
           onClick={()=>setShowSettings(false)}>
           <div style={{ background:'#fff', borderRadius:14, padding:28, width:'100%', maxWidth:440, boxShadow:'0 20px 60px rgba(0,0,0,0.2)' }}
             onClick={e=>e.stopPropagation()}>
-            <div style={{ fontSize:16, fontWeight:700, color:T.text, marginBottom:4 }}>⚙️ Invoice Settings</div>
-            <div style={{ fontSize:12, color:T.textMuted, marginBottom:18 }}>Profit percentages used to auto-calculate Investor fields on new invoices.</div>
+            <div style={{ fontSize:16, fontWeight:700, color:T.text, marginBottom:4 }}>⚙️ Invoice Settings — {(formLinkedProject as any)?.id || 'this project'}</div>
+            <div style={{ fontSize:12, color:T.textMuted, marginBottom:18 }}>Profit percentages used to auto-calculate Investor fields for invoices on this project only.</div>
 
             <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 1</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:18 }}>

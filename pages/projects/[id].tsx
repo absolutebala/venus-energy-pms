@@ -1991,21 +1991,18 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
   );
 }
 
-function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0 }: { projectId:string; canAdd:boolean; projectPoNo?:string; paidAmount?:number }) {
+function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, investorPct }: { projectId:string; canAdd:boolean; projectPoNo?:string; paidAmount?:number; investorPct?: { investor1_profit1_pct:number; investor1_profit2_pct:number; investor2_profit1_pct:number; investor2_profit2_pct:number } }) {
   const { getByProject, addInvoice, updateInvoice, deleteInvoice, loading } = useInvoices();
+  const { updateProject: ctxUpdateProjectInv } = useProjects();
   const [editInvId,  setEditInvId]  = React.useState<string|null>(null);
   const [editInvRow, setEditInvRow] = React.useState<any>({});
 
-  // Invoice settings (Profit % per investor) — read-only here, configured on the main Invoices page
-  const [invSettings, setInvSettings] = React.useState({
+  // Invoice settings (Profit % per investor) — stored PER PROJECT on the projects table
+  const [invSettings, setInvSettings] = React.useState(investorPct || {
     investor1_profit1_pct: 5, investor1_profit2_pct: 5,
     investor2_profit1_pct: 5, investor2_profit2_pct: 95,
   });
-  React.useEffect(() => {
-    createClient().from('invoice_settings').select('*').eq('id', 1).single().then(({ data }) => {
-      if (data) setInvSettings(data);
-    });
-  }, []);
+  React.useEffect(() => { if (investorPct) setInvSettings(investorPct); }, [investorPct]);
   const { profile: invProfile } = useAuth();
   const isInvSuperAdmin = invProfile?.role === 'super_admin';
   const [showInvSettings, setShowInvSettings] = React.useState(false);
@@ -2020,14 +2017,11 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0 }: { p
         investor1_profit2_pct: Number((invSettingsForm as any).investor1_profit2_pct) || 0,
         investor2_profit1_pct: Number((invSettingsForm as any).investor2_profit1_pct) || 0,
         investor2_profit2_pct: Number((invSettingsForm as any).investor2_profit2_pct) || 0,
-        updated_by: invProfile?.full_name || '',
-        updated_at: new Date().toISOString(),
       };
-      const { error } = await createClient().from('invoice_settings').update(payload).eq('id', 1);
-      if (error) throw new Error(error.message);
+      await ctxUpdateProjectInv(projectId, payload as any, invProfile?.full_name || undefined);
       setInvSettings(prev => ({ ...prev, ...payload }));
       setShowInvSettings(false);
-      setToast({ msg:'✅ Invoice settings updated', type:'success' });
+      setToast({ msg:'✅ Invoice settings updated for this project', type:'success' });
     } catch (err:any) {
       setToast({ msg:'❌ ' + err.message, type:'error' });
     } finally {
@@ -3533,7 +3527,13 @@ export default function ProjectDetailPage() {
         {/* ── Invoice ── */}
         {showInvoice && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('🧾','Invoice', 'invoice', false)}
-          <InvoiceSection projectId={p.id} canAdd={canAddInvoice} projectPoNo={p.poNo||''} paidAmount={(p as any).paidAmount||0} />
+          <InvoiceSection projectId={p.id} canAdd={canAddInvoice} projectPoNo={p.poNo||''} paidAmount={(p as any).paidAmount||0}
+            investorPct={{
+              investor1_profit1_pct: Number((p as any).investor1_profit1_pct ?? 5),
+              investor1_profit2_pct: Number((p as any).investor1_profit2_pct ?? 5),
+              investor2_profit1_pct: Number((p as any).investor2_profit1_pct ?? 5),
+              investor2_profit2_pct: Number((p as any).investor2_profit2_pct ?? 95),
+            }} />
         </div>}
 
         {/* ── 6. Activity Log ── */}

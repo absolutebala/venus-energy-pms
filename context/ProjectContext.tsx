@@ -9,6 +9,10 @@ export interface Project {
   stn_applicable?: boolean;
   srn_applicable?: boolean;
   ptw_applicable?: boolean;
+  investor1_profit1_pct?: number;
+  investor1_profit2_pct?: number;
+  investor2_profit1_pct?: number;
+  investor2_profit2_pct?: number;
   region: string; type: string; pm: string; rm: string;
   vendor: string; vendorContact: string; vendorPhone: string; vendorEmail: string;
   status: string; poValue: number; billedAmount: number; paidAmount: number;
@@ -30,6 +34,10 @@ function mapRow(row: any): Project {
     stn_applicable: row.stn_applicable !== false,
     srn_applicable: row.srn_applicable !== false,
     ptw_applicable: row.ptw_applicable !== false,
+    investor1_profit1_pct: Number(row.investor1_profit1_pct ?? 5),
+    investor1_profit2_pct: Number(row.investor1_profit2_pct ?? 5),
+    investor2_profit1_pct: Number(row.investor2_profit1_pct ?? 5),
+    investor2_profit2_pct: Number(row.investor2_profit2_pct ?? 95),
     poStatus:      row.po_status       ?? row.poStatus       ?? '',
     poNo:          row.po_no         ?? row.poNo         ?? '',
     indusId:       row.indus_id      ?? row.indusId      ?? '',
@@ -77,6 +85,7 @@ const DB_COLUMNS = new Set([
   'po_date','start_date','end_date','ptw_ticket_id','ptw_supervisor',
   'ptw_date_from','ptw_date_to','work_scope','remarks','safety_photos','site_photos','jmr_document','at_certificate','noc_document','drawing_document','ptw_document',
   'stn_applicable','srn_applicable','ptw_applicable',
+  'investor1_profit1_pct','investor1_profit2_pct','investor2_profit1_pct','investor2_profit2_pct',
   'updated_at','updated_by',
 ]);
 
