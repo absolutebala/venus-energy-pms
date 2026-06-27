@@ -15,6 +15,7 @@ export interface Project {
   investor2_profit2_pct?: number;
   investor1_additional_capital_pct?: number;
   investor1_interest_pct?: number;
+  investor1_other_expenses_pct?: number;
   region: string; type: string; pm: string; rm: string;
   vendor: string; vendorContact: string; vendorPhone: string; vendorEmail: string;
   status: string; poValue: number; billedAmount: number; paidAmount: number;
@@ -42,6 +43,7 @@ function mapRow(row: any): Project {
     investor2_profit2_pct: Number(row.investor2_profit2_pct ?? 95),
     investor1_additional_capital_pct: Number(row.investor1_additional_capital_pct ?? 2),
     investor1_interest_pct: Number(row.investor1_interest_pct ?? 2),
+    investor1_other_expenses_pct: Number(row.investor1_other_expenses_pct ?? 0),
     poStatus:      row.po_status       ?? row.poStatus       ?? '',
     poNo:          row.po_no         ?? row.poNo         ?? '',
     indusId:       row.indus_id      ?? row.indusId      ?? '',
@@ -90,7 +92,7 @@ const DB_COLUMNS = new Set([
   'ptw_date_from','ptw_date_to','work_scope','remarks','safety_photos','site_photos','jmr_document','at_certificate','noc_document','drawing_document','ptw_document',
   'stn_applicable','srn_applicable','ptw_applicable',
   'investor1_profit1_pct','investor1_profit2_pct','investor2_profit1_pct','investor2_profit2_pct',
-  'investor1_additional_capital_pct','investor1_interest_pct',
+  'investor1_additional_capital_pct','investor1_interest_pct','investor1_other_expenses_pct',
   'updated_at','updated_by',
 ]);
 

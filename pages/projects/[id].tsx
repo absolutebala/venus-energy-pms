@@ -1991,7 +1991,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
   );
 }
 
-function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, investorPct }: { projectId:string; canAdd:boolean; projectPoNo?:string; paidAmount?:number; investorPct?: { investor1_profit1_pct:number; investor1_profit2_pct:number; investor2_profit1_pct:number; investor2_profit2_pct:number; investor1_additional_capital_pct:number; investor1_interest_pct:number } }) {
+function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, investorPct }: { projectId:string; canAdd:boolean; projectPoNo?:string; paidAmount?:number; investorPct?: { investor1_profit1_pct:number; investor1_profit2_pct:number; investor2_profit1_pct:number; investor2_profit2_pct:number; investor1_additional_capital_pct:number; investor1_interest_pct:number; investor1_other_expenses_pct:number } }) {
   const { getByProject, addInvoice, updateInvoice, deleteInvoice, loading } = useInvoices();
   const { updateProject: ctxUpdateProjectInv } = useProjects();
   const [editInvId,  setEditInvId]  = React.useState<string|null>(null);
@@ -2001,7 +2001,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
   const [invSettings, setInvSettings] = React.useState(investorPct || {
     investor1_profit1_pct: 5, investor1_profit2_pct: 5,
     investor2_profit1_pct: 5, investor2_profit2_pct: 95,
-    investor1_additional_capital_pct: 2, investor1_interest_pct: 2,
+    investor1_additional_capital_pct: 2, investor1_interest_pct: 2, investor1_other_expenses_pct: 0,
   });
   React.useEffect(() => { if (investorPct) setInvSettings(investorPct); }, [investorPct]);
   const { profile: invProfile } = useAuth();
@@ -2020,6 +2020,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
         investor2_profit2_pct: Number((invSettingsForm as any).investor2_profit2_pct) || 0,
         investor1_additional_capital_pct: Number((invSettingsForm as any).investor1_additional_capital_pct) || 0,
         investor1_interest_pct: Number((invSettingsForm as any).investor1_interest_pct) || 0,
+        investor1_other_expenses_pct: Number((invSettingsForm as any).investor1_other_expenses_pct) || 0,
       };
       await ctxUpdateProjectInv(projectId, payload as any, invProfile?.full_name || undefined);
       setInvSettings(prev => ({ ...prev, ...payload }));
@@ -2031,12 +2032,14 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
       setInvSettingsSaving(false);
     }
   };
-  const calcInvestor1 = (amt: number) => {
+  const calcInvestor1 = (amt: number, incentive: number = 0) => {
     const profit1 = amt * (Number(invSettings.investor1_profit1_pct) || 0) / 100;
     const profit2 = amt * (Number(invSettings.investor1_profit2_pct) || 0) / 100;
-    const additionalCapital = amt * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100;
-    const interest = amt * (Number(invSettings.investor1_interest_pct) || 0) / 100;
-    return { paidAmount, profit1, profit2, additionalCapital, interest, otherExpenses: amt - paidAmount - profit1 - profit2 };
+    const additionalCapital = paidAmount * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100;
+    const interest = paidAmount * (Number(invSettings.investor1_interest_pct) || 0) / 100;
+    const otherExpenses = amt * (Number(invSettings.investor1_other_expenses_pct) || 0) / 100;
+    const balanceAmount = amt - paidAmount - additionalCapital - profit1 - profit2 - otherExpenses - interest - incentive;
+    return { paidAmount, profit1, profit2, additionalCapital, interest, otherExpenses, incentive, balanceAmount };
   };
   const calcInvestor2 = (amt: number) => ({
     profit1: amt * (Number(invSettings.investor2_profit1_pct) || 0) / 100,
@@ -2048,7 +2051,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
     setSaving(true);
     try {
       const amt = Number(editInvRow.invoiceAmount)||0, gstPct = Number(editInvRow.gst)||0, gst = amt * gstPct / 100;
-      const editInv1 = calcInvestor1(amt);
+      const editInv1 = calcInvestor1(amt, Number(editInvRow.investor1Incentive)||0);
       const editInv2 = calcInvestor2(amt);
       await updateInvoice(editInvId, {
         invoiceNo: editInvRow.invoiceNo, invoiceDate: editInvRow.invoiceDate,
@@ -2061,6 +2064,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
           investor1PaidAmount: editInv1.paidAmount, investor1Profit1: editInv1.profit1,
           investor1Profit2: editInv1.profit2, investor1OtherExpenses: editInv1.otherExpenses,
           investor1AdditionalCapital: editInv1.additionalCapital, investor1Interest: editInv1.interest,
+          investor1Incentive: editInv1.incentive, investor1BalanceAmount: editInv1.balanceAmount,
         } : {}),
         ...(editInvRow.investor === 'Investor 2' ? {
           investor2Profit1: editInv2.profit1, investor2Profit2: editInv2.profit2,
@@ -2080,7 +2084,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
   const [newRow,  setNewRow]  = React.useState({
     invoiceNo:'', invoiceDate:'', invoiceAmount:'',
     gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo,
-    wccNo:'', receiptNo:'', investor:''
+    wccNo:'', receiptNo:'', investor:'', investor1Incentive:''
   });
 
   const fmt  = (n: number) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits:2 });
@@ -2116,7 +2120,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
     const amt = Number(newRow.invoiceAmount), gstPct = Number(newRow.gst), gst = amt * gstPct / 100;
     setSaving(true);
     try {
-      const inv1 = calcInvestor1(amt);
+      const inv1 = calcInvestor1(amt, Number(newRow.investor1Incentive)||0);
       const inv2 = calcInvestor2(amt);
       await addInvoice({
         invoiceNo: newRow.invoiceNo, invoiceDate: newRow.invoiceDate,
@@ -2130,6 +2134,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
           investor1PaidAmount: inv1.paidAmount, investor1Profit1: inv1.profit1,
           investor1Profit2: inv1.profit2, investor1OtherExpenses: inv1.otherExpenses,
           investor1AdditionalCapital: inv1.additionalCapital, investor1Interest: inv1.interest,
+          investor1Incentive: inv1.incentive, investor1BalanceAmount: inv1.balanceAmount,
         } : {}),
         ...(newRow.investor === 'Investor 2' ? {
           investor2Profit1: inv2.profit1, investor2Profit2: inv2.profit2,
@@ -2225,24 +2230,35 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                         </div>
                       </div>
                       {editInvRow.investor === 'Investor 1' && (() => {
-                        const c1 = calcInvestor1(Number(editInvRow.invoiceAmount)||0);
+                        const c1 = calcInvestor1(Number(editInvRow.invoiceAmount)||0, Number(editInvRow.investor1Incentive)||0);
                         return (
                           <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:10, marginBottom:12, background:'#fff' }}>
                             <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 1 Details</div>
-                            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+                            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:8 }}>
                               {[
                                 ['Paid Amount (₹)', fmt(c1.paidAmount)],
                                 [`Profit 1 (${invSettings.investor1_profit1_pct}%)`, fmt(c1.profit1)],
                                 [`Profit 2 (${invSettings.investor1_profit2_pct}%)`, fmt(c1.profit2)],
                                 [`Additional Capital (${invSettings.investor1_additional_capital_pct}%)`, fmt(c1.additionalCapital)],
                                 [`Interest (${invSettings.investor1_interest_pct}%)`, fmt(c1.interest)],
-                                ['Other Expenses (₹)', fmt(c1.otherExpenses)],
+                                [`Other Expenses (${invSettings.investor1_other_expenses_pct}%)`, fmt(c1.otherExpenses)],
                               ].map(([label,val]) => (
                                 <div key={label as string}>
                                   <div style={{ fontSize:10, color:T.textMuted, marginBottom:2 }}>{label}</div>
                                   <div style={{ ...inpS, background:T.bg }}>{val}</div>
                                 </div>
                               ))}
+                            </div>
+                            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+                              <div>
+                                <div style={{ fontSize:10, color:T.textMuted, marginBottom:2 }}>Incentive (₹)</div>
+                                <input type="number" style={inpS} value={editInvRow.investor1Incentive||''} placeholder="0"
+                                  onChange={e=>setEditInvRow((p:any)=>({...p, investor1Incentive:e.target.value}))} />
+                              </div>
+                              <div style={{ gridColumn:'span 2' }}>
+                                <div style={{ fontSize:10, color:T.textMuted, marginBottom:2 }}>Balance Amount (₹)</div>
+                                <div style={{ ...inpS, background:T.primaryLight, color:T.primary, fontWeight:700 }}>{fmt(c1.balanceAmount)}</div>
+                              </div>
                             </div>
                           </div>
                         );
@@ -2351,24 +2367,35 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
             </div>
           </div>
           {newRow.investor === 'Investor 1' && (() => {
-            const c1 = calcInvestor1(Number(newRow.invoiceAmount)||0);
+            const c1 = calcInvestor1(Number(newRow.invoiceAmount)||0, Number(newRow.investor1Incentive)||0);
             return (
               <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:12, marginBottom:12, background:'#fff' }}>
                 <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 1 Details</div>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:10 }}>
                   {[
                     ['Paid Amount (₹)', fmt(c1.paidAmount)],
                     [`Profit 1 (${invSettings.investor1_profit1_pct}%)`, fmt(c1.profit1)],
                     [`Profit 2 (${invSettings.investor1_profit2_pct}%)`, fmt(c1.profit2)],
                     [`Additional Capital (${invSettings.investor1_additional_capital_pct}%)`, fmt(c1.additionalCapital)],
                     [`Interest (${invSettings.investor1_interest_pct}%)`, fmt(c1.interest)],
-                    ['Other Expenses (₹)', fmt(c1.otherExpenses)],
+                    [`Other Expenses (${invSettings.investor1_other_expenses_pct}%)`, fmt(c1.otherExpenses)],
                   ].map(([label,val]) => (
                     <div key={label as string}>
                       <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</div>
                       <div style={{ ...inpS, background:T.bg }}>{val}</div>
                     </div>
                   ))}
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+                  <div>
+                    <label style={{ display:'block', fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Incentive (₹)</label>
+                    <input type="number" style={inpS} value={(newRow as any).investor1Incentive||''} placeholder="0"
+                      onChange={e=>setNewRow(p=>({...p, investor1Incentive:e.target.value}))} />
+                  </div>
+                  <div style={{ gridColumn:'span 2' }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Balance Amount (₹)</div>
+                    <div style={{ ...inpS, background:T.primaryLight, color:T.primary, fontWeight:700 }}>{fmt(c1.balanceAmount)}</div>
+                  </div>
                 </div>
               </div>
             );
@@ -2463,6 +2490,12 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Interest (%)</label>
                 <input type="number" value={(invSettingsForm as any).investor1_interest_pct}
                   onChange={e=>setInvSettingsForm((p:any)=>({...p, investor1_interest_pct:e.target.value}))}
+                  style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Other Expenses (%)</label>
+                <input type="number" value={(invSettingsForm as any).investor1_other_expenses_pct}
+                  onChange={e=>setInvSettingsForm((p:any)=>({...p, investor1_other_expenses_pct:e.target.value}))}
                   style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
               </div>
             </div>
@@ -3558,6 +3591,7 @@ export default function ProjectDetailPage() {
               investor2_profit2_pct: Number((p as any).investor2_profit2_pct ?? 95),
               investor1_additional_capital_pct: Number((p as any).investor1_additional_capital_pct ?? 2),
               investor1_interest_pct: Number((p as any).investor1_interest_pct ?? 2),
+              investor1_other_expenses_pct: Number((p as any).investor1_other_expenses_pct ?? 0),
             }} />
         </div>}
 

@@ -13,6 +13,7 @@ export interface Invoice {
   investor1PaidAmount?: number; investor1Profit1?: number; investor1Profit2?: number; investor1OtherExpenses?: number;
   investor2Profit1?: number; investor2Profit2?: number;
   investor1AdditionalCapital?: number; investor1Interest?: number;
+  investor1Incentive?: number; investor1BalanceAmount?: number;
   createdAt?: string; updatedAt?: string;
 }
 
@@ -41,6 +42,8 @@ function mapRow(row: any): Invoice {
     investor2Profit2:       Number(row.investor2_profit2        ?? 0),
     investor1AdditionalCapital: Number(row.investor1_additional_capital ?? 0),
     investor1Interest:          Number(row.investor1_interest          ?? 0),
+    investor1Incentive:         Number(row.investor1_incentive         ?? 0),
+    investor1BalanceAmount:     Number(row.investor1_balance_amount    ?? 0),
     createdAt:     row.created_at     ?? '',
     updatedAt:     row.updated_at     ?? '',
   };
@@ -58,6 +61,7 @@ function mapToDb(inv: Partial<Invoice>): Record<string, any> {
     investor1Profit2:'investor1_profit2', investor1OtherExpenses:'investor1_other_expenses',
     investor2Profit1:'investor2_profit1', investor2Profit2:'investor2_profit2',
     investor1AdditionalCapital:'investor1_additional_capital', investor1Interest:'investor1_interest',
+    investor1Incentive:'investor1_incentive', investor1BalanceAmount:'investor1_balance_amount',
   };
   const DATE_COLS = new Set(['invoice_date','due_date']);
   for (const [key, val] of Object.entries(inv)) {

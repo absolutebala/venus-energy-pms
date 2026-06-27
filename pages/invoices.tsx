@@ -83,7 +83,7 @@ export default function InvoicesPage() {
   const [newInv,      setNewInv]      = useState({
     invoiceNo:"", invoiceDate:"", invoiceAmount:"",
     gst:"", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
-    wccNo:"", receiptNo:"", investor:"",
+    wccNo:"", receiptNo:"", investor:"", investor1Incentive:"",
   });
 
   // ── Invoice Settings (admin-only Profit% config) — PER PROJECT, scoped to whichever project is matched
@@ -137,6 +137,7 @@ export default function InvoicesPage() {
     investor2_profit2_pct: Number((formLinkedProject as any)?.investor2_profit2_pct ?? 95),
     investor1_additional_capital_pct: Number((formLinkedProject as any)?.investor1_additional_capital_pct ?? 2),
     investor1_interest_pct: Number((formLinkedProject as any)?.investor1_interest_pct ?? 2),
+    investor1_other_expenses_pct: Number((formLinkedProject as any)?.investor1_other_expenses_pct ?? 0),
   };
   const openSettings = () => { setSettingsForm(invSettings); setShowSettings(true); };
   const saveInvoiceSettings = async () => {
@@ -150,6 +151,7 @@ export default function InvoicesPage() {
         investor2_profit2_pct: Number((settingsForm as any).investor2_profit2_pct) || 0,
         investor1_additional_capital_pct: Number((settingsForm as any).investor1_additional_capital_pct) || 0,
         investor1_interest_pct: Number((settingsForm as any).investor1_interest_pct) || 0,
+        investor1_other_expenses_pct: Number((settingsForm as any).investor1_other_expenses_pct) || 0,
       };
       await ctxUpdateProjectInv((formLinkedProject as any).id, payload as any, profile?.full_name || undefined);
       setShowSettings(false);
@@ -161,14 +163,18 @@ export default function InvoicesPage() {
     }
   };
   const formInvoiceAmt = Number(newInv.invoiceAmount) || 0;
+  const investor1PaidAmt = Number((formLinkedProject as any)?.paidAmount) || 0;
+  const investor1OtherExpenses = formInvoiceAmt * (Number(invSettings.investor1_other_expenses_pct) || 0) / 100;
+  const investor1Incentive = Number(newInv.investor1Incentive) || 0;
   const investor1Calc = {
-    paidAmount: Number((formLinkedProject as any)?.paidAmount) || 0,
+    paidAmount: investor1PaidAmt,
     profit1: formInvoiceAmt * (Number(invSettings.investor1_profit1_pct) || 0) / 100,
     profit2: formInvoiceAmt * (Number(invSettings.investor1_profit2_pct) || 0) / 100,
-    additionalCapital: formInvoiceAmt * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100,
-    interest: formInvoiceAmt * (Number(invSettings.investor1_interest_pct) || 0) / 100,
+    additionalCapital: investor1PaidAmt * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100,
+    interest: investor1PaidAmt * (Number(invSettings.investor1_interest_pct) || 0) / 100,
   };
-  const investor1OtherExpenses = formInvoiceAmt - investor1Calc.paidAmount - investor1Calc.profit1 - investor1Calc.profit2;
+  const investor1BalanceAmount = formInvoiceAmt - investor1Calc.paidAmount - investor1Calc.additionalCapital
+    - investor1Calc.profit1 - investor1Calc.profit2 - investor1OtherExpenses - investor1Calc.interest - investor1Incentive;
   const investor2Calc = {
     profit1: formInvoiceAmt * (Number(invSettings.investor2_profit1_pct) || 0) / 100,
     profit2: formInvoiceAmt * (Number(invSettings.investor2_profit2_pct) || 0) / 100,
@@ -270,9 +276,11 @@ export default function InvoicesPage() {
       const investor1Paid = Number((linkedProj as any)?.paidAmount) || 0;
       const inv1Profit1 = amt * (Number(invSettings.investor1_profit1_pct) || 0) / 100;
       const inv1Profit2 = amt * (Number(invSettings.investor1_profit2_pct) || 0) / 100;
-      const inv1Other = amt - investor1Paid - inv1Profit1 - inv1Profit2;
-      const inv1AdditionalCapital = amt * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100;
-      const inv1Interest = amt * (Number(invSettings.investor1_interest_pct) || 0) / 100;
+      const inv1AdditionalCapital = investor1Paid * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100;
+      const inv1Interest = investor1Paid * (Number(invSettings.investor1_interest_pct) || 0) / 100;
+      const inv1Other = amt * (Number(invSettings.investor1_other_expenses_pct) || 0) / 100;
+      const inv1Incentive = Number(newInv.investor1Incentive) || 0;
+      const inv1Balance = amt - investor1Paid - inv1AdditionalCapital - inv1Profit1 - inv1Profit2 - inv1Other - inv1Interest - inv1Incentive;
       const inv2Profit1 = amt * (Number(invSettings.investor2_profit1_pct) || 0) / 100;
       const inv2Profit2 = amt * (Number(invSettings.investor2_profit2_pct) || 0) / 100;
       await addInvoice({
@@ -288,6 +296,7 @@ export default function InvoicesPage() {
           investor1PaidAmount: investor1Paid, investor1Profit1: inv1Profit1,
           investor1Profit2: inv1Profit2, investor1OtherExpenses: inv1Other,
           investor1AdditionalCapital: inv1AdditionalCapital, investor1Interest: inv1Interest,
+          investor1Incentive: inv1Incentive, investor1BalanceAmount: inv1Balance,
         } : {}),
         ...(newInv.investor === 'Investor 2' ? {
           investor2Profit1: inv2Profit1, investor2Profit2: inv2Profit2,
@@ -295,7 +304,7 @@ export default function InvoicesPage() {
       });
       setNewInv({ invoiceNo:"", invoiceDate:"", invoiceAmount:"",
         gst:"", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
-        wccNo:"", receiptNo:"", investor:"" });
+        wccNo:"", receiptNo:"", investor:"", investor1Incentive:"" });
       setShowForm(false);
       setToast({ msg:"✅ Invoice added successfully", type:"success" });
     } catch (err: any) {
@@ -549,20 +558,32 @@ export default function InvoicesPage() {
             {newInv.investor === 'Investor 1' && (
               <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:14, marginBottom:12, background:'#fff' }}>
                 <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:10 }}>Investor 1 Details</div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:12 }}>
                   {[
                     ['Paid Amount (₹)', fmt(investor1Calc.paidAmount)],
                     [`Profit 1 (${invSettings.investor1_profit1_pct}%)`, fmt(investor1Calc.profit1)],
                     [`Profit 2 (${invSettings.investor1_profit2_pct}%)`, fmt(investor1Calc.profit2)],
                     [`Additional Capital (${invSettings.investor1_additional_capital_pct}%)`, fmt(investor1Calc.additionalCapital)],
                     [`Interest (${invSettings.investor1_interest_pct}%)`, fmt(investor1Calc.interest)],
-                    ['Other Expenses (₹)', fmt(investor1OtherExpenses)],
+                    [`Other Expenses (${invSettings.investor1_other_expenses_pct}%)`, fmt(investor1OtherExpenses)],
                   ].map(([label,val]) => (
                     <div key={label as string}>
                       <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</div>
                       <div style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, background:T.bg, color:T.text }}>{val}</div>
                     </div>
                   ))}
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+                  <div>
+                    <label style={{ display:"block", fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>Incentive (₹)</label>
+                    <input type="number" value={newInv.investor1Incentive} placeholder="0"
+                      onChange={e => setNewInv(p => ({ ...p, investor1Incentive: e.target.value }))}
+                      style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px", fontSize:13, width:"100%", boxSizing:"border-box" as const, outline:"none", background:"#fff" }} />
+                  </div>
+                  <div style={{ gridColumn:"span 2" }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Balance Amount (₹)</div>
+                    <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:6, padding:'7px 10px', fontSize:13, fontWeight:700, background:T.primaryLight, color:T.primary }}>{fmt(investor1BalanceAmount)}</div>
+                  </div>
                 </div>
               </div>
             )}
@@ -821,6 +842,12 @@ export default function InvoicesPage() {
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Interest (%)</label>
                 <input type="number" value={(settingsForm as any).investor1_interest_pct}
                   onChange={e=>setSettingsForm((p:any)=>({...p, investor1_interest_pct:e.target.value}))}
+                  style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Other Expenses (%)</label>
+                <input type="number" value={(settingsForm as any).investor1_other_expenses_pct}
+                  onChange={e=>setSettingsForm((p:any)=>({...p, investor1_other_expenses_pct:e.target.value}))}
                   style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
               </div>
             </div>
