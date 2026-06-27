@@ -135,6 +135,8 @@ export default function InvoicesPage() {
     investor1_profit2_pct: Number((formLinkedProject as any)?.investor1_profit2_pct ?? 5),
     investor2_profit1_pct: Number((formLinkedProject as any)?.investor2_profit1_pct ?? 5),
     investor2_profit2_pct: Number((formLinkedProject as any)?.investor2_profit2_pct ?? 95),
+    investor1_additional_capital_pct: Number((formLinkedProject as any)?.investor1_additional_capital_pct ?? 2),
+    investor1_interest_pct: Number((formLinkedProject as any)?.investor1_interest_pct ?? 2),
   };
   const openSettings = () => { setSettingsForm(invSettings); setShowSettings(true); };
   const saveInvoiceSettings = async () => {
@@ -146,6 +148,8 @@ export default function InvoicesPage() {
         investor1_profit2_pct: Number((settingsForm as any).investor1_profit2_pct) || 0,
         investor2_profit1_pct: Number((settingsForm as any).investor2_profit1_pct) || 0,
         investor2_profit2_pct: Number((settingsForm as any).investor2_profit2_pct) || 0,
+        investor1_additional_capital_pct: Number((settingsForm as any).investor1_additional_capital_pct) || 0,
+        investor1_interest_pct: Number((settingsForm as any).investor1_interest_pct) || 0,
       };
       await ctxUpdateProjectInv((formLinkedProject as any).id, payload as any, profile?.full_name || undefined);
       setShowSettings(false);
@@ -161,6 +165,8 @@ export default function InvoicesPage() {
     paidAmount: Number((formLinkedProject as any)?.paidAmount) || 0,
     profit1: formInvoiceAmt * (Number(invSettings.investor1_profit1_pct) || 0) / 100,
     profit2: formInvoiceAmt * (Number(invSettings.investor1_profit2_pct) || 0) / 100,
+    additionalCapital: formInvoiceAmt * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100,
+    interest: formInvoiceAmt * (Number(invSettings.investor1_interest_pct) || 0) / 100,
   };
   const investor1OtherExpenses = formInvoiceAmt - investor1Calc.paidAmount - investor1Calc.profit1 - investor1Calc.profit2;
   const investor2Calc = {
@@ -265,6 +271,8 @@ export default function InvoicesPage() {
       const inv1Profit1 = amt * (Number(invSettings.investor1_profit1_pct) || 0) / 100;
       const inv1Profit2 = amt * (Number(invSettings.investor1_profit2_pct) || 0) / 100;
       const inv1Other = amt - investor1Paid - inv1Profit1 - inv1Profit2;
+      const inv1AdditionalCapital = amt * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100;
+      const inv1Interest = amt * (Number(invSettings.investor1_interest_pct) || 0) / 100;
       const inv2Profit1 = amt * (Number(invSettings.investor2_profit1_pct) || 0) / 100;
       const inv2Profit2 = amt * (Number(invSettings.investor2_profit2_pct) || 0) / 100;
       await addInvoice({
@@ -279,6 +287,7 @@ export default function InvoicesPage() {
         ...(newInv.investor === 'Investor 1' ? {
           investor1PaidAmount: investor1Paid, investor1Profit1: inv1Profit1,
           investor1Profit2: inv1Profit2, investor1OtherExpenses: inv1Other,
+          investor1AdditionalCapital: inv1AdditionalCapital, investor1Interest: inv1Interest,
         } : {}),
         ...(newInv.investor === 'Investor 2' ? {
           investor2Profit1: inv2Profit1, investor2Profit2: inv2Profit2,
@@ -540,11 +549,13 @@ export default function InvoicesPage() {
             {newInv.investor === 'Investor 1' && (
               <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:14, marginBottom:12, background:'#fff' }}>
                 <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:10 }}>Investor 1 Details</div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:12 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
                   {[
                     ['Paid Amount (₹)', fmt(investor1Calc.paidAmount)],
                     [`Profit 1 (${invSettings.investor1_profit1_pct}%)`, fmt(investor1Calc.profit1)],
                     [`Profit 2 (${invSettings.investor1_profit2_pct}%)`, fmt(investor1Calc.profit2)],
+                    [`Additional Capital (${invSettings.investor1_additional_capital_pct}%)`, fmt(investor1Calc.additionalCapital)],
+                    [`Interest (${invSettings.investor1_interest_pct}%)`, fmt(investor1Calc.interest)],
                     ['Other Expenses (₹)', fmt(investor1OtherExpenses)],
                   ].map(([label,val]) => (
                     <div key={label as string}>
@@ -798,6 +809,18 @@ export default function InvoicesPage() {
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Profit 2 (%)</label>
                 <input type="number" value={(settingsForm as any).investor1_profit2_pct}
                   onChange={e=>setSettingsForm((p:any)=>({...p, investor1_profit2_pct:e.target.value}))}
+                  style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Additional Capital (%)</label>
+                <input type="number" value={(settingsForm as any).investor1_additional_capital_pct}
+                  onChange={e=>setSettingsForm((p:any)=>({...p, investor1_additional_capital_pct:e.target.value}))}
+                  style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Interest (%)</label>
+                <input type="number" value={(settingsForm as any).investor1_interest_pct}
+                  onChange={e=>setSettingsForm((p:any)=>({...p, investor1_interest_pct:e.target.value}))}
                   style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
               </div>
             </div>
