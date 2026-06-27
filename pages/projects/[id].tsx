@@ -1991,22 +1991,52 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
   );
 }
 
-function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:string; canAdd:boolean; projectPoNo?:string }) {
+function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0 }: { projectId:string; canAdd:boolean; projectPoNo?:string; paidAmount?:number }) {
   const { getByProject, addInvoice, updateInvoice, deleteInvoice, loading } = useInvoices();
   const [editInvId,  setEditInvId]  = React.useState<string|null>(null);
   const [editInvRow, setEditInvRow] = React.useState<any>({});
+
+  // Invoice settings (Profit % per investor) — read-only here, configured on the main Invoices page
+  const [invSettings, setInvSettings] = React.useState({
+    investor1_profit1_pct: 5, investor1_profit2_pct: 5,
+    investor2_profit1_pct: 5, investor2_profit2_pct: 95,
+  });
+  React.useEffect(() => {
+    createClient().from('invoice_settings').select('*').eq('id', 1).single().then(({ data }) => {
+      if (data) setInvSettings(data);
+    });
+  }, []);
+  const calcInvestor1 = (amt: number) => {
+    const profit1 = amt * (Number(invSettings.investor1_profit1_pct) || 0) / 100;
+    const profit2 = amt * (Number(invSettings.investor1_profit2_pct) || 0) / 100;
+    return { paidAmount, profit1, profit2, otherExpenses: amt - paidAmount - profit1 - profit2 };
+  };
+  const calcInvestor2 = (amt: number) => ({
+    profit1: amt * (Number(invSettings.investor2_profit1_pct) || 0) / 100,
+    profit2: amt * (Number(invSettings.investor2_profit2_pct) || 0) / 100,
+  });
 
   const saveInvEdit = async () => {
     if (!editInvId) return;
     setSaving(true);
     try {
       const amt = Number(editInvRow.invoiceAmount)||0, gstPct = Number(editInvRow.gst)||0, gst = amt * gstPct / 100;
+      const editInv1 = calcInvestor1(amt);
+      const editInv2 = calcInvestor2(amt);
       await updateInvoice(editInvId, {
         invoiceNo: editInvRow.invoiceNo, invoiceDate: editInvRow.invoiceDate,
         invoiceAmount: amt, gst, totalAmount: amt + gst,
         dueDate: editInvRow.dueDate, invoiceStatus: editInvRow.invoiceStatus,
         paymentStatus: editInvRow.paymentStatus,
         wccNo: editInvRow.wccNo||'', receiptNo: editInvRow.receiptNo||'',
+        investor: editInvRow.investor || '',
+        ...(editInvRow.investor === 'Investor 1' ? {
+          investor1PaidAmount: editInv1.paidAmount, investor1Profit1: editInv1.profit1,
+          investor1Profit2: editInv1.profit2, investor1OtherExpenses: editInv1.otherExpenses,
+        } : {}),
+        ...(editInvRow.investor === 'Investor 2' ? {
+          investor2Profit1: editInv2.profit1, investor2Profit2: editInv2.profit2,
+        } : {}),
       } as any);
       setEditInvId(null); setEditInvRow({});
       setToast({ msg:'✅ Invoice updated', type:'success' });
@@ -2022,7 +2052,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
   const [newRow,  setNewRow]  = React.useState({
     invoiceNo:'', invoiceDate:'', invoiceAmount:'',
     gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo,
-    wccNo:'', receiptNo:''
+    wccNo:'', receiptNo:'', investor:''
   });
 
   const fmt  = (n: number) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits:2 });
@@ -2058,6 +2088,8 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
     const amt = Number(newRow.invoiceAmount), gstPct = Number(newRow.gst), gst = amt * gstPct / 100;
     setSaving(true);
     try {
+      const inv1 = calcInvestor1(amt);
+      const inv2 = calcInvestor2(amt);
       await addInvoice({
         invoiceNo: newRow.invoiceNo, invoiceDate: newRow.invoiceDate,
         invoiceAmount: amt, gst, totalAmount: amt + gst,
@@ -2065,10 +2097,18 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
         invoiceStatus: newRow.invoiceStatus, paymentStatus: newRow.paymentStatus,
         dueDate: newRow.dueDate, poNo: newRow.poNo || projectPoNo,
         projectId, createdBy: profile?.full_name || '',
+        investor: newRow.investor || '',
+        ...(newRow.investor === 'Investor 1' ? {
+          investor1PaidAmount: inv1.paidAmount, investor1Profit1: inv1.profit1,
+          investor1Profit2: inv1.profit2, investor1OtherExpenses: inv1.otherExpenses,
+        } : {}),
+        ...(newRow.investor === 'Investor 2' ? {
+          investor2Profit1: inv2.profit1, investor2Profit2: inv2.profit2,
+        } : {}),
       });
       setNewRow({ invoiceNo:'', invoiceDate:'', invoiceAmount:'',
         gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo,
-        wccNo:'', receiptNo:'' });
+        wccNo:'', receiptNo:'', investor:'' });
       setAdding(false);
       logActivity(projectId, `Invoice ${newRow.invoiceNo} added`, profile?.full_name||'', profile?.role||'').catch(console.error);
       setToast({ msg:'✅ Invoice saved', type:'success' });
@@ -2147,7 +2187,54 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
                             {['Draft','Submitted','Approved','Rejected','Paid'].map(s=><option key={s}>{s}</option>)}
                           </select>
                         </div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Investor</div>
+                          <select style={inpS} value={editInvRow.investor||''} onChange={e=>setEditInvRow((p:any)=>({...p,investor:e.target.value}))}>
+                            <option value="">— None —</option>
+                            <option value="Investor 1">Investor 1</option>
+                            <option value="Investor 2">Investor 2</option>
+                          </select>
+                        </div>
                       </div>
+                      {editInvRow.investor === 'Investor 1' && (() => {
+                        const c1 = calcInvestor1(Number(editInvRow.invoiceAmount)||0);
+                        return (
+                          <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:10, marginBottom:12, background:'#fff' }}>
+                            <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 1 Details</div>
+                            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+                              {[
+                                ['Paid Amount (₹)', fmt(c1.paidAmount)],
+                                [`Profit 1 (${invSettings.investor1_profit1_pct}%)`, fmt(c1.profit1)],
+                                [`Profit 2 (${invSettings.investor1_profit2_pct}%)`, fmt(c1.profit2)],
+                                ['Other Expenses (₹)', fmt(c1.otherExpenses)],
+                              ].map(([label,val]) => (
+                                <div key={label as string}>
+                                  <div style={{ fontSize:10, color:T.textMuted, marginBottom:2 }}>{label}</div>
+                                  <div style={{ ...inpS, background:T.bg }}>{val}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      {editInvRow.investor === 'Investor 2' && (() => {
+                        const c2 = calcInvestor2(Number(editInvRow.invoiceAmount)||0);
+                        return (
+                          <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:10, marginBottom:12, background:'#fff' }}>
+                            <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 2 Details</div>
+                            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
+                              {[
+                                [`Profit 1 (${invSettings.investor2_profit1_pct}%)`, fmt(c2.profit1)],
+                                [`Profit 2 (${invSettings.investor2_profit2_pct}%)`, fmt(c2.profit2)],
+                              ].map(([label,val]) => (
+                                <div key={label as string}>
+                                  <div style={{ fontSize:10, color:T.textMuted, marginBottom:2 }}>{label}</div>
+                                  <div style={{ ...inpS, background:T.bg }}>{val}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                       <div style={{ display:'flex', gap:8 }}>
                         <button onClick={saveInvEdit} disabled={saving}
                           style={{ background:T.primary, color:'#fff', border:'none', borderRadius:7, padding:'6px 18px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
@@ -2222,7 +2309,56 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='' }: { projectId:strin
                 {['Pending','Partial','Paid'].map(s=><option key={s}>{s}</option>)}
               </select>
             </div>
+            <div>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Investor</label>
+              <select value={newRow.investor} onChange={e=>setNewRow(p=>({...p,investor:e.target.value}))}
+                style={{ ...inpS, cursor:'pointer' }}>
+                <option value="">— None —</option>
+                <option value="Investor 1">Investor 1</option>
+                <option value="Investor 2">Investor 2</option>
+              </select>
+            </div>
           </div>
+          {newRow.investor === 'Investor 1' && (() => {
+            const c1 = calcInvestor1(Number(newRow.invoiceAmount)||0);
+            return (
+              <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:12, marginBottom:12, background:'#fff' }}>
+                <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 1 Details</div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+                  {[
+                    ['Paid Amount (₹)', fmt(c1.paidAmount)],
+                    [`Profit 1 (${invSettings.investor1_profit1_pct}%)`, fmt(c1.profit1)],
+                    [`Profit 2 (${invSettings.investor1_profit2_pct}%)`, fmt(c1.profit2)],
+                    ['Other Expenses (₹)', fmt(c1.otherExpenses)],
+                  ].map(([label,val]) => (
+                    <div key={label as string}>
+                      <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</div>
+                      <div style={{ ...inpS, background:T.bg }}>{val}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+          {newRow.investor === 'Investor 2' && (() => {
+            const c2 = calcInvestor2(Number(newRow.invoiceAmount)||0);
+            return (
+              <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:12, marginBottom:12, background:'#fff' }}>
+                <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 2 Details</div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:10 }}>
+                  {[
+                    [`Profit 1 (${invSettings.investor2_profit1_pct}%)`, fmt(c2.profit1)],
+                    [`Profit 2 (${invSettings.investor2_profit2_pct}%)`, fmt(c2.profit2)],
+                  ].map(([label,val]) => (
+                    <div key={label as string}>
+                      <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</div>
+                      <div style={{ ...inpS, background:T.bg }}>{val}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
           <div style={{ display:'flex', gap:10 }}>
             <button onClick={saveNew} disabled={saving||!newRow.invoiceNo||!newRow.invoiceDate||!newRow.invoiceAmount}
               style={{ background:T.primary, color:'#fff', border:'none', borderRadius:8, padding:'8px 18px',
@@ -3305,7 +3441,7 @@ export default function ProjectDetailPage() {
         {/* ── Invoice ── */}
         {showInvoice && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('🧾','Invoice', 'invoice', false)}
-          <InvoiceSection projectId={p.id} canAdd={canAddInvoice} projectPoNo={p.poNo||''} />
+          <InvoiceSection projectId={p.id} canAdd={canAddInvoice} projectPoNo={p.poNo||''} paidAmount={(p as any).paidAmount||0} />
         </div>}
 
         {/* ── 6. Activity Log ── */}
