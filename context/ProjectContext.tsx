@@ -179,9 +179,13 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       .update(dbPayload)
       .eq('id', id);
     if (err) throw new Error(err.message);
-    // Optimistic update with mapped camelCase
-    const mapped = mapRow({ ...updates, id, updated_by: updatedBy || '' });
-    setProjects(prev => prev.map(p => p.id === id ? { ...p, ...mapped } : p));
+    // Optimistic update: merge ONLY the fields that were actually part of this partial update.
+    // (Previously this ran the partial `updates` object through mapRow(), which fills in '' for
+    // every field absent from a full DB row — silently wiping indusId/site/poNo/pm/region/etc.
+    // in the in-memory cache on every partial save, until the next full refetch.)
+    setProjects(prev => prev.map(p => p.id === id
+      ? { ...p, ...updates, updatedBy: updatedBy || p.updatedBy, updatedAt: dbPayload.updated_at }
+      : p));
   }, []);
 
   return (
