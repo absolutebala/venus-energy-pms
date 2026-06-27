@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import DateInput from '@/components/DateInput';
 import MultiSelect from '@/components/MultiSelect';
@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useInvoices } from '@/context/InvoiceContext';
 import * as XLSX from 'xlsx';
 import { useProjects } from '@/context/ProjectContext';
+import { createClient } from '@/lib/supabase';
 import { T, card, btnPrimary, btnSecondary } from '@/lib/theme';
 import Toast from '@/components/Toast';
 
@@ -82,8 +83,63 @@ export default function InvoicesPage() {
   const [newInv,      setNewInv]      = useState({
     invoiceNo:"", invoiceDate:"", invoiceAmount:"",
     gst:"", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
-    wccNo:"", receiptNo:"",
+    wccNo:"", receiptNo:"", investor:"",
   });
+
+  // ── Invoice Settings (admin-only Profit% config) ─────────────────────────
+  const isSuperAdmin = !authLoading && profile?.role === 'super_admin';
+  const [invSettings, setInvSettings] = useState({
+    investor1_profit1_pct: 5, investor1_profit2_pct: 5,
+    investor2_profit1_pct: 5, investor2_profit2_pct: 95,
+  });
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsForm, setSettingsForm] = useState(invSettings);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+
+  useEffect(() => {
+    createClient().from('invoice_settings').select('*').eq('id', 1).single().then(({ data }) => {
+      if (data) { setInvSettings(data); setSettingsForm(data); }
+    });
+  }, []);
+
+  const openSettings = () => { setSettingsForm(invSettings); setShowSettings(true); };
+
+  const saveInvoiceSettings = async () => {
+    setSettingsSaving(true);
+    try {
+      const payload = {
+        investor1_profit1_pct: Number((settingsForm as any).investor1_profit1_pct) || 0,
+        investor1_profit2_pct: Number((settingsForm as any).investor1_profit2_pct) || 0,
+        investor2_profit1_pct: Number((settingsForm as any).investor2_profit1_pct) || 0,
+        investor2_profit2_pct: Number((settingsForm as any).investor2_profit2_pct) || 0,
+        updated_by: profile?.full_name || '',
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await createClient().from('invoice_settings').update(payload).eq('id', 1);
+      if (error) throw new Error(error.message);
+      setInvSettings(prev => ({ ...prev, ...payload }));
+      setShowSettings(false);
+      setToast({ msg: '✅ Invoice settings updated', type: 'success' });
+    } catch (err: any) {
+      setToast({ msg: '❌ ' + err.message, type: 'error' });
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
+  // Resolve the project linked to the invoice form in progress (mirrors saveInvoice's own lookup)
+  const formLinkedProject = matchedProject || projects.find((p: any) => matchesPO(p.poNo, newInv.poNo));
+  const formInvoiceAmt = Number(newInv.invoiceAmount) || 0;
+  const investor1Calc = {
+    paidAmount: Number((formLinkedProject as any)?.paidAmount) || 0,
+    profit1: formInvoiceAmt * (Number(invSettings.investor1_profit1_pct) || 0) / 100,
+    profit2: formInvoiceAmt * (Number(invSettings.investor1_profit2_pct) || 0) / 100,
+  };
+  const investor1OtherExpenses = formInvoiceAmt - investor1Calc.paidAmount - investor1Calc.profit1 - investor1Calc.profit2;
+  const investor2Calc = {
+    profit1: formInvoiceAmt * (Number(invSettings.investor2_profit1_pct) || 0) / 100,
+    profit2: formInvoiceAmt * (Number(invSettings.investor2_profit2_pct) || 0) / 100,
+  };
 
   const saveInvEdit = async () => {
     if (!editInvId) return;
@@ -210,6 +266,12 @@ export default function InvoicesPage() {
     const linkedProj = matchedProject || projects.find((p:any) => matchesPO(p.poNo, newInv.poNo));
     setSaving(true);
     try {
+      const investor1Paid = Number((linkedProj as any)?.paidAmount) || 0;
+      const inv1Profit1 = amt * (Number(invSettings.investor1_profit1_pct) || 0) / 100;
+      const inv1Profit2 = amt * (Number(invSettings.investor1_profit2_pct) || 0) / 100;
+      const inv1Other = amt - investor1Paid - inv1Profit1 - inv1Profit2;
+      const inv2Profit1 = amt * (Number(invSettings.investor2_profit1_pct) || 0) / 100;
+      const inv2Profit2 = amt * (Number(invSettings.investor2_profit2_pct) || 0) / 100;
       await addInvoice({
         invoiceNo: newInv.invoiceNo, invoiceDate: newInv.invoiceDate,
         invoiceAmount: amt, gst, totalAmount: amt + gst,
@@ -218,10 +280,18 @@ export default function InvoicesPage() {
         dueDate: newInv.dueDate, poNo: newInv.poNo || (linkedProj as any)?.poNo || "",
         projectId: (linkedProj as any)?.id || "",
         createdBy: profile?.full_name || "",
+        investor: newInv.investor || "",
+        ...(newInv.investor === 'Investor 1' ? {
+          investor1PaidAmount: investor1Paid, investor1Profit1: inv1Profit1,
+          investor1Profit2: inv1Profit2, investor1OtherExpenses: inv1Other,
+        } : {}),
+        ...(newInv.investor === 'Investor 2' ? {
+          investor2Profit1: inv2Profit1, investor2Profit2: inv2Profit2,
+        } : {}),
       });
       setNewInv({ invoiceNo:"", invoiceDate:"", invoiceAmount:"",
         gst:"", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
-        wccNo:"", receiptNo:"" });
+        wccNo:"", receiptNo:"", investor:"" });
       setShowForm(false);
       setToast({ msg:"✅ Invoice added successfully", type:"success" });
     } catch (err: any) {
@@ -290,6 +360,12 @@ export default function InvoicesPage() {
             </div>
           </div>
           <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' as const }}>
+            {isSuperAdmin && (
+              <button onClick={openSettings} title="Invoice Settings"
+                style={{ ...btnSecondary, fontSize:12, display:'flex', alignItems:'center', gap:6, padding:'8px 10px' }}>
+                ⚙️
+              </button>
+            )}
             {canExport && (
               <button onClick={exportToExcel}
                 style={{ ...btnSecondary, fontSize:12, display:'flex', alignItems:'center', gap:6 }}>
@@ -453,7 +529,53 @@ export default function InvoicesPage() {
                   {["Pending","Partial","Paid"].map(s => <option key={s}>{s}</option>)}
                 </select>
               </div>
+              <div>
+                <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>Investor</label>
+                <select value={newInv.investor} onChange={e => setNewInv(p => ({ ...p, investor: e.target.value }))}
+                  style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px", fontSize:13, width:"100%", outline:"none", background:"#fff", cursor:"pointer" }}>
+                  <option value="">— None —</option>
+                  <option value="Investor 1">Investor 1</option>
+                  <option value="Investor 2">Investor 2</option>
+                </select>
+              </div>
             </div>
+
+            {newInv.investor === 'Investor 1' && (
+              <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:14, marginBottom:12, background:'#fff' }}>
+                <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:10 }}>Investor 1 Details</div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:12 }}>
+                  {[
+                    ['Paid Amount (₹)', fmt(investor1Calc.paidAmount)],
+                    [`Profit 1 (${invSettings.investor1_profit1_pct}%)`, fmt(investor1Calc.profit1)],
+                    [`Profit 2 (${invSettings.investor1_profit2_pct}%)`, fmt(investor1Calc.profit2)],
+                    ['Other Expenses (₹)', fmt(investor1OtherExpenses)],
+                  ].map(([label,val]) => (
+                    <div key={label as string}>
+                      <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</div>
+                      <div style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, background:T.bg, color:T.text }}>{val}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {newInv.investor === 'Investor 2' && (
+              <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:14, marginBottom:12, background:'#fff' }}>
+                <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:10 }}>Investor 2 Details</div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  {[
+                    [`Profit 1 (${invSettings.investor2_profit1_pct}%)`, fmt(investor2Calc.profit1)],
+                    [`Profit 2 (${invSettings.investor2_profit2_pct}%)`, fmt(investor2Calc.profit2)],
+                  ].map(([label,val]) => (
+                    <div key={label as string}>
+                      <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</div>
+                      <div style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, background:T.bg, color:T.text }}>{val}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div style={{ display:"flex", gap:10 }}>
               <button onClick={saveInvoice} disabled={saving || !newInv.invoiceNo || !newInv.invoiceDate || !newInv.invoiceAmount}
                 style={{ ...btnPrimary, opacity: saving || !newInv.invoiceNo || !newInv.invoiceDate || !newInv.invoiceAmount ? 0.5 : 1 }}>
@@ -659,6 +781,57 @@ export default function InvoicesPage() {
           )}
         </div>
       </div>
+      {showSettings && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.5)', zIndex:1100, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+          onClick={()=>setShowSettings(false)}>
+          <div style={{ background:'#fff', borderRadius:14, padding:28, width:'100%', maxWidth:440, boxShadow:'0 20px 60px rgba(0,0,0,0.2)' }}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{ fontSize:16, fontWeight:700, color:T.text, marginBottom:4 }}>⚙️ Invoice Settings</div>
+            <div style={{ fontSize:12, color:T.textMuted, marginBottom:18 }}>Profit percentages used to auto-calculate Investor fields on new invoices.</div>
+
+            <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 1</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:18 }}>
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Profit 1 (%)</label>
+                <input type="number" value={(settingsForm as any).investor1_profit1_pct}
+                  onChange={e=>setSettingsForm((p:any)=>({...p, investor1_profit1_pct:e.target.value}))}
+                  style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Profit 2 (%)</label>
+                <input type="number" value={(settingsForm as any).investor1_profit2_pct}
+                  onChange={e=>setSettingsForm((p:any)=>({...p, investor1_profit2_pct:e.target.value}))}
+                  style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
+              </div>
+            </div>
+
+            <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 2</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:20 }}>
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Profit 1 (%)</label>
+                <input type="number" value={(settingsForm as any).investor2_profit1_pct}
+                  onChange={e=>setSettingsForm((p:any)=>({...p, investor2_profit1_pct:e.target.value}))}
+                  style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Profit 2 (%)</label>
+                <input type="number" value={(settingsForm as any).investor2_profit2_pct}
+                  onChange={e=>setSettingsForm((p:any)=>({...p, investor2_profit2_pct:e.target.value}))}
+                  style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
+              </div>
+            </div>
+
+            <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+              <button onClick={()=>setShowSettings(false)}
+                style={{ ...btnSecondary }}>Cancel</button>
+              <button onClick={saveInvoiceSettings} disabled={settingsSaving}
+                style={{ ...btnPrimary, opacity: settingsSaving ? 0.7 : 1 }}>
+                {settingsSaving ? 'Saving…' : '💾 Save Settings'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showExportWarning && (
         <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.5)', zIndex:1100, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
           <div style={{ background:'#fff', borderRadius:14, padding:28, width:'100%', maxWidth:380, boxShadow:'0 20px 60px rgba(0,0,0,0.2)', textAlign:'center' as const }}>
