@@ -2422,12 +2422,16 @@ export default function ProjectDetailPage() {
     }
   }, [dbProject?.id]);
 
+  const APPLICABLE_LABELS: Record<string,string> = {
+    stn_applicable: 'STN Applicable', srn_applicable: 'SRN Applicable', ptw_applicable: 'PTW Applicable',
+  };
   const toggleApplicable = async (field: 'stn_applicable'|'srn_applicable'|'ptw_applicable', value: boolean) => {
     if (field==='stn_applicable') setStnApplicable(value);
     if (field==='srn_applicable') setSrnApplicable(value);
     if (field==='ptw_applicable') setPtwApplicable(value);
     try {
       await ctxUpdateProject((dbProject as any)?.id, { [field]: value } as any, profile?.full_name ?? undefined);
+      logActivityMain((dbProject as any)?.id, `${APPLICABLE_LABELS[field]} turned ${value ? 'ON' : 'OFF'}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
     } catch (err:any) {
       // Roll back the optimistic toggle if the save failed
       if (field==='stn_applicable') setStnApplicable(!value);
