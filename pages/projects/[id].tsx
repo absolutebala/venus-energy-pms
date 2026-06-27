@@ -2960,6 +2960,14 @@ export default function ProjectDetailPage() {
   );
 
   const p = project;
+  // Live-aggregated Paid Amount across all projects sharing this PO — same figure shown in Financial Summary.
+  // Used for Investor 1 calculations too, so both stay consistent (the project's raw stored paidAmount
+  // column can be stale/per-project-only and was causing a mismatch with Financial Summary's number).
+  const poPaidAmt = React.useMemo(() => {
+    if (!p?.poNo) return Number((p as any)?.paidAmount) || 0;
+    const siblingIds = (allProjects as any[]).filter((proj:any) => proj.poNo === p.poNo).map((proj:any) => proj.id);
+    return allExpenses.filter((e:any) => siblingIds.includes(e.projectId) && e.status === 'paid').reduce((a:number,e:any) => a + Number(e.amount||0), 0);
+  }, [allProjects, allExpenses, p?.poNo, (p as any)?.paidAmount]);
 
   const workDocsList = getProjectDocs((id as string) || '');
   const workDocs: Record<string, any[]> = DOC_TYPES.reduce((acc:any, dt:any) => {
@@ -3243,7 +3251,6 @@ export default function ProjectDetailPage() {
             {(() => {
               // Aggregate across all projects with same PO number
               const siblingIds = (allProjects as any[]).filter((proj:any) => proj.poNo === p.poNo).map((proj:any) => proj.id);
-              const poPaidAmt = allExpenses.filter((e:any) => siblingIds.includes(e.projectId) && e.status === 'paid').reduce((a:number,e:any) => a + Number(e.amount||0), 0);
               const poBilledAmt = allInvoices.filter((i:any) => siblingIds.includes(i.projectId) && (i.invoiceStatus === 'Approved' || i.paymentStatus === 'Paid')).reduce((a:number,i:any) => a + Number(i.invoiceAmount||0), 0);
               const rows = [
                 { label:'PO Value',      key:'poValue',  color:T.text,    computed: undefined },
@@ -3583,7 +3590,7 @@ export default function ProjectDetailPage() {
         {/* ── Invoice ── */}
         {showInvoice && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('🧾','Invoice', 'invoice', false)}
-          <InvoiceSection projectId={p.id} canAdd={canAddInvoice} projectPoNo={p.poNo||''} paidAmount={(p as any).paidAmount||0}
+          <InvoiceSection projectId={p.id} canAdd={canAddInvoice} projectPoNo={p.poNo||''} paidAmount={poPaidAmt}
             investorPct={{
               investor1_profit1_pct: Number((p as any).investor1_profit1_pct ?? 5),
               investor1_profit2_pct: Number((p as any).investor1_profit2_pct ?? 5),
