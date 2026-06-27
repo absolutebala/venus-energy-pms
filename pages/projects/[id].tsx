@@ -2084,7 +2084,8 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
   const [newRow,  setNewRow]  = React.useState({
     invoiceNo:'', invoiceDate:'', invoiceAmount:'',
     gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo,
-    wccNo:'', receiptNo:'', investor:'', investor1Incentive:''
+    wccNo:'', receiptNo:'', investor:'', investor1Incentive:'',
+    basicPaymentNo:'', basicPaymentDate:'', taxPaymentNo:'', taxPaymentDate:'', tds:'', remarks:''
   });
 
   const fmt  = (n: number) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits:2 });
