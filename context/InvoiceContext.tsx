@@ -14,6 +14,9 @@ export interface Invoice {
   investor2Profit1?: number; investor2Profit2?: number;
   investor1AdditionalCapital?: number; investor1Interest?: number;
   investor1Incentive?: number; investor1BalanceAmount?: number;
+  basicPaymentNo?: string; basicPaymentDate?: string;
+  taxPaymentNo?: string; taxPaymentDate?: string;
+  tds?: number; remarks?: string;
   createdAt?: string; updatedAt?: string;
 }
 
@@ -44,6 +47,12 @@ function mapRow(row: any): Invoice {
     investor1Interest:          Number(row.investor1_interest          ?? 0),
     investor1Incentive:         Number(row.investor1_incentive         ?? 0),
     investor1BalanceAmount:     Number(row.investor1_balance_amount    ?? 0),
+    basicPaymentNo:   row.basic_payment_no   ?? '',
+    basicPaymentDate: row.basic_payment_date ?? '',
+    taxPaymentNo:     row.tax_payment_no     ?? '',
+    taxPaymentDate:   row.tax_payment_date   ?? '',
+    tds:              Number(row.tds ?? 0),
+    remarks:          row.remarks ?? '',
     createdAt:     row.created_at     ?? '',
     updatedAt:     row.updated_at     ?? '',
   };
@@ -62,8 +71,10 @@ function mapToDb(inv: Partial<Invoice>): Record<string, any> {
     investor2Profit1:'investor2_profit1', investor2Profit2:'investor2_profit2',
     investor1AdditionalCapital:'investor1_additional_capital', investor1Interest:'investor1_interest',
     investor1Incentive:'investor1_incentive', investor1BalanceAmount:'investor1_balance_amount',
+    basicPaymentNo:'basic_payment_no', basicPaymentDate:'basic_payment_date',
+    taxPaymentNo:'tax_payment_no', taxPaymentDate:'tax_payment_date',
   };
-  const DATE_COLS = new Set(['invoice_date','due_date']);
+  const DATE_COLS = new Set(['invoice_date','due_date','basic_payment_date','tax_payment_date']);
   for (const [key, val] of Object.entries(inv)) {
     const dbKey = map[key] || key;
     if (dbKey === 'id' || dbKey === 'created_at' || dbKey === 'updated_at') continue;

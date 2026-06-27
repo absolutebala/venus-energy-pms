@@ -84,6 +84,7 @@ export default function InvoicesPage() {
     invoiceNo:"", invoiceDate:"", invoiceAmount:"",
     gst:"", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
     wccNo:"", receiptNo:"", investor:"", investor1Incentive:"",
+    basicPaymentNo:"", basicPaymentDate:"", taxPaymentNo:"", taxPaymentDate:"", tds:"", remarks:"",
   });
 
   // ── Invoice Settings (admin-only Profit% config) — PER PROJECT, scoped to whichever project is matched
@@ -107,6 +108,9 @@ export default function InvoicesPage() {
         dueDate: editInvRow.dueDate, invoiceStatus: editInvRow.invoiceStatus,
         paymentStatus: editInvRow.paymentStatus,
         wccNo: editInvRow.wccNo||'', receiptNo: editInvRow.receiptNo||'',
+        basicPaymentNo: editInvRow.basicPaymentNo||'', basicPaymentDate: editInvRow.basicPaymentDate||'',
+        taxPaymentNo: editInvRow.taxPaymentNo||'', taxPaymentDate: editInvRow.taxPaymentDate||'',
+        tds: Number(editInvRow.tds)||0, remarks: editInvRow.remarks||'',
       } as any);
       setEditInvId(null); setEditInvRow({});
       setToast({ msg:'✅ Invoice updated', type:'success' });
@@ -291,6 +295,9 @@ export default function InvoicesPage() {
         dueDate: newInv.dueDate, poNo: newInv.poNo || (linkedProj as any)?.poNo || "",
         projectId: (linkedProj as any)?.id || "",
         createdBy: profile?.full_name || "",
+        basicPaymentNo: newInv.basicPaymentNo||"", basicPaymentDate: newInv.basicPaymentDate||"",
+        taxPaymentNo: newInv.taxPaymentNo||"", taxPaymentDate: newInv.taxPaymentDate||"",
+        tds: Number(newInv.tds)||0, remarks: newInv.remarks||"",
         investor: newInv.investor || "",
         ...(newInv.investor === 'Investor 1' ? {
           investor1PaidAmount: investor1Paid, investor1Profit1: inv1Profit1,
@@ -304,7 +311,8 @@ export default function InvoicesPage() {
       });
       setNewInv({ invoiceNo:"", invoiceDate:"", invoiceAmount:"",
         gst:"", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
-        wccNo:"", receiptNo:"", investor:"", investor1Incentive:"" });
+        wccNo:"", receiptNo:"", investor:"", investor1Incentive:"",
+        basicPaymentNo:"", basicPaymentDate:"", taxPaymentNo:"", taxPaymentDate:"", tds:"", remarks:"" });
       setShowForm(false);
       setToast({ msg:"✅ Invoice added successfully", type:"success" });
     } catch (err: any) {
@@ -506,7 +514,10 @@ export default function InvoicesPage() {
               {([["PO Number","poNo","text","PO-2025-XXX"],["Invoice No *","invoiceNo","text","INV-2025-XXX"],
                  ["Invoice Date *","invoiceDate","date",""],["Due Date","dueDate","date",""],
                  ["Basic Amount (₹) *","invoiceAmount","number",""],["GST (%)","gst","number",""],
-                 ["WCC No","wccNo","text",""],["Receipt No","receiptNo","text",""]] as [string,string,string,string][]).map(([label,field,type,ph]) => (
+                 ["WCC No","wccNo","text",""],["Receipt No","receiptNo","text",""],
+                 ["Basic Payment No","basicPaymentNo","text",""],["Basic Payment Date","basicPaymentDate","date",""],
+                 ["Tax Payment No","taxPaymentNo","text",""],["Tax Payment Date","taxPaymentDate","date",""],
+                 ["TDS (₹)","tds","number",""],["Remarks","remarks","text",""]] as [string,string,string,string][]).map(([label,field,type,ph]) => (
                 <div key={field}>
                   <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>{label}</label>
                   {type === 'date' ? (
@@ -759,6 +770,16 @@ export default function InvoicesPage() {
                                 {['Draft','Submitted','Approved','Rejected','Paid'].map(s=><option key={s}>{s}</option>)}
                               </select>
                             </div>
+                          </div>
+                          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:12 }}>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Basic Payment No</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%' }} value={editInvRow.basicPaymentNo||''} onChange={e=>setEditInvRow((p:any)=>({...p,basicPaymentNo:e.target.value}))} /></div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Basic Payment Date</div><input type="date" style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%' }} value={editInvRow.basicPaymentDate||''} onChange={e=>setEditInvRow((p:any)=>({...p,basicPaymentDate:e.target.value}))} /></div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Tax Payment No</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%' }} value={editInvRow.taxPaymentNo||''} onChange={e=>setEditInvRow((p:any)=>({...p,taxPaymentNo:e.target.value}))} /></div>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Tax Payment Date</div><input type="date" style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%' }} value={editInvRow.taxPaymentDate||''} onChange={e=>setEditInvRow((p:any)=>({...p,taxPaymentDate:e.target.value}))} /></div>
+                          </div>
+                          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:12 }}>
+                            <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>TDS (₹)</div><input type="number" style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%' }} value={editInvRow.tds||''} onChange={e=>setEditInvRow((p:any)=>({...p,tds:e.target.value}))} /></div>
+                            <div style={{ gridColumn:'span 3' }}><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Remarks</div><input style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'5px 8px', fontSize:12, outline:'none', width:'100%' }} value={editInvRow.remarks||''} onChange={e=>setEditInvRow((p:any)=>({...p,remarks:e.target.value}))} /></div>
                           </div>
                           <div style={{ display:'flex', gap:8 }}>
                             <button onClick={saveInvEdit} disabled={saving}
