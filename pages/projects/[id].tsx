@@ -2686,6 +2686,17 @@ export default function ProjectDetailPage() {
   const { getByProject: getProjectDocs, addDoc, deleteDoc: deleteWorkDoc, getDocStatus } = useWorkDocs();
   const { getByProject: getActivityLog, logActivity } = useActivity();
   const dbProject = id ? getProject(id as string) : undefined;
+  // Live-aggregated Paid Amount across all projects sharing this PO — same figure shown in Financial Summary.
+  // Used for Investor 1 calculations too, so both stay consistent (the project's raw stored paidAmount
+  // column can be stale/per-project-only and was causing a mismatch with Financial Summary's number).
+  // NOTE: this hook must run unconditionally on every render — it sits above any early `return` in this
+  // component (e.g. "Project Not Found"), since skipping a hook conditionally violates the Rules of Hooks.
+  const poPaidAmt = React.useMemo(() => {
+    const dbP = dbProject as any;
+    if (!dbP?.poNo) return Number(dbP?.paidAmount) || 0;
+    const siblingIds = (allProjects as any[]).filter((proj:any) => proj.poNo === dbP.poNo).map((proj:any) => proj.id);
+    return allExpenses.filter((e:any) => siblingIds.includes(e.projectId) && e.status === 'paid').reduce((a:number,e:any) => a + Number(e.amount||0), 0);
+  }, [allProjects, allExpenses, dbProject]);
   const { logActivity: logActivityMain } = useActivity();
   const [stnApplicable, setStnApplicable] = React.useState(true);
   const [srnApplicable, setSrnApplicable] = React.useState(true);
@@ -2960,14 +2971,6 @@ export default function ProjectDetailPage() {
   );
 
   const p = project;
-  // Live-aggregated Paid Amount across all projects sharing this PO — same figure shown in Financial Summary.
-  // Used for Investor 1 calculations too, so both stay consistent (the project's raw stored paidAmount
-  // column can be stale/per-project-only and was causing a mismatch with Financial Summary's number).
-  const poPaidAmt = React.useMemo(() => {
-    if (!p?.poNo) return Number((p as any)?.paidAmount) || 0;
-    const siblingIds = (allProjects as any[]).filter((proj:any) => proj.poNo === p.poNo).map((proj:any) => proj.id);
-    return allExpenses.filter((e:any) => siblingIds.includes(e.projectId) && e.status === 'paid').reduce((a:number,e:any) => a + Number(e.amount||0), 0);
-  }, [allProjects, allExpenses, p?.poNo, (p as any)?.paidAmount]);
 
   const workDocsList = getProjectDocs((id as string) || '');
   const workDocs: Record<string, any[]> = DOC_TYPES.reduce((acc:any, dt:any) => {
