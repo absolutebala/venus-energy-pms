@@ -642,13 +642,15 @@ export default function SiteExpensesPage() {
                 placeholder="e.g. Equity, Loan, etc."
                 style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const }} />
             </div>
-            <div style={{ marginBottom:20 }}>
-              <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Regain Capital (₹)</label>
-              <div style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const, background:T.bg, color:T.text }}>{fmt(regainCapitalLive)}</div>
-              <p style={{ fontSize:13, color:T.textMuted, marginTop:6, marginBottom:0 }}>
-                Previous Regain Capital ({fmt(previousRegainCapital)}) minus this Expense Amount ({fmt(Number(paidModal?.amount||0))})
-              </p>
-            </div>
+            {paidForm.fundSource === 'Capital Fund' && (
+              <div style={{ marginBottom:20 }}>
+                <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Regain Capital (₹)</label>
+                <div style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const, background:T.bg, color:T.text }}>{fmt(regainCapitalLive)}</div>
+                <p style={{ fontSize:13, color:T.textMuted, marginTop:6, marginBottom:0 }}>
+                  Previous Regain Capital ({fmt(previousRegainCapital)}) minus this Expense Amount ({fmt(Number(paidModal?.amount||0))})
+                </p>
+              </div>
+            )}
             <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
               <button onClick={()=>setPaidModal(null)}
                 style={{ background:T.bg, border:`1px solid ${T.border}`, borderRadius:8, padding:"8px 18px", fontSize:13, cursor:"pointer", color:T.text }}>
