@@ -275,15 +275,15 @@ export default function RolesPage() {
                     // Build module rows (exclude sec_ — handled separately)
                     const moduleRows = Object.entries(perms[activeRole] || {}).filter(([m]) => !m.startsWith('sec_')).map(([module, perm]: any) => ({
                       role: activeRole, module,
-                      can_create: perm.can_create, can_read: perm.can_read,
-                      can_edit: perm.can_edit,     can_delete: perm.can_delete,
+                      can_create: !!perm?.can_create, can_read: !!perm?.can_read,
+                      can_edit: !!perm?.can_edit,     can_delete: !!perm?.can_delete,
                     }));
                     // Build section rows (exclude any module already in moduleRows)
                     const moduleKeys = new Set(moduleRows.map((r: any) => r.module));
                     const sectionRows = Object.entries(sectionPerms[activeRole] || {}).filter(([s]) => !moduleKeys.has(s)).map(([section, perm]: any) => ({
                       role: activeRole, module: section,
-                      can_create: perm.can_create, can_read: perm.can_read,
-                      can_edit: perm.can_edit,     can_delete: perm.can_delete,
+                      can_create: !!perm?.can_create, can_read: !!perm?.can_read,
+                      can_edit: !!perm?.can_edit,     can_delete: !!perm?.can_delete,
                     }));
                     const { error } = await supabase.from('role_permissions').insert([...moduleRows, ...sectionRows]);
                     if (error) throw error;
