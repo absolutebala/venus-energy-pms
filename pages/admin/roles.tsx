@@ -185,23 +185,27 @@ export default function RolesPage() {
   // effect never re-fetches (and silently overwrites an in-progress, unsaved toggle) once a
   // role's permissions have already been loaded once.
   const loadedRolesRef = React.useRef<Set<string>>(new Set());
+  const [permsReady, setPermsReady] = React.useState<Record<string, boolean>>({});
 
+  const DEFAULT_PERM_OBJ = { can_create:false, can_read:false, can_edit:false, can_delete:false };
   const toggle = (module: string, action: Action) => {
+    if (!permsReady[activeRole]) return; // not yet safe to toggle — DB load still in flight
     setPerms((p:any) => ({
       ...p,
       [activeRole]: {
         ...p[activeRole],
-        [module]: { ...p[activeRole][module], [action]: !p[activeRole][module]?.[action] }
+        [module]: { ...DEFAULT_PERM_OBJ, ...(p[activeRole]?.[module] || {}), [action]: !p[activeRole]?.[module]?.[action] }
       }
     }));
   };
 
   const toggleSection = (section: string, action: Action) => {
+    if (!permsReady[activeRole]) return; // not yet safe to toggle — DB load still in flight
     setSectionPerms((p:any) => ({
       ...p,
       [activeRole]: {
         ...p[activeRole],
-        [section]: { ...(p[activeRole]?.[section] || {}), [action]: !p[activeRole]?.[section]?.[action] }
+        [section]: { ...DEFAULT_PERM_OBJ, ...(p[activeRole]?.[section] || {}), [action]: !p[activeRole]?.[section]?.[action] }
       }
     }));
   };
@@ -210,7 +214,7 @@ export default function RolesPage() {
   // Load current permissions from DB when role changes (only once per role per session —
   // re-fetching on every effect run would silently overwrite any unsaved toggle the user made).
   React.useEffect(() => {
-    if (loadedRolesRef.current.has(activeRole)) return;
+    if (loadedRolesRef.current.has(activeRole)) { setPermsReady(p => ({ ...p, [activeRole]: true })); return; }
     const loadPerms = async () => {
       loadedRolesRef.current.add(activeRole);
       const supabase = createClient();
@@ -232,6 +236,10 @@ export default function RolesPage() {
         setPerms((prev:any) => ({ ...prev, [activeRole]: moduleMap }));
         setSectionPerms((prev:any) => ({ ...prev, [activeRole]: sectionMap }));
       }
+      // Mark this role's permissions as fully loaded — only now is it safe to allow toggling,
+      // since toggling before this point could merge against stale/incomplete default state
+      // and silently wipe other permission columns for the same row.
+      setPermsReady(p => ({ ...p, [activeRole]: true }));
     };
     loadPerms();
   }, [activeRole]);
@@ -341,7 +349,7 @@ export default function RolesPage() {
                             return (
                               <td key={action.key} style={{ padding:'12px 14px', textAlign:'center' }}>
                                 <div onClick={()=>toggle(mod.key, action.key)}
-                                  style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?action.color:T.border}`, background:enabled?action.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', margin:'0 auto', transition:'all 0.15s' }}>
+                                  style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?action.color:T.border}`, background:enabled?action.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:permsReady[activeRole]?'pointer':'not-allowed', opacity:permsReady[activeRole]?1:0.4, margin:'0 auto', transition:'all 0.15s' }}>
                                   {enabled && <span style={{ fontSize:14, fontWeight:700, color:action.color }}>✓</span>}
                                 </div>
                               </td>
@@ -394,7 +402,7 @@ export default function RolesPage() {
                           return (
                             <td key={action.key} style={{ padding:'12px 14px', textAlign:'center' as const }}>
                               <div onClick={()=>toggleSection(sec.key, action.key)}
-                                style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?action.color:T.border}`, background:enabled?action.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', margin:'0 auto', transition:'all 0.15s' }}>
+                                style={{ width:32, height:32, borderRadius:8, border:`2px solid ${enabled?action.color:T.border}`, background:enabled?action.bg:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:permsReady[activeRole]?'pointer':'not-allowed', opacity:permsReady[activeRole]?1:0.4, margin:'0 auto', transition:'all 0.15s' }}>
                                 {enabled && <span style={{ fontSize:14, fontWeight:700, color:action.color }}>✓</span>}
                               </div>
                             </td>
