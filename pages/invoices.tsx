@@ -229,7 +229,7 @@ export default function InvoicesPage() {
 
   const pendingApproval = dateFilteredInvoices.filter(i => ["Submitted","Under Review"].includes(i.invoiceStatus));
   const pendingPayment  = dateFilteredInvoices.filter(i => i.paymentStatus === "Pending");
-  const overdue         = dateFilteredInvoices.filter(i => i.paymentStatus !== "Paid" && i.dueDate && new Date(i.dueDate) < today);
+  const overdue         = dateFilteredInvoices.filter(i => i.paymentStatus === "Paid");
 
   const displayInvoices = useMemo(() => {
     let list = poSearch && searchMatchedInvoiceIds
@@ -237,7 +237,7 @@ export default function InvoicesPage() {
       : [...dateFilteredInvoices];
     if (cardFilter === "pendingApproval") list = list.filter(i => ["Submitted","Under Review"].includes(i.invoiceStatus));
     if (cardFilter === "pendingPayment")  list = list.filter(i => i.paymentStatus === "Pending");
-    if (cardFilter === "overdue")         list = list.filter(i => i.paymentStatus !== "Paid" && i.dueDate && new Date(i.dueDate) < today);
+    if (cardFilter === "overdue")         list = list.filter(i => i.paymentStatus === "Paid");
     list.sort((a, b) => {
       const va = (a as any)[sortKey], vb = (b as any)[sortKey];
       if (typeof va === "number") return sortDir === "asc" ? va - vb : vb - va;
@@ -480,7 +480,7 @@ export default function InvoicesPage() {
             { label:"Total Invoices",   value:dateFilteredInvoices.length, sub:fmt(dateFilteredInvoices.reduce((a,i)=>a+i.totalAmount,0)), color:T.primary,  filter:null,              icon:"📄" },
             { label:"Pending Approval", value:pendingApproval.length, sub:`${pendingApproval.length} need review`, color:"#2563EB",  filter:"pendingApproval", icon:"⏳" },
             { label:"Pending Payment",  value:pendingPayment.length,  sub:fmt(pendingPayment.reduce((a,i)=>a+i.totalAmount,0)), color:"#D97706", filter:"pendingPayment", icon:"💳" },
-            { label:"Overdue",          value:overdue.length, sub:fmt(overdue.reduce((a,i)=>a+i.totalAmount,0)), color:T.danger, filter:"overdue", icon:"⚠️" },
+            { label:"Invoices Paid",    value:overdue.length, sub:fmt(overdue.reduce((a,i)=>a+i.totalAmount,0)), color:T.success, filter:"overdue", icon:"✅" },
           ].map(s => (
             <div key={s.label} onClick={() => setCardFilter(cardFilter === s.filter ? null : s.filter)}
               style={{ ...card, padding:"16px 18px", cursor:"pointer", position:"relative" as const,
