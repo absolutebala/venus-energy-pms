@@ -475,7 +475,7 @@ export default function SiteExpensesPage() {
                           {isPending && canManage && (
                             <button onClick={async ev=>{
                               ev.stopPropagation();
-                              setPaidModal(e); setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:(e as any).bankAccount||(e as any).upiId||"", txnDate:new Date().toISOString().split('T')[0] });
+                              setPaidModal(e); setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:(e as any).bankAccount||(e as any).upiId||"", txnDate:new Date().toISOString().split('T')[0], investorType:"", fundSource:"", fundType:"" });
                               setPaidModalPassbook(null);
                               if ((e as any).bankAccountId) {
                                 const { data } = await createClient().from('vendor_bank_accounts').select('passbook_url,passbook_filename').eq('id', (e as any).bankAccountId).maybeSingle();
