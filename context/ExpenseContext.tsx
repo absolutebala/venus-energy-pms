@@ -11,6 +11,7 @@ export interface Expense {
   status: string;
   paidTxnRef?: string; paidPaymentMode?: string; paidAt?: string; txnDate?: string;
   bankAccount?: string; bankAccountId?: string; upiId?: string; upiAccountId?: string; paidFromAccount?: string; paidToAccount?: string;
+  investorType?: string; fundSource?: string; fundType?: string; regainCapital?: number;
 }
 
 function mapRow(row: any): Expense {
@@ -39,6 +40,10 @@ function mapRow(row: any): Expense {
     paidPaymentMode: row.paid_payment_mode ?? '',
     paidAt:          row.paid_at           ?? '',
     txnDate:         row.txn_date          ?? '',
+    investorType:    row.investor_type     ?? '',
+    fundSource:      row.fund_source       ?? '',
+    fundType:        row.fund_type         ?? '',
+    regainCapital:   Number(row.regain_capital ?? 0),
   };
 }
 
@@ -47,6 +52,7 @@ const VALID_DB_COLS = new Set([
   'payment_mode','project_id','po_no','remarks','created_by',
   'status','paid_txn_ref','paid_payment_mode','paid_at','txn_date',
   'bank_account','bank_account_id','upi_id','upi_account_id','paid_from_account','paid_to_account',
+  'investor_type','fund_source','fund_type','regain_capital',
 ]);
 
 const CAMEL_TO_SNAKE: Record<string,string> = {
@@ -55,6 +61,7 @@ const CAMEL_TO_SNAKE: Record<string,string> = {
   createdBy:'created_by', paidTxnRef:'paid_txn_ref',
   paidPaymentMode:'paid_payment_mode', paidAt:'paid_at', txnDate:'txn_date',
   bankAccount:'bank_account', bankAccountId:'bank_account_id', upiId:'upi_id', upiAccountId:'upi_account_id', paidFromAccount:'paid_from_account', paidToAccount:'paid_to_account',
+  investorType:'investor_type', fundSource:'fund_source', fundType:'fund_type', regainCapital:'regain_capital',
 };
 
 const UUID_COLS = new Set(['bank_account_id', 'upi_account_id']);

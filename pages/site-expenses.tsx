@@ -6,6 +6,7 @@ import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import * as XLSX from 'xlsx';
 import { useExpenses } from '@/context/ExpenseContext';
+import { useInvoices } from '@/context/InvoiceContext';
 import { useProjects } from '@/context/ProjectContext';
 import { createClient } from '@/lib/supabase';
 import { T, card, btnPrimary, inputStyle } from '@/lib/theme';
@@ -101,7 +102,10 @@ export default function SiteExpensesPage() {
   const [paidModal,    setPaidModal]    = useState<any>(null);
   const [showExportWarning, setShowExportWarning] = useState(false);
   const [paidModalPassbook, setPaidModalPassbook] = useState<{url:string;filename:string}|null>(null);
-  const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] });
+  const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0], investorType:"", fundSource:"", fundType:"" });
+  const { invoices: allInvoicesForRegain } = useInvoices();
+  // Regain Capital = total invoice amount across ALL projects where payment status is Paid, minus this expense's own amount
+  const regainCapitalLive = (allInvoicesForRegain||[]).filter((i:any)=>i.paymentStatus==='Paid').reduce((a:number,i:any)=>a+Number(i.invoiceAmount||0),0) - Number(paidModal?.amount||0);
   const [datePreset,   setDatePreset]   = useState<string>('all');
   const [customFrom,   setCustomFrom]   = useState('');
   const [customTo,     setCustomTo]     = useState('');
@@ -256,6 +260,10 @@ export default function SiteExpensesPage() {
         paidPaymentMode: paidForm.paymentMode,
         txnDate: paidForm.txnDate,
         paidAt: new Date().toISOString(),
+        investorType: paidForm.investorType||'',
+        fundSource: paidForm.fundSource||'',
+        fundType: paidForm.fundType||'',
+        regainCapital: regainCapitalLive,
       });
       // Update project paid_amount
       const proj = (projects as any[]).find((p:any) => p.id === paidModal.projectId);
@@ -264,7 +272,7 @@ export default function SiteExpensesPage() {
         await createClient().from('projects').update({ paid_amount: newPaid }).eq('id', proj.id);
       }
       setPaidModal(null);
-      setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0] });
+      setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0], investorType:"", fundSource:"", fundType:"" });
       setToast({ msg:"✅ Marked as Paid — Financial Summary updated", type:"success" });
     } catch (err:any) {
       setToast({ msg:"❌ " + err.message, type:"error" });
@@ -608,6 +616,34 @@ export default function SiteExpensesPage() {
               <input value={paidForm.toAccount} onChange={e=>setPaidForm(p=>({...p,toAccount:e.target.value}))}
                 placeholder="e.g. Vendor Bank A/C / UPI ID"
                 style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const }} />
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Investor Type</label>
+              <select value={paidForm.investorType} onChange={e=>setPaidForm(p=>({...p,investorType:e.target.value}))}
+                style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const, cursor:"pointer" }}>
+                <option value="">— None —</option>
+                <option value="Investor 1">Investor 1</option>
+                <option value="Investor 2">Investor 2</option>
+              </select>
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Fund Source</label>
+              <select value={paidForm.fundSource} onChange={e=>setPaidForm(p=>({...p,fundSource:e.target.value}))}
+                style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const, cursor:"pointer" }}>
+                <option value="">— None —</option>
+                <option value="Capital Fund">Capital Fund</option>
+                <option value="Personal Fund">Personal Fund</option>
+              </select>
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Fund Type</label>
+              <input value={paidForm.fundType} onChange={e=>setPaidForm(p=>({...p,fundType:e.target.value}))}
+                placeholder="e.g. Equity, Loan, etc."
+                style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const }} />
+            </div>
+            <div style={{ marginBottom:20 }}>
+              <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Regain Capital (₹)</label>
+              <div style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const, background:T.bg, color:T.text }}>{fmt(regainCapitalLive)}</div>
             </div>
             <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
               <button onClick={()=>setPaidModal(null)}
