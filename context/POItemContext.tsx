@@ -83,9 +83,23 @@ export function POItemProvider({ children }: { children: React.ReactNode }) {
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('po_items').select('*').order('project_id').order('sort_order');
-    if (!error) setItems((data || []).map(mapRow));
+    // Supabase/PostgREST caps a single select at 1000 rows by default — paginate in batches
+    // to ensure every row is loaded, not just the first 1000 (which was silently hiding items
+    // on projects whose rows fell past that cutoff).
+    const BATCH = 1000;
+    let allRows: any[] = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from('po_items').select('*').order('project_id').order('sort_order')
+        .range(from, from + BATCH - 1);
+      if (error) break;
+      const rows = data || [];
+      allRows = allRows.concat(rows);
+      if (rows.length < BATCH) break;
+      from += BATCH;
+    }
+    setItems(allRows.map(mapRow));
     setLoading(false);
   }, []);
 
