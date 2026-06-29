@@ -645,7 +645,7 @@ export default function SiteExpensesPage() {
               <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Regain Capital (₹)</label>
               <div style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const, background:T.bg, color:T.text }}>{fmt(regainCapitalLive)}</div>
               <p style={{ fontSize:13, color:T.textMuted, marginTop:6, marginBottom:0 }}>
-                Total invoices paid across all projects, minus this expense's amount
+                Previous Regain Capital value is deducted with this expense's amount
               </p>
             </div>
             <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
