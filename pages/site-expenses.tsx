@@ -105,7 +105,8 @@ export default function SiteExpensesPage() {
   const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0], investorType:"", fundSource:"", fundType:"" });
   const { invoices: allInvoicesForRegain } = useInvoices();
   // Regain Capital = total invoice amount across ALL projects where payment status is Paid, minus this expense's own amount
-  const regainCapitalLive = (allInvoicesForRegain||[]).filter((i:any)=>i.paymentStatus==='Paid').reduce((a:number,i:any)=>a+Number(i.invoiceAmount||0),0) - Number(paidModal?.amount||0);
+  const previousRegainCapital = (allInvoicesForRegain||[]).filter((i:any)=>i.paymentStatus==='Paid').reduce((a:number,i:any)=>a+Number(i.invoiceAmount||0),0);
+  const regainCapitalLive = previousRegainCapital - Number(paidModal?.amount||0);
   const [datePreset,   setDatePreset]   = useState<string>('all');
   const [customFrom,   setCustomFrom]   = useState('');
   const [customTo,     setCustomTo]     = useState('');
@@ -645,7 +646,7 @@ export default function SiteExpensesPage() {
               <label style={{ display:"block", fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase" }}>Regain Capital (₹)</label>
               <div style={{ ...inputStyle(), width:"100%", boxSizing:"border-box" as const, background:T.bg, color:T.text }}>{fmt(regainCapitalLive)}</div>
               <p style={{ fontSize:13, color:T.textMuted, marginTop:6, marginBottom:0 }}>
-                Previous Regain Capital value is deducted with this expense's amount
+                Previous Regain Capital ({fmt(previousRegainCapital)}) minus this Expense Amount ({fmt(Number(paidModal?.amount||0))})
               </p>
             </div>
             <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
