@@ -40,8 +40,20 @@ export default function SRNReturnPage() {
 
   const fetchSRN = useCallback(async () => {
     setLoading(true);
-    const { data } = await sb.from('srn').select('*').order('project_id').order('sort_order').order('created_at');
-    setSrnRawItems(data || []);
+    // Supabase/PostgREST caps a single select at 1000 rows by default — paginate in batches
+    const BATCH = 1000;
+    let allRows: any[] = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await sb.from('srn').select('*')
+        .order('project_id').order('sort_order').order('created_at').range(from, from + BATCH - 1);
+      if (error) break;
+      const rows = data || [];
+      allRows = allRows.concat(rows);
+      if (rows.length < BATCH) break;
+      from += BATCH;
+    }
+    setSrnRawItems(allRows);
     setLoading(false);
   }, []);
 

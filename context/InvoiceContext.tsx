@@ -108,8 +108,20 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('invoices').select('*').order('invoice_date', { ascending: false });
-    if (!error) setInvoices((data || []).map(mapRow));
+    // Supabase/PostgREST caps a single select at 1000 rows by default — paginate in batches
+    const BATCH = 1000;
+    let allRows: any[] = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase.from('invoices').select('*')
+        .order('invoice_date', { ascending: false }).range(from, from + BATCH - 1);
+      if (error) break;
+      const rows = data || [];
+      allRows = allRows.concat(rows);
+      if (rows.length < BATCH) break;
+      from += BATCH;
+    }
+    setInvoices(allRows.map(mapRow));
     setLoading(false);
   }, []);
 
