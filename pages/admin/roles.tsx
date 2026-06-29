@@ -181,6 +181,10 @@ export default function RolesPage() {
   const { refreshProfile } = useAuth();
   const [saving,    setSaving] = useState(false);
   const [toast, setToast]     = useState<{msg:string;type:'success'|'error'|'info'}|null>(null);
+  // Tracks which roles have already been loaded from the DB this session, so the loadPerms
+  // effect never re-fetches (and silently overwrites an in-progress, unsaved toggle) once a
+  // role's permissions have already been loaded once.
+  const loadedRolesRef = React.useRef<Set<string>>(new Set());
 
   const toggle = (module: string, action: Action) => {
     setPerms((p:any) => ({
@@ -203,9 +207,12 @@ export default function RolesPage() {
   };
 
 
-  // Load current permissions from DB when role changes
+  // Load current permissions from DB when role changes (only once per role per session —
+  // re-fetching on every effect run would silently overwrite any unsaved toggle the user made).
   React.useEffect(() => {
+    if (loadedRolesRef.current.has(activeRole)) return;
     const loadPerms = async () => {
+      loadedRolesRef.current.add(activeRole);
       const supabase = createClient();
       const { data } = await supabase.from('role_permissions').select('*').eq('role', activeRole);
       if (data && data.length > 0) {
