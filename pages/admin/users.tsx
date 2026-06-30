@@ -136,6 +136,7 @@ export default function AdminUsersPage() {
 
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string|null>(null);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [modal, setModal] = useState<Modal>('none');
@@ -170,14 +171,30 @@ export default function AdminUsersPage() {
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      if (!token) { setLoading(false); return; }
+      if (!token) {
+        setFetchError('Your session has expired. Please log out and log back in.');
+        setLoading(false);
+        return;
+      }
       const res = await fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } });
       const json = await res.json();
-      if (json.users) setUsers(json.users as UserRow[]);
-    } catch(err) { console.error('fetchUsers error:', err); }
+      if (res.status === 401) {
+        setFetchError('Your session has expired. Please log out and log back in.');
+      } else if (res.status === 403) {
+        setFetchError('You do not have permission to view this page.');
+      } else if (!res.ok) {
+        setFetchError(json.error || 'Failed to load users. Please try again.');
+      } else if (json.users) {
+        setUsers(json.users as UserRow[]);
+      }
+    } catch(err) {
+      console.error('fetchUsers error:', err);
+      setFetchError('Failed to load users. Please check your connection and try again.');
+    }
     setLoading(false);
   }, []);
 
@@ -344,6 +361,14 @@ export default function AdminUsersPage() {
               <tbody>
                 {loading ? (
                   <tr><td colSpan={9} style={{ ...td, textAlign:'center', padding:40 }}><div className="spinner" style={{ margin:'0 auto' }} /></td></tr>
+                ) : fetchError ? (
+                  <tr><td colSpan={9} style={{ ...td, textAlign:'center', padding:40 }}>
+                    <div style={{ color:T.danger, fontWeight:600, marginBottom:10 }}>⚠️ {fetchError}</div>
+                    <button onClick={fetchUsers}
+                      style={{ background:T.primary, color:'#fff', border:'none', borderRadius:7, padding:'6px 16px', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+                      Retry
+                    </button>
+                  </td></tr>
                 ) : filtered.length === 0 ? (
                   <tr><td colSpan={9} style={{ ...td, textAlign:'center', padding:40, color:T.textDim }}>No users found.</td></tr>
                 ) : filtered.map((u,i) => (
