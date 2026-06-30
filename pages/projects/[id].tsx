@@ -2143,7 +2143,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
         projectId, createdBy: profile?.full_name || '',
         basicPaymentNo: (newRow as any).basicPaymentNo||'', basicPaymentDate: (newRow as any).basicPaymentDate||'',
         taxPaymentNo: (newRow as any).taxPaymentNo||'', taxPaymentDate: (newRow as any).taxPaymentDate||'',
-        tds: Number((newRow as any).tds)||0, remarks: (newRow as any).remarks||'',
+        tds: amt * 0.01, remarks: (newRow as any).remarks||'',
         investor: newRow.investor || '',
         ...(newRow.investor === 'Investor 1' ? {
           investor1PaidAmount: inv1.paidAmount, investor1Profit1: inv1.profit1,
@@ -2364,7 +2364,9 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                ['TDS (₹)','tds','number',''],['Remarks','remarks','text','']] as [string,string,string,string][]).map(([label,field,type,ph])=>(
               <div key={field}>
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</label>
-                {type === 'date' ? (
+                {field === 'tds' ? (
+                  <div style={{ ...inpS, background:T.bg }}>{fmt((Number((newRow as any).invoiceAmount)||0) * 0.01)}</div>
+                ) : type === 'date' ? (
                   <DateInput value={(newRow as any)[field]} onChange={v=>setNewRow(p=>({...p,[field]:v}))} max={field==='dueDate'?'9999-12-31':undefined} style={inpS} />
                 ) : (
                   <input type={type} value={(newRow as any)[field]} placeholder={ph}

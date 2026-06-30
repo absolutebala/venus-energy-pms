@@ -297,7 +297,7 @@ export default function InvoicesPage() {
         createdBy: profile?.full_name || "",
         basicPaymentNo: newInv.basicPaymentNo||"", basicPaymentDate: newInv.basicPaymentDate||"",
         taxPaymentNo: newInv.taxPaymentNo||"", taxPaymentDate: newInv.taxPaymentDate||"",
-        tds: Number(newInv.tds)||0, remarks: newInv.remarks||"",
+        tds: amt * 0.01, remarks: newInv.remarks||"",
         investor: newInv.investor || "",
         ...(newInv.investor === 'Investor 1' ? {
           investor1PaidAmount: investor1Paid, investor1Profit1: inv1Profit1,
@@ -520,7 +520,11 @@ export default function InvoicesPage() {
                  ["TDS (₹)","tds","number",""],["Remarks","remarks","text",""]] as [string,string,string,string][]).map(([label,field,type,ph]) => (
                 <div key={field}>
                   <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>{label}</label>
-                  {type === 'date' ? (
+                  {field === 'tds' ? (
+                    <div style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px", fontSize:13, background:T.bg, color:T.text }}>
+                      {fmt((Number(newInv.invoiceAmount)||0) * 0.01)}
+                    </div>
+                  ) : type === 'date' ? (
                     <DateInput value={(newInv as any)[field]} onChange={v => setNewInv(p => ({ ...p, [field]: v }))}
                       max={field === 'dueDate' ? '9999-12-31' : undefined}
                       style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px",
