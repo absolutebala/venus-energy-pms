@@ -25,6 +25,7 @@ const MODULES: { key: string; label: string; icon: string; desc: string; note?: 
   { key:'site_expenses',label:'Site Expenses',    icon:'💰', desc:'Payments to vendors per project | Accounting adds, others view only'                },
   { key:'invoices', label:'Invoices', icon:'🧾', desc:'Invoice management — create, track and manage project invoices. PO search, financial summary, sortable table' },
   { key:'reports',      label:'Reports',          icon:'📊', desc:'Auto-generated reports — Read only for all roles (no manual create)'               },
+  { key:'capital',      label:'Capital',          icon:'🏦', desc:'Capital/Personal Fund summary and Investor 1/2 profit tracking — defaults to Super Admin only' },
   { key:'safety_compliance', label:'Safety Compliance', icon:'🛡', desc:'Site safety inspection tracking — enable per role when ready to use' },
 ];
 
