@@ -227,7 +227,7 @@ function WorkProgressSection({ projectId, role }: { projectId: string; role: str
                             <div style={{ display:'flex', gap:4 }}>
                               <button onClick={()=>{ setEditId(item.id); setEditRow({...item}); }}
                                 style={{ background:'none', border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12, color:T.primary }}>✏️</button>
-                              <button onClick={()=>deleteItem(item.id)}
+                              <button onClick={()=>{ if(window.confirm('Delete this work progress entry?')) deleteItem(item.id); }}
                                 style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:14 }}>🗑</button>
                             </div>
                           )}
