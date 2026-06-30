@@ -104,8 +104,11 @@ export default function SiteExpensesPage() {
   const [paidModalPassbook, setPaidModalPassbook] = useState<{url:string;filename:string}|null>(null);
   const [paidForm,     setPaidForm]     = useState({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:"", txnDate:new Date().toISOString().split('T')[0], investorType:"", fundSource:"", fundType:"" });
   const { invoices: allInvoicesForRegain } = useInvoices();
-  // Regain Capital = total invoice amount across ALL projects where payment status is Paid, minus this expense's own amount
-  const previousRegainCapital = (allInvoicesForRegain||[]).filter((i:any)=>i.paymentStatus==='Paid').reduce((a:number,i:any)=>a+Number(i.invoiceAmount||0),0);
+  // Regain Capital = sum of PAID EXPENSE amounts for projects that have at least one Paid invoice, minus this expense's own amount
+  const previousRegainCapital = (() => {
+    const paidInvoiceProjectIds = new Set((allInvoicesForRegain||[]).filter((i:any)=>i.paymentStatus==='Paid').map((i:any)=>i.projectId));
+    return expenses.filter((e:any)=>e.status==='paid' && paidInvoiceProjectIds.has(e.projectId)).reduce((a:number,e:any)=>a+Number(e.amount||0),0);
+  })();
   const regainCapitalLive = previousRegainCapital - Number(paidModal?.amount||0);
   const [datePreset,   setDatePreset]   = useState<string>('all');
   const [customFrom,   setCustomFrom]   = useState('');
