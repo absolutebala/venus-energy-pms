@@ -137,9 +137,12 @@ const fmt = (v:number) => `₹${v.toLocaleString('en-IN')}`;
 // ── Work Progress Section ────────────────────────────────────────────────────
 function WorkProgressSection({ projectId, role }: { projectId: string; role: string }) {
   const { getByProject, addItem, updateItem, deleteItem } = useWorkProgress();
-  const { profile } = useAuth();
+  const { profile, can } = useAuth();
   const items = getByProject(projectId);
   const isVendor = role === 'vendor';
+  // Respect actual Role & Permissions settings for create/edit, instead of hardcoding to vendor only
+  const canCreateWP = isVendor || can('sec_work_progress', 'create');
+  const canEditWP   = isVendor || can('sec_work_progress', 'edit');
   const today = new Date().toISOString().split('T')[0];
   const [adding,  setAdding]  = React.useState(false);
   const [saving,  setSaving]  = React.useState(false);
@@ -220,7 +223,7 @@ function WorkProgressSection({ projectId, role }: { projectId: string; role: str
                         <td style={tdS}>{item.totalWorkStatus||'—'}</td>
                         <td style={{ ...tdS, color:T.textMuted }}>{item.remarks||'—'}</td>
                         <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
-                          {isVendor && (
+                          {canEditWP && (
                             <div style={{ display:'flex', gap:4 }}>
                               <button onClick={()=>{ setEditId(item.id); setEditRow({...item}); }}
                                 style={{ background:'none', border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12, color:T.primary }}>✏️</button>
@@ -260,7 +263,7 @@ function WorkProgressSection({ projectId, role }: { projectId: string; role: str
           </div>
         </div>
       )}
-      {isVendor && !adding && (
+      {canCreateWP && !adding && (
         <button onClick={()=>setAdding(true)}
           style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8, padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
           + Add Work Progress
