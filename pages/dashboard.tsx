@@ -541,7 +541,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilt
     <div>
       {/* ── Project KPI cards ── */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-        <div onClick={()=>router.push('/projects')}
+        <div onClick={()=>router.push(buildProjectsLink({}))}
           style={{ ...card, padding:'16px 18px', cursor:'pointer', position:'relative' as const, overflow:'hidden', transition:'all 0.15s' }}
           onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(-1px)'}
           onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(0)'}>
@@ -557,7 +557,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilt
               <span style={{ color:'#D97706' }}> · {projects.filter((p:any)=>!['Open','Closed'].includes((p as any).poStatus||'')).length} Other</span>}
           </div>
         </div>
-        <div onClick={()=>router.push('/projects?status=PO%20Open')}
+        <div onClick={()=>router.push(buildProjectsLink({ status:'PO Open' }))}
           style={{ ...card, padding:'16px 18px', cursor:'pointer', position:'relative' as const, overflow:'hidden', transition:'all 0.15s' }}
           onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(-1px)'}
           onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(0)'}>
@@ -569,7 +569,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilt
           <div style={{ fontSize:26, fontWeight:700, color:'#059669', marginBottom:4 }}>{projects.filter((p:any)=>(p as any).poStatus==='Open').length}</div>
           <div style={{ fontSize:11, color:T.textMuted }}>{Math.round(projects.filter((p:any)=>(p as any).poStatus==='Open').length/Math.max(projects.length,1)*100)}% of total</div>
         </div>
-        <div onClick={()=>router.push('/projects?status=PO%20Closed')}
+        <div onClick={()=>router.push(buildProjectsLink({ status:'PO Closed' }))}
           style={{ ...card, padding:'16px 18px', cursor:'pointer', position:'relative' as const, overflow:'hidden', transition:'all 0.15s' }}
           onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(-1px)'}
           onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(0)'}>
@@ -580,10 +580,10 @@ function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilt
           </div>
           <div style={{ fontSize:26, fontWeight:700, color:'#DC2626', marginBottom:4 }}>{projects.filter((p:any)=>(p as any).poStatus==='Closed').length}</div>
           <div style={{ fontSize:11, color:T.textMuted }}>
-            {(() => { const other = projects.filter((p:any)=>!['Open','Closed'].includes((p as any).poStatus||'')).length; return other > 0 ? <span onClick={e=>{e.stopPropagation();router.push('/projects?status=PO%20Unclassified');}} style={{color:'#D97706',cursor:'pointer',textDecoration:'underline'}}>{other} unclassified →</span> : <span>1% of total</span>; })()}
+            {(() => { const other = projects.filter((p:any)=>!['Open','Closed'].includes((p as any).poStatus||'')).length; return other > 0 ? <span onClick={e=>{e.stopPropagation();router.push(buildProjectsLink({ status:'PO Unclassified' }));}} style={{color:'#D97706',cursor:'pointer',textDecoration:'underline'}}>{other} unclassified →</span> : <span>1% of total</span>; })()}
           </div>
         </div>
-        <div onClick={()=>router.push('/projects')}
+        <div onClick={()=>router.push(buildProjectsLink({}))}
           style={{ ...card, padding:'16px 18px', cursor:'pointer', position:'relative' as const, overflow:'hidden', transition:'all 0.15s' }}
           onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(-1px)'}
           onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(0)'}>
@@ -717,19 +717,31 @@ function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilt
   );
 }
 
-function RegionManagerDashboard({ projects, rmName }: { projects: typeof ALL_PROJECTS; rmName: string }) {
+function RegionManagerDashboard({ projects, rmName, activeFilters }: { projects: typeof ALL_PROJECTS; rmName: string; activeFilters?: Record<string,string[]> }) {
   const router = useRouter();
   const [globalView, setGlobalView] = useState(false);
   const myProjects = projects; // already filtered by rmName in parent filteredProjects
   const myPMs = Array.from(new Set(myProjects.map(p=>p.pm).filter(Boolean))) as string[];
+  const buildProjectsLink = (extra: Record<string,string>) => {
+    const q: Record<string,string> = {};
+    const af = activeFilters || {};
+    if (af.status?.length) q.projStatus = af.status.join(',');
+    if (af.region?.length) q.region     = af.region.join(',');
+    if (af.type?.length)   q.type       = af.type.join(',');
+    if (af.pm?.length)     q.pm         = af.pm.join(',');
+    if (af.vendor?.length) q.vendor     = af.vendor.join(',');
+    Object.assign(q, extra);
+    const qs = new URLSearchParams(q).toString();
+    return `/projects?${qs}`;
+  };
 
   return (
     <div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-        <KpiCard label="My Region Projects"  value={myProjects.length}                                                                      icon="📁" color={T.primary} onClick={()=>router.push('/projects')} />
+        <KpiCard label="My Region Projects"  value={myProjects.length}                                                                      icon="📁" color={T.primary} onClick={()=>router.push(buildProjectsLink({}))} />
         <KpiCard label="Active PMs"          value={myPMs.length}                                                                           icon="👤" color={T.success} />
-        <KpiCard label="PO Open"             value={myProjects.filter((p:any)=>(p as any).poStatus==='Open').length}                        icon="🟢" color='#059669'   onClick={()=>router.push('/projects?status=PO%20Open')} />
-        <KpiCard label="Yet to Start"        value={myProjects.filter((p:any)=>((p as any).projectStatus||'')==='Yet to Start').length}      icon="🕐" color='#6B7280'   onClick={()=>router.push(`/projects?projStatus=${encodeURIComponent("Yet to Start")}`)} />
+        <KpiCard label="PO Open"             value={myProjects.filter((p:any)=>(p as any).poStatus==='Open').length}                        icon="🟢" color='#059669'   onClick={()=>router.push(buildProjectsLink({ status:'PO Open' }))} />
+        <KpiCard label="Yet to Start"        value={myProjects.filter((p:any)=>((p as any).projectStatus||'')==='Yet to Start').length}      icon="🕐" color='#6B7280'   onClick={()=>router.push(buildProjectsLink({ projStatus:'Yet to Start' }))} />
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
@@ -750,7 +762,7 @@ function RegionManagerDashboard({ projects, rmName }: { projects: typeof ALL_PRO
               vendorGroups[v].push(p);
             });
             return Object.entries(vendorGroups).sort((a,b)=>b[1].length-a[1].length).map(([vendor,ps])=>(
-              <div key={vendor} onClick={()=>router.push(`/projects?vendor=${encodeURIComponent(vendor)}`)}
+              <div key={vendor} onClick={()=>router.push(buildProjectsLink({ vendor }))}
                 style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', marginBottom:6, transition:'all 0.15s' }}
                 onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
                 onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
@@ -797,7 +809,7 @@ function RegionManagerDashboard({ projects, rmName }: { projects: typeof ALL_PRO
             return Object.entries(sg).sort((a,b)=>b[1]-a[1]).map(([s,n])=>{
               const c=sc[s]||'#6B7280'; const pct=Math.round(n/myProjects.length*100);
               return (
-                <div key={s} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(myProjects[0]?.rm||'')}`)} style={{ marginBottom:10, cursor:'pointer' }}>
+                <div key={s} onClick={()=>router.push(buildProjectsLink({ projStatus:s }))} style={{ marginBottom:10, cursor:'pointer' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
                     <span style={{ fontSize:12, color:T.text }}>{s}</span>
                     <span style={{ fontSize:12, fontWeight:700, color:c }}>{n} ({pct}%)</span>
@@ -815,7 +827,7 @@ function RegionManagerDashboard({ projects, rmName }: { projects: typeof ALL_PRO
       {/* Aging Distribution */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
         {[{label:'0–30d',color:'#0D9488',f:(p:any)=>p.aging<=30,min:0,max:30},{label:'31–60d',color:'#D97706',f:(p:any)=>p.aging>30&&p.aging<=60,min:31,max:60},{label:'61–90d',color:'#DC2626',f:(p:any)=>p.aging>60&&p.aging<=90,min:61,max:90},{label:'90d+',color:'#7C3AED',f:(p:any)=>p.aging>90,min:91,max:999}].map(b=>(
-          <div key={b.label} onClick={()=>router.push(`/projects?ageMin=${b.min}&ageMax=${b.max}`)}
+          <div key={b.label} onClick={()=>router.push(buildProjectsLink({ ageMin:String(b.min), ageMax:String(b.max) }))}
             style={{ ...card, padding:'14px 16px', cursor:'pointer', borderLeft:`4px solid ${b.color}` }}>
             <div style={{ fontSize:10, fontWeight:600, color:b.color, textTransform:'uppercase' as const, marginBottom:4 }}>{b.label}</div>
             <div style={{ fontSize:24, fontWeight:800, color:b.color }}>{myProjects.filter(b.f).length}</div>
@@ -829,9 +841,20 @@ function RegionManagerDashboard({ projects, rmName }: { projects: typeof ALL_PRO
 }
 
 // ── 3. PROJECT MANAGER DASHBOARD ─────────────────────────────────
-function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName: string }) {
+function ProjectManagerDashboard({ projects, pmName, activeFilters }: { projects: any[]; pmName: string; activeFilters?: Record<string,string[]> }) {
   const router = useRouter();
   const myProjects = projects.filter(p => p.pm === pmName);
+  const buildProjectsLink = (extra: Record<string,string>) => {
+    const q: Record<string,string> = { pm: pmName };
+    const af = activeFilters || {};
+    if (af.status?.length) q.projStatus = af.status.join(',');
+    if (af.region?.length) q.region     = af.region.join(',');
+    if (af.type?.length)   q.type       = af.type.join(',');
+    if (af.vendor?.length) q.vendor     = af.vendor.join(',');
+    Object.assign(q, extra);
+    const qs = new URLSearchParams(q).toString();
+    return `/projects?${qs}`;
+  };
   const noVendor   = myProjects.filter(p=>!p.vendor);
   const billing    = myProjects.filter(p=>p.status==='billing_review');
   const recent     = [...myProjects].sort((a,b)=>new Date(b.startDate||0).getTime()-new Date(a.startDate||0).getTime()).slice(0,6);
@@ -839,16 +862,16 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
   return (
     <div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-        <KpiCard label="My Projects"    value={myProjects.length}                                                              icon="📁" color={T.primary} onClick={()=>router.push('/projects')} />
-        <KpiCard label="Vendor Required" value={noVendor.length}                                                                  icon="⚠️" color={T.danger}  onClick={()=>router.push('/projects?noVendor=1')} />
-        <KpiCard label="PO Open"         value={myProjects.filter((p:any)=>(p as any).poStatus==='Open').length}                   icon="🟢" color='#059669'   onClick={()=>router.push('/projects?status=PO%20Open')} />
-        <KpiCard label="Yet to Start"    value={myProjects.filter((p:any)=>((p as any).projectStatus||'')==='Yet to Start').length} icon="🕐" color='#6B7280'   onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pmName)}&projStatus=${encodeURIComponent("Yet to Start")}`)} />
+        <KpiCard label="My Projects"    value={myProjects.length}                                                              icon="📁" color={T.primary} onClick={()=>router.push(buildProjectsLink({}))} />
+        <KpiCard label="Vendor Required" value={noVendor.length}                                                                  icon="⚠️" color={T.danger}  onClick={()=>router.push(buildProjectsLink({ noVendor:'1' }))} />
+        <KpiCard label="PO Open"         value={myProjects.filter((p:any)=>(p as any).poStatus==='Open').length}                   icon="🟢" color='#059669'   onClick={()=>router.push(buildProjectsLink({ status:'PO Open' }))} />
+        <KpiCard label="Yet to Start"    value={myProjects.filter((p:any)=>((p as any).projectStatus||'')==='Yet to Start').length} icon="🕐" color='#6B7280'   onClick={()=>router.push(buildProjectsLink({ projStatus:'Yet to Start' }))} />
       </div>
 
       {/* Aging Distribution — moved to top */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
         {[{label:'0–30d',color:'#0D9488',f:(p:any)=>p.aging<=30},{label:'31–60d',color:'#D97706',f:(p:any)=>p.aging>30&&p.aging<=60},{label:'61–90d',color:'#DC2626',f:(p:any)=>p.aging>60&&p.aging<=90},{label:'90d+',color:'#7C3AED',f:(p:any)=>p.aging>90}].map(b=>(
-          <div key={b.label} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pmName)}`)}
+          <div key={b.label} onClick={()=>router.push(buildProjectsLink({}))}
             style={{ ...card, padding:'14px 16px', cursor:'pointer', borderLeft:`4px solid ${b.color}` }}>
             <div style={{ fontSize:10, fontWeight:600, color:b.color, textTransform:'uppercase' as const, marginBottom:4 }}>{b.label}</div>
             <div style={{ fontSize:24, fontWeight:800, color:b.color }}>{myProjects.filter(b.f).length}</div>
@@ -875,7 +898,7 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
               vendorGroups[v].push(p);
             });
             return Object.entries(vendorGroups).sort((a,b)=>b[1].length-a[1].length).map(([vendor,ps])=>(
-              <div key={vendor} onClick={()=>router.push(`/projects?vendor=${encodeURIComponent(vendor)}&pm=${encodeURIComponent(pmName)}`)}
+              <div key={vendor} onClick={()=>router.push(buildProjectsLink({ vendor }))}
                 style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', marginBottom:6, transition:'all 0.15s' }}
                 onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
                 onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
@@ -903,7 +926,7 @@ function ProjectManagerDashboard({ projects, pmName }: { projects: any[]; pmName
             return Object.entries(sg).sort((a,b)=>b[1]-a[1]).map(([s,n])=>{
               const c=sc[s]||'#6B7280'; const pct=Math.round(n/Math.max(myProjects.length,1)*100);
               return (
-                <div key={s} onClick={()=>router.push(`/projects?pm=${encodeURIComponent(pmName)}&projStatus=${encodeURIComponent(s)}`)} style={{ marginBottom:10, cursor:'pointer' }}>
+                <div key={s} onClick={()=>router.push(buildProjectsLink({ projStatus:s }))} style={{ marginBottom:10, cursor:'pointer' }}>
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
                     <span style={{ fontSize:12, color:T.text }}>{s}</span>
                     <span style={{ fontSize:12, fontWeight:700, color:c }}>{n} ({pct}%)</span>
@@ -1400,8 +1423,10 @@ export default function Dashboard() {
 
         {role === 'super_admin'     && <SuperAdminDashboard   projects={isLoading ? [] : filteredProjects} loading={isLoading}
           activeFilters={{ status:dashStatus, region:dashRegion, type:dashType, pm:dashPM, vendor:dashVendor }} />}
-        {role === 'region_manager'  && <RegionManagerDashboard projects={isLoading ? [] : filteredProjects} rmName={profile?.full_name||''} />}
-        {role === 'project_manager' && <ProjectManagerDashboard projects={isLoading ? [] : filteredProjects} pmName={profile?.full_name||''} />}
+        {role === 'region_manager'  && <RegionManagerDashboard projects={isLoading ? [] : filteredProjects} rmName={profile?.full_name||''}
+          activeFilters={{ status:dashStatus, region:dashRegion, type:dashType, pm:dashPM, vendor:dashVendor }} />}
+        {role === 'project_manager' && <ProjectManagerDashboard projects={isLoading ? [] : filteredProjects} pmName={profile?.full_name||''}
+          activeFilters={{ status:dashStatus, region:dashRegion, type:dashType, pm:dashPM, vendor:dashVendor }} />}
         {role === 'site_engineer'   && <SiteEngineerDashboard  projects={isLoading ? [] : projectsWithAging} />}
         {role === 'vendor'          && <VendorDashboard         projects={isLoading ? [] : projectsWithAging} />}
         {role === 'viewer'          && <ViewerDashboard         projects={isLoading ? [] : projectsWithAging} />}
