@@ -42,6 +42,9 @@ export default function CapitalPage() {
     const paidInvoiceProjectIds = new Set((invoices as any[]).filter(i => i.paymentStatus === 'Paid').map(i => i.projectId));
     return (expenses as any[]).filter(e => e.status === 'paid' && paidInvoiceProjectIds.has(e.projectId)).reduce((a, e) => a + Number(e.amount||0), 0);
   }, [expenses, invoices]);
+  // Pending Invoice Amount = total of ALL paid expenses portal-wide, minus the live Regain Capital figure above
+  const totalPaidExpensesAll = useMemo(() => (expenses as any[]).filter(e => e.status === 'paid').reduce((a, e) => a + Number(e.amount||0), 0), [expenses]);
+  const pendingInvoiceAmount = totalPaidExpensesAll - latestRegainCapital;
 
   // ── Invoice side: Investor 1 / Investor 2 profit totals ───────────────────
   const investor1Invoices = useMemo(() => (invoices as any[]).filter(i => i.investor === 'Investor 1'), [invoices]);
@@ -127,7 +130,7 @@ export default function CapitalPage() {
           <>
             {/* Fund summary cards (from Expenses) */}
             <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:10 }}>💰 Fund Summary (from Expense Payments)</div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:24 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:24 }}>
               <div style={{ ...card, padding:'16px 18px', borderLeft:`4px solid #0D9488` }}>
                 <div style={{ fontSize:10, fontWeight:600, color:'#0D9488', textTransform:'uppercase' as const, marginBottom:4 }}>Capital Fund</div>
                 <div style={{ fontSize:20, fontWeight:800, color:'#0D9488' }}>{fmt(totalCapitalFund)}</div>
@@ -142,6 +145,11 @@ export default function CapitalPage() {
                 <div style={{ fontSize:10, fontWeight:600, color:'#059669', textTransform:'uppercase' as const, marginBottom:4 }}>Regain Capital</div>
                 <div style={{ fontSize:20, fontWeight:800, color:'#059669' }}>{fmt(latestRegainCapital)}</div>
                 <div style={{ fontSize:10, color:T.textMuted }}>live, as of now</div>
+              </div>
+              <div style={{ ...card, padding:'16px 18px', borderLeft:`4px solid #DC2626` }}>
+                <div style={{ fontSize:10, fontWeight:600, color:'#DC2626', textTransform:'uppercase' as const, marginBottom:4 }}>Pending Invoice Amount</div>
+                <div style={{ fontSize:20, fontWeight:800, color:'#DC2626' }}>{fmt(pendingInvoiceAmount)}</div>
+                <div style={{ fontSize:10, color:T.textMuted }}>total expenses paid − Regain Capital</div>
               </div>
             </div>
 
