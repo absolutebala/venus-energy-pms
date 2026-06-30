@@ -2181,7 +2181,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
           <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:900 }}>
             <thead>
               <tr>
-                {['#','Invoice No','Invoice Date','Basic Amount (₹)','GST (₹)','Total Amount (₹)','WCC No','Receipt No','Inv. Status','Pay Status','Due Date',''].map((h,i)=>(
+                {['#','Invoice No','Invoice Date','Basic Amount (₹)','GST (₹)','Total Amount (₹)','WCC No','Receipt No','Inv. Status','Pay Status','Due Date','Investor','Basic Pmt No','Basic Pmt Date','Tax Pmt No','Tax Pmt Date','TDS (₹)','Remarks',''].map((h,i)=>(
                   <th key={i} style={{ ...thS, textAlign:i>=4&&i<=6?'right' as const:'left' as const }}>{h}</th>
                 ))}
               </tr>
@@ -2204,6 +2204,13 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                   <td style={tdS}><Pill label={item.invoiceStatus} cfg={INV_COLORS[item.invoiceStatus]||INV_COLORS.Draft} /></td>
                   <td style={tdS}><Pill label={item.paymentStatus} cfg={PAY_COLORS[item.paymentStatus]||PAY_COLORS.Pending} /></td>
                   <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD(item.dueDate)}</td>
+                  <td style={tdS}>{(item as any).investor || '—'}</td>
+                  <td style={tdS}>{(item as any).basicPaymentNo || '—'}</td>
+                  <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD((item as any).basicPaymentDate)}</td>
+                  <td style={tdS}>{(item as any).taxPaymentNo || '—'}</td>
+                  <td style={{ ...tdS, color:T.textMuted, whiteSpace:'nowrap' as const }}>{fmtD((item as any).taxPaymentDate)}</td>
+                  <td style={{ ...tdS, textAlign:'right' as const }}>{(item as any).tds ? fmt((item as any).tds) : '—'}</td>
+                  <td style={{ ...tdS, maxWidth:140 }}><div style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{(item as any).remarks || '—'}</div></td>
                   <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
                     <div style={{ display:'flex', gap:4 }}>
                       {canAdd && (
