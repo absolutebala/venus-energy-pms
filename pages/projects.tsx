@@ -358,12 +358,17 @@ export default function ProjectsPage() {
     return Math.floor((new Date().getTime() - new Date(ref).getTime()) / 86400000);
   };
   const filtered = roleFilteredProjects.filter(p => {
-    const displayStatus = STATUS_DISPLAY[p.status] || p.status;
-    if (statusFilter === 'PO Open')   return (p as any).poStatus === 'Open';
-    if (statusFilter === 'PO Closed') return (p as any).poStatus === 'Closed';
-    if (statusFilter === 'PO Unclassified') return !['Open','Closed'].includes((p as any).poStatus||'');
-    if (statusFilter === 'Not Set') return !(p as any).projectStatus;
-    if (statusFilter !== 'All') return ((p as any).projectStatus || '') === statusFilter;
+    // Status filter check — was previously an early `return`, which short-circuited the entire
+    // function and silently skipped every other active filter (Type, Age, PM, Region, Vendor,
+    // search) whenever a PO Open/Closed/Unclassified/project-status filter was selected.
+    // Now it's a single boolean AND'd with all the other conditions below.
+    let statusOk = true;
+    if (statusFilter === 'PO Open')   statusOk = (p as any).poStatus === 'Open';
+    else if (statusFilter === 'PO Closed') statusOk = (p as any).poStatus === 'Closed';
+    else if (statusFilter === 'PO Unclassified') statusOk = !['Open','Closed'].includes((p as any).poStatus||'');
+    else if (statusFilter === 'Not Set') statusOk = !(p as any).projectStatus;
+    else if (statusFilter !== 'All') statusOk = ((p as any).projectStatus || '') === statusFilter;
+    if (!statusOk) return false;
     if (typeFilter !== 'All Types' && !typeFilter.split(',').includes(p.type)) return false;
     if (ageMin !== null && p.aging < ageMin) return false;
     if (ageMax !== null && ageMax < 999 && p.aging > ageMax) return false;
@@ -384,12 +389,10 @@ export default function ProjectsPage() {
 
   const projectsForVendorFilter = React.useMemo(() =>
     roleFilteredProjects.filter((p:any) => {
-      if (statusFilter !== 'All') {
-        if (statusFilter === 'PO Open')   return (p as any).poStatus === 'Open';
-        if (statusFilter === 'PO Closed') return (p as any).poStatus === 'Closed';
-        if (statusFilter === 'Not Set')   return !(p as any).projectStatus;
-        return ((p as any).projectStatus || '') === statusFilter;
-      }
+      if (statusFilter === 'PO Open' && (p as any).poStatus !== 'Open') return false;
+      if (statusFilter === 'PO Closed' && (p as any).poStatus !== 'Closed') return false;
+      if (statusFilter === 'Not Set' && (p as any).projectStatus) return false;
+      if (!['All','PO Open','PO Closed','Not Set'].includes(statusFilter) && ((p as any).projectStatus || '') !== statusFilter) return false;
       if (typeFilter !== 'All Types' && !typeFilter.split(',').includes(p.type)) return false;
       if (pmFilter.length) { const _pm = (p as any).pm||'— Unassigned —'; if (!pmFilter.includes(_pm)) return false; }
       if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'— Unassigned —')) return false;
@@ -400,12 +403,10 @@ export default function ProjectsPage() {
 
   const projectsForPMFilter = React.useMemo(() =>
     roleFilteredProjects.filter((p:any) => {
-      if (statusFilter !== 'All') {
-        if (statusFilter === 'PO Open')   return (p as any).poStatus === 'Open';
-        if (statusFilter === 'PO Closed') return (p as any).poStatus === 'Closed';
-        if (statusFilter === 'Not Set')   return !(p as any).projectStatus;
-        return ((p as any).projectStatus || '') === statusFilter;
-      }
+      if (statusFilter === 'PO Open' && (p as any).poStatus !== 'Open') return false;
+      if (statusFilter === 'PO Closed' && (p as any).poStatus !== 'Closed') return false;
+      if (statusFilter === 'Not Set' && (p as any).projectStatus) return false;
+      if (!['All','PO Open','PO Closed','Not Set'].includes(statusFilter) && ((p as any).projectStatus || '') !== statusFilter) return false;
       if (typeFilter !== 'All Types' && !typeFilter.split(',').includes(p.type)) return false;
       if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'— Unassigned —')) return false;
       if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'— Unassigned —')) return false;
@@ -416,12 +417,10 @@ export default function ProjectsPage() {
 
   const projectsForRegionFilter = React.useMemo(() =>
     roleFilteredProjects.filter((p:any) => {
-      if (statusFilter !== 'All') {
-        if (statusFilter === 'PO Open')   return (p as any).poStatus === 'Open';
-        if (statusFilter === 'PO Closed') return (p as any).poStatus === 'Closed';
-        if (statusFilter === 'Not Set')   return !(p as any).projectStatus;
-        return ((p as any).projectStatus || '') === statusFilter;
-      }
+      if (statusFilter === 'PO Open' && (p as any).poStatus !== 'Open') return false;
+      if (statusFilter === 'PO Closed' && (p as any).poStatus !== 'Closed') return false;
+      if (statusFilter === 'Not Set' && (p as any).projectStatus) return false;
+      if (!['All','PO Open','PO Closed','Not Set'].includes(statusFilter) && ((p as any).projectStatus || '') !== statusFilter) return false;
       if (typeFilter !== 'All Types' && !typeFilter.split(',').includes(p.type)) return false;
       if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'— Unassigned —')) return false;
       if (pmFilter.length) { const _pm = (p as any).pm||'— Unassigned —'; if (!pmFilter.includes(_pm)) return false; }
@@ -432,12 +431,10 @@ export default function ProjectsPage() {
 
   const projectsForTypeFilter = React.useMemo(() =>
     roleFilteredProjects.filter((p:any) => {
-      if (statusFilter !== 'All') {
-        if (statusFilter === 'PO Open')   return (p as any).poStatus === 'Open';
-        if (statusFilter === 'PO Closed') return (p as any).poStatus === 'Closed';
-        if (statusFilter === 'Not Set')   return !(p as any).projectStatus;
-        return ((p as any).projectStatus || '') === statusFilter;
-      }
+      if (statusFilter === 'PO Open' && (p as any).poStatus !== 'Open') return false;
+      if (statusFilter === 'PO Closed' && (p as any).poStatus !== 'Closed') return false;
+      if (statusFilter === 'Not Set' && (p as any).projectStatus) return false;
+      if (!['All','PO Open','PO Closed','Not Set'].includes(statusFilter) && ((p as any).projectStatus || '') !== statusFilter) return false;
       if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'— Unassigned —')) return false;
       if (pmFilter.length) { const _pm = (p as any).pm||'— Unassigned —'; if (!pmFilter.includes(_pm)) return false; }
       if (projectStatusFilter.length && !projectStatusFilter.includes((p as any).projectStatus||'— Unassigned —')) return false;
