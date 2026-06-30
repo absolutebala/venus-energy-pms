@@ -526,7 +526,7 @@ export default function InvoicesPage() {
                     </div>
                   ) : field === 'gst' ? (
                     <div style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px", fontSize:13, background:T.bg, color:T.text }}>
-                      18%
+                      {fmt((Number(newInv.invoiceAmount)||0) * 0.18)} (18%)
                     </div>
                   ) : type === 'date' ? (
                     <DateInput value={(newInv as any)[field]} onChange={v => setNewInv(p => ({ ...p, [field]: v }))}

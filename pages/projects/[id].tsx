@@ -2367,7 +2367,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                 {field === 'tds' ? (
                   <div style={{ ...inpS, background:T.bg }}>{fmt((Number((newRow as any).invoiceAmount)||0) * 0.01)}</div>
                 ) : field === 'gst' ? (
-                  <div style={{ ...inpS, background:T.bg }}>18%</div>
+                  <div style={{ ...inpS, background:T.bg }}>{fmt((Number((newRow as any).invoiceAmount)||0) * 0.18)} (18%)</div>
                 ) : type === 'date' ? (
                   <DateInput value={(newRow as any)[field]} onChange={v=>setNewRow(p=>({...p,[field]:v}))} max={field==='dueDate'?'9999-12-31':undefined} style={inpS} />
                 ) : (
