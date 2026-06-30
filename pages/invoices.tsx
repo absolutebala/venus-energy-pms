@@ -682,8 +682,14 @@ export default function InvoicesPage() {
                   <th style={thS()}>#</th>
                   {([["poNo","PO No"],["invoiceDate","PO Date"],["invoiceDate","Indus ID"],["invoiceNo","Project ID"],["invoiceNo","Project"],
                      ["invoiceNo","WCC No"],["invoiceNo","Receipt No"],["invoiceNo","Invoice No"],["invoiceDate","Invoice Date"],
+                     ["dueDate","Due Date"],
                      ["invoiceAmount","Basic Amt (₹)"],["gst","GST (%)"],["gst","Tax Amt (₹)"],["totalAmount","Total Amt (₹)"],
-                     ["invoiceNo","Circle"],["invoiceNo","Project Status"]] as [SortKey,string][])
+                     ["invoiceNo","Circle"],["invoiceNo","Project Status"],
+                     ["invoiceStatus","Inv. Status"],["paymentStatus","Pay Status"],
+                     ["invoiceNo","Investor"],
+                     ["invoiceNo","Basic Payment No"],["invoiceNo","Basic Payment Date"],
+                     ["invoiceNo","Tax Payment No"],["invoiceNo","Tax Payment Date"],
+                     ["invoiceNo","TDS (₹)"],["invoiceNo","Remarks"]] as [SortKey,string][])
                     .map(([key, label]) => (
                       <th key={label} style={thS(key)} onClick={() => handleSort(key)}>
                         {label}<SortIcon active={sortKey === key} dir={sortDir} />
@@ -723,6 +729,16 @@ export default function InvoicesPage() {
                       <td style={{ ...tdS, textAlign:"right" as const, fontWeight:700, color:T.primary }}>{fmt(inv.totalAmount)}</td>
                       <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{proj ? (proj as any).region || "—" : "—"}</td>
                       <td style={tdS}>{proj ? <StatusPill label={(proj as any).projectStatus||'—'} cfg={{bg:'#F3F4F6',color:'#6B7280'}} /> : "—"}</td>
+                      <td style={tdS}><StatusPill label={inv.invoiceStatus||'—'} cfg={INV_STATUS_CFG[inv.invoiceStatus]||INV_STATUS_CFG.Draft} /></td>
+                      <td style={tdS}><StatusPill label={inv.paymentStatus||'—'} cfg={PAY_STATUS_CFG[inv.paymentStatus]||PAY_STATUS_CFG.Pending} /></td>
+                      <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{fmtDate(inv.dueDate)}</td>
+                      <td style={tdS}>{(inv as any).investor || "—"}</td>
+                      <td style={tdS}>{(inv as any).basicPaymentNo || "—"}</td>
+                      <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{fmtDate((inv as any).basicPaymentDate)}</td>
+                      <td style={tdS}>{(inv as any).taxPaymentNo || "—"}</td>
+                      <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{fmtDate((inv as any).taxPaymentDate)}</td>
+                      <td style={{ ...tdS, textAlign:"right" as const }}>{(inv as any).tds ? fmt((inv as any).tds) : "—"}</td>
+                      <td style={{ ...tdS, maxWidth:140 }}><div style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{(inv as any).remarks || "—"}</div></td>
                       <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
                         <button onClick={e=>{e.stopPropagation();setEditInvId(editInvId===inv.id?null:inv.id);setEditInvRow({...inv});}}
                           style={{ background:editInvId===inv.id?T.primary:'#F0FDFA', color:editInvId===inv.id?'#fff':'#0D9488',
