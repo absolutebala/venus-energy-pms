@@ -143,6 +143,7 @@ function WorkProgressSection({ projectId, role }: { projectId: string; role: str
   // Respect actual Role & Permissions settings for create/edit, instead of hardcoding to vendor only
   const canCreateWP = isVendor || can('sec_work_progress', 'create');
   const canEditWP   = isVendor || can('sec_work_progress', 'edit');
+  const canDeleteWP = can('sec_work_progress', 'delete');
   const today = new Date().toISOString().split('T')[0];
   const [adding,  setAdding]  = React.useState(false);
   const [saving,  setSaving]  = React.useState(false);
@@ -223,12 +224,16 @@ function WorkProgressSection({ projectId, role }: { projectId: string; role: str
                         <td style={tdS}>{item.totalWorkStatus||'—'}</td>
                         <td style={{ ...tdS, color:T.textMuted }}>{item.remarks||'—'}</td>
                         <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
-                          {canEditWP && (
+                          {(canEditWP || canDeleteWP) && (
                             <div style={{ display:'flex', gap:4 }}>
-                              <button onClick={()=>{ setEditId(item.id); setEditRow({...item}); }}
-                                style={{ background:'none', border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12, color:T.primary }}>✏️</button>
-                              <button onClick={()=>{ if(window.confirm('Delete this work progress entry?')) deleteItem(item.id); }}
-                                style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:14 }}>🗑</button>
+                              {canEditWP && (
+                                <button onClick={()=>{ setEditId(item.id); setEditRow({...item}); }}
+                                  style={{ background:'none', border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12, color:T.primary }}>✏️</button>
+                              )}
+                              {canDeleteWP && (
+                                <button onClick={()=>{ if(window.confirm('Delete this work progress entry?')) deleteItem(item.id); }}
+                                  style={{ background:'none', border:'none', cursor:'pointer', color:T.danger, fontSize:14 }}>🗑</button>
+                              )}
                             </div>
                           )}
                         </td>
