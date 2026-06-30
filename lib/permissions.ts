@@ -12,7 +12,7 @@ function perm(can_create:boolean, can_read:boolean, can_edit:boolean, can_delete
 }
 
 function buildFull(): Record<AppModule, Permission> {
-  const modules: AppModule[] = ['dashboard','projects','vendors','srn_return','site_expenses','sec_expenses','sec_work_progress','ptw','reports'];
+  const modules: AppModule[] = ['dashboard','projects','vendors','srn_return','site_expenses','sec_expenses','sec_work_progress','ptw','reports','capital'];
   return Object.fromEntries(modules.map(m=>[m,{
     module:m,
     can_create: m !== 'srn_return' && m !== 'reports', // no create for STN/SRN or Reports
