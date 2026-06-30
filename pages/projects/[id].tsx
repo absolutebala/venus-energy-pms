@@ -2094,7 +2094,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
   const [toast,   setToast]   = React.useState<any>(null);
   const [newRow,  setNewRow]  = React.useState({
     invoiceNo:'', invoiceDate:'', invoiceAmount:'',
-    gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo,
+    gst:'18', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo,
     wccNo:'', receiptNo:'', investor:'', investor1Incentive:'',
     basicPaymentNo:'', basicPaymentDate:'', taxPaymentNo:'', taxPaymentDate:'', tds:'', remarks:''
   });
@@ -2156,7 +2156,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
         } : {}),
       });
       setNewRow({ invoiceNo:'', invoiceDate:'', invoiceAmount:'',
-        gst:'', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo,
+        gst:'18', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo,
         wccNo:'', receiptNo:'', investor:'', investor1Incentive:'',
         basicPaymentNo:'', basicPaymentDate:'', taxPaymentNo:'', taxPaymentDate:'', tds:'', remarks:'' });
       setAdding(false);
@@ -2366,6 +2366,8 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</label>
                 {field === 'tds' ? (
                   <div style={{ ...inpS, background:T.bg }}>{fmt((Number((newRow as any).invoiceAmount)||0) * 0.01)}</div>
+                ) : field === 'gst' ? (
+                  <div style={{ ...inpS, background:T.bg }}>18%</div>
                 ) : type === 'date' ? (
                   <DateInput value={(newRow as any)[field]} onChange={v=>setNewRow(p=>({...p,[field]:v}))} max={field==='dueDate'?'9999-12-31':undefined} style={inpS} />
                 ) : (

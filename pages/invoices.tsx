@@ -82,7 +82,7 @@ export default function InvoicesPage() {
   const [showExportWarning, setShowExportWarning] = useState(false);
   const [newInv,      setNewInv]      = useState({
     invoiceNo:"", invoiceDate:"", invoiceAmount:"",
-    gst:"", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
+    gst:"18", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
     wccNo:"", receiptNo:"", investor:"", investor1Incentive:"",
     basicPaymentNo:"", basicPaymentDate:"", taxPaymentNo:"", taxPaymentDate:"", tds:"", remarks:"",
   });
@@ -310,7 +310,7 @@ export default function InvoicesPage() {
         } : {}),
       });
       setNewInv({ invoiceNo:"", invoiceDate:"", invoiceAmount:"",
-        gst:"", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
+        gst:"18", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
         wccNo:"", receiptNo:"", investor:"", investor1Incentive:"",
         basicPaymentNo:"", basicPaymentDate:"", taxPaymentNo:"", taxPaymentDate:"", tds:"", remarks:"" });
       setShowForm(false);
@@ -523,6 +523,10 @@ export default function InvoicesPage() {
                   {field === 'tds' ? (
                     <div style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px", fontSize:13, background:T.bg, color:T.text }}>
                       {fmt((Number(newInv.invoiceAmount)||0) * 0.01)}
+                    </div>
+                  ) : field === 'gst' ? (
+                    <div style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px", fontSize:13, background:T.bg, color:T.text }}>
+                      18%
                     </div>
                   ) : type === 'date' ? (
                     <DateInput value={(newInv as any)[field]} onChange={v => setNewInv(p => ({ ...p, [field]: v }))}
