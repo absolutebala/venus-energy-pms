@@ -36,11 +36,12 @@ export default function CapitalPage() {
 
   const totalCapitalFund = capitalFundExpenses.reduce((a, e) => a + Number(e.amount||0), 0);
   const totalPersonalFund = personalFundExpenses.reduce((a, e) => a + Number(e.amount||0), 0);
-  // Latest known Regain Capital snapshot (most recently paid Capital Fund expense's stored value)
+  // Live Regain Capital — recalculated right now, same formula used in the Make Payment modal:
+  // sum of paid expenses for projects that have at least one Paid invoice.
   const latestRegainCapital = useMemo(() => {
-    const sorted = [...capitalFundExpenses].sort((a,b) => new Date(b.paidAt||0).getTime() - new Date(a.paidAt||0).getTime());
-    return sorted.length > 0 ? Number(sorted[0].regainCapital||0) : 0;
-  }, [capitalFundExpenses]);
+    const paidInvoiceProjectIds = new Set((invoices as any[]).filter(i => i.paymentStatus === 'Paid').map(i => i.projectId));
+    return (expenses as any[]).filter(e => e.status === 'paid' && paidInvoiceProjectIds.has(e.projectId)).reduce((a, e) => a + Number(e.amount||0), 0);
+  }, [expenses, invoices]);
 
   // ── Invoice side: Investor 1 / Investor 2 profit totals ───────────────────
   const investor1Invoices = useMemo(() => (invoices as any[]).filter(i => i.investor === 'Investor 1'), [invoices]);
@@ -138,9 +139,9 @@ export default function CapitalPage() {
                 <div style={{ fontSize:10, color:T.textMuted }}>{personalFundExpenses.length} payments</div>
               </div>
               <div style={{ ...card, padding:'16px 18px', borderLeft:`4px solid #059669` }}>
-                <div style={{ fontSize:10, fontWeight:600, color:'#059669', textTransform:'uppercase' as const, marginBottom:4 }}>Latest Regain Capital</div>
+                <div style={{ fontSize:10, fontWeight:600, color:'#059669', textTransform:'uppercase' as const, marginBottom:4 }}>Regain Capital</div>
                 <div style={{ fontSize:20, fontWeight:800, color:'#059669' }}>{fmt(latestRegainCapital)}</div>
-                <div style={{ fontSize:10, color:T.textMuted }}>as of last Capital Fund payment</div>
+                <div style={{ fontSize:10, color:T.textMuted }}>live, as of now</div>
               </div>
             </div>
 
