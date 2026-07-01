@@ -449,10 +449,10 @@ export default function ReportsPage() {
             {active==='executive' && (
               <div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:16 }}>
-                  <KPI label="Total Invoices Unpaid" value={fmt(totalUnpaidInvoices)}                                                  color={T.danger}  />
-                  <KPI label="Total PO Value"    value={fmtCr(totalPO)}                                                             color={T.text}    />
-                  <KPI label="Total Billed"      value={fmt(totalBilled)}                                                           color={T.info}    />
-                  <KPI label="Total Paid"        value={fmt(totalPaid)}                                                             color={T.success} />
+                  <KPI label="Total Invoices Unpaid" value={fmt(totalUnpaidInvoices)}                                                  color={T.danger}  sub="Invoices pending payment" />
+                  <KPI label="Total PO Value"    value={fmtCr(totalPO)}                                                             color={T.text}    sub="Across all projects" />
+                  <KPI label="Total Billed"      value={fmt(totalBilled)}                                                           color={T.info}    sub="Total paid invoice amount" />
+                  <KPI label="Total Paid"        value={fmt(totalPaid)}                                                             color={T.success} sub="Total paid expense amount" />
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:16 }}>
                   <KPI label="Regions"           value={new Set(projects.map((p:any)=>p.region).filter(Boolean)).size}             color='#7C3AED'   sub="Unique regions" />
