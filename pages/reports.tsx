@@ -216,8 +216,8 @@ export default function ReportsPage() {
   const totalBilled  = invoices.filter(i=>i.paymentStatus==='Paid').reduce((a,i)=>a+Number(i.invoiceAmount||0),0);
   // Total Paid = sum of paid expense amounts
   const totalPaid    = expenses.filter(e=>e.status==='paid').reduce((a,e)=>a+Number(e.amount||0),0);
-  // Total Invoices Unpaid = invoices where payment status is NOT Paid
-  const totalUnpaidInvoices = invoices.filter(i=>i.paymentStatus!=='Paid').length;
+  // Total Invoices Unpaid = total invoice amount where payment status is NOT Paid
+  const totalUnpaidInvoices = invoices.filter(i=>i.paymentStatus!=='Paid').reduce((a,i)=>a+Number(i.invoiceAmount||0),0);
   const totalPending = totalBilled - totalPaid;
 
   const statusData = [
@@ -449,7 +449,7 @@ export default function ReportsPage() {
             {active==='executive' && (
               <div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:16 }}>
-                  <KPI label="Total Invoices Unpaid" value={totalUnpaidInvoices}                                                        color={T.danger}  />
+                  <KPI label="Total Invoices Unpaid" value={fmt(totalUnpaidInvoices)}                                                  color={T.danger}  />
                   <KPI label="Total PO Value"    value={fmtCr(totalPO)}                                                             color={T.text}    />
                   <KPI label="Total Billed"      value={fmt(totalBilled)}                                                           color={T.info}    />
                   <KPI label="Total Paid"        value={fmt(totalPaid)}                                                             color={T.success} />
