@@ -249,12 +249,12 @@ export default function ReportsPage() {
   const vendors = Array.from(new Set(projects.map((p:any)=>p.vendor).filter(Boolean))) as string[];
   const vendorData = vendors.map(v => {
     const ps = projects.filter((p:any)=>p.vendor===v);
-    const completed = ps.filter((p:any)=>['completed','billing_review'].includes(p.status)).length;
+    const completed = ps.filter((p:any)=>(p as any).projectStatus==='WCC Raised').length;
+    const delayed   = ps.filter((p:any)=>p.aging>90).length;
     return {
       name: v.length>20?v.substring(0,18)+'…':v, fullName:v,
-      total:ps.length, completed,
-      delayed:ps.filter((p:any)=>p.status==='delayed').length,
-      completionRate:Math.round(completed/ps.length*100),
+      total:ps.length, completed, delayed,
+      completionRate: ps.length > 0 ? Math.round(completed/ps.length*100) : 0,
     };
   });
 
