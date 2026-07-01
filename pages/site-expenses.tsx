@@ -141,6 +141,14 @@ export default function SiteExpensesPage() {
     setPaidForm(p => ({...p, fromAccount: val}));
   };
   const [paidSaving,   setPaidSaving]   = useState(false);
+  const [resolvedVendorName, setResolvedVendorName] = useState<string>('');
+  React.useEffect(() => {
+    const vendorId = (profile as any)?.vendor_id;
+    if (!vendorId || profile?.role !== 'vendor') return;
+    createClient().from('vendors').select('name').eq('id', vendorId).single().then(({ data }) => {
+      if (data?.name) setResolvedVendorName(data.name);
+    });
+  }, [(profile as any)?.vendor_id, profile?.role]);
 
   // Group projects by vendor
   const VENDOR_MAP: Record<string, any[]> = (projects as any[]).reduce((acc:any, p:any) => {
@@ -161,17 +169,17 @@ export default function SiteExpensesPage() {
   const roleFilteredExpenses = React.useMemo(() => {
     const role = profile?.role || '';
     const name = profile?.full_name || '';
-    const vendorName = (profile as any)?.vendor_name || '';
     if (role === 'project_manager') {
       const myProjectIds = new Set((projects as any[]).filter((p:any)=>p.pm===name).map((p:any)=>p.id));
       return expenses.filter((e:any) => myProjectIds.has(e.projectId));
     }
     if (role === 'vendor') {
-      const myProjectIds = new Set((projects as any[]).filter((p:any)=>p.vendor===vendorName).map((p:any)=>p.id));
+      if (!resolvedVendorName) return [];
+      const myProjectIds = new Set((projects as any[]).filter((p:any)=>p.vendor===resolvedVendorName).map((p:any)=>p.id));
       return expenses.filter((e:any) => myProjectIds.has(e.projectId));
     }
     return expenses;
-  }, [expenses, projects, profile?.role, profile?.full_name, (profile as any)?.vendor_name]);
+  }, [expenses, projects, profile?.role, profile?.full_name, resolvedVendorName]);
 
   const allExpenses = roleFilteredExpenses
     .filter((e:any) => {
