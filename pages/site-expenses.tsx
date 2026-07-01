@@ -31,7 +31,7 @@ export default function SiteExpensesPage() {
   const { expenses, loading: expLoading, addExpense, updateExpense, deleteExpense } = useExpenses();
   const { projects } = useProjects();
   const canAdd    = !authLoading && can("site_expenses", "create");
-  const canManage = !authLoading && can("site_expenses", "edit");
+  const canManage = !authLoading && can("site_expenses", "edit") && role !== 'vendor';
 
   const [selectedVendor,  setSelectedVendor]  = useState("");
   const [selectedProject, setSelectedProject] = useState("");
@@ -228,8 +228,8 @@ export default function SiteExpensesPage() {
   const totalPages    = Math.ceil(allExpenses.length / PER_PAGE);
   const paginatedExp  = allExpenses.slice((page-1)*PER_PAGE, page*PER_PAGE);
 
-  const pendingTotal = allExpenses.filter((e:any) => e.status === 'pending').reduce((a:number,e:any) => a + Number(e.amount), 0);
-  const paidTotal    = allExpenses.filter((e:any) => e.status === 'paid').reduce((a:number,e:any) => a + Number(e.amount), 0);
+  const pendingTotal = roleFilteredExpenses.filter((e:any) => e.status === 'pending').reduce((a:number,e:any) => a + Number(e.amount), 0);
+  const paidTotal    = roleFilteredExpenses.filter((e:any) => e.status === 'paid').reduce((a:number,e:any) => a + Number(e.amount), 0);
 
   const handleAdd = async () => {
     if (!selectedProject || !form.amount || !form.expenseDate) {
@@ -544,7 +544,7 @@ export default function SiteExpensesPage() {
                 <tfoot>
                   <tr style={{ background:T.primaryLight, fontWeight:700 }}>
                     <td colSpan={5} style={{ ...tdS, color:T.primary }}>Total</td>
-                    <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>{fmt(allExpenses.reduce((a:number,e:any)=>a+Number(e.amount),0))}</td>
+                    <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>{fmt(roleFilteredExpenses.reduce((a:number,e:any)=>a+Number(e.amount),0))}</td>
                     <td colSpan={6} style={tdS}></td>
                   </tr>
                 </tfoot>
