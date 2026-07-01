@@ -31,7 +31,7 @@ export default function SiteExpensesPage() {
   const { expenses, loading: expLoading, addExpense, updateExpense, deleteExpense } = useExpenses();
   const { projects } = useProjects();
   const canAdd    = !authLoading && can("site_expenses", "create");
-  const canManage = !authLoading && can("site_expenses", "edit") && role !== 'vendor';
+  const canManage = !authLoading && can("site_expenses", "edit") && profile?.role !== 'vendor';
 
   const [selectedVendor,  setSelectedVendor]  = useState("");
   const [selectedProject, setSelectedProject] = useState("");
