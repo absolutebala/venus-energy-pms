@@ -337,7 +337,7 @@ export default function ReportsPage() {
       rows = vendorData.map(v => ({
         'Vendor': v.fullName, 'Total Projects': v.total,
         'Completed': v.completed, 'Delayed': v.delayed,
-        'Completion Rate (%)': v.completionRate,
+        'PO Value': v.poValue,
       }));
     } else if (active === 'aging') {
       sheetName = 'PO Aging';
