@@ -68,7 +68,7 @@ const ALL_COLS: Record<string, {key:string; label:string}[]> = {
     { key:'total',          label:'Total Projects'   },
     { key:'completed',      label:'Completed'        },
     { key:'delayed',        label:'Delayed'          },
-    { key:'completionRate', label:'Completion Rate %'},
+    { key:'poValue', label:'PO Value'},
   ],
   aging: [
     { key:'id',        label:'Project ID'   },
@@ -251,10 +251,10 @@ export default function ReportsPage() {
     const ps = projects.filter((p:any)=>p.vendor===v);
     const completed = ps.filter((p:any)=>(p as any).projectStatus==='WCC Raised').length;
     const delayed   = ps.filter((p:any)=>p.aging>90).length;
+    const poValue   = ps.reduce((a,p:any)=>a+Number(p.poValue||0),0);
     return {
       name: v.length>20?v.substring(0,18)+'…':v, fullName:v,
-      total:ps.length, completed, delayed,
-      completionRate: ps.length > 0 ? Math.round(completed/ps.length*100) : 0,
+      total:ps.length, completed, delayed, poValue,
     };
   });
 
@@ -710,14 +710,7 @@ export default function ReportsPage() {
                       <td style={{ padding:'10px', textAlign:'center', fontWeight:700 }}>{v.total}</td>
                       <td style={{ padding:'10px', textAlign:'center', color:T.success, fontWeight:600 }}>{v.completed}</td>
                       <td style={{ padding:'10px', textAlign:'center', color:v.delayed>0?T.danger:T.success, fontWeight:600 }}>{v.delayed}</td>
-                      <td style={{ padding:'10px' }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                          <div style={{ flex:1, height:6, background:T.border, borderRadius:3 }}>
-                            <div style={{ height:'100%', width:`${v.completionRate}%`, background:PCT_CLR(v.completionRate), borderRadius:3 }} />
-                          </div>
-                          <span style={{ fontSize:12, fontWeight:700, color:PCT_CLR(v.completionRate), minWidth:36 }}>{v.completionRate}%</span>
-                        </div>
-                      </td>
+                      <td style={{ padding:'10px', textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(v.poValue)}</td>
                     </tr>
                   ))}</tbody>
                 </table>
