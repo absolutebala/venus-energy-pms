@@ -24,9 +24,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ];
 
     for (const table of tables) {
-      const { data, error } = await admin.from(table).select('*');
-      if (!error && data) backup[table] = data;
-      else console.warn(`Backup: could not export ${table}:`, error?.message);
+      // Paginate in batches of 1000 to bypass Supabase's default row cap
+      const BATCH = 1000;
+      let allRows: any[] = [];
+      let from = 0;
+      let batchError = null;
+      while (true) {
+        const { data, error } = await admin.from(table).select('*').range(from, from + BATCH - 1);
+        if (error) { batchError = error; break; }
+        const rows = data || [];
+        allRows = allRows.concat(rows);
+        if (rows.length < BATCH) break;
+        from += BATCH;
+      }
+      if (!batchError) backup[table] = allRows;
+      else console.warn(`Backup: could not export ${table}:`, batchError?.message);
     }
 
     const totalRecords = Object.values(backup).reduce((a,v)=>a+v.length, 0);
