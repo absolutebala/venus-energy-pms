@@ -2065,7 +2065,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
     if (!editInvId) return;
     setSaving(true);
     try {
-      const amt = Number(editInvRow.invoiceAmount)||0, gstPct = Number(editInvRow.gst)||0, gst = amt * gstPct / 100;
+      const amt = Number(editInvRow.invoiceAmount)||0, gst = amt * 0.18;
       const editInv1 = calcInvestor1(amt, Number(editInvRow.investor1Incentive)||0);
       const editInv2 = calcInvestor2(amt);
       await updateInvoice(editInvId, {
@@ -2245,7 +2245,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                         <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Basic Amount (₹)</div><input style={inpS} type="number" value={editInvRow.invoiceAmount||''} onChange={e=>setEditInvRow((p:any)=>({...p,invoiceAmount:e.target.value}))} /></div>
                       </div>
                       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:12 }}>
-                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>GST (₹)</div><input style={inpS} type="number" value={editInvRow.gst||''} onChange={e=>setEditInvRow((p:any)=>({...p,gst:e.target.value}))} /></div>
+                        <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>GST (₹)</div><div style={{ ...inpS, background:T.bg }}>{fmt((Number(editInvRow.invoiceAmount)||0) * 0.18)} (18%)</div></div>
                         <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>WCC No</div><input style={inpS} value={editInvRow.wccNo||''} onChange={e=>setEditInvRow((p:any)=>({...p,wccNo:e.target.value}))} /></div>
                         <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Receipt No</div><input style={inpS} value={editInvRow.receiptNo||''} onChange={e=>setEditInvRow((p:any)=>({...p,receiptNo:e.target.value}))} /></div>
                         <div><div style={{ fontSize:11, color:T.textMuted, marginBottom:2 }}>Invoice Status</div>
