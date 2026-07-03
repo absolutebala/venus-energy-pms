@@ -2044,18 +2044,22 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
     const tds = amt * 0.01;
     const m1Payment = amt * 0.01;
     const paymentReceived = amt - tds - m1Payment - incentive;
-    const profit1 = amt * (Number(invSettings.investor1_profit1_pct) || 0) / 100;
-    const profit2 = amt * (Number(invSettings.investor1_profit2_pct) || 0) / 100;
+    const profit1 = paymentReceived * (Number(invSettings.investor1_profit1_pct) || 0) / 100;
+    const profit2 = paymentReceived * (Number(invSettings.investor1_profit2_pct) || 0) / 100;
     const additionalCapital = paidAmount * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100;
     const interest = paidAmount * (Number(invSettings.investor1_interest_pct) || 0) / 100;
     const otherExpenses = paymentReceived * (Number(invSettings.investor1_other_expenses_pct) || 0) / 100;
     const balanceAmount = amt - paidAmount - additionalCapital - profit1 - profit2 - otherExpenses - interest - incentive;
     return { paidAmount, profit1, profit2, additionalCapital, interest, otherExpenses, incentive, balanceAmount, m1Payment, paymentReceived };
   };
-  const calcInvestor2 = (amt: number) => ({
-    profit1: amt * (Number(invSettings.investor2_profit1_pct) || 0) / 100,
-    profit2: amt * (Number(invSettings.investor2_profit2_pct) || 0) / 100,
-  });
+  const calcInvestor2 = (amt: number) => {
+    const tds = amt * 0.01;
+    const m1Payment = amt * 0.01;
+    const paymentReceived = amt - tds - m1Payment;
+    const profit1 = paymentReceived * (Number(invSettings.investor2_profit1_pct) || 0) / 100;
+    const profit2 = paymentReceived * (Number(invSettings.investor2_profit2_pct) || 0) / 100;
+    return { profit1, profit2, paymentReceived, m1Payment };
+  };
 
   const saveInvEdit = async () => {
     if (!editInvId) return;
@@ -2312,6 +2316,8 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                             <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 2 Details</div>
                             <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
                               {[
+                                ['M1 Payment (1%)', fmt(c2.m1Payment)],
+                                ['Payment Received (₹)', fmt(c2.paymentReceived)],
                                 [`Profit 1 (${invSettings.investor2_profit1_pct}%)`, fmt(c2.profit1)],
                                 [`Profit 2 (${invSettings.investor2_profit2_pct}%)`, fmt(c2.profit2)],
                               ].map(([label,val]) => (
@@ -2458,6 +2464,8 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                 <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 2 Details</div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:10 }}>
                   {[
+                    ['M1 Payment (1%)', fmt(c2.m1Payment)],
+                    ['Payment Received (₹)', fmt(c2.paymentReceived)],
                     [`Profit 1 (${invSettings.investor2_profit1_pct}%)`, fmt(c2.profit1)],
                     [`Profit 2 (${invSettings.investor2_profit2_pct}%)`, fmt(c2.profit2)],
                   ].map(([label,val]) => (
