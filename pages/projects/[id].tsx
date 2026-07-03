@@ -2041,13 +2041,16 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
     }
   };
   const calcInvestor1 = (amt: number, incentive: number = 0) => {
+    const tds = amt * 0.01;
+    const m1Payment = amt * 0.01;
+    const paymentReceived = amt - tds - m1Payment - incentive;
     const profit1 = amt * (Number(invSettings.investor1_profit1_pct) || 0) / 100;
     const profit2 = amt * (Number(invSettings.investor1_profit2_pct) || 0) / 100;
     const additionalCapital = paidAmount * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100;
     const interest = paidAmount * (Number(invSettings.investor1_interest_pct) || 0) / 100;
-    const otherExpenses = amt * (Number(invSettings.investor1_other_expenses_pct) || 0) / 100;
+    const otherExpenses = paymentReceived * (Number(invSettings.investor1_other_expenses_pct) || 0) / 100;
     const balanceAmount = amt - paidAmount - additionalCapital - profit1 - profit2 - otherExpenses - interest - incentive;
-    return { paidAmount, profit1, profit2, additionalCapital, interest, otherExpenses, incentive, balanceAmount };
+    return { paidAmount, profit1, profit2, additionalCapital, interest, otherExpenses, incentive, balanceAmount, m1Payment, paymentReceived };
   };
   const calcInvestor2 = (amt: number) => ({
     profit1: amt * (Number(invSettings.investor2_profit1_pct) || 0) / 100,
@@ -2076,6 +2079,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
           investor1Profit2: editInv1.profit2, investor1OtherExpenses: editInv1.otherExpenses,
           investor1AdditionalCapital: editInv1.additionalCapital, investor1Interest: editInv1.interest,
           investor1Incentive: editInv1.incentive, investor1BalanceAmount: editInv1.balanceAmount,
+          m1Payment: editInv1.m1Payment, paymentReceived: editInv1.paymentReceived,
         } : {}),
         ...(editInvRow.investor === 'Investor 2' ? {
           investor2Profit1: editInv2.profit1, investor2Profit2: editInv2.profit2,
@@ -2150,6 +2154,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
           investor1Profit2: inv1.profit2, investor1OtherExpenses: inv1.otherExpenses,
           investor1AdditionalCapital: inv1.additionalCapital, investor1Interest: inv1.interest,
           investor1Incentive: inv1.incentive, investor1BalanceAmount: inv1.balanceAmount,
+          m1Payment: inv1.m1Payment, paymentReceived: inv1.paymentReceived,
         } : {}),
         ...(newRow.investor === 'Investor 2' ? {
           investor2Profit1: inv2.profit1, investor2Profit2: inv2.profit2,
@@ -2277,6 +2282,8 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                                 [`Additional Capital (${invSettings.investor1_additional_capital_pct}%)`, fmt(c1.additionalCapital)],
                                 [`Interest (${invSettings.investor1_interest_pct}%)`, fmt(c1.interest)],
                                 [`Other Expenses (${invSettings.investor1_other_expenses_pct}%)`, fmt(c1.otherExpenses)],
+                                ['M1 Payment (1%)', fmt(c1.m1Payment)],
+                                ['Payment Received (₹)', fmt(c1.paymentReceived)],
                               ].map(([label,val]) => (
                                 <div key={label as string}>
                                   <div style={{ fontSize:10, color:T.textMuted, marginBottom:2 }}>{label}</div>
@@ -2421,6 +2428,8 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                     [`Additional Capital (${invSettings.investor1_additional_capital_pct}%)`, fmt(c1.additionalCapital)],
                     [`Interest (${invSettings.investor1_interest_pct}%)`, fmt(c1.interest)],
                     [`Other Expenses (${invSettings.investor1_other_expenses_pct}%)`, fmt(c1.otherExpenses)],
+                    ['M1 Payment (1%)', fmt(c1.m1Payment)],
+                    ['Payment Received (₹)', fmt(c1.paymentReceived)],
                   ].map(([label,val]) => (
                     <div key={label as string}>
                       <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</div>
