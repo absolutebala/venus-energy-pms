@@ -2740,8 +2740,9 @@ export default function ProjectDetailPage() {
   const showPTW           = !loading && can('sec_ptw',              'read');
 
   const { getProject, updateProject: ctxUpdateProject, projects: allProjects } = useProjects();
-  const { expenses: allExpenses } = useExpenses();
-  const { invoices: allInvoices } = useInvoices();
+  const { expenses: allExpenses, loading: allExpLoading } = useExpenses();
+  const { invoices: allInvoices, loading: allInvLoading } = useInvoices();
+  const finSummaryLoading = allExpLoading || allInvLoading;
   const { getByProject: getProjectDocs, addDoc, deleteDoc: deleteWorkDoc, getDocStatus } = useWorkDocs();
   const { getByProject: getActivityLog, logActivity } = useActivity();
   const dbProject = id ? getProject(id as string) : undefined;
@@ -3327,7 +3328,9 @@ export default function ProjectDetailPage() {
                     <input type="number" value={(form as any)[r.key]||0} onChange={e=>setForm((f:any)=>({...f,[r.key!]:Number(e.target.value)}))}
                       style={{ ...inputStyle(), width:160, textAlign:'right' as const }} />
                   ) : (
-                    <span style={{ fontSize:14, fontWeight:700, color:r.color }}>{fmt(r.computed !== undefined ? r.computed : (p as any)[r.key!])}</span>
+                    <span style={{ fontSize:14, fontWeight:700, color:r.color }}>
+                      {finSummaryLoading && r.key !== 'poValue' ? '—' : fmt(r.computed !== undefined ? r.computed : (p as any)[r.key!])}
+                    </span>
                   )}
                 </div>
               ));
