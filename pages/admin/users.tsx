@@ -22,7 +22,7 @@ interface UserRow {
   created_at: string;
 }
 
-type Modal = 'none' | 'invite' | 'create' | 'edit';
+type Modal = 'none' | 'invite' | 'create' | 'edit' | 'changePassword';
 
 
 // ── Module-level components (outside AdminUsersPage to prevent cursor jump) ──
@@ -390,6 +390,7 @@ export default function AdminUsersPage() {
                           {u.is_active?'Deactivate':'Activate'}
                         </button>
                         <button onClick={()=>setDeleteTarget(u)} style={{ background:T.dangerBg, border:'none', borderRadius:6, padding:'5px 10px', color:T.danger, cursor:'pointer', fontSize:12, fontWeight:500 }}>🗑 Delete</button>
+                        <button onClick={()=>{ setEditUser(u); setFPassword(''); setModal('changePassword'); }} style={{ background:'#FFF7ED', border:'none', borderRadius:6, padding:'5px 10px', color:'#D97706', cursor:'pointer', fontSize:12, fontWeight:500 }}>🔑 Password</button>
                       </div>
                     </td>
                   </tr>
@@ -503,6 +504,45 @@ export default function AdminUsersPage() {
           </div>
         </ModalOverlay>
       )}
+      {/* Change Password Modal */}
+      {modal === 'changePassword' && editUser && (
+        <ModalOverlay onClose={()=>{setModal('none');setEditUser(null);setFPassword('');setMsg(null);}}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+            <h3 style={{ fontSize:17, fontWeight:700, color:T.text }}>🔑 Change Password</h3>
+            <button onClick={()=>{setModal('none');setEditUser(null);setFPassword('');setMsg(null);}} style={{ background:'none', border:'none', fontSize:18, cursor:'pointer', color:T.textDim }}>✕</button>
+          </div>
+          <MsgAlert msg={msg} />
+          <div style={{ marginBottom:16, padding:'10px 14px', background:T.bg, borderRadius:8 }}>
+            <div style={{ fontSize:12, color:T.textMuted }}>Changing password for</div>
+            <div style={{ fontSize:14, fontWeight:700, color:T.text }}>{editUser.full_name || editUser.email}</div>
+            <div style={{ fontSize:12, color:T.textMuted }}>{editUser.email}</div>
+          </div>
+          <PasswordField label="New Password *" value={fPassword} onChange={setFPassword} fkey="cp" focused={focused} setFocused={setFocused} placeholder="Min. 6 characters" />
+          <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:20 }}>
+            <button onClick={()=>{setModal('none');setEditUser(null);setFPassword('');setMsg(null);}} style={btnSecondary}>Cancel</button>
+            <button onClick={async () => {
+              if (!fPassword || fPassword.length < 6) { setMsg({ type:'error', text:'Password must be at least 6 characters.' }); return; }
+              setBusy(true); setMsg(null);
+              try {
+                const { data: { session } } = await supabase.auth.getSession();
+                const token = session?.access_token;
+                const res = await fetch('/api/admin/change-password', {
+                  method: 'POST',
+                  headers: { 'Content-Type':'application/json', Authorization:`Bearer ${token}` },
+                  body: JSON.stringify({ userId: editUser.id, password: fPassword }),
+                });
+                const json = await res.json();
+                if (!res.ok) setMsg({ type:'error', text: json.error || 'Failed to change password.' });
+                else { setMsg({ type:'success', text:'Password changed successfully!' }); setTimeout(() => { setModal('none'); setEditUser(null); setFPassword(''); setMsg(null); }, 1500); }
+              } catch { setMsg({ type:'error', text:'Network error. Please try again.' }); }
+              setBusy(false);
+            }} disabled={busy} style={{ ...btnPrimary, opacity:busy?0.7:1 }}>
+              {busy ? 'Saving…' : '🔑 Change Password'}
+            </button>
+          </div>
+        </ModalOverlay>
+      )}
+
       {/* Delete Confirm Modal */}
       {deleteTarget && (
         <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.5)', zIndex:2000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
