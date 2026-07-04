@@ -593,6 +593,10 @@ export default function ReportsPage() {
                         const pl      = billed - expPaid;
                         return {
                           'S.No': i+1,
+                          'Project No': p.id||'—',
+                          'Project ID': p.projectId||'—',
+                          'Indus ID': p.indusId||'—',
+                          'Region': p.region||'—',
                           'PO Number': p.poNo||'—',
                           'Project Type': p.type||'—',
                           'Site Name': p.site||'—',
@@ -604,7 +608,7 @@ export default function ReportsPage() {
                         };
                       });
                       const ws = XLSX.utils.json_to_sheet(rows);
-                      ws['!cols'] = [{wch:6},{wch:16},{wch:20},{wch:20},{wch:24},{wch:14},{wch:16},{wch:16},{wch:16}];
+                      ws['!cols'] = [{wch:6},{wch:14},{wch:16},{wch:14},{wch:16},{wch:16},{wch:20},{wch:20},{wch:24},{wch:14},{wch:16},{wch:16},{wch:16}];
                       const wb = XLSX.utils.book_new();
                       XLSX.utils.book_append_sheet(wb, ws, 'Financial Details');
                       XLSX.writeFile(wb, `Venus_Financial_${new Date().toISOString().slice(0,10)}.xlsx`);
@@ -618,8 +622,8 @@ export default function ReportsPage() {
                     <table style={{ width:'100%', borderCollapse:'collapse' as const, fontSize:12 }}>
                       <thead>
                         <tr style={{ background:T.primaryLight }}>
-                          {['#','PO Number','Project Type','Site Name','Project Status','PO Value','Expense Paid','Billed Amount','P/L Projection'].map((h,i)=>(
-                            <th key={i} style={{ padding:'8px 10px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const, color:T.primary, textAlign:i>=5?'right' as const:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const }}>{h}</th>
+                          {['#','Project No','Project ID','Indus ID','Region','PO Number','Project Type','Site Name','Project Status','PO Value','Expense Paid','Billed Amount','P/L Projection'].map((h,i)=>(
+                            <th key={i} style={{ padding:'8px 10px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const, color:T.primary, textAlign:i>=9?'right' as const:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -632,6 +636,10 @@ export default function ReportsPage() {
                           return (
                             <tr key={p.id} style={{ background:idx%2===0?'#fff':T.bg, borderBottom:`1px solid ${T.border}` }}>
                               <td style={{ padding:'8px 10px', color:T.textMuted }}>{absIdx+1}</td>
+                              <td style={{ padding:'8px 10px', fontWeight:600, color:T.primary, fontSize:11 }}>{p.id||'—'}</td>
+                              <td style={{ padding:'8px 10px', fontSize:11, color:T.textMuted }}>{p.projectId||'—'}</td>
+                              <td style={{ padding:'8px 10px', fontSize:11, color:T.textMuted }}>{p.indusId||'—'}</td>
+                              <td style={{ padding:'8px 10px', fontSize:11 }}>{p.region||'—'}</td>
                               <td style={{ padding:'8px 10px', fontWeight:600, color:T.primary }}>{p.poNo||'—'}</td>
                               <td style={{ padding:'8px 10px', fontSize:11 }}>{p.type||'—'}</td>
                               <td style={{ padding:'8px 10px' }}>{p.site||'—'}</td>
