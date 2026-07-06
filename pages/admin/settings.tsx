@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/router';
-import { useTheme } from '@/lib/theme';
+import { T } from '@/lib/theme';
 import { createClient } from '@/lib/supabase';
 
 export default function AdminSettingsPage() {
   const { profile, loading: authLoading } = useAuth();
   const router = useRouter();
-  const T = useTheme();
   const supabase = createClient();
 
   const [syncing, setSyncing] = useState(false);
