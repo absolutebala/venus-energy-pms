@@ -129,12 +129,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         await admin.from('projects').insert({ id: projectId, ...project });
 
         // Log to activity
-        await admin.from('activity_log').insert({
+        try { await admin.from('activity_log').insert({
           project_id:   projectId,
           action:       `Project created from Oracle ERP sync — PO ${po.OrderNumber}`,
           performed_by: 'Oracle Sync',
           role:         'system',
-        }).catch(() => {});
+        }); } catch {}
 
         created++;
       } catch (err: any) {
@@ -152,23 +152,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // Log sync result to activity
-    await admin.from('activity_log').insert({
+    try { await admin.from('activity_log').insert({
       project_id:   'SYSTEM',
       action:       `Oracle ERP PO sync complete — ${created} created, ${oraclePOs.length - newPOs.length} skipped (already exist)`,
       performed_by: 'Oracle Sync',
       role:         'system',
-    }).catch(() => {});
+    }); } catch {}
 
     return res.status(200).json(summary);
 
   } catch (err: any) {
     console.error('Oracle sync error:', err);
-    await admin.from('activity_log').insert({
+    try { await admin.from('activity_log').insert({
       project_id:   'SYSTEM',
       action:       `Oracle ERP PO sync FAILED: ${err.message}`,
       performed_by: 'Oracle Sync',
       role:         'system',
-    }).catch(() => {});
+    }); } catch {}
     return res.status(500).json({ error: err.message });
   }
 }
