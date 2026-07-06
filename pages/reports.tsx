@@ -609,6 +609,24 @@ export default function ReportsPage() {
                       });
                       const ws = XLSX.utils.json_to_sheet(rows);
                       ws['!cols'] = [{wch:6},{wch:14},{wch:16},{wch:14},{wch:16},{wch:16},{wch:20},{wch:20},{wch:24},{wch:14},{wch:16},{wch:16},{wch:16}];
+                      // Force numeric cells to be numbers so pivot tables work correctly
+                      const numericCols = ['PO Value (₹)', 'Expense Paid (₹)', 'Billed Amount (₹)', 'P/L Projection (₹)'];
+                      const textCols = ['S.No', 'Project No', 'Project ID', 'Indus ID', 'Region', 'PO Number', 'Project Type', 'Site Name', 'Project Status'];
+                      Object.keys(ws).filter(k => !k.startsWith('!')).forEach(cellAddr => {
+                        const cell = ws[cellAddr];
+                        if (!cell || cell.t === undefined) return;
+                        // Get the header for this column
+                        const col = cellAddr.replace(/[0-9]/g, '');
+                        const headerCell = ws[col + '1'];
+                        if (!headerCell) return;
+                        const header = headerCell.v;
+                        if (numericCols.includes(header)) {
+                          const num = Number(cell.v);
+                          if (!isNaN(num)) { cell.t = 'n'; cell.v = num; delete cell.w; }
+                        } else if (textCols.includes(header)) {
+                          cell.t = 's'; cell.v = String(cell.v ?? '');
+                        }
+                      });
                       const wb = XLSX.utils.book_new();
                       XLSX.utils.book_append_sheet(wb, ws, 'Financial Details');
                       XLSX.writeFile(wb, `Venus_Financial_${new Date().toISOString().slice(0,10)}.xlsx`);
