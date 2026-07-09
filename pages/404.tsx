@@ -16,7 +16,7 @@ export default function Custom404() {
         <div>© 2025 Venus Energy Pvt. Ltd.</div>
         <div style={{ marginTop:4 }}>
           Powered by{' '}
-          <a href="https://www.idataone.com" target="_blank" rel="noopener noreferrer" style={{ color:T.primary, fontWeight:600, textDecoration:'none' }}>இDataOne</a>
+          <a href="https://www.idataone.com" target="_blank" rel="noopener noreferrer" style={{ color:T.primary, fontWeight:600, textDecoration:'none' }}>ஐDataOne</a>
         </div>
       </div>
     </div>

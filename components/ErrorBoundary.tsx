@@ -72,7 +72,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
             </div>
 
             <div style={{ marginTop:20, fontSize:11, color:'#94A3B8' }}>
-              Venus Energy PMS · Powered by இDataOne
+              Venus Energy PMS · Powered by ஐDataOne
             </div>
           </div>
         </div>

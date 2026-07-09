@@ -27,7 +27,7 @@ export default function PoweredBy({ center = false, light = false }: Props) {
         onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
         onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
       >
-        இDataOne
+        ஐDataOne
       </a>
     </div>
   );
