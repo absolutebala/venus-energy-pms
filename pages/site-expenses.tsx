@@ -314,6 +314,15 @@ export default function SiteExpensesPage() {
     } finally { setPaidSaving(false); }
   };
 
+  // Convert number to Indian words (Crores/Lakhs/Thousands)
+  const inWords = (n: number): string => {
+    if (!n || n === 0) return 'Zero';
+    if (n >= 10000000) return `${(n/10000000).toFixed(2)} Crores`;
+    if (n >= 100000)   return `${(n/100000).toFixed(2)} Lakhs`;
+    if (n >= 1000)     return `${(n/1000).toFixed(2)} Thousands`;
+    return `${n.toFixed(2)} Rupees`;
+  };
+
   const thS: React.CSSProperties = { padding:"10px 12px", fontSize:10, fontWeight:700, textTransform:"uppercase",
     color:T.primary, background:T.primaryLight, textAlign:"left" as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:"nowrap" as const };
   const tdS: React.CSSProperties = { padding:"10px 12px", fontSize:13, borderBottom:`1px solid ${T.border}`, verticalAlign:"middle" as const };
@@ -327,19 +336,32 @@ export default function SiteExpensesPage() {
         </div>
 
         {/* Summary cards */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
-          {[
-            { label:"Total Records",    value: allExpenses.length,                                          color:T.primary },
-            { label:"Pending Amount",   value: fmt(pendingTotal),                                        color:T.warning },
-            { label:"Paid Amount",      value: fmt(paidTotal),                                           color:T.success },
-            { label:"Pending Requests", value: allExpenses.filter((e:any)=>e.status==="pending").length,    color:T.danger  },
-          ].map(s => (
-            <div key={s.label} style={{ ...card, padding:"14px 16px" }}>
-              <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:"uppercase", marginBottom:4 }}>{s.label}</div>
-              <div style={{ fontSize:18, fontWeight:800, color:s.color }}>{s.value}</div>
+        {(() => {
+          const filteredPending = allExpenses.filter((e:any) => e.status === 'pending').reduce((a:number,e:any) => a + Number(e.amount), 0);
+          const filteredPaid    = allExpenses.filter((e:any) => e.status === 'paid').reduce((a:number,e:any) => a + Number(e.amount), 0);
+          return (
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
+              <div style={{ ...card, padding:"14px 16px" }}>
+                <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:"uppercase" as const, marginBottom:4 }}>Total Records</div>
+                <div style={{ fontSize:18, fontWeight:800, color:T.primary }}>{allExpenses.length}</div>
+              </div>
+              <div style={{ ...card, padding:"14px 16px" }}>
+                <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:"uppercase" as const, marginBottom:4 }}>Pending Amount</div>
+                <div style={{ fontSize:18, fontWeight:800, color:T.warning }}>{fmt(filteredPending)}</div>
+                <div style={{ fontSize:10, color:T.textMuted, marginTop:3 }}>{inWords(filteredPending)}</div>
+              </div>
+              <div style={{ ...card, padding:"14px 16px" }}>
+                <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:"uppercase" as const, marginBottom:4 }}>Paid Amount</div>
+                <div style={{ fontSize:18, fontWeight:800, color:T.success }}>{fmt(filteredPaid)}</div>
+                <div style={{ fontSize:10, color:T.textMuted, marginTop:3 }}>{inWords(filteredPaid)}</div>
+              </div>
+              <div style={{ ...card, padding:"14px 16px" }}>
+                <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:"uppercase" as const, marginBottom:4 }}>Pending Requests</div>
+                <div style={{ fontSize:18, fontWeight:800, color:T.danger }}>{allExpenses.filter((e:any)=>e.status==="pending").length}</div>
+              </div>
             </div>
-          ))}
-        </div>
+          );
+        })()}
 
         {/* Date Filter */}
         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16, flexWrap:'wrap' as const }}>
@@ -485,12 +507,17 @@ export default function SiteExpensesPage() {
                           {e.expenseType}
                         </span>
                       </td>
-                      <td style={{ ...tdS, textAlign:"right" as const, fontWeight:700, color:T.primary, minWidth:160 }}>
-                        {fmt(e.amount)}
+                      <td style={{ ...tdS, textAlign:"right" as const, minWidth:160 }}>
                         {(() => {
                           const poTotal = poPaidBeforeMap.get(e.id);
-                          if (poTotal === undefined || poTotal === 0) return null;
-                          return <div style={{ fontSize:10, color:T.textMuted, fontWeight:400, marginTop:2, whiteSpace:'nowrap' as const }}>PO paid so far: {fmt(poTotal)}</div>;
+                          return (
+                            <>
+                              {poTotal !== undefined && poTotal > 0 && (
+                                <div style={{ fontSize:10, color:T.textMuted, fontWeight:400, whiteSpace:'nowrap' as const, marginBottom:2 }}>PO paid so far: {fmt(poTotal)}</div>
+                              )}
+                              <div style={{ fontWeight:700, color:T.primary }}>{fmt(e.amount)}</div>
+                            </>
+                          );
                         })()}
                       </td>
                       <td style={{ ...tdS, color:T.textMuted }}>{e.paidTxnRef || "—"}</td>
@@ -587,7 +614,9 @@ export default function SiteExpensesPage() {
                 <tfoot>
                   <tr style={{ background:T.primaryLight, fontWeight:700 }}>
                     <td colSpan={5} style={{ ...tdS, color:T.primary }}>Total</td>
-                    <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>{fmt(roleFilteredExpenses.reduce((a:number,e:any)=>a+Number(e.amount),0))}</td>
+                    <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>
+                      {(() => { const t = roleFilteredExpenses.reduce((a:number,e:any)=>a+Number(e.amount),0); return <><div>{fmt(t)}</div><div style={{ fontSize:10, fontWeight:400, color:T.textMuted }}>{inWords(t)}</div></>; })()}
+                    </td>
                     <td colSpan={6} style={tdS}></td>
                   </tr>
                 </tfoot>
