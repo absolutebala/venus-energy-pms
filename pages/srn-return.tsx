@@ -348,18 +348,24 @@ export default function SRNReturnPage() {
         const val = cardFilter.field === 'pm' ? proj.pm : cardFilter.field === 'vendor' ? proj.vendor : proj.region;
         if (val !== cardFilter.value) return false;
       }
-      // Apply Pending-only toggle (narrows the active card filter selection to pending items of that type)
-      if (cardFilter && pendingOnly) {
-        if (cardFilter.type === 'stn') {
-          const hasPending = kpiSubFilter?.status === 'not_submitted'
-            ? proj.stnItems.some((i:any) => i.utilisedStatus === 'pending' || !i.utilisedStatus || i.utilisedStatus === '')
-            : kpiSubFilter?.status === 'pm_rejected'
-            ? proj.stnItems.some((i:any) => i.utilisedStatus === 'pm_rejected')
-            : proj.stnItems.some((i:any) => i.utilisedStatus === 'submitted');
-          if (!hasPending) return false;
-        } else if (cardFilter.type === 'srn') {
-          const hasPending = proj.srnItems.some((i:any) => !i.received);
-          if (!hasPending) return false;
+      // Apply statusSubFilter checkboxes (All / Pending / Not Submitted / Rejected)
+      if (cardFilter && !statusSubFilter.has('all')) {
+        if (cardFilter.type === 'stn' || cardFilter.type === 'global') {
+          const match = proj.stnItems.some((i:any) => {
+            if (statusSubFilter.has('pending') && i.utilisedStatus === 'submitted') return true;
+            if (statusSubFilter.has('not_submitted') && (i.utilisedStatus === 'pending' || !i.utilisedStatus || i.utilisedStatus === '')) return true;
+            if (statusSubFilter.has('rejected') && i.utilisedStatus === 'pm_rejected') return true;
+            return false;
+          });
+          if (!match && proj.stnItems.length > 0) return false;
+        }
+        if (cardFilter.type === 'srn' || cardFilter.type === 'global') {
+          const match = proj.srnItems.some((i:any) => {
+            if (statusSubFilter.has('pending') && !i.received) return true;
+            if (statusSubFilter.has('rejected') && i.received === false && i.pm_comment) return true;
+            return false;
+          });
+          if (!match && proj.srnItems.length > 0) return false;
         }
       }
       // Apply statusDistFilter
@@ -407,7 +413,7 @@ export default function SRNReturnPage() {
              proj.poNo.toLowerCase().includes(s) ||
              proj.vendor.toLowerCase().includes(s);
     });
-  }, [allProjectIds, srnGrouped, stnGrouped, cardFilter, pendingOnly, search, kpiSubFilter, statusDistFilter, agingDistFilter, projects]);
+  }, [allProjectIds, srnGrouped, stnGrouped, cardFilter, pendingOnly, statusSubFilter, search, kpiSubFilter, statusDistFilter, agingDistFilter, projects]);
 
   // ── Pagination ───────────────────────────────────────────────────────────
   const PER_PAGE = 10;
@@ -425,7 +431,7 @@ export default function SRNReturnPage() {
       const p = Number(router.query.page); if(p&&p>0) setPage(p);
     }
   }, [router.isReady]);
-  React.useEffect(() => { setPage(1); router.replace({query:{...router.query,page:1}},undefined,{shallow:true}); }, [search, cardFilter, pendingOnly, showSRN, showSTN, kpiSubFilter, statusDistFilter, agingDistFilter]);
+  React.useEffect(() => { setPage(1); router.replace({query:{...router.query,page:1}},undefined,{shallow:true}); }, [search, cardFilter, pendingOnly, statusSubFilter, showSRN, showSTN, kpiSubFilter, statusDistFilter, agingDistFilter]);
   const totalPages = Math.ceil(filteredProjects.length / PER_PAGE);
   const paginated  = filteredProjects.slice((page-1)*PER_PAGE, page*PER_PAGE);
   const isLoading  = loading || projLoading || stnLoading;
@@ -795,12 +801,21 @@ export default function SRNReturnPage() {
               </button>
             )}
             {cardFilter && (
-              <button onClick={()=>setPendingOnly(p=>!p)}
-                style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', fontSize:12, fontWeight:600,
-                  color: pendingOnly ? '#fff' : '#92400E', background: pendingOnly ? '#D97706' : '#FFFBEB',
-                  border:'1px solid #D97706', borderRadius:7, cursor:'pointer' }}>
-                ⏳ Pending ({cardFilterPendingCount})
-              </button>
+              <div style={{ display:'flex', alignItems:'center', gap:12, background:'#F8FAFC', border:`1px solid #E2E8F0`, borderRadius:8, padding:'5px 14px' }}>
+                {[
+                  { val:'all',           label:'All',           color:'#6B7280' },
+                  { val:'pending',       label:'Pending',       color:'#D97706' },
+                  { val:'not_submitted', label:'Not Submitted', color:'#6B7280' },
+                  { val:'rejected',      label:'Rejected',      color:'#DC2626' },
+                ].map(({ val, label, color }) => (
+                  <label key={val} style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, fontWeight:600,
+                    color: statusSubFilter.has(val) ? color : '#9CA3AF', cursor:'pointer', whiteSpace:'nowrap' as const }}>
+                    <input type="checkbox" checked={statusSubFilter.has(val)} onChange={()=>toggleStatusSub(val)}
+                      style={{ accentColor: color, width:13, height:13 }} />
+                    {label}
+                  </label>
+                ))}
+              </div>
             )}
           </div>
           <div style={{ display:'flex', gap:16, alignItems:'center' }}>
