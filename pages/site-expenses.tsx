@@ -485,12 +485,12 @@ export default function SiteExpensesPage() {
                           {e.expenseType}
                         </span>
                       </td>
-                      <td style={{ ...tdS, textAlign:"right" as const, fontWeight:700, color:T.primary }}>
+                      <td style={{ ...tdS, textAlign:"right" as const, fontWeight:700, color:T.primary, minWidth:160 }}>
                         {fmt(e.amount)}
                         {(() => {
                           const poTotal = poPaidBeforeMap.get(e.id);
                           if (poTotal === undefined || poTotal === 0) return null;
-                          return <div style={{ fontSize:10, color:T.textMuted, fontWeight:400, marginTop:2 }}>PO paid so far: {fmt(poTotal)}</div>;
+                          return <div style={{ fontSize:10, color:T.textMuted, fontWeight:400, marginTop:2, whiteSpace:'nowrap' as const }}>PO paid so far: {fmt(poTotal)}</div>;
                         })()}
                       </td>
                       <td style={{ ...tdS, color:T.textMuted }}>{e.paidTxnRef || "—"}</td>
