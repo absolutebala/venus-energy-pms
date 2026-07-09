@@ -16,7 +16,7 @@ export default function PoweredBy({ center = false, light = false }: Props) {
     }}>
       Powered by{' '}
       <a
-        href="https://www.absoluteapplabs.com"
+        href="https://www.idataone.com"
         target="_blank"
         rel="noopener noreferrer"
         style={{
@@ -27,7 +27,7 @@ export default function PoweredBy({ center = false, light = false }: Props) {
         onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
         onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
       >
-        Absolute App Labs
+        இDataOne
       </a>
     </div>
   );

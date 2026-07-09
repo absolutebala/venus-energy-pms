@@ -208,7 +208,7 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
       {!collapsed && (
         <div style={{ padding:'8px 14px', borderTop:`1px solid ${T.border}`, textAlign:'center' }}>
           <div style={{ fontSize:10, color:T.textMuted }}>
-            Powered by <span style={{ color:T.primary, fontWeight:600 }}>Absolute App Labs</span>
+            Powered by <a href="https://www.idataone.com" target="_blank" rel="noopener noreferrer" style={{ color:T.primary, fontWeight:600, textDecoration:"none" }}>இDataOne</a>
           </div>
         </div>
       )}

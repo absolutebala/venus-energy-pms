@@ -16,7 +16,7 @@ export default function Custom404() {
         <div>© 2025 Venus Energy Pvt. Ltd.</div>
         <div style={{ marginTop:4 }}>
           Powered by{' '}
-          <a href="https://www.absoluteapplabs.com" target="_blank" rel="noopener noreferrer" style={{ color:T.primary, fontWeight:600, textDecoration:'none' }}>Absolute App Labs</a>
+          <a href="https://www.idataone.com" target="_blank" rel="noopener noreferrer" style={{ color:T.primary, fontWeight:600, textDecoration:'none' }}>இDataOne</a>
         </div>
       </div>
     </div>

@@ -102,8 +102,8 @@ export default function LoginPage() {
             <p style={{ fontSize:12, color:T.textDim, marginBottom:4 }}>© 2025 Venus Energy Pvt. Ltd. · All rights reserved.</p>
             <p style={{ fontSize:11, color:T.textDim }}>
               Powered by{' '}
-              <a href="https://www.absoluteapplabs.com" target="_blank" rel="noopener noreferrer" style={{ color:T.primary, fontWeight:600, textDecoration:'none' }}>
-                Absolute App Labs
+              <a href="https://www.idataone.com" target="_blank" rel="noopener noreferrer" style={{ color:T.primary, fontWeight:600, textDecoration:'none' }}>
+                இDataOne
               </a>
             </p>
           </div>

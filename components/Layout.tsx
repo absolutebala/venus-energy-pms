@@ -19,8 +19,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div style={{ fontSize:11, color:T.textDim }}>© 2025 Venus Energy Pvt. Ltd. · Telecom Infrastructure Management</div>
           <div style={{ fontSize:11, color:T.textDim }}>
             Powered by{' '}
-            <a href="https://www.absoluteapplabs.com" target="_blank" rel="noopener noreferrer" style={{ color:T.primary, fontWeight:600, textDecoration:'none' }}>
-              Absolute App Labs
+            <a href="https://www.idataone.com" target="_blank" rel="noopener noreferrer" style={{ color:T.primary, fontWeight:600, textDecoration:'none' }}>
+              இDataOne
             </a>
           </div>
         </div>
