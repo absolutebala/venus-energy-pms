@@ -431,15 +431,15 @@ export default function SiteExpensesPage() {
             <table style={{ width:"100%", borderCollapse:"collapse" as const, minWidth:1100 }}>
               <thead>
                 <tr>
-                  {["#","Req. Date","PO Number","Indus ID","Remarks","Expense Type","Amount (₹)","TXN Ref","Payment Mode","Txn Date","Status",""].map((h,i)=>(
+                  {["#","Req. Date","PO Number","Indus ID","Remarks","Expense Type","Amount (₹)","TXN Ref","Payment Mode","Txn Date","Status","Project Status",""].map((h,i)=>(
                     <th key={i} style={{ ...thS, textAlign:i===6?"right" as const:"left" as const }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {expLoading && <tr><td colSpan={12} style={{ padding:30, textAlign:"center" as const, color:T.textMuted }}>Loading...</td></tr>}
+                {expLoading && <tr><td colSpan={13} style={{ padding:30, textAlign:"center" as const, color:T.textMuted }}>Loading...</td></tr>}
                 {!expLoading && allExpenses.length === 0 && (
-                  <tr><td colSpan={12} style={{ padding:30, textAlign:"center" as const, color:T.textDim }}>No expenses found</td></tr>
+                  <tr><td colSpan={13} style={{ padding:30, textAlign:"center" as const, color:T.textDim }}>No expenses found</td></tr>
                 )}
                 {paginatedExp.map((e:any, idx:number) => {
                   const proj = (projects as any[]).find(p=>p.id===e.projectId);
@@ -474,6 +474,11 @@ export default function SiteExpensesPage() {
                           color: isPending ? '#D97706' : '#059669' }}>
                           {isPending ? "Pending" : "Paid"}
                         </span>
+                      </td>
+                      <td style={{ ...tdS, fontSize:11 }}>
+                        {proj?.projectStatus
+                          ? <span style={{ fontSize:10, fontWeight:600, color:'#6B7280', background:'#F3F4F6', padding:'2px 8px', borderRadius:10, whiteSpace:'nowrap' as const }}>{proj.projectStatus}</span>
+                          : <span style={{ color:T.textDim }}>—</span>}
                       </td>
                       <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
                         <div style={{ display:'flex', gap:4, alignItems:'center' }}>
