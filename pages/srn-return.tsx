@@ -32,6 +32,17 @@ export default function SRNReturnPage() {
   // cardFilter: { type:'stn'|'srn', field:'pm'|'region', value:string } | null
   const [cardFilter, setCardFilter] = useState<{type:string;field:string;value:string}|null>(null);
   const [pendingOnly, setPendingOnly] = useState(false);
+  const [statusSubFilter, setStatusSubFilter] = useState<Set<string>>(new Set(['all']));
+  const toggleStatusSub = (val: string) => {
+    setStatusSubFilter(prev => {
+      const next = new Set(prev);
+      if (val === 'all') return new Set(['all']);
+      next.delete('all');
+      if (next.has(val)) { next.delete(val); if (next.size === 0) return new Set(['all']); }
+      else next.add(val);
+      return next;
+    });
+  };
   const [showExportWarning, setShowExportWarning] = useState(false);
 
   const role       = profile?.role || 'viewer';
