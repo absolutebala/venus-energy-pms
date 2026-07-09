@@ -241,6 +241,27 @@ export default function SiteExpensesPage() {
   const pendingTotal = roleFilteredExpenses.filter((e:any) => e.status === 'pending').reduce((a:number,e:any) => a + Number(e.amount), 0);
   const paidTotal    = roleFilteredExpenses.filter((e:any) => e.status === 'paid').reduce((a:number,e:any) => a + Number(e.amount), 0);
 
+  // Pre-compute running paid total per PO up to (but not including) each expense's date
+  // So each expense row can show "PO paid so far before this expense was raised"
+  const poPaidBeforeMap = React.useMemo(() => {
+    const map = new Map<string, number>();
+    const paidExpenses = (roleFilteredExpenses as any[]).filter(e => e.status === 'paid');
+    // For each expense, find its PO and sum paid expenses before its date
+    for (const exp of roleFilteredExpenses as any[]) {
+      const proj = (projects as any[]).find(p => p.id === exp.projectId);
+      if (!proj?.poNo) continue;
+      const expDate = exp.expenseDate || '';
+      const poTotal = paidExpenses
+        .filter(pe => {
+          const peProj = (projects as any[]).find(p => p.id === pe.projectId);
+          return peProj?.poNo === proj.poNo && (pe.expenseDate || '') < expDate;
+        })
+        .reduce((a, pe) => a + Number(pe.amount || 0), 0);
+      map.set(exp.id, poTotal);
+    }
+    return map;
+  }, [roleFilteredExpenses, projects]);
+
   const handleAdd = async () => {
     if (!selectedProject || !form.amount || !form.expenseDate) {
       setToast({ msg:"Please fill Date, Amount and select a Project", type:"error" }); return;
@@ -464,7 +485,14 @@ export default function SiteExpensesPage() {
                           {e.expenseType}
                         </span>
                       </td>
-                      <td style={{ ...tdS, textAlign:"right" as const, fontWeight:700, color:T.primary }}>{fmt(e.amount)}</td>
+                      <td style={{ ...tdS, textAlign:"right" as const, fontWeight:700, color:T.primary }}>
+                        {fmt(e.amount)}
+                        {(() => {
+                          const poTotal = poPaidBeforeMap.get(e.id);
+                          if (poTotal === undefined || poTotal === 0) return null;
+                          return <div style={{ fontSize:10, color:T.textMuted, fontWeight:400, marginTop:2 }}>PO paid so far: {fmt(poTotal)}</div>;
+                        })()}
+                      </td>
                       <td style={{ ...tdS, color:T.textMuted }}>{e.paidTxnRef || "—"}</td>
                       <td style={tdS}>{e.paidPaymentMode || "—"}</td>
                       <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{(e as any).txnDate || "—"}</td>
