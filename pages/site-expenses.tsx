@@ -197,12 +197,14 @@ export default function SiteExpensesPage() {
         const startOfLastMonth = new Date(today.getFullYear(), today.getMonth()-1, 1);
         const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
         const last7 = new Date(today); last7.setDate(today.getDate()-6);
-        if (datePreset==='today'     && e.expenseDate !== todayStr) return false;
-        if (datePreset==='week'      && !inRange(e.expenseDate, startOfWeek, today)) return false;
-        if (datePreset==='last7'     && !inRange(e.expenseDate, last7, today)) return false;
-        if (datePreset==='month'     && !inRange(e.expenseDate, startOfMonth, today)) return false;
-        if (datePreset==='lastmonth' && !inRange(e.expenseDate, startOfLastMonth, endOfLastMonth)) return false;
-        if (datePreset==='custom' && customFrom && customTo && !inRange(e.expenseDate, new Date(customFrom), new Date(customTo))) return false;
+        // Use paidAt (payment date) for all date filters
+        const paidDate = (e as any).paidAt ? (e as any).paidAt.split('T')[0] : '';
+        if (datePreset==='today'     && paidDate !== todayStr) return false;
+        if (datePreset==='week'      && !inRange(paidDate, startOfWeek, today)) return false;
+        if (datePreset==='last7'     && !inRange(paidDate, last7, today)) return false;
+        if (datePreset==='month'     && !inRange(paidDate, startOfMonth, today)) return false;
+        if (datePreset==='lastmonth' && !inRange(paidDate, startOfLastMonth, endOfLastMonth)) return false;
+        if (datePreset==='custom' && customFrom && customTo && !inRange(paidDate, new Date(customFrom), new Date(customTo))) return false;
       }
       // Project-level filters
       if (expVendorFilter.length || expPMFilter.length || expRegionFilter.length || expTypeFilter.length) {
