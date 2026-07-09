@@ -3200,11 +3200,15 @@ export default function ProjectDetailPage() {
                 <div style={{ minWidth:200 }}>
                   <select
                     value={p.projectStatus || ''}
-                    onChange={e => {
+                    onChange={async e => {
                       const newStatus = e.target.value;
                       const prevStatus = p.projectStatus || '';
-                      ctxUpdateProject(p.id, { projectStatus: newStatus } as any, profile?.full_name ?? undefined);
-                      logActivityMain(p.id, `Project status changed from "${prevStatus||'—'}" to "${newStatus}"`, profile?.full_name||'', profile?.role||'', prevStatus, newStatus).catch(()=>{});
+                      try {
+                        await ctxUpdateProject(p.id, { projectStatus: newStatus } as any, profile?.full_name ?? undefined);
+                        logActivityMain(p.id, `Project status changed from "${prevStatus||'—'}" to "${newStatus}"`, profile?.full_name||'', profile?.role||'', prevStatus, newStatus).catch(()=>{});
+                      } catch (err: any) {
+                        console.error('Failed to update project status:', err);
+                      }
                     }}
                     style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:'8px 12px', fontSize:13, outline:'none', background:'#fff', minWidth:220, cursor:'pointer' }}>
                     <option value="">— Set Project Status —</option>
