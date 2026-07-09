@@ -300,13 +300,13 @@ export default function SRNReturnPage() {
   // ── Handle global card filter click (By PM / By Vendor / By Region) ─────
   const handleCardClick = (type: string, field: string, value: string) => {
     if (cardFilter?.type===type && cardFilter?.field===field && cardFilter?.value===value) {
-      setCardFilter(null); setPendingOnly(false);
+      setCardFilter(null); setPendingOnly(false); setStatusSubFilter(new Set(['all']));
     } else {
       setCardFilter({ type, field, value });
       setKpiSubFilter(null); setPendingOnly(false);
     }
   };
-  const clearCardFilter = () => { setCardFilter(null); setPendingOnly(false); };
+  const clearCardFilter = () => { setCardFilter(null); setPendingOnly(false); setStatusSubFilter(new Set(['all'])); };
 
   // Pending count for the currently selected card filter row (matches the BreakdownTable's own pending number)
   const cardFilterPendingCount = useMemo(() => {
