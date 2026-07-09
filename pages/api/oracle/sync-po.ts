@@ -1,15 +1,21 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 
-// ── Oracle ERP Cloud → Venus Energy PMS: Purchase Order Sync ─────────────
-// Reads POs from Oracle via REST API and creates new projects in Supabase.
-// Never overwrites existing projects — only creates new ones.
-// Triggered manually (POST from UI) or automatically (Vercel cron, GET with cron secret).
+async function getSettings(admin: any): Promise<Record<string, string>> {
+  const { data } = await admin.from('system_settings').select('key,value');
+  const map: Record<string, string> = {};
+  (data || []).forEach((r: any) => { map[r.key] = r.value || ''; });
+  return map;
+}
 
-async function getOracleToken(): Promise<string> {
-  const tokenUrl  = process.env.ORACLE_TOKEN_URL!;
-  const clientId  = process.env.ORACLE_CLIENT_ID!;
-  const clientSecret = process.env.ORACLE_CLIENT_SECRET!;
+async function getOracleToken(settings: Record<string, string>): Promise<string> {
+  const tokenUrl     = settings['oracle_token_url'];
+  const clientId     = settings['oracle_client_id'];
+  const clientSecret = settings['oracle_client_secret'];
+
+  if (!tokenUrl || !clientId || !clientSecret) {
+    throw new Error('Oracle credentials not configured. Please set them in Admin → Settings.');
+  }
 
   const res = await fetch(tokenUrl, {
     method: 'POST',
@@ -31,16 +37,11 @@ async function getOracleToken(): Promise<string> {
   return data.access_token;
 }
 
-async function fetchOraclePOs(token: string): Promise<any[]> {
-  const baseUrl = process.env.ORACLE_BASE_URL!;
-  // Oracle FSCM REST API endpoint for Purchase Orders
-  const url = `${baseUrl}/fscmRestApi/resources/11.13.18.05/purchaseOrders?limit=500&fields=OrderNumber,OrderDate,Amount,Supplier,SupplierSiteCode,Description,BuyerEmail,BuyerName,Status,CurrencyCode`;
+async function fetchOraclePOs(token: string, baseUrl: string): Promise<any[]> {
+  const url = `${baseUrl}/fscmRestApi/resources/11.13.18.05/purchaseOrders?limit=500&fields=OrderNumber,OrderDate,Amount,Supplier,Description,BuyerName,Status`;
 
   const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
   });
 
   if (!res.ok) {
@@ -53,89 +54,82 @@ async function fetchOraclePOs(token: string): Promise<any[]> {
 }
 
 function mapOraclePOToProject(po: any): Record<string, any> {
-  // Map Oracle PO fields to Venus Energy portal project schema
   const poDate = po.OrderDate ? new Date(po.OrderDate).toISOString().split('T')[0] : null;
   return {
-    po_no:          po.OrderNumber      || '',
+    po_no:          po.OrderNumber   || '',
     po_date:        poDate,
-    po_value:       Number(po.Amount)   || 0,
-    vendor:         po.Supplier         || '',
-    site:           po.Description      || '',
-    pm:             po.BuyerName        || '',
+    po_value:       Number(po.Amount) || 0,
+    vendor:         po.Supplier      || '',
+    site:           po.Description   || '',
+    pm:             po.BuyerName     || '',
     po_status:      po.Status === 'OPEN' ? 'Open' : po.Status === 'CLOSED' ? 'Closed' : 'Open',
     project_status: 'Yet to Start',
     status:         'not_started',
-    source:         'oracle_erp',      // mark as oracle-synced
+    source:         'oracle_erp',
     created_at:     new Date().toISOString(),
   };
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Allow GET (cron) with cron secret, or POST (manual) with user auth
-  const isCron = req.method === 'GET';
+  const isCron   = req.method === 'GET';
   const isManual = req.method === 'POST';
-
   if (!isCron && !isManual) return res.status(405).json({ error: 'Method not allowed' });
+
+  const admin = createAdminClient();
 
   // Cron auth
   if (isCron) {
-    const authHeader = req.headers.authorization;
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
   }
 
-  // Manual auth — verify super_admin
+  // Manual auth — super_admin only
   if (isManual) {
-    const admin = createAdminClient();
     const token = req.headers.authorization?.replace('Bearer ', '').trim();
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
     const { data: { user }, error: authErr } = await admin.auth.getUser(token);
     if (authErr || !user) return res.status(401).json({ error: 'Unauthorized' });
     const { data: callerProfile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-    if (callerProfile?.role !== 'super_admin') return res.status(403).json({ error: 'Forbidden — super admin only' });
+    if (callerProfile?.role !== 'super_admin') return res.status(403).json({ error: 'Forbidden' });
   }
 
-  const admin = createAdminClient();
-
   try {
-    // 1. Get Oracle OAuth token
-    const oracleToken = await getOracleToken();
+    // 1. Load Oracle credentials from system_settings
+    const settings = await getSettings(admin);
 
-    // 2. Fetch POs from Oracle
-    const oraclePOs = await fetchOraclePOs(oracleToken);
+    // 2. Get Oracle OAuth token
+    const oracleToken = await getOracleToken(settings);
+
+    // 3. Fetch POs from Oracle
+    const oraclePOs = await fetchOraclePOs(oracleToken, settings['oracle_base_url']);
     if (!oraclePOs.length) {
       return res.status(200).json({ success: true, created: 0, skipped: 0, message: 'No POs returned from Oracle' });
     }
 
-    // 3. Get existing PO numbers from Supabase to avoid duplicates
+    // 4. Get existing PO numbers from Supabase
     const { data: existingProjects } = await admin.from('projects').select('po_no');
     const existingPoNos = new Set((existingProjects || []).map((p: any) => p.po_no).filter(Boolean));
 
-    // 4. Filter to only new POs
+    // 5. Filter to only new POs
     const newPOs = oraclePOs.filter(po => po.OrderNumber && !existingPoNos.has(po.OrderNumber));
 
-    // 5. Generate project IDs and insert new projects
     let created = 0;
     const errors: string[] = [];
 
     for (const po of newPOs) {
       try {
-        // Generate next project number via RPC
         const { data: nextNum } = await admin.rpc('get_next_project_num');
         const projectId = `VE-${new Date().getFullYear()}-${String(nextNum).padStart(3, '0')}`;
-
         const project = mapOraclePOToProject(po);
         await admin.from('projects').insert({ id: projectId, ...project });
-
-        // Log to activity
-        try { await admin.from('activity_log').insert({
-          project_id:   projectId,
-          action:       `Project created from Oracle ERP sync — PO ${po.OrderNumber}`,
-          performed_by: 'Oracle Sync',
-          role:         'system',
-        }); } catch {}
-
+        try {
+          await admin.from('activity_log').insert({
+            project_id: projectId,
+            action: `Project created from Oracle ERP sync — PO ${po.OrderNumber}`,
+            performed_by: 'Oracle Sync', role: 'system',
+          });
+        } catch {}
         created++;
       } catch (err: any) {
         errors.push(`PO ${po.OrderNumber}: ${err.message}`);
@@ -143,32 +137,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const summary = {
-      success:  true,
-      total:    oraclePOs.length,
-      created,
-      skipped:  oraclePOs.length - newPOs.length,
-      errors:   errors.length ? errors : undefined,
+      success: true, total: oraclePOs.length, created,
+      skipped: oraclePOs.length - newPOs.length,
+      errors: errors.length ? errors : undefined,
       syncedAt: new Date().toISOString(),
     };
 
-    // Log sync result to activity
-    try { await admin.from('activity_log').insert({
-      project_id:   'SYSTEM',
-      action:       `Oracle ERP PO sync complete — ${created} created, ${oraclePOs.length - newPOs.length} skipped (already exist)`,
-      performed_by: 'Oracle Sync',
-      role:         'system',
-    }); } catch {}
+    try {
+      await admin.from('activity_log').insert({
+        project_id: 'SYSTEM',
+        action: `Oracle ERP PO sync complete — ${created} created, ${oraclePOs.length - newPOs.length} skipped`,
+        performed_by: 'Oracle Sync', role: 'system',
+      });
+    } catch {}
 
     return res.status(200).json(summary);
 
   } catch (err: any) {
     console.error('Oracle sync error:', err);
-    try { await admin.from('activity_log').insert({
-      project_id:   'SYSTEM',
-      action:       `Oracle ERP PO sync FAILED: ${err.message}`,
-      performed_by: 'Oracle Sync',
-      role:         'system',
-    }); } catch {}
+    try {
+      await admin.from('activity_log').insert({
+        project_id: 'SYSTEM',
+        action: `Oracle ERP PO sync FAILED: ${err.message}`,
+        performed_by: 'Oracle Sync', role: 'system',
+      });
+    } catch {}
     return res.status(500).json({ error: err.message });
   }
 }
