@@ -374,9 +374,12 @@ export default function SRNReturnPage() {
       // Apply kpiSubFilter
       if (kpiSubFilter) {
         if (kpiSubFilter.type === 'stn') {
-          const match = proj.stnItems.some((i:any) =>
-            kpiSubFilter.status === 'pm_rejected' ? i.utilisedStatus === 'pm_rejected' : i.utilisedStatus === 'submitted'
-          );
+          const match = proj.stnItems.some((i:any) => {
+            if (kpiSubFilter.status === 'pm_rejected')    return i.utilisedStatus === 'pm_rejected';
+            if (kpiSubFilter.status === 'pending_approval') return i.utilisedStatus === 'submitted';
+            if (kpiSubFilter.status === 'not_submitted')  return i.utilisedStatus === 'pending' || !i.utilisedStatus || i.utilisedStatus === '';
+            return false;
+          });
           if (!match) return false;
         } else {
           const match = proj.srnItems.some((i:any) =>
