@@ -158,9 +158,14 @@ export default function SRNReturnPage() {
 
   const stnByPM = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
-    const filtered = kpiSubFilter?.type==='stn'
-      ? roleStnItems.filter(i => kpiSubFilter.status==='pm_rejected' ? i.utilisedStatus==='pm_rejected' : i.utilisedStatus==='submitted')
-      : roleStnItems;
+    const filterStnByKpi = (items: typeof roleStnItems) => {
+      if (!kpiSubFilter || kpiSubFilter.type !== 'stn') return items;
+      if (kpiSubFilter.status === 'pm_rejected')    return items.filter(i => i.utilisedStatus === 'pm_rejected');
+      if (kpiSubFilter.status === 'pending_approval') return items.filter(i => i.utilisedStatus === 'submitted');
+      if (kpiSubFilter.status === 'not_submitted')  return items.filter(i => !i.utilisedStatus || i.utilisedStatus === '');
+      return items;
+    };
+    const filtered = filterStnByKpi(roleStnItems);
     for (const i of filtered) {
       const proj=(projects as any[]).find(p=>p.id===i.projectId); const pm=proj?.pm||'—';
       const isPend=i.utilisedStatus==='submitted'; if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(isPend) r[pm].pending++;
@@ -169,9 +174,14 @@ export default function SRNReturnPage() {
 
   const stnByRegion = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
-    const filtered = kpiSubFilter?.type==='stn'
-      ? roleStnItems.filter(i => kpiSubFilter.status==='pm_rejected' ? i.utilisedStatus==='pm_rejected' : i.utilisedStatus==='submitted')
-      : roleStnItems;
+    const filterStnByKpi = (items: typeof roleStnItems) => {
+      if (!kpiSubFilter || kpiSubFilter.type !== 'stn') return items;
+      if (kpiSubFilter.status === 'pm_rejected')    return items.filter(i => i.utilisedStatus === 'pm_rejected');
+      if (kpiSubFilter.status === 'pending_approval') return items.filter(i => i.utilisedStatus === 'submitted');
+      if (kpiSubFilter.status === 'not_submitted')  return items.filter(i => !i.utilisedStatus || i.utilisedStatus === '');
+      return items;
+    };
+    const filtered = filterStnByKpi(roleStnItems);
     for (const i of filtered) {
       const proj=(projects as any[]).find(p=>p.id===i.projectId); const reg=proj?.region||'—';
       const isPend=i.utilisedStatus==='submitted'; if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(isPend) r[reg].pending++;
@@ -330,7 +340,11 @@ export default function SRNReturnPage() {
       // Apply Pending-only toggle (narrows the active card filter selection to pending items of that type)
       if (cardFilter && pendingOnly) {
         if (cardFilter.type === 'stn') {
-          const hasPending = proj.stnItems.some((i:any) => i.utilisedStatus === 'submitted');
+          const hasPending = kpiSubFilter?.status === 'not_submitted'
+            ? proj.stnItems.some((i:any) => !i.utilisedStatus || i.utilisedStatus === '')
+            : kpiSubFilter?.status === 'pm_rejected'
+            ? proj.stnItems.some((i:any) => i.utilisedStatus === 'pm_rejected')
+            : proj.stnItems.some((i:any) => i.utilisedStatus === 'submitted');
           if (!hasPending) return false;
         } else if (cardFilter.type === 'srn') {
           const hasPending = proj.srnItems.some((i:any) => !i.received);
@@ -519,7 +533,15 @@ export default function SRNReturnPage() {
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
               <span style={{ fontSize:18 }}>📦</span>
               <span style={{ fontSize:14, fontWeight:700, color:Theme.primary }}>STN — Store Transfer Note</span>
-              {stnNotSubmittedCount > 0 && <span style={{ fontSize:12, fontWeight:600, color:'#6B7280', background:'#F3F4F6', padding:'2px 10px', borderRadius:20 }}>{stnNotSubmittedCount} Not Submitted</span>}
+              {stnNotSubmittedCount > 0 && (
+                <span onClick={()=>toggleKpiSub('stn','not_submitted')}
+                  style={{ fontSize:12, fontWeight:600, cursor:'pointer',
+                    color: kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='not_submitted' ? '#fff' : '#6B7280',
+                    background: kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='not_submitted' ? '#6B7280' : '#F3F4F6',
+                    padding:'2px 10px', borderRadius:20, transition:'all 0.15s' }}>
+                  {stnNotSubmittedCount} Not Submitted
+                </span>
+              )}
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:10, marginBottom:16 }}>
               <div style={{ background:Theme.primaryLight, borderRadius:8, padding:'10px 14px' }}>
