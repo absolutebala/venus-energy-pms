@@ -60,8 +60,26 @@ export default function ActivitiesPage() {
     });
   }, [rows, projects]);
 
-  const totalPages = Math.max(1, Math.ceil(enriched.length / perPage));
-  const paginated = enriched.slice((page - 1) * perPage, page * perPage);
+  const [search, setSearch] = React.useState('');
+
+  const filtered = React.useMemo(() => {
+    if (!search.trim()) return enriched;
+    const q = search.trim().toLowerCase();
+    return enriched.filter(e =>
+      (e.projectId||'').toLowerCase().includes(q) ||
+      (e.indusId||'').toLowerCase().includes(q) ||
+      (e.site||'').toLowerCase().includes(q) ||
+      (e.projectName||'').toLowerCase().includes(q) ||
+      (e.poNo||'').toLowerCase().includes(q) ||
+      (e.action||'').toLowerCase().includes(q) ||
+      (e.byName||'').toLowerCase().includes(q) ||
+      (e.byRole||'').toLowerCase().includes(q) ||
+      (e.pm||'').toLowerCase().includes(q)
+    );
+  }, [enriched, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const paginated = filtered.slice((page - 1) * perPage, page * perPage);
 
   const isLoading = authLoading || projLoading || loading;
   const isSuperAdmin = !authLoading && profile?.role === 'super_admin';
@@ -111,10 +129,14 @@ export default function ActivitiesPage() {
           <div>
             <div style={{ fontSize: 22, fontWeight: 800, color: T.text }}>Activities</div>
             <div style={{ fontSize: 13, color: T.textMuted, marginTop: 2 }}>
-              {isLoading ? 'Loading...' : `${enriched.length} activities`}
+              {isLoading ? 'Loading...' : search.trim() ? `${filtered.length} of ${enriched.length} activities` : `${enriched.length} activities`}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
+            <input
+              value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+              placeholder="Search project, site, action, by…"
+              style={{ border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 14px', fontSize: 13, outline: 'none', width: 260, color: T.text }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <label style={{ fontSize: 12, color: T.textMuted, fontWeight: 600 }}>From</label>
               <input type="date" value={dateFrom} max={maxDate}
