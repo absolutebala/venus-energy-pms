@@ -150,8 +150,10 @@ export default function SRNReturnPage() {
   }, [srnRawItems, roleProjectIds]);
   const stnPendingCount  = roleStnItems.filter(i => i.utilisedStatus === 'submitted').length;
   const stnRejectedCount = roleStnItems.filter(i => i.utilisedStatus === 'pm_rejected').length;
+  const stnApprovedCount = roleStnItems.filter(i => i.utilisedStatus === 'pm_approved').length;
   const srnPendingCount  = roleSrnItems.filter((i:any) => !i.received).length;
   const srnRejectedCount = roleSrnItems.filter((i:any) => i.received === false && i.pm_comment).length;
+  const srnApprovedCount = roleSrnItems.filter((i:any) => i.received === true).length;
 
   const stnByPM = useMemo(() => {
     const r:Record<string,{total:number;pending:number}> = {};
@@ -200,55 +202,67 @@ export default function SRNReturnPage() {
   }, [roleStnItems, roleSrnItems, projects]);
 
   const combinedByVendorSTN = useMemo(() => {
-    const r:Record<string,{total:number;pending:number}> = {};
+    const r:Record<string,{total:number;pending:number;approved:number}> = {};
     for (const i of roleStnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.projectId); const v=proj?.vendor||'—';
-      if(!r[v]) r[v]={total:0,pending:0}; r[v].total++; if(i.utilisedStatus==='submitted') r[v].pending++;
+      if(!r[v]) r[v]={total:0,pending:0,approved:0}; r[v].total++;
+      if(i.utilisedStatus==='submitted') r[v].pending++;
+      if(i.utilisedStatus==='pm_approved') r[v].approved++;
     }
     return r;
   }, [roleStnItems, projects]);
 
   const combinedByVendorSRN = useMemo(() => {
-    const r:Record<string,{total:number;pending:number}> = {};
+    const r:Record<string,{total:number;pending:number;approved:number}> = {};
     for (const i of roleSrnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.project_id); const v=proj?.vendor||'—';
-      if(!r[v]) r[v]={total:0,pending:0}; r[v].total++; if(!i.received) r[v].pending++;
+      if(!r[v]) r[v]={total:0,pending:0,approved:0}; r[v].total++;
+      if(!i.received) r[v].pending++;
+      if(i.received===true) r[v].approved++;
     }
     return r;
   }, [roleSrnItems, projects]);
 
   const combinedByRegionSTN = useMemo(() => {
-    const r:Record<string,{total:number;pending:number}> = {};
+    const r:Record<string,{total:number;pending:number;approved:number}> = {};
     for (const i of roleStnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.projectId); const reg=proj?.region||'—';
-      if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(i.utilisedStatus==='submitted') r[reg].pending++;
+      if(!r[reg]) r[reg]={total:0,pending:0,approved:0}; r[reg].total++;
+      if(i.utilisedStatus==='submitted') r[reg].pending++;
+      if(i.utilisedStatus==='pm_approved') r[reg].approved++;
     }
     return r;
   }, [roleStnItems, projects]);
 
   const combinedByRegionSRN = useMemo(() => {
-    const r:Record<string,{total:number;pending:number}> = {};
+    const r:Record<string,{total:number;pending:number;approved:number}> = {};
     for (const i of roleSrnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.project_id); const reg=proj?.region||'—';
-      if(!r[reg]) r[reg]={total:0,pending:0}; r[reg].total++; if(!i.received) r[reg].pending++;
+      if(!r[reg]) r[reg]={total:0,pending:0,approved:0}; r[reg].total++;
+      if(!i.received) r[reg].pending++;
+      if(i.received===true) r[reg].approved++;
     }
     return r;
   }, [roleSrnItems, projects]);
 
   const combinedByPMSTN = useMemo(() => {
-    const r:Record<string,{total:number;pending:number}> = {};
+    const r:Record<string,{total:number;pending:number;approved:number}> = {};
     for (const i of roleStnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.projectId); const pm=proj?.pm||'—';
-      if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(i.utilisedStatus==='submitted') r[pm].pending++;
+      if(!r[pm]) r[pm]={total:0,pending:0,approved:0}; r[pm].total++;
+      if(i.utilisedStatus==='submitted') r[pm].pending++;
+      if(i.utilisedStatus==='pm_approved') r[pm].approved++;
     }
     return r;
   }, [roleStnItems, projects]);
 
   const combinedByPMSRN = useMemo(() => {
-    const r:Record<string,{total:number;pending:number}> = {};
+    const r:Record<string,{total:number;pending:number;approved:number}> = {};
     for (const i of roleSrnItems) {
       const proj=(projects as any[]).find((p:any)=>p.id===i.project_id); const pm=proj?.pm||'—';
-      if(!r[pm]) r[pm]={total:0,pending:0}; r[pm].total++; if(!i.received) r[pm].pending++;
+      if(!r[pm]) r[pm]={total:0,pending:0,approved:0}; r[pm].total++;
+      if(!i.received) r[pm].pending++;
+      if(i.received===true) r[pm].approved++;
     }
     return r;
   }, [roleSrnItems, projects]);
@@ -442,12 +456,13 @@ export default function SRNReturnPage() {
   const tdS: React.CSSProperties = { padding:'10px 12px', fontSize:12, borderBottom:`1px solid ${Theme.border}`, verticalAlign:'middle' as const };
 
   // ── Breakdown table component ─────────────────────────────────────────────
-  const BreakdownTable = ({ data, color, field, type }: { data:Record<string,{total:number;pending:number}>; color:string; field:string; type:string }) => (
+  const BreakdownTable = ({ data, color, field, type }: { data:Record<string,{total:number;pending:number;approved:number}>; color:string; field:string; type:string }) => (
     <table style={{ width:'100%', borderCollapse:'collapse' as const, fontSize:11 }}>
       <thead>
         <tr>
           <th style={{ textAlign:'left' as const, padding:'4px 6px', color:Theme.textMuted, fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Name</th>
           <th style={{ textAlign:'right' as const, padding:'4px 6px', color:Theme.textMuted, fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Total</th>
+          <th style={{ textAlign:'right' as const, padding:'4px 6px', color:'#166534', fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Approved</th>
           <th style={{ textAlign:'right' as const, padding:'4px 6px', color:Theme.textMuted, fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>{type==='global' ? 'Pending Items (STN/SRN)' : 'Pending'}</th>
         </tr>
       </thead>
@@ -461,6 +476,7 @@ export default function SRNReturnPage() {
               onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=isActive?`${color}15`:'transparent'}>
               <td style={{ padding:'4px 6px', color:isActive?color:Theme.text, fontWeight:isActive?700:500 }}>{name}{isActive?' ●':''}</td>
               <td style={{ padding:'4px 6px', textAlign:'right' as const, color:Theme.textMuted }}>{v.total}</td>
+              <td style={{ padding:'4px 6px', textAlign:'right' as const, fontWeight:700, color:v.approved>0?'#16A34A':Theme.textMuted }}>{v.approved}</td>
               <td style={{ padding:'4px 6px', textAlign:'right' as const, fontWeight:700, color:v.pending>0?color:Theme.textMuted }}>{v.pending}</td>
             </tr>
           );
@@ -493,10 +509,14 @@ export default function SRNReturnPage() {
               <span style={{ fontSize:18 }}>📦</span>
               <span style={{ fontSize:14, fontWeight:700, color:Theme.primary }}>STN — Store Transfer Note</span>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:16 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:10, marginBottom:16 }}>
               <div style={{ background:Theme.primaryLight, borderRadius:8, padding:'10px 14px' }}>
                 <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>Total Items</div>
                 <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{roleStnItems.length}</div>
+              </div>
+              <div style={{ background:'#F0FDF4', borderRadius:8, padding:'10px 14px', border:'2px solid transparent' }}>
+                <div style={{ fontSize:10, fontWeight:600, color:'#166534', textTransform:'uppercase' as const, marginBottom:4 }}>✓ Approved</div>
+                <div style={{ fontSize:24, fontWeight:800, color:'#16A34A' }}>{stnApprovedCount}</div>
               </div>
               <div onClick={()=>toggleKpiSub('stn','pm_rejected')} style={{ background:kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='pm_rejected'?'#FEE2E2':'#FEF2F2', borderRadius:8, padding:'10px 14px', cursor:'pointer',
                 border:kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='pm_rejected'?'2px solid #DC2626':'2px solid transparent', transition:'all 0.15s' }}>
@@ -519,10 +539,14 @@ export default function SRNReturnPage() {
               <span style={{ fontSize:18 }}>🔄</span>
               <span style={{ fontSize:14, fontWeight:700, color:Theme.primary }}>SRN — Store Return Note</span>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:16 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:10, marginBottom:16 }}>
               <div style={{ background:Theme.primaryLight, borderRadius:8, padding:'10px 14px' }}>
                 <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>Total Items</div>
                 <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{roleSrnItems.length}</div>
+              </div>
+              <div style={{ background:'#F0FDF4', borderRadius:8, padding:'10px 14px', border:'2px solid transparent' }}>
+                <div style={{ fontSize:10, fontWeight:600, color:'#166534', textTransform:'uppercase' as const, marginBottom:4 }}>✓ Approved</div>
+                <div style={{ fontSize:24, fontWeight:800, color:'#16A34A' }}>{srnApprovedCount}</div>
               </div>
               <div onClick={()=>toggleKpiSub('srn','rejected')} style={{ background:kpiSubFilter?.type==='srn'&&kpiSubFilter?.status==='rejected'?'#FEE2E2':'#FEF2F2', borderRadius:8, padding:'10px 14px', cursor:'pointer',
                 border:kpiSubFilter?.type==='srn'&&kpiSubFilter?.status==='rejected'?'2px solid #DC2626':'2px solid transparent', transition:'all 0.15s' }}>
