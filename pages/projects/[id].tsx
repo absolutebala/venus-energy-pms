@@ -1281,7 +1281,7 @@ function SRNSectionNew({ projectId, role, onAllReceived, onCountChange, canAdd: 
   React.useEffect(() => { onCountChange?.(items.length); }, [items, onCountChange]);
 
   const isPM    = ['project_manager','super_admin','region_manager'].includes(role);
-  const canAdd  = ['super_admin','vendor','pm'].includes(role) && canAddApplicable;
+  const canAdd  = ['super_admin','vendor','pm','project_manager'].includes(role) && canAddApplicable;
   const canEdit = ['super_admin','pm','rm','project_manager','super_admin','region_manager'].includes(role);
   const [editId,  setEditId]  = React.useState<string|null>(null);
   const [editRow, setEditRow] = React.useState<any>({});
