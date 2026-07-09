@@ -151,7 +151,7 @@ export default function SRNReturnPage() {
   const stnPendingCount  = roleStnItems.filter(i => i.utilisedStatus === 'submitted').length;
   const stnRejectedCount = roleStnItems.filter(i => i.utilisedStatus === 'pm_rejected').length;
   const stnApprovedCount = roleStnItems.filter(i => i.utilisedStatus === 'pm_approved').length;
-  const stnNotSubmittedCount = roleStnItems.filter(i => !i.utilisedStatus || i.utilisedStatus === '').length;
+  const stnNotSubmittedCount = roleStnItems.filter(i => i.utilisedStatus === 'pending' || !i.utilisedStatus || i.utilisedStatus === '').length;
   const srnPendingCount  = roleSrnItems.filter((i:any) => !i.received).length;
   const srnRejectedCount = roleSrnItems.filter((i:any) => i.received === false && i.pm_comment).length;
   const srnApprovedCount = roleSrnItems.filter((i:any) => i.received === true).length;
@@ -162,7 +162,7 @@ export default function SRNReturnPage() {
       if (!kpiSubFilter || kpiSubFilter.type !== 'stn') return items;
       if (kpiSubFilter.status === 'pm_rejected')    return items.filter(i => i.utilisedStatus === 'pm_rejected');
       if (kpiSubFilter.status === 'pending_approval') return items.filter(i => i.utilisedStatus === 'submitted');
-      if (kpiSubFilter.status === 'not_submitted')  return items.filter(i => !i.utilisedStatus || i.utilisedStatus === '');
+      if (kpiSubFilter.status === 'not_submitted')  return items.filter(i => i.utilisedStatus === 'pending' || !i.utilisedStatus || i.utilisedStatus === '');
       return items;
     };
     const filtered = filterStnByKpi(roleStnItems);
@@ -178,7 +178,7 @@ export default function SRNReturnPage() {
       if (!kpiSubFilter || kpiSubFilter.type !== 'stn') return items;
       if (kpiSubFilter.status === 'pm_rejected')    return items.filter(i => i.utilisedStatus === 'pm_rejected');
       if (kpiSubFilter.status === 'pending_approval') return items.filter(i => i.utilisedStatus === 'submitted');
-      if (kpiSubFilter.status === 'not_submitted')  return items.filter(i => !i.utilisedStatus || i.utilisedStatus === '');
+      if (kpiSubFilter.status === 'not_submitted')  return items.filter(i => i.utilisedStatus === 'pending' || !i.utilisedStatus || i.utilisedStatus === '');
       return items;
     };
     const filtered = filterStnByKpi(roleStnItems);
@@ -220,7 +220,7 @@ export default function SRNReturnPage() {
       if(i.utilisedStatus==='submitted') r[v].pending++;
       if(i.utilisedStatus==='pm_approved') r[v].approved++;
       if(i.utilisedStatus==='pm_rejected') r[v].rejected++;
-      if(!i.utilisedStatus||i.utilisedStatus==='') r[v].notSubmitted++;
+      if(i.utilisedStatus==='pending'||!i.utilisedStatus||i.utilisedStatus==='') r[v].notSubmitted++;
     }
     return r;
   }, [roleStnItems, projects]);
@@ -244,7 +244,7 @@ export default function SRNReturnPage() {
       if(i.utilisedStatus==='submitted') r[reg].pending++;
       if(i.utilisedStatus==='pm_approved') r[reg].approved++;
       if(i.utilisedStatus==='pm_rejected') r[reg].rejected++;
-      if(!i.utilisedStatus||i.utilisedStatus==='') r[reg].notSubmitted++;
+      if(i.utilisedStatus==='pending'||!i.utilisedStatus||i.utilisedStatus==='') r[reg].notSubmitted++;
     }
     return r;
   }, [roleStnItems, projects]);
@@ -268,7 +268,7 @@ export default function SRNReturnPage() {
       if(i.utilisedStatus==='submitted') r[pm].pending++;
       if(i.utilisedStatus==='pm_approved') r[pm].approved++;
       if(i.utilisedStatus==='pm_rejected') r[pm].rejected++;
-      if(!i.utilisedStatus||i.utilisedStatus==='') r[pm].notSubmitted++;
+      if(i.utilisedStatus==='pending'||!i.utilisedStatus||i.utilisedStatus==='') r[pm].notSubmitted++;
     }
     return r;
   }, [roleStnItems, projects]);
@@ -341,7 +341,7 @@ export default function SRNReturnPage() {
       if (cardFilter && pendingOnly) {
         if (cardFilter.type === 'stn') {
           const hasPending = kpiSubFilter?.status === 'not_submitted'
-            ? proj.stnItems.some((i:any) => !i.utilisedStatus || i.utilisedStatus === '')
+            ? proj.stnItems.some((i:any) => i.utilisedStatus === 'pending' || !i.utilisedStatus || i.utilisedStatus === '')
             : kpiSubFilter?.status === 'pm_rejected'
             ? proj.stnItems.some((i:any) => i.utilisedStatus === 'pm_rejected')
             : proj.stnItems.some((i:any) => i.utilisedStatus === 'submitted');
