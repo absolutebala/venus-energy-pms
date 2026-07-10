@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { useProjects } from '@/context/ProjectContext';
 import { useAuth } from '@/context/AuthContext';
-import { T, fmt } from '@/lib/theme';
+import { T, fmtINR as fmt } from '@/lib/theme';
 import { createClient } from '@/lib/supabase';
 import * as XLSX from 'xlsx';
 
