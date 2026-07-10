@@ -574,7 +574,7 @@ export default function PMDetailPage() {
                     </thead>
                     <tbody>
                       {projPaginated.map((p, i) => {
-                        const absIdx = (projPage - 1) * PER_PAGE + i + 1;
+                        const absIdx = (projPage - 1) * projPerPage + i + 1;
                         return (
                           <tr key={p.id} onClick={() => router.push(`/projects/${p.id}`)}
                             style={{ background: i % 2 === 0 ? '#fff' : T.bg, cursor: 'pointer' }}
