@@ -314,25 +314,6 @@ export default function PMDetailPage() {
     <Layout>
       <style dangerouslySetInnerHTML={{ __html: printStyle }} />
 
-      {/* PDF-only header — hidden on screen, visible during PDF export */}
-      {exportingPDF && (
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px',
-          background:'linear-gradient(135deg, #0D9488, #0F766E)', color:'#fff', marginBottom:20, borderRadius:10 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{ width:40, height:40, borderRadius:10, background:'rgba(255,255,255,0.2)',
-              display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>⚡</div>
-            <div>
-              <div style={{ fontSize:18, fontWeight:800, letterSpacing:0.5 }}>Venus Energy</div>
-              <div style={{ fontSize:10, opacity:0.8, textTransform:'uppercase', letterSpacing:1 }}>Project Control</div>
-            </div>
-          </div>
-          <div style={{ textAlign:'right' as const }}>
-            <div style={{ fontSize:16, fontWeight:700 }}>PM Performance Report</div>
-            <div style={{ fontSize:12, opacity:0.85, marginTop:2 }}>Generated on {new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
@@ -405,6 +386,30 @@ export default function PMDetailPage() {
 
         {/* Main content */}
         <div ref={contentRef}>
+          {/* PDF-only header — inside contentRef so html2canvas captures it */}
+          {exportingPDF && (
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px',
+              background:'linear-gradient(135deg, #0D9488, #0F766E)', color:'#fff', marginBottom:16, borderRadius:10 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                <div style={{ width:40, height:40, borderRadius:10, background:'rgba(255,255,255,0.2)',
+                  display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>⚡</div>
+                <div>
+                  <div style={{ fontSize:18, fontWeight:800, letterSpacing:0.5 }}>Venus Energy</div>
+                  <div style={{ fontSize:10, opacity:0.8, textTransform:'uppercase', letterSpacing:1 }}>Project Control</div>
+                </div>
+              </div>
+              <div style={{ textAlign:'right' as const }}>
+                <div style={{ fontSize:16, fontWeight:700 }}>PM Performance Report</div>
+                <div style={{ fontSize:13, opacity:0.85, marginTop:3 }}>
+                  <strong>{pmName}</strong> · {filteredPmProjects.length} Projects · {stnItems.length} STN · {srnItems.length} SRN
+                </div>
+                <div style={{ fontSize:11, opacity:0.75, marginTop:2 }}>
+                  {datePreset === 'all' ? 'All Time' : datePreset === 'week' ? 'This Week' : datePreset === 'month' ? 'This Month' : `${dateFrom} to ${dateTo}`}
+                  {' · '}Generated on {new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}
+                </div>
+              </div>
+            </div>
+          )}
           {loading ? (
             <div style={{ ...card, textAlign: 'center' as const, padding: 40, color: T.textMuted }}>Loading data...</div>
           ) : pmProjects.length === 0 ? (
