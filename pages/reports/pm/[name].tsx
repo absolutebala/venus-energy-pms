@@ -136,7 +136,7 @@ export default function PMDetailPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button onClick={() => router.push('/reports?report=pm')}
+            <button onClick={() => router.push('/reports?section=pm')}
               style={{ background: 'none', border: 'none', color: T.primary, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
               ← PM Performance
             </button>
@@ -154,7 +154,7 @@ export default function PMDetailPage() {
         <div>
           {REPORTS.map(r => (
             <div key={r.key}
-              onClick={() => r.key === 'pm' ? router.push('/reports?report=pm') : router.push(`/reports?report=${r.key}`)}
+              onClick={() => router.push(`/reports?section=${r.key}`)}
               style={{ padding: '10px 12px', borderRadius: 9, marginBottom: 6, cursor: 'pointer',
                 border: `1.5px solid ${r.key === 'pm' ? T.primary : T.border}`,
                 background: r.key === 'pm' ? T.primaryLight : T.surface }}>
@@ -172,57 +172,61 @@ export default function PMDetailPage() {
             <div style={{ ...card, textAlign: 'center' as const, padding: 40, color: T.textMuted }}>No projects found for {pmName}</div>
           ) : (
             <>
-              {/* 1. Project Status (pie) + PTW Status side by side */}
+              {/* 1. Project Status (pie) left + PTW, STN, SRN metrics right */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 0 }}>
+                {/* Left: Project Status pie */}
                 <div style={card}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 12 }}>📁 Project Status</div>
-                  <ResponsiveContainer width="100%" height={220}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 4 }}>📁 Project Status <span style={{ fontSize: 12, color: T.textMuted, fontWeight: 400 }}>({pmProjects.length} total)</span></div>
+                  <ResponsiveContainer width="100%" height={260}>
                     <PieChart>
-                      <Pie data={statusGroups} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent*100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                      <Pie data={statusGroups} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90}>
                         {statusGroups.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                       </Pie>
-                      <Tooltip formatter={(v: any) => [`${v} projects`]} />
+                      <Tooltip formatter={(v: any, name: any) => [`${v} projects`, name]} />
+                      <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div style={card}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 12 }}>🔐 PTW Status</div>
-                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12, marginTop: 8 }}>
-                    {[
-                      { label: '1. Total PTEs', value: ptwMetrics.total, color: T.primary },
-                      { label: '2. Raised PTEs', value: ptwMetrics.raised, color: T.success },
-                      { label: '3. Not Raised PTEs', value: ptwMetrics.notRaised, color: ptwMetrics.notRaised > 0 ? T.danger : T.success },
-                    ].map(m => (
-                      <div key={m.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: T.bg, borderRadius: 8 }}>
-                        <span style={{ fontSize: 13, color: T.textMuted }}>{m.label}</span>
-                        <span style={{ fontSize: 22, fontWeight: 800, color: m.color }}>{m.value}</span>
-                      </div>
-                    ))}
+                {/* Right: PTW + STN + SRN stacked */}
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                  {/* PTW */}
+                  <div style={card}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 8 }}>🔐 PTW Status</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                      {[
+                        { label: 'Total PTEs', value: ptwMetrics.total, color: T.primary },
+                        { label: 'Raised', value: ptwMetrics.raised, color: T.success },
+                        { label: 'Not Raised', value: ptwMetrics.notRaised, color: ptwMetrics.notRaised > 0 ? T.danger : T.success },
+                      ].map(m => (
+                        <div key={m.label} style={{ background: T.bg, borderRadius: 8, padding: '8px 10px', textAlign: 'center' as const }}>
+                          <div style={{ fontSize: 10, color: T.textMuted, fontWeight: 600, marginBottom: 3 }}>{m.label}</div>
+                          <div style={{ fontSize: 20, fontWeight: 800, color: m.color }}>{m.value}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              {/* 2. STN / SRN Status Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                <div style={card}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#D97706', marginBottom: 12 }}>📦 STN Status</div>
-                  <MetricRow label="1. STN Total Qty Lifted"       value={stnMetrics.totalLifted} />
-                  <MetricRow label="2. STN Total Qty Used"         value={stnMetrics.totalUsed} />
-                  <MetricRow label="3. STN Pending Qty"            value={stnMetrics.totalPending} color={stnMetrics.totalPending > 0 ? T.warning : T.success} />
-                  <MetricRow label="4. STN Return Qty"             value={stnMetrics.totalReturn} />
-                  <MetricRow label="5. STN Material Value"         value={fmt(stnMetrics.totalValue)} color={T.primary} />
-                  <MetricRow label="6. STN Material Pending Value" value={fmt(stnMetrics.pendingValue)} color={stnMetrics.pendingValue > 0 ? T.danger : T.success} />
-                  <MetricRow label="7. Avg Aging Days"             value={`${stnMetrics.avgAging}d`} color={stnMetrics.avgAging > 90 ? T.danger : stnMetrics.avgAging > 60 ? T.warning : T.success} />
-                </div>
-                <div style={card}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#DC2626', marginBottom: 12 }}>🔄 SRN Status</div>
-                  <MetricRow label="1. SRN Total Qty Lifted"       value={srnMetrics.totalLifted} />
-                  <MetricRow label="2. SRN Total Qty Used"         value={srnMetrics.totalUsed} />
-                  <MetricRow label="3. SRN Pending Qty"            value={srnMetrics.totalPending} color={srnMetrics.totalPending > 0 ? T.warning : T.success} />
-                  <MetricRow label="4. SRN Return Qty"             value={srnMetrics.totalReturn} />
-                  <MetricRow label="5. SRN Material Value"         value={fmt(srnMetrics.totalValue)} color={T.primary} />
-                  <MetricRow label="6. SRN Material Pending Value" value={fmt(srnMetrics.pendingValue)} color={srnMetrics.pendingValue > 0 ? T.danger : T.success} />
-                  <MetricRow label="7. Avg Aging Days"             value={`${srnMetrics.avgAging}d`} color={srnMetrics.avgAging > 90 ? T.danger : srnMetrics.avgAging > 60 ? T.warning : T.success} />
+                  {/* STN */}
+                  <div style={card}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#D97706', marginBottom: 8 }}>📦 STN Status</div>
+                    <MetricRow label="Total Qty Lifted"       value={stnMetrics.totalLifted} />
+                    <MetricRow label="Total Qty Used"         value={stnMetrics.totalUsed} />
+                    <MetricRow label="Pending Qty"            value={stnMetrics.totalPending} color={stnMetrics.totalPending > 0 ? T.warning : T.success} />
+                    <MetricRow label="Return Qty"             value={stnMetrics.totalReturn} />
+                    <MetricRow label="Material Value"         value={fmt(stnMetrics.totalValue)} color={T.primary} />
+                    <MetricRow label="Material Pending Value" value={fmt(stnMetrics.pendingValue)} color={stnMetrics.pendingValue > 0 ? T.danger : T.success} />
+                    <MetricRow label="Avg Aging Days"         value={`${stnMetrics.avgAging}d`} color={stnMetrics.avgAging > 90 ? T.danger : stnMetrics.avgAging > 60 ? T.warning : T.success} />
+                  </div>
+                  {/* SRN */}
+                  <div style={card}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#DC2626', marginBottom: 8 }}>🔄 SRN Status</div>
+                    <MetricRow label="Total Qty Lifted"       value={srnMetrics.totalLifted} />
+                    <MetricRow label="Total Qty Used"         value={srnMetrics.totalUsed} />
+                    <MetricRow label="Pending Qty"            value={srnMetrics.totalPending} color={srnMetrics.totalPending > 0 ? T.warning : T.success} />
+                    <MetricRow label="Return Qty"             value={srnMetrics.totalReturn} />
+                    <MetricRow label="Material Value"         value={fmt(srnMetrics.totalValue)} color={T.primary} />
+                    <MetricRow label="Material Pending Value" value={fmt(srnMetrics.pendingValue)} color={srnMetrics.pendingValue > 0 ? T.danger : T.success} />
+                    <MetricRow label="Avg Aging Days"         value={`${srnMetrics.avgAging}d`} color={srnMetrics.avgAging > 90 ? T.danger : srnMetrics.avgAging > 60 ? T.warning : T.success} />
+                  </div>
                 </div>
               </div>
 
