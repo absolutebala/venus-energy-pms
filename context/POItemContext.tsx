@@ -81,15 +81,19 @@ export function POItemProvider({ children }: { children: React.ReactNode }) {
   const [items,   setItems]   = useState<POItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // fetchId prevents race conditions: if a new fetch starts while one is in progress,
+  // the older fetch is abandoned so stale/partial data never overwrites fresh data.
+  const fetchIdRef = React.useRef(0);
+
   const fetchItems = useCallback(async () => {
+    const myId = ++fetchIdRef.current;
     setLoading(true);
-    // Supabase/PostgREST caps a single select at 1000 rows by default — paginate in batches
-    // to ensure every row is loaded, not just the first 1000 (which was silently hiding items
-    // on projects whose rows fell past that cutoff).
     const BATCH = 1000;
     let allRows: any[] = [];
     let from = 0;
     while (true) {
+      // Abort if a newer fetch has started
+      if (fetchIdRef.current !== myId) return;
       const { data, error } = await supabase
         .from('po_items').select('*').order('project_id').order('sort_order')
         .range(from, from + BATCH - 1);
@@ -99,6 +103,8 @@ export function POItemProvider({ children }: { children: React.ReactNode }) {
       if (rows.length < BATCH) break;
       from += BATCH;
     }
+    // Only commit results if this is still the latest fetch
+    if (fetchIdRef.current !== myId) return;
     setItems(allRows.map(mapRow));
     setLoading(false);
   }, []);

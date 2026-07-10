@@ -174,9 +174,10 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
   // Re-fetch when browser tab regains focus (avoids stale data after navigation)
   useEffect(() => {
-    const onFocus = () => fetchProjects();
+    let focusTimer: ReturnType<typeof setTimeout>;
+    const onFocus = () => { clearTimeout(focusTimer); focusTimer = setTimeout(() => fetchProjects(), 500); };
     window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    return () => { window.removeEventListener('focus', onFocus); clearTimeout(focusTimer); };
   }, [fetchProjects]);
 
 
