@@ -177,12 +177,20 @@ export default function PMDetailPage() {
                 <div style={card}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 12 }}>📁 Project Status <span style={{ fontSize: 12, color: T.textMuted, fontWeight: 400 }}>({pmProjects.length} total)</span></div>
                   <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
-                    {statusGroups.map(({ name: sName, value }, i) => (
-                      <div key={sName} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: T.bg, borderRadius: 8, borderLeft: `4px solid ${PIE_COLORS[i % PIE_COLORS.length]}` }}>
-                        <span style={{ fontSize: 12, color: T.text, fontWeight: 500 }}>{sName}</span>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: PIE_COLORS[i % PIE_COLORS.length] }}>{value}</span>
-                      </div>
-                    ))}
+                    {statusGroups.map(({ name: sName, value }, i) => {
+                      const pct = pmProjects.length ? Math.round(value / pmProjects.length * 100) : 0;
+                      return (
+                        <div key={sName} style={{ padding: '8px 12px', background: T.bg, borderRadius: 8, borderLeft: `4px solid ${PIE_COLORS[i % PIE_COLORS.length]}` }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                            <span style={{ fontSize: 12, color: T.text, fontWeight: 500 }}>{sName}</span>
+                            <span style={{ fontSize: 14, fontWeight: 800, color: PIE_COLORS[i % PIE_COLORS.length] }}>{value} <span style={{ fontSize: 11, fontWeight: 600, color: T.textMuted }}>({pct}%)</span></span>
+                          </div>
+                          <div style={{ height: 4, background: T.border, borderRadius: 2 }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: PIE_COLORS[i % PIE_COLORS.length], borderRadius: 2 }} />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
                 {/* Right: PTW + STN + SRN stacked */}
