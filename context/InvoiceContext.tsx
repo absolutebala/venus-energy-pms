@@ -130,6 +130,15 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
+  // Re-fetch when auth session is established (fixes empty data after login)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        fetchInvoices();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [fetchInvoices]);
   // Re-fetch when browser tab regains focus (avoids stale data after navigation)
   useEffect(() => {
     // Debounce focus refetch to avoid hammering Supabase on every tab switch

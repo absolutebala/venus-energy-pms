@@ -110,11 +110,21 @@ export function POItemProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => { fetchItems(); }, [fetchItems]);
+  // Re-fetch when auth session is established (fixes empty data after login)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        fetchItems();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [fetchItems]);
   // Re-fetch when browser tab regains focus (avoids stale data after navigation)
   useEffect(() => {
-    const onFocus = () => fetchItems();
+    let focusTimer: ReturnType<typeof setTimeout>;
+    const onFocus = () => { clearTimeout(focusTimer); focusTimer = setTimeout(() => fetchItems(), 500); };
     window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    return () => { window.removeEventListener('focus', onFocus); clearTimeout(focusTimer); };
   }, [fetchItems]);
 
 

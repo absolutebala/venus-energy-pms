@@ -120,6 +120,22 @@ export function ExpenseProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => { fetchExpenses(); }, [fetchExpenses]);
+  // Re-fetch when auth session is established (fixes empty data after login)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        fetchExpenses();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [fetchExpenses]);
+  // Re-fetch when browser tab regains focus
+  useEffect(() => {
+    let focusTimer: ReturnType<typeof setTimeout>;
+    const onFocus = () => { clearTimeout(focusTimer); focusTimer = setTimeout(() => fetchExpenses(), 500); };
+    window.addEventListener('focus', onFocus);
+    return () => { window.removeEventListener('focus', onFocus); clearTimeout(focusTimer); };
+  }, [fetchExpenses]);
 
   const getByProject = useCallback((projectId: string) =>
     expenses.filter(e => e.projectId === projectId), [expenses]);

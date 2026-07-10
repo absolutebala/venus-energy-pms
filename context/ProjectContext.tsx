@@ -172,6 +172,16 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
+  // Re-fetch when auth session is established (fixes empty data after login)
+  useEffect(() => {
+    const supabaseClient = supabase;
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        fetchProjects();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [fetchProjects]);
   // Re-fetch when browser tab regains focus (avoids stale data after navigation)
   useEffect(() => {
     let focusTimer: ReturnType<typeof setTimeout>;
