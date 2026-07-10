@@ -145,6 +145,8 @@ export default function PMDetailPage() {
   const exportToPDF = async () => {
     if (!contentRef.current) return;
     setExportingPDF(true);
+    // Wait for React to re-render the header/footer/signature sections before capturing
+    await new Promise(resolve => setTimeout(resolve, 400));
     try {
       const canvas = await html2canvas(contentRef.current, {
         scale: 1.5,
