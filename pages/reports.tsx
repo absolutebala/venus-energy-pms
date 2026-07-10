@@ -185,6 +185,7 @@ export default function ReportsPage() {
     router.push(`/reports?section=${key}`, undefined, { shallow: true });
   };
   const [region,   setRegion]   = useState('All');
+  const [vendorFilter, setVendorFilter] = useState('All');
 
   const role = profile?.role || 'viewer';
   const loading = projLoading || invLoading;
@@ -255,7 +256,8 @@ export default function ReportsPage() {
       cleanPct, stnTotal, stnApproved, stnPending, stnRate, completionRate,
       onTime: Math.round(100-(delayed/Math.max(ps.length,1)*100)),
     };
-  }).filter(pm => pm.total > 0);
+  }).filter(pm => pm.total > 0)
+    .filter(pm => vendorFilter === 'All' || projects.some((p:any) => p.pm === pm.name && p.vendor === vendorFilter));
 
   const vendors = Array.from(new Set(projects.map((p:any)=>p.vendor).filter(Boolean))) as string[];
   const vendorData = vendors.map(v => {
@@ -438,6 +440,9 @@ export default function ReportsPage() {
 
           <select value={region} onChange={e=>setRegion(e.target.value)} style={selS}>
               <option>All</option>{(regions as string[]).map(r=><option key={r}>{r}</option>)}
+            </select>
+          <select value={vendorFilter} onChange={e=>setVendorFilter(e.target.value)} style={selS}>
+              <option>All</option>{Array.from(new Set((rawProjects as any[]).map((p:any)=>p.vendor).filter(Boolean))).sort().map((v:any)=><option key={v}>{v}</option>)}
             </select>
 
           </div>
@@ -768,6 +773,21 @@ export default function ReportsPage() {
                     ))}
                   </div>
                 </div>
+                  {/* PM List */}
+                  <div style={{ ...card, gridColumn:'span 2' }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>👤 PM List — Click to view detailed report</div>
+                    <div style={{ display:'flex', flexWrap:'wrap' as const, gap:8 }}>
+                      {[...pmData].sort((a,b)=>b.total-a.total).map(pm => (
+                        <button key={pm.name} onClick={()=>window.open(`/reports/pm/${encodeURIComponent(pm.name)}`, '_blank')}
+                          style={{ background:T.primaryLight, color:T.primary, border:`1px solid ${T.primaryMid}`,
+                            borderRadius:8, padding:'8px 16px', fontSize:13, fontWeight:600, cursor:'pointer',
+                            display:'flex', alignItems:'center', gap:6 }}>
+                          👤 {pm.name}
+                          <span style={{ fontSize:11, background:T.primary, color:'#fff', borderRadius:20, padding:'1px 7px' }}>{pm.total}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
               );
             })()}
 
