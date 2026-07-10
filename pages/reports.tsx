@@ -736,6 +736,7 @@ export default function ReportsPage() {
               );
               return (
                 <>
+                {pmListButtons}
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                   {/* Card 1 — PO Value Champion */}
                   <div style={card}>
@@ -771,20 +772,6 @@ export default function ReportsPage() {
                       <RankRow key={pm.name} rank={i} name={pm.name}
                         value={`${pm.cleanPct}%`} sub={`${pm.total-pm.delayed} of ${pm.total} on track`}
                         color={pm.cleanPct>=80?T.success:pm.cleanPct>=60?T.warning:T.danger} bar={pm.cleanPct} barColor={pm.cleanPct>=80?T.success:pm.cleanPct>=60?T.warning:T.danger} />
-                    ))}
-                  </div>
-                </div>
-                <div style={card}>
-                  <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>👤 PM List — Click to view detailed report</div>
-                  <div style={{ display:'flex', flexWrap:'wrap' as const, gap:8 }}>
-                    {[...pmData].sort((a,b)=>b.total-a.total).map(pm => (
-                      <button key={pm.name} onClick={()=>window.open(`/reports/pm/${encodeURIComponent(pm.name)}`, '_blank')}
-                        style={{ background:T.primaryLight, color:T.primary, border:`1px solid ${T.primaryMid}`,
-                          borderRadius:8, padding:'8px 16px', fontSize:13, fontWeight:600, cursor:'pointer',
-                          display:'flex', alignItems:'center', gap:6 }}>
-                        👤 {pm.name}
-                        <span style={{ fontSize:11, background:T.primary, color:'#fff', borderRadius:20, padding:'1px 7px' }}>{pm.total}</span>
-                      </button>
                     ))}
                   </div>
                 </div>
