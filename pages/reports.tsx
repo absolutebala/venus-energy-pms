@@ -34,7 +34,6 @@ const REPORTS = [
   { key:'financial', label:'Financial Summary',      icon:'💰', desc:'PO value, billed, paid by region'         },
   { key:'pm',        label:'PM Performance',         icon:'👤', desc:'On-time rate, delayed, completed per PM'  },
   { key:'vendor',    label:'Vendor Performance',     icon:'🏢', desc:'Completion rate, delays per vendor'       },
-  { key:'aging',     label:'PO Aging Analysis',      icon:'⏰', desc:'Aging buckets, overdue projects'          },
 ];
 
 const PIE_COLORS = ['#2563EB','#DC2626','#16A34A','#D97706','#7C3AED','#6B7280'];
@@ -740,7 +739,7 @@ export default function ReportsPage() {
                   <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>👤 PM List — Click to view detailed report</div>
                   <div style={{ display:'flex', flexWrap:'wrap' as const, gap:8 }}>
                     {[...pmData].sort((a,b)=>b.total-a.total).map(pm => (
-                      <button key={pm.name} onClick={()=>window.open(`/reports/pm/${encodeURIComponent(pm.name)}`, '_blank')}
+                      <button key={pm.name} onClick={()=>router.push(`/reports/pm/${encodeURIComponent(pm.name)}`)}
                         style={{ background:T.primaryLight, color:T.primary, border:`1px solid ${T.primaryMid}`,
                           borderRadius:8, padding:'8px 16px', fontSize:13, fontWeight:600, cursor:'pointer',
                           display:'flex', alignItems:'center', gap:6 }}>

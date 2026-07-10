@@ -5,19 +5,18 @@ import { useProjects } from '@/context/ProjectContext';
 import { useAuth } from '@/context/AuthContext';
 import { T, fmtINR as fmt } from '@/lib/theme';
 import { createClient } from '@/lib/supabase';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
 
 const card: React.CSSProperties = { background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: '16px 20px', marginBottom: 16 };
 const th: React.CSSProperties = { padding: '8px 10px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase' as const, color: T.primary, background: T.primaryLight, textAlign: 'left' as const, borderBottom: `2px solid ${T.primaryMid}`, whiteSpace: 'nowrap' as const };
 const td: React.CSSProperties = { padding: '8px 10px', fontSize: 12, borderBottom: `1px solid ${T.border}`, verticalAlign: 'middle' as const };
 
 const REPORTS = [
-  { key:'executive', label:'Executive Summary', icon:'📊', desc:'KPIs, billing, payments' },
-  { key:'financial', label:'Financial Summary',  icon:'💰', desc:'PO value, billed, paid by region' },
-  { key:'pm',        label:'PM Performance',     icon:'👤', desc:'Leaderboard & drill-down' },
-  { key:'vendor',    label:'Vendor Performance', icon:'🏢', desc:'Completion rate, delays per vendor' },
-  { key:'aging',     label:'PO Aging',           icon:'⏳', desc:'Projects overdue > 60 days' },
-  { key:'stnsrn',    label:'STN / SRN',          icon:'📦', desc:'Material tracking summary' },
+  { key:'executive', label:'Executive Summary',   icon:'📊', desc:'KPIs, billing, payments' },
+  { key:'financial', label:'Financial Summary',   icon:'💰', desc:'PO value, billed, paid by region' },
+  { key:'status',    label:'Project Status',      icon:'📁', desc:'Status distribution across projects' },
+  { key:'pm',        label:'PM Performance',      icon:'👤', desc:'Leaderboard & drill-down' },
+  { key:'vendor',    label:'Vendor Performance',  icon:'🏢', desc:'Completion rate, delays per vendor' },
 ];
 
 const PIE_COLORS = ['#2563EB','#DC2626','#16A34A','#D97706','#7C3AED','#6B7280','#0D9488','#EC4899','#F97316','#84CC16'];
@@ -174,18 +173,17 @@ export default function PMDetailPage() {
             <>
               {/* 1. Project Status (pie) left + PTW, STN, SRN metrics right */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 0 }}>
-                {/* Left: Project Status pie */}
+                {/* Left: Project Status list */}
                 <div style={card}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 4 }}>📁 Project Status <span style={{ fontSize: 12, color: T.textMuted, fontWeight: 400 }}>({pmProjects.length} total)</span></div>
-                  <ResponsiveContainer width="100%" height={260}>
-                    <PieChart>
-                      <Pie data={statusGroups} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90}>
-                        {statusGroups.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                      </Pie>
-                      <Tooltip formatter={(v: any, name: any) => [`${v} projects`, name]} />
-                      <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 12 }}>📁 Project Status <span style={{ fontSize: 12, color: T.textMuted, fontWeight: 400 }}>({pmProjects.length} total)</span></div>
+                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+                    {statusGroups.map(({ name: sName, value }, i) => (
+                      <div key={sName} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: T.bg, borderRadius: 8, borderLeft: `4px solid ${PIE_COLORS[i % PIE_COLORS.length]}` }}>
+                        <span style={{ fontSize: 12, color: T.text, fontWeight: 500 }}>{sName}</span>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: PIE_COLORS[i % PIE_COLORS.length] }}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 {/* Right: PTW + STN + SRN stacked */}
                 <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
@@ -207,7 +205,7 @@ export default function PMDetailPage() {
                   </div>
                   {/* STN */}
                   <div style={card}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#D97706', marginBottom: 8 }}>📦 STN Status</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#D97706', marginBottom: 8 }}>📦 STN Status <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 400 }}>({stnItems.length} items)</span></div>
                     <MetricRow label="Total Qty Lifted"       value={stnMetrics.totalLifted} />
                     <MetricRow label="Total Qty Used"         value={stnMetrics.totalUsed} />
                     <MetricRow label="Pending Qty"            value={stnMetrics.totalPending} color={stnMetrics.totalPending > 0 ? T.warning : T.success} />
@@ -218,7 +216,7 @@ export default function PMDetailPage() {
                   </div>
                   {/* SRN */}
                   <div style={card}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#DC2626', marginBottom: 8 }}>🔄 SRN Status</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#DC2626', marginBottom: 8 }}>🔄 SRN Status <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 400 }}>({srnItems.length} items)</span></div>
                     <MetricRow label="Total Qty Lifted"       value={srnMetrics.totalLifted} />
                     <MetricRow label="Total Qty Used"         value={srnMetrics.totalUsed} />
                     <MetricRow label="Pending Qty"            value={srnMetrics.totalPending} color={srnMetrics.totalPending > 0 ? T.warning : T.success} />
