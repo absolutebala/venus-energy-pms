@@ -716,7 +716,7 @@ export default function ReportsPage() {
             )}
 
             {/* ── PM Performance Leaderboard ── */}
-            {active==='pm' && (<>{(() => {
+            {active==='pm' && (() => {
               const medal = (i:number) => i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
               const RankRow = ({ rank, name, value, sub, color, bar, barColor }: any) => (
                 <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', background:rank===0?'#FFFBEB':rank===1?'#F8FAFC':rank===2?'#FFF7ED':'#fff',
@@ -773,23 +773,22 @@ export default function ReportsPage() {
                     ))}
                   </div>
                 </div>
-                  {/* PM List */}
-                  <div style={{ ...card, gridColumn:'span 2' }}>
-                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>👤 PM List — Click to view detailed report</div>
-                    <div style={{ display:'flex', flexWrap:'wrap' as const, gap:8 }}>
-                      {[...pmData].sort((a,b)=>b.total-a.total).map(pm => (
-                        <button key={pm.name} onClick={()=>window.open(`/reports/pm/${encodeURIComponent(pm.name)}`, '_blank')}
-                          style={{ background:T.primaryLight, color:T.primary, border:`1px solid ${T.primaryMid}`,
-                            borderRadius:8, padding:'8px 16px', fontSize:13, fontWeight:600, cursor:'pointer',
-                            display:'flex', alignItems:'center', gap:6 }}>
-                          👤 {pm.name}
-                          <span style={{ fontSize:11, background:T.primary, color:'#fff', borderRadius:20, padding:'1px 7px' }}>{pm.total}</span>
-                        </button>
-                      ))}
-                    </div>
+                <div style={card}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>👤 PM List — Click to view detailed report</div>
+                  <div style={{ display:'flex', flexWrap:'wrap' as const, gap:8 }}>
+                    {[...pmData].sort((a,b)=>b.total-a.total).map(pm => (
+                      <button key={pm.name} onClick={()=>window.open(`/reports/pm/${encodeURIComponent(pm.name)}`, '_blank')}
+                        style={{ background:T.primaryLight, color:T.primary, border:`1px solid ${T.primaryMid}`,
+                          borderRadius:8, padding:'8px 16px', fontSize:13, fontWeight:600, cursor:'pointer',
+                          display:'flex', alignItems:'center', gap:6 }}>
+                        👤 {pm.name}
+                        <span style={{ fontSize:11, background:T.primary, color:'#fff', borderRadius:20, padding:'1px 7px' }}>{pm.total}</span>
+                      </button>
+                    ))}
                   </div>
+                </div>
               );
-            })()}</>}
+            })()}
 
             {/* ── Vendor Performance ── */}
             {active==='vendor' && (
