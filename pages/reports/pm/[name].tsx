@@ -105,34 +105,40 @@ export default function PMDetailPage() {
     return Object.entries(g).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
   }, [pmProjects]);
 
+  // Filtered STN/SRN items based on date-filtered projects
+  const filteredProjectIds = React.useMemo(() => new Set(filteredPmProjects.map(p => p.id)), [filteredPmProjects]);
+  const filteredStnItems = React.useMemo(() => stnItems.filter(i => filteredProjectIds.has(i.project_id)), [stnItems, filteredProjectIds]);
+  const filteredSrnItems = React.useMemo(() => srnItems.filter(i => filteredProjectIds.has(i.project_id)), [srnItems, filteredProjectIds]);
+  const filteredPtwItems = React.useMemo(() => ptwItems.filter(i => filteredProjectIds.has(i.project_id)), [ptwItems, filteredProjectIds]);
+
   // STN metrics
   const stnMetrics = React.useMemo(() => ({
-    totalLifted:  stnItems.reduce((a, i) => a + Number(i.issued_qty || 0), 0),
-    totalUsed:    stnItems.reduce((a, i) => a + Number(i.utilised_qty || 0), 0),
-    totalPending: stnItems.reduce((a, i) => a + Math.max(0, Number(i.issued_qty || 0) - Number(i.pm_approved_qty || i.utilised_qty || 0)), 0),
-    totalReturn:  stnItems.reduce((a, i) => a + Number(i.return_qty || 0), 0),
-    totalValue:   stnItems.reduce((a, i) => a + Number(i.amount || 0), 0),
-    pendingValue: stnItems.filter(i => !i.utilised_status || i.utilised_status === 'pending').reduce((a, i) => a + Number(i.amount || 0), 0),
-    avgAging:     pmProjects.length ? Math.round(pmProjects.reduce((a, p) => a + (p.aging || 0), 0) / pmProjects.length) : 0,
-  }), [stnItems, pmProjects]);
+    totalLifted:  filteredStnItems.reduce((a, i) => a + Number(i.issued_qty || 0), 0),
+    totalUsed:    filteredStnItems.reduce((a, i) => a + Number(i.utilised_qty || 0), 0),
+    totalPending: filteredStnItems.reduce((a, i) => a + Math.max(0, Number(i.issued_qty || 0) - Number(i.pm_approved_qty || i.utilised_qty || 0)), 0),
+    totalReturn:  filteredStnItems.reduce((a, i) => a + Number(i.return_qty || 0), 0),
+    totalValue:   filteredStnItems.reduce((a, i) => a + Number(i.amount || 0), 0),
+    pendingValue: filteredStnItems.filter(i => !i.utilised_status || i.utilised_status === 'pending').reduce((a, i) => a + Number(i.amount || 0), 0),
+    avgAging:     filteredPmProjects.length ? Math.round(filteredPmProjects.reduce((a, p) => a + (p.aging || 0), 0) / filteredPmProjects.length) : 0,
+  }), [filteredStnItems, filteredPmProjects]);
 
   // SRN metrics
   const srnMetrics = React.useMemo(() => ({
-    totalLifted:  srnItems.reduce((a, i) => a + Number(i.quantity || 0), 0),
-    totalUsed:    srnItems.filter(i => i.received === true).reduce((a, i) => a + Number(i.quantity || 0), 0),
-    totalPending: srnItems.filter(i => !i.received).reduce((a, i) => a + Number(i.quantity || 0), 0),
-    totalReturn:  srnItems.reduce((a, i) => a + Number(i.return_qty || 0), 0),
-    totalValue:   srnItems.reduce((a, i) => a + Number(i.amount || 0), 0),
-    pendingValue: srnItems.filter(i => !i.received).reduce((a, i) => a + Number(i.amount || 0), 0),
-    avgAging:     pmProjects.length ? Math.round(pmProjects.reduce((a, p) => a + (p.aging || 0), 0) / pmProjects.length) : 0,
-  }), [srnItems, pmProjects]);
+    totalLifted:  filteredSrnItems.reduce((a, i) => a + Number(i.quantity || 0), 0),
+    totalUsed:    filteredSrnItems.filter(i => i.received === true).reduce((a, i) => a + Number(i.quantity || 0), 0),
+    totalPending: filteredSrnItems.filter(i => !i.received).reduce((a, i) => a + Number(i.quantity || 0), 0),
+    totalReturn:  filteredSrnItems.reduce((a, i) => a + Number(i.return_qty || 0), 0),
+    totalValue:   filteredSrnItems.reduce((a, i) => a + Number(i.amount || 0), 0),
+    pendingValue: filteredSrnItems.filter(i => !i.received).reduce((a, i) => a + Number(i.amount || 0), 0),
+    avgAging:     filteredPmProjects.length ? Math.round(filteredPmProjects.reduce((a, p) => a + (p.aging || 0), 0) / filteredPmProjects.length) : 0,
+  }), [filteredSrnItems, filteredPmProjects]);
 
   // PTW metrics
   const ptwMetrics = React.useMemo(() => ({
-    total:    pmProjects.length,
-    raised:   new Set(ptwItems.map(p => p.project_id)).size,
-    notRaised: pmProjects.length - new Set(ptwItems.map(p => p.project_id)).size,
-  }), [ptwItems, pmProjects]);
+    total:     filteredPmProjects.length,
+    raised:    new Set(filteredPtwItems.map(p => p.project_id)).size,
+    notRaised: filteredPmProjects.length - new Set(filteredPtwItems.map(p => p.project_id)).size,
+  }), [filteredPtwItems, filteredPmProjects]);
 
   // STN/SRN table data (projects that have either STN or SRN)
   const stnSrnTableData = React.useMemo(() =>
@@ -331,7 +337,7 @@ export default function PMDetailPage() {
             <h1 style={{ fontSize: 20, fontWeight: 800, color: T.text, margin: 0 }}>👤 {pmName}</h1>
           </div>
           <div style={{ fontSize: 13, color: T.textMuted, marginTop: 4 }}>
-            {loading ? 'Loading...' : `${pmProjects.length} projects · ${stnItems.length} STN items · ${srnItems.length} SRN items`}
+            {loading ? 'Loading...' : `${filteredPmProjects.length} projects · ${filteredStnItems.length} STN items · ${filteredSrnItems.length} SRN items`}
           </div>
           {exportingPDF && (
             <div style={{ display:'flex', gap:20, marginTop:8, padding:'10px 16px', background:T.primaryLight, borderRadius:8, border:`1px solid ${T.primaryMid}` }}>
@@ -463,7 +469,7 @@ export default function PMDetailPage() {
                   </div>
                   {/* STN */}
                   <div style={card}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#D97706', marginBottom: 8 }}>📦 STN Status <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 400 }}>({stnItems.length} items)</span></div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#D97706', marginBottom: 8 }}>📦 STN Status <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 400 }}>({filteredStnItems.length} items)</span></div>
                     <MetricRow label="Total Qty Lifted"       value={stnMetrics.totalLifted} />
                     <MetricRow label="Total Qty Used"         value={stnMetrics.totalUsed} />
                     <MetricRow label="Pending Qty"            value={stnMetrics.totalPending} color={stnMetrics.totalPending > 0 ? T.warning : T.success} />
@@ -474,7 +480,7 @@ export default function PMDetailPage() {
                   </div>
                   {/* SRN */}
                   <div style={card}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#DC2626', marginBottom: 8 }}>🔄 SRN Status <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 400 }}>({srnItems.length} items)</span></div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#DC2626', marginBottom: 8 }}>🔄 SRN Status <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 400 }}>({filteredSrnItems.length} items)</span></div>
                     <MetricRow label="Total Qty Lifted"       value={srnMetrics.totalLifted} />
                     <MetricRow label="Total Qty Used"         value={srnMetrics.totalUsed} />
                     <MetricRow label="Pending Qty"            value={srnMetrics.totalPending} color={srnMetrics.totalPending > 0 ? T.warning : T.success} />
@@ -498,8 +504,8 @@ export default function PMDetailPage() {
                     </thead>
                     <tbody>
                       {stnSrnPaginated.map((p, i) => {
-                        const pStn = stnItems.filter(s => s.project_id === p.id);
-                        const pSrn = srnItems.filter(s => s.project_id === p.id);
+                        const pStn = filteredStnItems.filter(s => s.project_id === p.id);
+                        const pSrn = filteredSrnItems.filter(s => s.project_id === p.id);
                         const absIdx = (stnSrnPage - 1) * PER_PAGE + i + 1;
                         return (
                           <tr key={p.id} style={{ background: i % 2 === 0 ? '#fff' : T.bg }}>
