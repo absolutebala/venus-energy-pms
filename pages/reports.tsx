@@ -735,6 +735,7 @@ export default function ReportsPage() {
                 </div>
               );
               return (
+                <>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                   {/* Card 1 — PO Value Champion */}
                   <div style={card}>
@@ -787,6 +788,7 @@ export default function ReportsPage() {
                     ))}
                   </div>
                 </div>
+                </>
               );
             })()}
 
