@@ -4,9 +4,19 @@ import Layout from '@/components/Layout';
 import { useProjects } from '@/context/ProjectContext';
 import { useAuth } from '@/context/AuthContext';
 import { T, fmtINR as fmt } from '@/lib/theme';
+import * as XLSX from 'xlsx';
 import { createClient } from '@/lib/supabase';
 
 
+
+const printStyle = `
+@media print {
+  nav, button, .no-print { display: none !important; }
+  body { font-size: 11px; }
+  * { box-shadow: none !important; }
+  @page { margin: 1cm; size: A4; }
+}
+`;
 const card: React.CSSProperties = { background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: '16px 20px', marginBottom: 16 };
 const th: React.CSSProperties = { padding: '8px 10px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase' as const, color: T.primary, background: T.primaryLight, textAlign: 'left' as const, borderBottom: `2px solid ${T.primaryMid}`, whiteSpace: 'nowrap' as const };
 const td: React.CSSProperties = { padding: '8px 10px', fontSize: 12, borderBottom: `1px solid ${T.border}`, verticalAlign: 'middle' as const };
@@ -127,10 +137,89 @@ export default function PMDetailPage() {
     </div>
   );
 
+  const exportToExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Summary
+    const summaryRows = [
+      { Metric: 'PM Name', Value: pmName },
+      { Metric: 'Total Projects', Value: pmProjects.length },
+      { Metric: 'STN Items', Value: stnItems.length },
+      { Metric: 'SRN Items', Value: srnItems.length },
+      { Metric: '', Value: '' },
+      { Metric: '--- STN Metrics ---', Value: '' },
+      { Metric: 'STN Total Qty Lifted', Value: stnMetrics.totalLifted },
+      { Metric: 'STN Total Qty Used', Value: stnMetrics.totalUsed },
+      { Metric: 'STN Pending Qty', Value: stnMetrics.totalPending },
+      { Metric: 'STN Return Qty', Value: stnMetrics.totalReturn },
+      { Metric: 'STN Material Value', Value: stnMetrics.totalValue },
+      { Metric: 'STN Material Pending Value', Value: stnMetrics.pendingValue },
+      { Metric: 'STN Avg Aging Days', Value: stnMetrics.avgAging },
+      { Metric: '', Value: '' },
+      { Metric: '--- SRN Metrics ---', Value: '' },
+      { Metric: 'SRN Total Qty Lifted', Value: srnMetrics.totalLifted },
+      { Metric: 'SRN Total Qty Used', Value: srnMetrics.totalUsed },
+      { Metric: 'SRN Pending Qty', Value: srnMetrics.totalPending },
+      { Metric: 'SRN Return Qty', Value: srnMetrics.totalReturn },
+      { Metric: 'SRN Material Value', Value: srnMetrics.totalValue },
+      { Metric: 'SRN Material Pending Value', Value: srnMetrics.pendingValue },
+      { Metric: 'SRN Avg Aging Days', Value: srnMetrics.avgAging },
+      { Metric: '', Value: '' },
+      { Metric: '--- PTW Metrics ---', Value: '' },
+      { Metric: 'Total PTEs', Value: ptwMetrics.total },
+      { Metric: 'Raised PTEs', Value: ptwMetrics.raised },
+      { Metric: 'Not Raised PTEs', Value: ptwMetrics.notRaised },
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), 'Summary');
+
+    // Sheet 2: Project Status
+    const statusRows = statusGroups.map(({ name: s, value }) => ({
+      'Project Status': s,
+      'Count': value,
+      'Percentage (%)': pmProjects.length ? Math.round(value / pmProjects.length * 100) : 0,
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(statusRows), 'Project Status');
+
+    // Sheet 3: Project List
+    const projRows = pmProjects.map((p, i) => ({
+      'S.No': i + 1,
+      'PO Number': (p as any).poNo || '—',
+      'Indus ID': (p as any).indusId || '—',
+      'Region': (p as any).region || '—',
+      'Project Status': (p as any).projectStatus || '—',
+      'PM': (p as any).pm || '—',
+      'RM': (p as any).rm || '—',
+      'Vendor': (p as any).vendor || '—',
+      'Aging (days)': (p as any).aging || 0,
+    }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(projRows), 'Projects');
+
+    // Sheet 4: STN/SRN Detail
+    const stnSrnRows = pmProjects.map((p, i) => {
+      const pStn = stnItems.filter(s => s.project_id === p.id);
+      const pSrn = srnItems.filter(s => s.project_id === p.id);
+      return {
+        'S.No': i + 1,
+        'PO Number': (p as any).poNo || '—',
+        'Indus ID': (p as any).indusId || '—',
+        'Region': (p as any).region || '—',
+        'STN Total Qty': pStn.reduce((a, s) => a + Number(s.issued_qty || 0), 0),
+        'STN Received Qty': pStn.reduce((a, s) => a + Number(s.pm_approved_qty || 0), 0),
+        'STN Return Qty': pStn.reduce((a, s) => a + Number(s.return_qty || 0), 0),
+        'SRN Total Qty': pSrn.reduce((a, s) => a + Number(s.quantity || 0), 0),
+        'SRN Return Qty': pSrn.reduce((a, s) => a + Number(s.return_qty || 0), 0),
+      };
+    }).filter(r => r['STN Total Qty'] > 0 || r['SRN Total Qty'] > 0);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stnSrnRows), 'STN-SRN Detail');
+
+    XLSX.writeFile(wb, `PM_Report_${pmName.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
   if (!pmName) return null;
 
   return (
     <Layout>
+      <style dangerouslySetInnerHTML={{ __html: printStyle }} />
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
@@ -145,6 +234,18 @@ export default function PMDetailPage() {
           <div style={{ fontSize: 13, color: T.textMuted, marginTop: 4 }}>
             {loading ? 'Loading...' : `${pmProjects.length} projects · ${stnItems.length} STN items · ${srnItems.length} SRN items`}
           </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={exportToExcel} disabled={loading}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 14px', fontSize: 12, fontWeight: 600,
+              color: '#166534', background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: 7, cursor: 'pointer' }}>
+            📥 Excel
+          </button>
+          <button onClick={() => window.print()}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 14px', fontSize: 12, fontWeight: 600,
+              color: '#1E40AF', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 7, cursor: 'pointer' }}>
+            🖨️ Print / PDF
+          </button>
         </div>
       </div>
 
