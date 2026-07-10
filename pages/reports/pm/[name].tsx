@@ -34,7 +34,7 @@ const REPORTS = [
 ];
 
 const PIE_COLORS = ['#2563EB','#DC2626','#16A34A','#D97706','#7C3AED','#6B7280','#0D9488','#EC4899','#F97316','#84CC16'];
-const PER_PAGE = 10;
+const PER_PAGE_DEFAULT = 10;
 
 const MetricRow = ({ label, value, color }: { label: string; value: any; color?: string }) => (
   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: `1px solid ${T.border}` }}>
@@ -55,7 +55,9 @@ export default function PMDetailPage() {
   const [ptwItems, setPtwItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [projPage, setProjPage] = useState(1);
+  const [projPerPage, setProjPerPage] = useState(PER_PAGE_DEFAULT);
   const [stnSrnPage, setStnSrnPage] = useState(1);
+  const [stnSrnPerPage, setStnSrnPerPage] = useState(PER_PAGE_DEFAULT);
   const [datePreset, setDatePreset] = useState<'all'|'week'|'month'|'custom'>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -154,18 +156,36 @@ export default function PMDetailPage() {
   );
 
   // Pagination
-  const projTotalPages = Math.max(1, Math.ceil(filteredPmProjects.length / PER_PAGE));
-  const projPaginated = filteredPmProjects.slice((projPage - 1) * PER_PAGE, projPage * PER_PAGE);
-  const stnSrnTotalPages = Math.max(1, Math.ceil(stnSrnTableData.length / PER_PAGE));
-  const stnSrnPaginated = stnSrnTableData.slice((stnSrnPage - 1) * PER_PAGE, stnSrnPage * PER_PAGE);
+  const projTotalPages = Math.max(1, Math.ceil(filteredPmProjects.length / projPerPage));
+  const projPaginated = filteredPmProjects.slice((projPage - 1) * projPerPage, projPage * projPerPage);
+  const stnSrnTotalPages = Math.max(1, Math.ceil(stnSrnTableData.length / stnSrnPerPage));
+  const stnSrnPaginated = stnSrnTableData.slice((stnSrnPage - 1) * stnSrnPerPage, stnSrnPage * stnSrnPerPage);
 
-  const Pagination = ({ page, total, setPage }: { page: number; total: number; setPage: (p: number) => void }) => (
-    <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 12 }}>
-      <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}
-        style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${T.border}`, background: page === 1 ? T.bg : '#fff', cursor: page === 1 ? 'default' : 'pointer', fontSize: 12 }}>← Prev</button>
-      <span style={{ padding: '4px 10px', fontSize: 12, color: T.textMuted }}>Page {page} of {total}</span>
-      <button onClick={() => setPage(Math.min(total, page + 1))} disabled={page === total}
-        style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${T.border}`, background: page === total ? T.bg : '#fff', cursor: page === total ? 'default' : 'pointer', fontSize: 12 }}>Next →</button>
+  const Pagination = ({ page, total, setPage, perPage, setPerPage, totalRecords }: {
+    page: number; total: number; setPage: (p: number) => void;
+    perPage: number; setPerPage: (n: number) => void; totalRecords: number;
+  }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ fontSize: 12, color: T.textMuted }}>Rows per page:</span>
+        {[10, 50, 100].map(n => (
+          <button key={n} onClick={() => { setPerPage(n); setPage(1); }}
+            style={{ padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              border: `1px solid ${perPage === n ? T.primary : T.border}`,
+              background: perPage === n ? T.primary : '#fff',
+              color: perPage === n ? '#fff' : T.textMuted }}>
+            {n}
+          </button>
+        ))}
+        <span style={{ fontSize: 11, color: T.textMuted, marginLeft: 4 }}>({totalRecords} total)</span>
+      </div>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}
+          style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${T.border}`, background: page === 1 ? T.bg : '#fff', cursor: page === 1 ? 'default' : 'pointer', fontSize: 12 }}>← Prev</button>
+        <span style={{ padding: '4px 10px', fontSize: 12, color: T.textMuted }}>Page {page} of {total}</span>
+        <button onClick={() => setPage(Math.min(total, page + 1))} disabled={page === total}
+          style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${T.border}`, background: page === total ? T.bg : '#fff', cursor: page === total ? 'default' : 'pointer', fontSize: 12 }}>Next →</button>
+      </div>
     </div>
   );
 
@@ -538,7 +558,8 @@ export default function PMDetailPage() {
                     </tbody>
                   </table>
                 </div>
-                {stnSrnTotalPages > 1 && <Pagination page={stnSrnPage} total={stnSrnTotalPages} setPage={setStnSrnPage} />}
+                <Pagination page={stnSrnPage} total={stnSrnTotalPages} setPage={setStnSrnPage}
+                  perPage={stnSrnPerPage} setPerPage={setStnSrnPerPage} totalRecords={stnSrnTableData.length} />
               </div>
 
               {/* 4. Project List — last section with pagination */}
@@ -573,7 +594,8 @@ export default function PMDetailPage() {
                     </tbody>
                   </table>
                 </div>
-                {projTotalPages > 1 && <Pagination page={projPage} total={projTotalPages} setPage={setProjPage} />}
+                <Pagination page={projPage} total={projTotalPages} setPage={setProjPage}
+                  perPage={projPerPage} setPerPage={setProjPerPage} totalRecords={filteredPmProjects.length} />
               </div>
             </>
           )}
