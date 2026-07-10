@@ -106,7 +106,7 @@ export default function PMDetailPage() {
     const g: Record<string, number> = {};
     filteredPmProjects.forEach(p => { const s = (p as any).projectStatus || 'Not Set'; g[s] = (g[s] || 0) + 1; });
     return Object.entries(g).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
-  }, [pmProjects]);
+  }, [filteredPmProjects]);
 
   // Filtered STN/SRN items based on date-filtered projects
   const filteredProjectIds = React.useMemo(() => new Set(filteredPmProjects.map(p => p.id)), [filteredPmProjects]);
