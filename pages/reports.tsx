@@ -716,7 +716,7 @@ export default function ReportsPage() {
             )}
 
             {/* ── PM Performance Leaderboard ── */}
-            {active==='pm' && (() => {
+            {active==='pm' && (<>{(() => {
               const medal = (i:number) => i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
               const RankRow = ({ rank, name, value, sub, color, bar, barColor }: any) => (
                 <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', background:rank===0?'#FFFBEB':rank===1?'#F8FAFC':rank===2?'#FFF7ED':'#fff',
@@ -789,7 +789,7 @@ export default function ReportsPage() {
                     </div>
                   </div>
               );
-            })()}
+            })()}</>}
 
             {/* ── Vendor Performance ── */}
             {active==='vendor' && (
