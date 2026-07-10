@@ -540,7 +540,7 @@ export default function PMDetailPage() {
                       {stnSrnPaginated.map((p, i) => {
                         const pStn = filteredStnItems.filter(s => s.project_id === p.id);
                         const pSrn = filteredSrnItems.filter(s => s.project_id === p.id);
-                        const absIdx = (stnSrnPage - 1) * PER_PAGE + i + 1;
+                        const absIdx = (stnSrnPage - 1) * stnSrnPerPage + i + 1;
                         return (
                           <tr key={p.id} style={{ background: i % 2 === 0 ? '#fff' : T.bg }}>
                             <td style={{ ...td, color: T.textMuted }}>{absIdx}</td>
