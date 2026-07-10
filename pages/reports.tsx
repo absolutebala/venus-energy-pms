@@ -758,32 +758,14 @@ export default function ReportsPage() {
                         color={pm.avgAging<=60?T.success:pm.avgAging<=90?T.warning:T.danger} />
                     ))}
                   </div>
-                  {/* Card 4 — STN Champion */}
+                  {/* Card 4 — Clean Portfolio */}
                   <div style={card}>
-                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>📦 STN Approval Champion</div>
-                    {[...pmData].filter(pm=>pm.stnTotal>0).sort((a,b)=>b.stnRate-a.stnRate).slice(0,5).map((pm,i)=>(
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>🛡️ Clean Portfolio <span style={{ fontSize:10, color:T.textMuted, fontWeight:400 }}>(aging ≤90d)</span></div>
+                    {[...pmData].sort((a,b)=>b.cleanPct-a.cleanPct).slice(0,5).map((pm,i)=>(
                       <RankRow key={pm.name} rank={i} name={pm.name}
-                        value={`${pm.stnRate}%`} sub={`${pm.stnApproved}/${pm.stnTotal} approved · ${pm.stnPending} pending`}
-                        color={pm.stnRate>=80?T.success:pm.stnRate>=50?T.warning:T.danger} bar={pm.stnRate} barColor={pm.stnRate>=80?T.success:pm.stnRate>=50?T.warning:T.danger} />
+                        value={`${pm.cleanPct}%`} sub={`${pm.total-pm.delayed} of ${pm.total} on track`}
+                        color={pm.cleanPct>=80?T.success:pm.cleanPct>=60?T.warning:T.danger} bar={pm.cleanPct} barColor={pm.cleanPct>=80?T.success:pm.cleanPct>=60?T.warning:T.danger} />
                     ))}
-                    {pmData.filter(pm=>pm.stnTotal>0).length===0 && <div style={{ color:T.textMuted, fontSize:13 }}>No STN data</div>}
-                  </div>
-                  {/* Card 5 — Clean Portfolio */}
-                  <div style={{ ...card, gridColumn:'span 2' }}>
-                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>🛡️ Clean Portfolio <span style={{ fontSize:10, color:T.textMuted, fontWeight:400 }}>(% projects not delayed — aging ≤90d)</span></div>
-                    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
-                      {[...pmData].sort((a,b)=>b.cleanPct-a.cleanPct).map((pm,i)=>(
-                        <div key={pm.name} style={{ padding:'12px 14px', background:pm.cleanPct>=80?'#F0FDF4':pm.cleanPct>=60?'#FFFBEB':'#FEF2F2',
-                          borderRadius:8, border:`1px solid ${pm.cleanPct>=80?'#BBF7D0':pm.cleanPct>=60?'#FDE68A':'#FECACA'}` }}>
-                          <div style={{ display:'flex', alignItems:'center', gap:4, marginBottom:4 }}>
-                            <span>{medal(i)}</span>
-                            <span style={{ fontSize:12, fontWeight:700, color:T.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{pm.name}</span>
-                          </div>
-                          <div style={{ fontSize:22, fontWeight:800, color:pm.cleanPct>=80?T.success:pm.cleanPct>=60?T.warning:T.danger }}>{pm.cleanPct}%</div>
-                          <div style={{ fontSize:10, color:T.textMuted }}>{pm.total-(pm.delayed)} of {pm.total} on track</div>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 </div>
               );
