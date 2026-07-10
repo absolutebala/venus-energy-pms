@@ -237,14 +237,25 @@ export default function ReportsPage() {
   const pms = Array.from(new Set(projects.map((p:any)=>p.pm).filter(Boolean))) as string[];
   const pmData = pms.map(pm => {
     const ps = projects.filter((p:any)=>p.pm===pm);
-    const completed = ps.filter((p:any)=>['completed','billing_review'].includes(p.status)).length;
+    const completed  = ps.filter((p:any)=>(p as any).projectStatus==='WCC Raised').length;
+    const delayed    = ps.filter((p:any)=>p.aging>90).length;
+    const poValue    = ps.reduce((a,p:any)=>a+Number(p.poValue||0),0);
+    const avgAging   = ps.length ? Math.round(ps.reduce((a,p:any)=>a+(p.aging||0),0)/ps.length) : 0;
+    const cleanPct   = ps.length ? Math.round(ps.filter((p:any)=>p.aging<=90).length/ps.length*100) : 0;
+    // STN metrics
+    const pmProjectIds = new Set(ps.map((p:any)=>p.id));
+    const pmStnItems = materials.filter(m => pmProjectIds.has(m.projectId));
+    const stnTotal    = pmStnItems.length;
+    const stnApproved = pmStnItems.filter(m => m.utilisedStatus==='pm_approved').length;
+    const stnPending  = pmStnItems.filter(m => m.utilisedStatus==='submitted').length;
+    const stnRate     = stnTotal ? Math.round(stnApproved/stnTotal*100) : 0;
+    const completionRate = ps.length ? Math.round(completed/ps.length*100) : 0;
     return {
-      name: pm, total: ps.length,
-      delayed:   ps.filter((p:any)=>p.status==='delayed').length,
-      completed,
-      onTime: Math.round(100-(ps.filter((p:any)=>p.status==='delayed').length/ps.length*100)),
+      name: pm, total: ps.length, completed, delayed, poValue, avgAging,
+      cleanPct, stnTotal, stnApproved, stnPending, stnRate, completionRate,
+      onTime: Math.round(100-(delayed/Math.max(ps.length,1)*100)),
     };
-  });
+  }).filter(pm => pm.total > 0);
 
   const vendors = Array.from(new Set(projects.map((p:any)=>p.vendor).filter(Boolean))) as string[];
   const vendorData = vendors.map(v => {
@@ -329,8 +340,11 @@ export default function ReportsPage() {
       sheetName = 'PM Performance';
       rows = pmData.map(p => ({
         'Project Manager': p.name, 'Total Projects': p.total,
-        'Completed': p.completed, 'Delayed': p.delayed,
-        'On-Time Rate (%)': p.onTime,
+        'Completed (WCC Raised)': p.completed, 'Completion Rate (%)': p.completionRate,
+        'Delayed (>90d)': p.delayed, 'Avg Aging (days)': p.avgAging,
+        'Clean Portfolio (%)': p.cleanPct,
+        'PO Value (₹)': p.poValue,
+        'STN Total': p.stnTotal, 'STN Approved': p.stnApproved, 'STN Approval Rate (%)': p.stnRate,
       }));
     } else if (active === 'vendor') {
       sheetName = 'Vendor Performance';
@@ -696,31 +710,84 @@ export default function ReportsPage() {
               </div>
             )}
 
-            {/* ── PM Performance ── */}
-            {active==='pm' && (
-              <div style={card}>
-                <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>PM Performance Overview</div>
-                {pmData.map((pm,i)=>(
-                  <div key={i} style={{ padding:'14px 16px', background:T.bg, borderRadius:10, marginBottom:10 }}>
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-                      <div style={{ fontSize:14, fontWeight:700 }}>{pm.name}</div>
-                      <div style={{ display:'flex', gap:8 }}>
-                        <span style={{ fontSize:12, color:T.info, background:T.primaryLight, padding:'2px 10px', borderRadius:10, fontWeight:600 }}>{pm.total} projects</span>
-                        {pm.delayed>0&&<span style={{ fontSize:12, color:T.danger, background:'#FEF2F2', padding:'2px 10px', borderRadius:10, fontWeight:600 }}>{pm.delayed} delayed</span>}
-                        <span style={{ fontSize:12, color:T.success, background:T.successBg, padding:'2px 10px', borderRadius:10, fontWeight:600 }}>{pm.completed} completed</span>
+            {/* ── PM Performance Leaderboard ── */}
+            {active==='pm' && (() => {
+              const medal = (i:number) => i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+              const RankRow = ({ rank, name, value, sub, color, bar, barColor }: any) => (
+                <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', background:rank===0?'#FFFBEB':rank===1?'#F8FAFC':rank===2?'#FFF7ED':'#fff',
+                  borderRadius:8, marginBottom:6, border:`1px solid ${rank===0?'#FDE68A':rank===1?'#E2E8F0':rank===2?'#FED7AA':T.border}` }}>
+                  <div style={{ fontSize:18, width:28, textAlign:'center' as const }}>{medal(rank)||<span style={{ fontSize:13, color:T.textMuted, fontWeight:700 }}>#{rank+1}</span>}</div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{name}</div>
+                    {sub && <div style={{ fontSize:11, color:T.textMuted }}>{sub}</div>}
+                    {bar !== undefined && (
+                      <div style={{ height:4, background:T.border, borderRadius:2, marginTop:4 }}>
+                        <div style={{ height:'100%', width:`${Math.min(bar,100)}%`, background:barColor||T.primary, borderRadius:2, transition:'width 0.5s' }} />
                       </div>
-                    </div>
-                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}>
-                      <span style={{ fontSize:12, color:T.textMuted }}>On-Time Rate</span>
-                      <span style={{ fontSize:12, fontWeight:700, color:PCT_CLR(pm.onTime) }}>{pm.onTime}%</span>
-                    </div>
-                    <div style={{ height:6, background:T.border, borderRadius:3 }}>
-                      <div style={{ height:'100%', width:`${pm.onTime}%`, background:PCT_CLR(pm.onTime), borderRadius:3 }} />
+                    )}
+                  </div>
+                  <div style={{ fontSize:16, fontWeight:800, color:color||T.primary, whiteSpace:'nowrap' as const }}>{value}</div>
+                </div>
+              );
+              return (
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                  {/* Card 1 — PO Value Champion */}
+                  <div style={card}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>💰 PO Value Champion</div>
+                    {[...pmData].sort((a,b)=>b.poValue-a.poValue).slice(0,5).map((pm,i)=>(
+                      <RankRow key={pm.name} rank={i} name={pm.name}
+                        value={fmt(pm.poValue)} sub={`${pm.total} projects`}
+                        color='#7C3AED' bar={pm.poValue/Math.max(...pmData.map(p=>p.poValue))*100} barColor='#7C3AED' />
+                    ))}
+                  </div>
+                  {/* Card 2 — Completion Race */}
+                  <div style={card}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>🏁 Completion Race (WCC Raised)</div>
+                    {[...pmData].sort((a,b)=>b.completionRate-a.completionRate).slice(0,5).map((pm,i)=>(
+                      <RankRow key={pm.name} rank={i} name={pm.name}
+                        value={`${pm.completionRate}%`} sub={`${pm.completed} of ${pm.total} completed`}
+                        color={pm.completionRate>=50?T.success:T.warning} bar={pm.completionRate} barColor={pm.completionRate>=50?T.success:T.warning} />
+                    ))}
+                  </div>
+                  {/* Card 3 — Speed Champion */}
+                  <div style={card}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>⚡ Speed Champion <span style={{ fontSize:10, color:T.textMuted, fontWeight:400 }}>(lower avg aging = better)</span></div>
+                    {[...pmData].sort((a,b)=>a.avgAging-b.avgAging).slice(0,5).map((pm,i)=>(
+                      <RankRow key={pm.name} rank={i} name={pm.name}
+                        value={`${pm.avgAging}d`} sub={`${pm.delayed} delayed (>90d)`}
+                        color={pm.avgAging<=60?T.success:pm.avgAging<=90?T.warning:T.danger} />
+                    ))}
+                  </div>
+                  {/* Card 4 — STN Champion */}
+                  <div style={card}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>📦 STN Approval Champion</div>
+                    {[...pmData].filter(pm=>pm.stnTotal>0).sort((a,b)=>b.stnRate-a.stnRate).slice(0,5).map((pm,i)=>(
+                      <RankRow key={pm.name} rank={i} name={pm.name}
+                        value={`${pm.stnRate}%`} sub={`${pm.stnApproved}/${pm.stnTotal} approved · ${pm.stnPending} pending`}
+                        color={pm.stnRate>=80?T.success:pm.stnRate>=50?T.warning:T.danger} bar={pm.stnRate} barColor={pm.stnRate>=80?T.success:pm.stnRate>=50?T.warning:T.danger} />
+                    ))}
+                    {pmData.filter(pm=>pm.stnTotal>0).length===0 && <div style={{ color:T.textMuted, fontSize:13 }}>No STN data</div>}
+                  </div>
+                  {/* Card 5 — Clean Portfolio */}
+                  <div style={{ ...card, gridColumn:'span 2' }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>🛡️ Clean Portfolio <span style={{ fontSize:10, color:T.textMuted, fontWeight:400 }}>(% projects not delayed — aging ≤90d)</span></div>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+                      {[...pmData].sort((a,b)=>b.cleanPct-a.cleanPct).map((pm,i)=>(
+                        <div key={pm.name} style={{ padding:'12px 14px', background:pm.cleanPct>=80?'#F0FDF4':pm.cleanPct>=60?'#FFFBEB':'#FEF2F2',
+                          borderRadius:8, border:`1px solid ${pm.cleanPct>=80?'#BBF7D0':pm.cleanPct>=60?'#FDE68A':'#FECACA'}` }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:4, marginBottom:4 }}>
+                            <span>{medal(i)}</span>
+                            <span style={{ fontSize:12, fontWeight:700, color:T.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{pm.name}</span>
+                          </div>
+                          <div style={{ fontSize:22, fontWeight:800, color:pm.cleanPct>=80?T.success:pm.cleanPct>=60?T.warning:T.danger }}>{pm.cleanPct}%</div>
+                          <div style={{ fontSize:10, color:T.textMuted }}>{pm.total-(pm.delayed)} of {pm.total} on track</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              );
+            })()}
 
             {/* ── Vendor Performance ── */}
             {active==='vendor' && (
