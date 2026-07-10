@@ -54,6 +54,9 @@ export default function PMDetailPage() {
   const [loading, setLoading] = useState(true);
   const [projPage, setProjPage] = useState(1);
   const [stnSrnPage, setStnSrnPage] = useState(1);
+  const [datePreset, setDatePreset] = useState<'all'|'week'|'month'|'custom'>('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const pmProjects = React.useMemo(() =>
     (allProjects as any[]).filter(p => p.pm === pmName),
@@ -77,10 +80,28 @@ export default function PMDetailPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Date-filtered projects
+  const filteredPmProjects = React.useMemo(() => {
+    if (datePreset === 'all') return pmProjects;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const startOfWeek = new Date(today); startOfWeek.setDate(today.getDate() - today.getDay());
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    return pmProjects.filter(p => {
+      const d = (p as any).startDate;
+      if (!d) return false;
+      const date = new Date(d);
+      if (datePreset === 'week')   return date >= startOfWeek && date <= today;
+      if (datePreset === 'month')  return date >= startOfMonth && date <= today;
+      if (datePreset === 'custom' && dateFrom && dateTo)
+        return date >= new Date(dateFrom) && date <= new Date(dateTo);
+      return true;
+    });
+  }, [pmProjects, datePreset, dateFrom, dateTo]);
+
   // Project Status breakdown for pie chart
   const statusGroups = React.useMemo(() => {
     const g: Record<string, number> = {};
-    pmProjects.forEach(p => { const s = (p as any).projectStatus || 'Not Set'; g[s] = (g[s] || 0) + 1; });
+    filteredPmProjects.forEach(p => { const s = (p as any).projectStatus || 'Not Set'; g[s] = (g[s] || 0) + 1; });
     return Object.entries(g).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
   }, [pmProjects]);
 
@@ -115,7 +136,7 @@ export default function PMDetailPage() {
 
   // STN/SRN table data (projects that have either STN or SRN)
   const stnSrnTableData = React.useMemo(() =>
-    pmProjects.filter(p => {
+    filteredPmProjects.filter(p => {
       const hasStn = stnItems.some(s => s.project_id === p.id);
       const hasSrn = srnItems.some(s => s.project_id === p.id);
       return hasStn || hasSrn;
@@ -124,8 +145,8 @@ export default function PMDetailPage() {
   );
 
   // Pagination
-  const projTotalPages = Math.max(1, Math.ceil(pmProjects.length / PER_PAGE));
-  const projPaginated = pmProjects.slice((projPage - 1) * PER_PAGE, projPage * PER_PAGE);
+  const projTotalPages = Math.max(1, Math.ceil(filteredPmProjects.length / PER_PAGE));
+  const projPaginated = filteredPmProjects.slice((projPage - 1) * PER_PAGE, projPage * PER_PAGE);
   const stnSrnTotalPages = Math.max(1, Math.ceil(stnSrnTableData.length / PER_PAGE));
   const stnSrnPaginated = stnSrnTableData.slice((stnSrnPage - 1) * PER_PAGE, stnSrnPage * PER_PAGE);
 
@@ -335,7 +356,24 @@ export default function PMDetailPage() {
             </div>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const }}>
+          {/* Date filters */}
+          {(['all','week','month','custom'] as const).map(preset => (
+            <button key={preset} onClick={() => { setDatePreset(preset); setProjPage(1); setStnSrnPage(1); }}
+              style={{ padding: '5px 12px', fontSize: 12, fontWeight: 600, borderRadius: 7, border: `1px solid ${datePreset===preset?T.primary:T.border}`,
+                background: datePreset===preset ? T.primary : '#fff', color: datePreset===preset ? '#fff' : T.textMuted, cursor: 'pointer' }}>
+              {preset === 'all' ? 'All' : preset === 'week' ? 'This Week' : preset === 'month' ? 'This Month' : 'Custom'}
+            </button>
+          ))}
+          {datePreset === 'custom' && (
+            <>
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} max={new Date().toISOString().split('T')[0]}
+                style={{ padding: '4px 8px', fontSize: 12, border: `1px solid ${T.border}`, borderRadius: 7, outline: 'none' }} />
+              <span style={{ fontSize: 12, color: T.textMuted }}>to</span>
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} max={new Date().toISOString().split('T')[0]}
+                style={{ padding: '4px 8px', fontSize: 12, border: `1px solid ${T.border}`, borderRadius: 7, outline: 'none' }} />
+            </>
+          )}
           <button onClick={exportToExcel} disabled={loading}
             style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 14px', fontSize: 12, fontWeight: 600,
               color: '#166534', background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: 7, cursor: 'pointer' }}>
@@ -377,7 +415,7 @@ export default function PMDetailPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 0 }}>
                 {/* Left: Project Status list */}
                 <div style={card}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 12 }}>📁 Project Status <span style={{ fontSize: 12, color: T.textMuted, fontWeight: 400 }}>({pmProjects.length} total)</span></div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 12 }}>📁 Project Status <span style={{ fontSize: 12, color: T.textMuted, fontWeight: 400 }}>({filteredPmProjects.length} total)</span></div>
                   <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
                     {statusGroups.map(({ name: sName, value }, i) => {
                       const pct = pmProjects.length ? Math.round(value / pmProjects.length * 100) : 0;
@@ -475,7 +513,7 @@ export default function PMDetailPage() {
 
               {/* 4. Project List — last section with pagination */}
               <div style={card}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 12 }}>📋 Project List <span style={{ fontSize: 12, color: T.textMuted, fontWeight: 400 }}>({pmProjects.length} projects)</span></div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 12 }}>📋 Project List <span style={{ fontSize: 12, color: T.textMuted, fontWeight: 400 }}>({filteredPmProjects.length} projects)</span></div>
                 <div style={{ overflowX: 'auto' as const }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 12 }}>
                     <thead>
