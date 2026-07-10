@@ -12,6 +12,8 @@ import { createClient } from '@/lib/supabase';
 
 
 const printStyle = `
+@keyframes spin { to { transform: rotate(360deg); } }
+
 @media print {
   nav, button, .no-print { display: none !important; }
   body { font-size: 11px; }
@@ -57,6 +59,7 @@ export default function PMDetailPage() {
   const [datePreset, setDatePreset] = useState<'all'|'week'|'month'|'custom'>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [isFiltering, startFilterTransition] = React.useTransition();
 
   const pmProjects = React.useMemo(() =>
     (allProjects as any[]).filter(p => p.pm === pmName),
@@ -337,7 +340,7 @@ export default function PMDetailPage() {
             <h1 style={{ fontSize: 20, fontWeight: 800, color: T.text, margin: 0 }}>👤 {pmName}</h1>
           </div>
           <div style={{ fontSize: 13, color: T.textMuted, marginTop: 4 }}>
-            {loading ? 'Loading...' : `${filteredPmProjects.length} projects · ${filteredStnItems.length} STN items · ${filteredSrnItems.length} SRN items`}
+            {loading ? 'Loading...' : isFiltering ? '⏳ Filtering...' : `${filteredPmProjects.length} projects · ${filteredStnItems.length} STN items · ${filteredSrnItems.length} SRN items`}
           </div>
           {exportingPDF && (
             <div style={{ display:'flex', gap:20, marginTop:8, padding:'10px 16px', background:T.primaryLight, borderRadius:8, border:`1px solid ${T.primaryMid}` }}>
@@ -351,7 +354,7 @@ export default function PMDetailPage() {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const }}>
           {/* Date filters */}
           {(['all','week','month','custom'] as const).map(preset => (
-            <button key={preset} onClick={() => { setDatePreset(preset); setProjPage(1); setStnSrnPage(1); }}
+            <button key={preset} onClick={() => { startFilterTransition(() => { setDatePreset(preset); setProjPage(1); setStnSrnPage(1); }); }}
               style={{ padding: '5px 12px', fontSize: 12, fontWeight: 600, borderRadius: 7, border: `1px solid ${datePreset===preset?T.primary:T.border}`,
                 background: datePreset===preset ? T.primary : '#fff', color: datePreset===preset ? '#fff' : T.textMuted, cursor: 'pointer' }}>
               {preset === 'all' ? 'All' : preset === 'week' ? 'This Week' : preset === 'month' ? 'This Month' : 'Custom'}
@@ -359,10 +362,10 @@ export default function PMDetailPage() {
           ))}
           {datePreset === 'custom' && (
             <>
-              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} max={new Date().toISOString().split('T')[0]}
+              <input type="date" value={dateFrom} onChange={e => startFilterTransition(() => setDateFrom(e.target.value))} max={new Date().toISOString().split('T')[0]}
                 style={{ padding: '4px 8px', fontSize: 12, border: `1px solid ${T.border}`, borderRadius: 7, outline: 'none' }} />
               <span style={{ fontSize: 12, color: T.textMuted }}>to</span>
-              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} max={new Date().toISOString().split('T')[0]}
+              <input type="date" value={dateTo} onChange={e => startFilterTransition(() => setDateTo(e.target.value))} max={new Date().toISOString().split('T')[0]}
                 style={{ padding: '4px 8px', fontSize: 12, border: `1px solid ${T.border}`, borderRadius: 7, outline: 'none' }} />
             </>
           )}
@@ -418,6 +421,17 @@ export default function PMDetailPage() {
                   {datePreset === 'all' ? 'All Time' : datePreset === 'week' ? 'This Week' : datePreset === 'month' ? 'This Month' : `${dateFrom} to ${dateTo}`}
                   {' · '}Generated on {new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}
                 </div>
+              </div>
+            </div>
+          )}
+          {isFiltering && (
+            <div style={{ position: 'fixed' as const, top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(255,255,255,0.6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(2px)' }}>
+              <div style={{ background: '#fff', borderRadius: 12, padding: '20px 32px', boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+                display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 20, height: 20, border: `3px solid ${T.primaryMid}`, borderTop: `3px solid ${T.primary}`,
+                  borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                <span style={{ fontSize: 14, fontWeight: 600, color: T.text }}>Applying filter…</span>
               </div>
             </div>
           )}
