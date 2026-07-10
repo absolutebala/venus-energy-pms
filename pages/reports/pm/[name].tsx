@@ -5,6 +5,8 @@ import { useProjects } from '@/context/ProjectContext';
 import { useAuth } from '@/context/AuthContext';
 import { T, fmtINR as fmt } from '@/lib/theme';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { createClient } from '@/lib/supabase';
 
 
@@ -137,6 +139,48 @@ export default function PMDetailPage() {
     </div>
   );
 
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const [exportingPDF, setExportingPDF] = React.useState(false);
+
+  const exportToPDF = async () => {
+    if (!contentRef.current) return;
+    setExportingPDF(true);
+    try {
+      const canvas = await html2canvas(contentRef.current, {
+        scale: 1.5,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth - 10;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let y = 5;
+      let remaining = imgHeight;
+      while (remaining > 0) {
+        const sliceHeight = Math.min(pageHeight - 10, remaining);
+        const srcY = (imgHeight - remaining) * (canvas.height / imgHeight);
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = sliceHeight * (canvas.height / imgHeight);
+        const ctx = sliceCanvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(canvas, 0, srcY, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
+          pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', 5, y, imgWidth, sliceHeight);
+        }
+        remaining -= sliceHeight;
+        if (remaining > 0) { pdf.addPage(); y = 5; }
+      }
+      pdf.save(`PM_Report_${pmName.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`);
+    } catch (err) {
+      console.error('PDF export error:', err);
+    }
+    setExportingPDF(false);
+  };
+
   const exportToExcel = () => {
     const wb = XLSX.utils.book_new();
 
@@ -241,10 +285,11 @@ export default function PMDetailPage() {
               color: '#166534', background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: 7, cursor: 'pointer' }}>
             📥 Excel
           </button>
-          <button onClick={() => window.print()}
+          <button onClick={exportToPDF} disabled={exportingPDF || loading}
             style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 14px', fontSize: 12, fontWeight: 600,
-              color: '#1E40AF', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 7, cursor: 'pointer' }}>
-            🖨️ Print / PDF
+              color: '#1E40AF', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 7,
+              cursor: exportingPDF ? 'not-allowed' : 'pointer', opacity: exportingPDF ? 0.7 : 1 }}>
+            {exportingPDF ? '⏳ Generating PDF…' : '📄 Export PDF'}
           </button>
         </div>
       </div>
@@ -265,7 +310,7 @@ export default function PMDetailPage() {
         </div>
 
         {/* Main content */}
-        <div>
+        <div ref={contentRef}>
           {loading ? (
             <div style={{ ...card, textAlign: 'center' as const, padding: 40, color: T.textMuted }}>Loading data...</div>
           ) : pmProjects.length === 0 ? (
