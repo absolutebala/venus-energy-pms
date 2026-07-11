@@ -58,10 +58,8 @@ export default function PMDetailPage() {
   const [projPerPage, setProjPerPage] = useState(PER_PAGE_DEFAULT);
   const [stnSrnPage, setStnSrnPage] = useState(1);
   const [stnSrnPerPage, setStnSrnPerPage] = useState(PER_PAGE_DEFAULT);
-  const [datePreset, setDatePreset] = useState<'all'|'week'|'month'|'custom'>('all');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
   const [isFiltering, startFilterTransition] = React.useTransition();
+  const [selectedStatus, setSelectedStatus] = useState<string|null>(null);
 
   const pmProjects = React.useMemo(() =>
     (allProjects as any[]).filter(p => p.pm === pmName),
@@ -87,21 +85,9 @@ export default function PMDetailPage() {
 
   // Date-filtered projects
   const filteredPmProjects = React.useMemo(() => {
-    if (datePreset === 'all') return pmProjects;
-    const today = new Date(); today.setHours(0,0,0,0);
-    const startOfWeek = new Date(today); startOfWeek.setDate(today.getDate() - today.getDay());
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    return pmProjects.filter(p => {
-      const d = (p as any).startDate;
-      if (!d) return false;
-      const date = new Date(d);
-      if (datePreset === 'week')   return date >= startOfWeek && date <= today;
-      if (datePreset === 'month')  return date >= startOfMonth && date <= today;
-      if (datePreset === 'custom' && dateFrom && dateTo)
-        return date >= new Date(dateFrom) && date <= new Date(dateTo);
-      return true;
-    });
-  }, [pmProjects, datePreset, dateFrom, dateTo]);
+    if (!selectedStatus) return pmProjects;
+    return pmProjects.filter(p => ((p as any).projectStatus || 'Not Set') === selectedStatus);
+  }, [pmProjects, selectedStatus]);
 
   // Project Status breakdown for pie chart
   const statusGroups = React.useMemo(() => {
@@ -360,7 +346,7 @@ export default function PMDetailPage() {
             <h1 style={{ fontSize: 20, fontWeight: 800, color: T.text, margin: 0 }}>👤 {pmName}</h1>
           </div>
           <div style={{ fontSize: 13, color: T.textMuted, marginTop: 4 }}>
-            {loading ? 'Loading...' : isFiltering ? '⏳ Filtering...' : `${filteredPmProjects.length} projects · ${filteredStnItems.length} STN items · ${filteredSrnItems.length} SRN items`}
+            {loading ? 'Loading...' : isFiltering ? '⏳ Filtering...' : `${filteredPmProjects.length}${selectedStatus ? ` (filtered)` : ''} projects · ${filteredStnItems.length} STN items · ${filteredSrnItems.length} SRN items`}
           </div>
           {exportingPDF && (
             <div style={{ display:'flex', gap:20, marginTop:8, padding:'10px 16px', background:T.primaryLight, borderRadius:8, border:`1px solid ${T.primaryMid}` }}>
@@ -372,22 +358,13 @@ export default function PMDetailPage() {
           )}
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const }}>
-          {/* Date filters */}
-          {(['all','week','month','custom'] as const).map(preset => (
-            <button key={preset} onClick={() => { startFilterTransition(() => { setDatePreset(preset); setProjPage(1); setStnSrnPage(1); }); }}
-              style={{ padding: '5px 12px', fontSize: 12, fontWeight: 600, borderRadius: 7, border: `1px solid ${datePreset===preset?T.primary:T.border}`,
-                background: datePreset===preset ? T.primary : '#fff', color: datePreset===preset ? '#fff' : T.textMuted, cursor: 'pointer' }}>
-              {preset === 'all' ? 'All' : preset === 'week' ? 'This Week' : preset === 'month' ? 'This Month' : 'Custom'}
-            </button>
-          ))}
-          {datePreset === 'custom' && (
-            <>
-              <input type="date" value={dateFrom} onChange={e => startFilterTransition(() => setDateFrom(e.target.value))} max={new Date().toISOString().split('T')[0]}
-                style={{ padding: '4px 8px', fontSize: 12, border: `1px solid ${T.border}`, borderRadius: 7, outline: 'none' }} />
-              <span style={{ fontSize: 12, color: T.textMuted }}>to</span>
-              <input type="date" value={dateTo} onChange={e => startFilterTransition(() => setDateTo(e.target.value))} max={new Date().toISOString().split('T')[0]}
-                style={{ padding: '4px 8px', fontSize: 12, border: `1px solid ${T.border}`, borderRadius: 7, outline: 'none' }} />
-            </>
+          {selectedStatus && (
+            <div style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 10px', background:T.primaryLight,
+              borderRadius:7, border:`1px solid ${T.primaryMid}`, fontSize:12, fontWeight:600, color:T.primary }}>
+              Filtered: {selectedStatus}
+              <span onClick={() => { startFilterTransition(() => { setSelectedStatus(null); setProjPage(1); }); }}
+                style={{ cursor:'pointer', color:T.danger, fontWeight:800, marginLeft:4 }}>✕</span>
+            </div>
           )}
           <button onClick={exportToExcel} disabled={loading}
             style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 14px', fontSize: 12, fontWeight: 600,
@@ -469,10 +446,15 @@ export default function PMDetailPage() {
                   <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
                     {statusGroups.map(({ name: sName, value }, i) => {
                       const pct = pmProjects.length ? Math.round(value / pmProjects.length * 100) : 0;
+                      const isActive = selectedStatus === sName;
                       return (
-                        <div key={sName} style={{ padding: '8px 12px', background: T.bg, borderRadius: 8, borderLeft: `4px solid ${PIE_COLORS[i % PIE_COLORS.length]}` }}>
+                        <div key={sName} onClick={() => { startFilterTransition(() => { setSelectedStatus(isActive ? null : sName); setProjPage(1); }); }}
+                          style={{ padding: '8px 12px', background: isActive ? `${PIE_COLORS[i % PIE_COLORS.length]}18` : T.bg,
+                            borderRadius: 8, borderLeft: `4px solid ${PIE_COLORS[i % PIE_COLORS.length]}`,
+                            cursor: 'pointer', transition: 'all 0.15s',
+                            border: isActive ? `1px solid ${PIE_COLORS[i % PIE_COLORS.length]}` : `1px solid transparent` }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                            <span style={{ fontSize: 12, color: T.text, fontWeight: 500 }}>{sName}</span>
+                            <span style={{ fontSize: 12, color: T.text, fontWeight: isActive ? 700 : 500 }}>{sName}</span>
                             <span style={{ fontSize: 14, fontWeight: 800, color: PIE_COLORS[i % PIE_COLORS.length] }}>{value} <span style={{ fontSize: 11, fontWeight: 600, color: T.textMuted }}>({pct}%)</span></span>
                           </div>
                           <div style={{ height: 4, background: T.border, borderRadius: 2 }}>
@@ -561,6 +543,168 @@ export default function PMDetailPage() {
                 <Pagination page={stnSrnPage} total={stnSrnTotalPages} setPage={setStnSrnPage}
                   perPage={stnSrnPerPage} setPerPage={setStnSrnPerPage} totalRecords={stnSrnTableData.length} />
               </div>
+
+              {/* 3b. Nearly Completing — Work Completed / Approval Pending with pending STN/SRN */}
+              {(() => {
+                const nearlyDone = filteredPmProjects.filter(p => (p as any).projectStatus === 'Work Completed / Approval Pending');
+                const withPending = nearlyDone.filter(p => {
+                  const hasPendingStn = filteredStnItems.some(s => s.project_id === p.id && s.utilised_status !== 'pm_approved');
+                  const hasPendingSrn = filteredSrnItems.some(s => s.project_id === p.id && s.received !== true);
+                  return hasPendingStn || hasPendingSrn;
+                });
+                const allClear = nearlyDone.filter(p => !withPending.find(wp => wp.id === p.id));
+                return (
+                  <div style={card}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 12 }}>
+                      🏁 Nearly Completing Projects <span style={{ fontSize: 12, color: T.textMuted, fontWeight: 400 }}>({nearlyDone.length} projects in Work Completed / Approval Pending)</span>
+                    </div>
+                    {nearlyDone.length === 0 ? (
+                      <div style={{ color: T.textMuted, fontSize: 13 }}>No projects in Work Completed / Approval Pending status.</div>
+                    ) : withPending.length === 0 ? (
+                      <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8, padding: '12px 16px', color: '#166534', fontSize: 13, fontWeight: 600 }}>
+                        ✅ No pending STN / SRN items for any nearly completing projects. All clear!
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '10px 14px', marginBottom: 10, fontSize: 12, color: '#92400E' }}>
+                          ⚠️ {withPending.length} of {nearlyDone.length} nearly completing projects still have pending STN/SRN items
+                        </div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 12 }}>
+                          <thead><tr>
+                            {['PO Number','Indus ID','Region','Pending STN','Pending SRN'].map((h,i) => <th key={i} style={th}>{h}</th>)}
+                          </tr></thead>
+                          <tbody>
+                            {withPending.map((p, i) => {
+                              const pendingStn = filteredStnItems.filter(s => s.project_id === p.id && s.utilised_status !== 'pm_approved').length;
+                              const pendingSrn = filteredSrnItems.filter(s => s.project_id === p.id && s.received !== true).length;
+                              return (
+                                <tr key={p.id} onClick={() => router.push(`/projects/${p.id}`)} style={{ background: i%2===0?'#fff':T.bg, cursor:'pointer' }}>
+                                  <td style={{ ...td, fontWeight:700, color:T.primary }}>{(p as any).poNo||'—'}</td>
+                                  <td style={{ ...td, color:T.textMuted }}>{(p as any).indusId||'—'}</td>
+                                  <td style={td}>{(p as any).region||'—'}</td>
+                                  <td style={{ ...td, textAlign:'center' as const, color: pendingStn>0?T.warning:T.success, fontWeight:700 }}>{pendingStn>0?pendingStn:'✓'}</td>
+                                  <td style={{ ...td, textAlign:'center' as const, color: pendingSrn>0?T.warning:T.success, fontWeight:700 }}>{pendingSrn>0?pendingSrn:'✓'}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                        {allClear.length > 0 && (
+                          <div style={{ marginTop:8, fontSize:12, color:T.textMuted }}>✅ {allClear.length} projects have no pending STN/SRN items.</div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* 3c. Negative Projection — Billed Amount < Paid Expenses */}
+              {(() => {
+                const lossProjects = filteredPmProjects.filter(p => {
+                  const billed = Number((p as any).billedAmount || 0);
+                  const paid   = Number((p as any).paidAmount   || 0);
+                  return billed > 0 && (billed - paid) < 0;
+                });
+                return (
+                  <div style={card}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 12 }}>
+                      📉 Negative Projection <span style={{ fontSize: 12, color: T.textMuted, fontWeight: 400 }}>(Billed Amount &lt; Paid Expenses)</span>
+                    </div>
+                    {lossProjects.length === 0 ? (
+                      <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8, padding: '12px 16px', color: '#166534', fontSize: 13, fontWeight: 600 }}>
+                        ✅ No projects with negative projection. All projects are financially on track!
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '10px 14px', marginBottom: 10, fontSize: 12, color: '#DC2626' }}>
+                          ⚠️ {lossProjects.length} project{lossProjects.length > 1 ? 's are' : ' is'} in loss — expenses exceed billed amount
+                        </div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 12 }}>
+                          <thead><tr>
+                            {['PO Number','Indus ID','Region','Billed','Paid','Projection'].map((h,i) => <th key={i} style={th}>{h}</th>)}
+                          </tr></thead>
+                          <tbody>
+                            {lossProjects.map((p, i) => {
+                              const billed = Number((p as any).billedAmount || 0);
+                              const paid   = Number((p as any).paidAmount   || 0);
+                              return (
+                                <tr key={p.id} onClick={() => router.push(`/projects/${p.id}`)} style={{ background: i%2===0?'#fff':T.bg, cursor:'pointer' }}>
+                                  <td style={{ ...td, fontWeight:700, color:T.primary }}>{(p as any).poNo||'—'}</td>
+                                  <td style={{ ...td, color:T.textMuted }}>{(p as any).indusId||'—'}</td>
+                                  <td style={td}>{(p as any).region||'—'}</td>
+                                  <td style={{ ...td, textAlign:'right' as const }}>{fmt(billed)}</td>
+                                  <td style={{ ...td, textAlign:'right' as const }}>{fmt(paid)}</td>
+                                  <td style={{ ...td, textAlign:'right' as const, fontWeight:700, color:T.danger }}>{fmt(billed-paid)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* 3d. Did Well / Didn't Do Well */}
+              {(() => {
+                const total = filteredPmProjects.length || 1;
+                const wccCount      = filteredPmProjects.filter(p => (p as any).projectStatus === 'WCC Raised').length;
+                const wccRate       = Math.round(wccCount / total * 100);
+                const delayedCount  = filteredPmProjects.filter(p => p.aging > 90).length;
+                const delayRate     = Math.round(delayedCount / total * 100);
+                const stnCleared    = filteredStnItems.filter(i => i.utilised_status === 'pm_approved').length;
+                const stnTotal      = filteredStnItems.length || 1;
+                const stnRate       = Math.round(stnCleared / stnTotal * 100);
+                const srnCleared    = filteredSrnItems.filter(i => i.received === true).length;
+                const srnTotal      = filteredSrnItems.length || 1;
+                const srnRate       = Math.round(srnCleared / srnTotal * 100);
+
+                const didWell    = [];
+                const didntWell  = [];
+
+                if (wccRate >= 10)  didWell.push(`✅ ${wccRate}% completion rate (${wccCount} of ${total} projects reached WCC Raised)`);
+                else                didntWell.push(`📉 Low completion rate — only ${wccRate}% of projects reached WCC Raised (${wccCount} of ${total})`);
+
+                if (delayRate <= 20) didWell.push(`✅ Low delay rate — only ${delayRate}% of projects are delayed beyond 90 days (${delayedCount} projects)`);
+                else                 didntWell.push(`⏰ High delay rate — ${delayRate}% of projects are overdue beyond 90 days (${delayedCount} projects)`);
+
+                if (stnTotal > 1) {
+                  if (stnRate >= 70) didWell.push(`✅ STN approval rate at ${stnRate}% (${stnCleared} of ${stnTotal} items approved)`);
+                  else               didntWell.push(`📦 Low STN approval rate — only ${stnRate}% approved (${stnTotal - stnCleared} items still pending)`);
+                }
+                if (srnTotal > 1) {
+                  if (srnRate >= 70) didWell.push(`✅ SRN clearance rate at ${srnRate}% (${srnCleared} of ${srnTotal} items received)`);
+                  else               didntWell.push(`🔄 Low SRN clearance rate — only ${srnRate}% received (${srnTotal - srnCleared} items pending)`);
+                }
+
+                return (
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+                    <div style={card}>
+                      <div style={{ fontSize:14, fontWeight:700, color:'#166534', marginBottom:12 }}>🏆 What {pmName} Did Well</div>
+                      {didWell.length === 0
+                        ? <div style={{ fontSize:13, color:T.textMuted }}>Not enough data to determine strengths.</div>
+                        : didWell.map((item, i) => (
+                            <div key={i} style={{ padding:'8px 12px', background:'#F0FDF4', borderRadius:8, marginBottom:6, fontSize:13, color:'#166534', border:'1px solid #BBF7D0' }}>
+                              {item}
+                            </div>
+                          ))
+                      }
+                    </div>
+                    <div style={card}>
+                      <div style={{ fontSize:14, fontWeight:700, color:T.danger, marginBottom:12 }}>🔧 Areas to Improve</div>
+                      {didntWell.length === 0
+                        ? <div style={{ fontSize:13, color:T.textMuted }}>No significant issues found — great performance!</div>
+                        : didntWell.map((item, i) => (
+                            <div key={i} style={{ padding:'8px 12px', background:'#FEF2F2', borderRadius:8, marginBottom:6, fontSize:13, color:'#DC2626', border:'1px solid #FECACA' }}>
+                              {item}
+                            </div>
+                          ))
+                      }
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* 4. Project List — last section with pagination */}
               <div style={card}>
