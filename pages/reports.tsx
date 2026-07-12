@@ -9,6 +9,7 @@ import { useProjects } from '@/context/ProjectContext';
 import { useInvoices } from '@/context/InvoiceContext';
 import { useExpenses } from '@/context/ExpenseContext';
 import { useMaterial } from '@/context/MaterialContext';
+import { usePOItems } from '@/context/POItemContext';
 import { T, card, badge , fmtINR} from '@/lib/theme';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
@@ -91,8 +92,13 @@ export default function ReportsPage() {
   const [finPage, setFinPage] = React.useState(1);
   const FIN_PER_PAGE = 10;
   const { allItems: materials, loading: matLoading } = useMaterial();
+  const { items: poItems } = usePOItems();
 
   const [colConfigs,  setColConfigs]  = useState<Record<string,string[]>>({});
+  const [wccPage,  setWccPage]  = useState(1);
+  const [negPage,  setNegPage]  = useState(1);
+  const [nearPage, setNearPage] = useState(1);
+  const PM_INSIGHT_PER_PAGE = 10;
   const [agingFilter, setAgingFilter]  = useState<{min:number;max:number}|null>(null);
   const [statusPage,  setStatusPage]   = useState(1);
   const STATUS_PER_PAGE = 25;
@@ -819,14 +825,25 @@ export default function ReportsPage() {
                 return billed > 0 && (billed - paid) < 0;
               });
 
-              // Nearly Completing — WC/Approval Pending with pending STN
+              // Nearly Completing — WC/Approval Pending with pending STN (using po_items)
               const nearlyComp = (projects as any[]).filter(p => p.projectStatus === 'Work Completed / Approval Pending').filter(p => {
-                return materials.some((m:any) => m.projectId === p.id && m.utilisedStatus !== 'pm_approved');
+                return poItems.some((m:any) => m.projectId === p.id && m.utilisedStatus !== 'pm_approved');
               });
 
               const thS: React.CSSProperties = { padding:'6px 8px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
                 color:T.primary, background:T.primaryLight, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const };
               const tdS: React.CSSProperties = { padding:'6px 8px', fontSize:11, borderBottom:`1px solid ${T.border}` };
+
+              const InsightPagination = ({ page, total, setPage }: { page:number; total:number; setPage:(n:number)=>void }) =>
+                total > 1 ? (
+                  <div style={{ display:'flex', justifyContent:'center', gap:6, marginTop:10 }}>
+                    <button onClick={()=>setPage(Math.max(1,page-1))} disabled={page===1}
+                      style={{ padding:'3px 10px', borderRadius:6, border:`1px solid ${T.border}`, background:page===1?T.bg:'#fff', cursor:page===1?'default':'pointer', fontSize:11 }}>← Prev</button>
+                    <span style={{ fontSize:11, color:T.textMuted, padding:'3px 8px' }}>Page {page} of {total}</span>
+                    <button onClick={()=>setPage(Math.min(total,page+1))} disabled={page===total}
+                      style={{ padding:'3px 10px', borderRadius:6, border:`1px solid ${T.border}`, background:page===total?T.bg:'#fff', cursor:page===total?'default':'pointer', fontSize:11 }}>Next →</button>
+                  </div>
+                ) : null;
 
               return (
                 <>
@@ -838,10 +855,11 @@ export default function ReportsPage() {
                   {wccAlert.length === 0 ? (
                     <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, padding:'10px 14px', color:'#166534', fontSize:12 }}>✅ No projects pending WCC beyond 15 days.</div>
                   ) : (
+                    <>
                     <div style={{ overflowX:'auto' as const }}>
                       <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                         <thead><tr>{['PM','PO Number','Indus ID','Region','Status','First Expense Paid','Days'].map((h,i)=><th key={i} style={thS}>{h}</th>)}</tr></thead>
-                        <tbody>{wccAlert.slice(0,20).map((p:any,i:number)=>(
+                        <tbody>{wccAlert.slice((wccPage-1)*PM_INSIGHT_PER_PAGE, wccPage*PM_INSIGHT_PER_PAGE).map((p:any,i:number)=>(
                           <tr key={p.id} style={{ background:i%2===0?'#fff':T.bg }}>
                             <td style={{ ...tdS, fontWeight:600 }}>{p.pm||'—'}</td>
                             <td style={{ ...tdS, color:T.primary, fontWeight:600 }}>{p.poNo||'—'}</td>
@@ -853,8 +871,9 @@ export default function ReportsPage() {
                           </tr>
                         ))}</tbody>
                       </table>
-                      {wccAlert.length > 20 && <div style={{ fontSize:11, color:T.textMuted, marginTop:6, textAlign:'center' as const }}>Showing 20 of {wccAlert.length}</div>}
                     </div>
+                    <InsightPagination page={wccPage} total={Math.ceil(wccAlert.length/PM_INSIGHT_PER_PAGE)} setPage={setWccPage} />
+                    </>
                   )}
                 </div>
 
@@ -866,10 +885,11 @@ export default function ReportsPage() {
                   {negProj.length === 0 ? (
                     <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, padding:'10px 14px', color:'#166534', fontSize:12 }}>✅ No projects with negative projection.</div>
                   ) : (
+                    <>
                     <div style={{ overflowX:'auto' as const }}>
                       <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                         <thead><tr>{['PM','PO Number','Indus ID','Region','Billed','Paid','Projection'].map((h,i)=><th key={i} style={thS}>{h}</th>)}</tr></thead>
-                        <tbody>{negProj.slice(0,20).map((p:any,i:number)=>{
+                        <tbody>{negProj.slice((negPage-1)*PM_INSIGHT_PER_PAGE, negPage*PM_INSIGHT_PER_PAGE).map((p:any,i:number)=>{
                           const billed=Number(p.billedAmount||0); const paid=Number(p.paidAmount||0);
                           return (
                             <tr key={p.id} style={{ background:i%2===0?'#fff':T.bg }}>
@@ -884,8 +904,9 @@ export default function ReportsPage() {
                           );
                         })}</tbody>
                       </table>
-                      {negProj.length > 20 && <div style={{ fontSize:11, color:T.textMuted, marginTop:6, textAlign:'center' as const }}>Showing 20 of {negProj.length}</div>}
                     </div>
+                    <InsightPagination page={negPage} total={Math.ceil(negProj.length/PM_INSIGHT_PER_PAGE)} setPage={setNegPage} />
+                    </>
                   )}
                 </div>
 
@@ -897,11 +918,12 @@ export default function ReportsPage() {
                   {nearlyComp.length === 0 ? (
                     <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, padding:'10px 14px', color:'#166534', fontSize:12 }}>✅ No nearly completing projects have pending STN items.</div>
                   ) : (
+                    <>
                     <div style={{ overflowX:'auto' as const }}>
                       <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                         <thead><tr>{['PM','PO Number','Indus ID','Region','Pending STN Items'].map((h,i)=><th key={i} style={thS}>{h}</th>)}</tr></thead>
-                        <tbody>{nearlyComp.slice(0,20).map((p:any,i:number)=>{
-                          const pendingStn = materials.filter((m:any)=>m.projectId===p.id&&m.utilisedStatus!=='pm_approved').length;
+                        <tbody>{nearlyComp.slice((nearPage-1)*PM_INSIGHT_PER_PAGE, nearPage*PM_INSIGHT_PER_PAGE).map((p:any,i:number)=>{
+                          const pendingStn = poItems.filter((m:any)=>m.projectId===p.id&&m.utilisedStatus!=='pm_approved').length;
                           return (
                             <tr key={p.id} style={{ background:i%2===0?'#fff':T.bg }}>
                               <td style={{ ...tdS, fontWeight:600 }}>{p.pm||'—'}</td>
@@ -913,8 +935,9 @@ export default function ReportsPage() {
                           );
                         })}</tbody>
                       </table>
-                      {nearlyComp.length > 20 && <div style={{ fontSize:11, color:T.textMuted, marginTop:6, textAlign:'center' as const }}>Showing 20 of {nearlyComp.length}</div>}
                     </div>
+                    <InsightPagination page={nearPage} total={Math.ceil(nearlyComp.length/PM_INSIGHT_PER_PAGE)} setPage={setNearPage} />
+                    </>
                   )}
                 </div>
                 </>
