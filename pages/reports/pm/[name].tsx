@@ -62,7 +62,7 @@ export default function PMDetailPage() {
   const [stnSrnPerPage, setStnSrnPerPage] = useState(PER_PAGE_DEFAULT);
   const [isFiltering, startFilterTransition] = React.useTransition();
   const [selectedStatus, setSelectedStatus] = useState<string|null>(null);
-  const [activityFilter, setActivityFilter] = useState<'all'|'today'|'week'|'month'>('all');
+  const [activityFilter, setActivityFilter] = useState<'all'|'today'|'week'|'month'>('week');
   const [exportingActivityPDF, setExportingActivityPDF] = useState(false);
   const activityRef = React.useRef<HTMLDivElement>(null);
 
