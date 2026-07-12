@@ -801,6 +801,37 @@ export default function PMDetailPage() {
                 <Pagination page={projPage} total={projTotalPages} setPage={setProjPage}
                   perPage={projPerPage} setPerPage={setProjPerPage} totalRecords={filteredPmProjects.length} />
               </div>
+
+              {/* 5. PM Activities */}
+              <div style={card}>
+                <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:12 }}>
+                  📋 PM Activities <span style={{ fontSize:12, color:T.textMuted, fontWeight:400 }}>({activities.length} total)</span>
+                </div>
+                {activities.length === 0 ? (
+                  <div style={{ color:T.textMuted, fontSize:13 }}>No activities recorded for {pmName}.</div>
+                ) : (
+                  <div style={{ overflowX:'auto' as const }}>
+                    <table style={{ width:'100%', borderCollapse:'collapse' as const, fontSize:12 }}>
+                      <thead>
+                        <tr>{['#','Project ID','Action','Previous Status','Current Status','Date & Time'].map((h,i)=><th key={i} style={th}>{h}</th>)}</tr>
+                      </thead>
+                      <tbody>
+                        {activities.slice(0,100).map((a:any, i:number) => (
+                          <tr key={a.id||i} style={{ background:i%2===0?'#fff':T.bg }}>
+                            <td style={{ ...td, color:T.textMuted }}>{i+1}</td>
+                            <td style={{ ...td, fontWeight:600, color:T.primary, cursor:'pointer' }} onClick={()=>router.push(`/projects/${a.project_id}`)}>{a.project_id}</td>
+                            <td style={td}>{a.action}</td>
+                            <td style={{ ...td, color:T.textMuted }}>{a.previous_status||'—'}</td>
+                            <td style={{ ...td, color:T.textMuted }}>{a.current_status||'—'}</td>
+                            <td style={{ ...td, color:T.textMuted, whiteSpace:'nowrap' as const }}>{new Date(a.created_at).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {activities.length > 100 && <div style={{ marginTop:8, fontSize:12, color:T.textMuted, textAlign:'center' as const }}>Showing latest 100 of {activities.length} activities</div>}
+                  </div>
+                )}
+              </div>
             </>
           )}
 
@@ -828,38 +859,6 @@ export default function PMDetailPage() {
                 </div>
               </div>
 
-              {/* 5. PM Activities */}
-              <div style={card}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-                  <div style={{ fontSize:14, fontWeight:700, color:T.text }}>
-                    📋 PM Activities <span style={{ fontSize:12, color:T.textMuted, fontWeight:400 }}>({activities.length} total)</span>
-                  </div>
-                </div>
-                {activities.length === 0 ? (
-                  <div style={{ color:T.textMuted, fontSize:13 }}>No activities recorded for {pmName}.</div>
-                ) : (
-                  <div style={{ overflowX:'auto' as const }}>
-                    <table style={{ width:'100%', borderCollapse:'collapse' as const, fontSize:12 }}>
-                      <thead>
-                        <tr>{['#','Project ID','Action','Previous Status','Current Status','Date & Time'].map((h,i)=><th key={i} style={th}>{h}</th>)}</tr>
-                      </thead>
-                      <tbody>
-                        {activities.slice(0,100).map((a:any, i:number) => (
-                          <tr key={a.id||i} style={{ background:i%2===0?'#fff':T.bg }}>
-                            <td style={{ ...td, color:T.textMuted }}>{i+1}</td>
-                            <td style={{ ...td, fontWeight:600, color:T.primary, cursor:'pointer' }} onClick={()=>router.push(`/projects/${a.project_id}`)}>{a.project_id}</td>
-                            <td style={td}>{a.action}</td>
-                            <td style={{ ...td, color:T.textMuted }}>{a.previous_status||'—'}</td>
-                            <td style={{ ...td, color:T.textMuted }}>{a.current_status||'—'}</td>
-                            <td style={{ ...td, color:T.textMuted, whiteSpace:'nowrap' as const }}>{new Date(a.created_at).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {activities.length > 100 && <div style={{ marginTop:8, fontSize:12, color:T.textMuted, textAlign:'center' as const }}>Showing latest 100 of {activities.length} activities</div>}
-                  </div>
-                )}
-              </div>
             </div>
           )}
         </div>
