@@ -791,6 +791,136 @@ export default function ReportsPage() {
               );
             })()}
 
+            {/* ── PM Performance Insight Cards ── */}
+            {active==='pm' && (() => {
+              const WCC_DONE = ['WCC Raised','Work Completed / Approval Pending',
+                'Invoice Submitted – Payment Pending','Invoice Submitted – Payment Received',
+                'Billing Shared','Already Billed with Another PO'];
+              const today = new Date();
+
+              // WCC Aging Alert
+              const wccAlert = (projects as any[]).filter(p => {
+                if (WCC_DONE.some(s => p.projectStatus === s)) return false;
+                const projExp = expenses.filter((e:any) => e.projectId === p.id && e.paidAt && e.status === 'paid');
+                if (!projExp.length) return false;
+                const firstPaid = new Date(projExp.sort((a:any,b:any)=>new Date(a.paidAt).getTime()-new Date(b.paidAt).getTime())[0].paidAt);
+                return Math.floor((today.getTime()-firstPaid.getTime())/(1000*60*60*24)) > 15;
+              }).map(p => {
+                const projExp = expenses.filter((e:any) => e.projectId === p.id && e.paidAt && e.status === 'paid');
+                const firstPaid = new Date(projExp.sort((a:any,b:any)=>new Date(a.paidAt).getTime()-new Date(b.paidAt).getTime())[0].paidAt);
+                const days = Math.floor((today.getTime()-firstPaid.getTime())/(1000*60*60*24));
+                return { ...p, firstPaidDate: firstPaid.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}), days };
+              }).sort((a:any,b:any)=>b.days-a.days);
+
+              // Negative Projection
+              const negProj = (projects as any[]).filter(p => {
+                const billed = Number(p.billedAmount||0);
+                const paid   = Number(p.paidAmount||0);
+                return billed > 0 && (billed - paid) < 0;
+              });
+
+              // Nearly Completing — WC/Approval Pending with pending STN
+              const nearlyComp = (projects as any[]).filter(p => p.projectStatus === 'Work Completed / Approval Pending').filter(p => {
+                return materials.some((m:any) => m.projectId === p.id && m.utilisedStatus !== 'pm_approved');
+              });
+
+              const thS: React.CSSProperties = { padding:'6px 8px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
+                color:T.primary, background:T.primaryLight, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const };
+              const tdS: React.CSSProperties = { padding:'6px 8px', fontSize:11, borderBottom:`1px solid ${T.border}` };
+
+              return (
+                <>
+                {/* WCC Aging Alert */}
+                <div style={{ ...card, marginTop:14 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:10 }}>
+                    ⏱️ WCC Aging Alert <span style={{ fontSize:11, color:T.textMuted, fontWeight:400 }}>— paid expense &gt;15 days, WCC not raised ({wccAlert.length} projects)</span>
+                  </div>
+                  {wccAlert.length === 0 ? (
+                    <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, padding:'10px 14px', color:'#166534', fontSize:12 }}>✅ No projects pending WCC beyond 15 days.</div>
+                  ) : (
+                    <div style={{ overflowX:'auto' as const }}>
+                      <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+                        <thead><tr>{['PM','PO Number','Indus ID','Region','Status','First Expense Paid','Days'].map((h,i)=><th key={i} style={thS}>{h}</th>)}</tr></thead>
+                        <tbody>{wccAlert.slice(0,20).map((p:any,i:number)=>(
+                          <tr key={p.id} style={{ background:i%2===0?'#fff':T.bg }}>
+                            <td style={{ ...tdS, fontWeight:600 }}>{p.pm||'—'}</td>
+                            <td style={{ ...tdS, color:T.primary, fontWeight:600 }}>{p.poNo||'—'}</td>
+                            <td style={{ ...tdS, color:T.textMuted }}>{p.indusId||'—'}</td>
+                            <td style={tdS}>{p.region||'—'}</td>
+                            <td style={tdS}><span style={{ fontSize:10, background:'#F3F4F6', padding:'2px 8px', borderRadius:10 }}>{p.projectStatus||'—'}</span></td>
+                            <td style={tdS}>{p.firstPaidDate}</td>
+                            <td style={{ ...tdS, fontWeight:700, color:p.days>30?T.danger:T.warning }}>{p.days}d</td>
+                          </tr>
+                        ))}</tbody>
+                      </table>
+                      {wccAlert.length > 20 && <div style={{ fontSize:11, color:T.textMuted, marginTop:6, textAlign:'center' as const }}>Showing 20 of {wccAlert.length}</div>}
+                    </div>
+                  )}
+                </div>
+
+                {/* Negative Projection */}
+                <div style={{ ...card, marginTop:14 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:10 }}>
+                    📉 Negative Projection <span style={{ fontSize:11, color:T.textMuted, fontWeight:400 }}>— Billed &lt; Paid Expenses ({negProj.length} projects)</span>
+                  </div>
+                  {negProj.length === 0 ? (
+                    <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, padding:'10px 14px', color:'#166534', fontSize:12 }}>✅ No projects with negative projection.</div>
+                  ) : (
+                    <div style={{ overflowX:'auto' as const }}>
+                      <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+                        <thead><tr>{['PM','PO Number','Indus ID','Region','Billed','Paid','Projection'].map((h,i)=><th key={i} style={thS}>{h}</th>)}</tr></thead>
+                        <tbody>{negProj.slice(0,20).map((p:any,i:number)=>{
+                          const billed=Number(p.billedAmount||0); const paid=Number(p.paidAmount||0);
+                          return (
+                            <tr key={p.id} style={{ background:i%2===0?'#fff':T.bg }}>
+                              <td style={{ ...tdS, fontWeight:600 }}>{p.pm||'—'}</td>
+                              <td style={{ ...tdS, color:T.primary, fontWeight:600 }}>{p.poNo||'—'}</td>
+                              <td style={{ ...tdS, color:T.textMuted }}>{p.indusId||'—'}</td>
+                              <td style={tdS}>{p.region||'—'}</td>
+                              <td style={tdS}>{fmt(billed)}</td>
+                              <td style={tdS}>{fmt(paid)}</td>
+                              <td style={{ ...tdS, fontWeight:700, color:T.danger }}>{fmt(billed-paid)}</td>
+                            </tr>
+                          );
+                        })}</tbody>
+                      </table>
+                      {negProj.length > 20 && <div style={{ fontSize:11, color:T.textMuted, marginTop:6, textAlign:'center' as const }}>Showing 20 of {negProj.length}</div>}
+                    </div>
+                  )}
+                </div>
+
+                {/* Nearly Completing */}
+                <div style={{ ...card, marginTop:14 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:10 }}>
+                    🏁 Nearly Completing — Pending STN <span style={{ fontSize:11, color:T.textMuted, fontWeight:400 }}>({nearlyComp.length} projects with pending STN)</span>
+                  </div>
+                  {nearlyComp.length === 0 ? (
+                    <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, padding:'10px 14px', color:'#166534', fontSize:12 }}>✅ No nearly completing projects have pending STN items.</div>
+                  ) : (
+                    <div style={{ overflowX:'auto' as const }}>
+                      <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+                        <thead><tr>{['PM','PO Number','Indus ID','Region','Pending STN Items'].map((h,i)=><th key={i} style={thS}>{h}</th>)}</tr></thead>
+                        <tbody>{nearlyComp.slice(0,20).map((p:any,i:number)=>{
+                          const pendingStn = materials.filter((m:any)=>m.projectId===p.id&&m.utilisedStatus!=='pm_approved').length;
+                          return (
+                            <tr key={p.id} style={{ background:i%2===0?'#fff':T.bg }}>
+                              <td style={{ ...tdS, fontWeight:600 }}>{p.pm||'—'}</td>
+                              <td style={{ ...tdS, color:T.primary, fontWeight:600 }}>{p.poNo||'—'}</td>
+                              <td style={{ ...tdS, color:T.textMuted }}>{p.indusId||'—'}</td>
+                              <td style={tdS}>{p.region||'—'}</td>
+                              <td style={{ ...tdS, fontWeight:700, color:T.warning }}>{pendingStn}</td>
+                            </tr>
+                          );
+                        })}</tbody>
+                      </table>
+                      {nearlyComp.length > 20 && <div style={{ fontSize:11, color:T.textMuted, marginTop:6, textAlign:'center' as const }}>Showing 20 of {nearlyComp.length}</div>}
+                    </div>
+                  )}
+                </div>
+                </>
+              );
+            })()}
+
             {/* ── Vendor Performance ── */}
             {active==='vendor' && (
               <div style={card}>
