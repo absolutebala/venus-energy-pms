@@ -569,6 +569,41 @@ export default function PMDetailPage() {
                   perPage={stnSrnPerPage} setPerPage={setStnSrnPerPage} totalRecords={stnSrnTableData.length} />
               </div>
 
+              {/* 3a. WCC Aging Alert */}
+              <div style={card}>
+                <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:12 }}>
+                  ⏱️ WCC Aging Alert <span style={{ fontSize:12, color:T.textMuted, fontWeight:400 }}>(paid expense &gt;15 days ago, WCC not yet raised)</span>
+                </div>
+                {wccAlertProjects.length === 0 ? (
+                  <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, padding:'12px 16px', color:'#166534', fontSize:13, fontWeight:600 }}>
+                    ✅ No projects pending WCC beyond 15 days of first expense.
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:8, padding:'10px 14px', marginBottom:10, fontSize:12, color:'#DC2626' }}>
+                      ⚠️ {wccAlertProjects.length} project{wccAlertProjects.length>1?'s have':' has'} expenses paid more than 15 days ago without WCC being raised
+                    </div>
+                    <table style={{ width:'100%', borderCollapse:'collapse' as const, fontSize:12 }}>
+                      <thead><tr>
+                        {['PO Number','Indus ID','Region','Project Status','First Expense Paid','Days Elapsed'].map((h,i)=><th key={i} style={th}>{h}</th>)}
+                      </tr></thead>
+                      <tbody>
+                        {wccAlertProjects.map((p:any, i:number) => (
+                          <tr key={p.id} onClick={()=>router.push(`/projects/${p.id}`)} style={{ background:i%2===0?'#fff':T.bg, cursor:'pointer' }}>
+                            <td style={{ ...td, fontWeight:700, color:T.primary }}>{p.poNo||'—'}</td>
+                            <td style={{ ...td, color:T.textMuted }}>{p.indusId||'—'}</td>
+                            <td style={td}>{p.region||'—'}</td>
+                            <td style={td}><span style={{ fontSize:10, fontWeight:600, color:'#6B7280', background:'#F3F4F6', padding:'2px 8px', borderRadius:10 }}>{p.projectStatus||'—'}</span></td>
+                            <td style={td}>{p.firstPaidDate}</td>
+                            <td style={{ ...td, fontWeight:700, color:(p as any).daysSinceFirstExpense>30?T.danger:T.warning }}>{(p as any).daysSinceFirstExpense}d</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </>
+                )}
+              </div>
+
               {/* 3b. Nearly Completing — Work Completed / Approval Pending with pending STN/SRN */}
               {(() => {
                 const nearlyDone = filteredPmProjects.filter(p => (p as any).projectStatus === 'Work Completed / Approval Pending');
