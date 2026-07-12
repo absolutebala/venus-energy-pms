@@ -102,8 +102,10 @@ export default function ReportsPage() {
   const [vWccPage,  setVWccPage]  = useState(1);
   const [vNegPage,  setVNegPage]  = useState(1);
   const [vNearPage, setVNearPage] = useState(1);
-  const [agingFilter, setAgingFilter]  = useState<{min:number;max:number}|null>(null);
-  const [statusPage,  setStatusPage]   = useState(1);
+  const [agingFilter,  setAgingFilter]  = useState<{min:number;max:number}|null>(null);
+  const [statusFilter, setStatusFilter] = useState<string|null>(null);
+  const [pmFilter,     setPmFilter]     = useState<string>('All');
+  const [statusPage,   setStatusPage]   = useState(1);
   const STATUS_PER_PAGE = 25;
   const [configError, setConfigError] = useState<string|null>(null);
   const [colModal,   setColModal]   = useState<string|null>(null); // active report key
@@ -211,10 +213,13 @@ export default function ReportsPage() {
     }).filter((p:any) => region === 'All' || p.region === region);
   }, [rawProjects, invoices, region]);
 
-  const statusFilteredProjects = React.useMemo(() => agingFilter
-    ? projects.filter((p:any)=>{ const a=getAging(p.startDate,p.status,p.endDate); return a>=agingFilter.min && a<=agingFilter.max; })
-    : projects
-  , [projects, agingFilter]);
+  const statusFilteredProjects = React.useMemo(() => {
+    let ps = projects as any[];
+    if (agingFilter) ps = ps.filter((p:any)=>{ const a=getAging(p.startDate,p.status,p.endDate); return a>=agingFilter.min && a<=agingFilter.max; });
+    if (statusFilter) ps = ps.filter((p:any)=>(p.projectStatus||'Not Set')===statusFilter);
+    if (pmFilter !== 'All') ps = ps.filter((p:any)=>p.pm===pmFilter);
+    return ps;
+  }, [projects, agingFilter, statusFilter, pmFilter]);
   const statusTotalPages = Math.ceil(statusFilteredProjects.length / STATUS_PER_PAGE);
   const statusPageData = statusFilteredProjects.slice((statusPage-1)*STATUS_PER_PAGE, statusPage*STATUS_PER_PAGE);
 
@@ -260,6 +265,26 @@ export default function ReportsPage() {
       wccAlertCount, negProjCount, nearlyCount,
       stnTotal, stnApproved, stnPending, stnNotSub, stnApprPct, ptwRaised, ptwCoverage };
   }, [projects, expenses, poItems, materials]);
+
+  // Project Status funnel — grouped by projectStatus
+  const projectStatusGroups = React.useMemo(() => {
+    const g: Record<string,number> = {};
+    (projects as any[]).forEach(p => { const s=(p as any).projectStatus||'Not Set'; g[s]=(g[s]||0)+1; });
+    return Object.entries(g).sort((a,b)=>b[1]-a[1]);
+  }, [projects]);
+
+  // Region × Status matrix
+  const regionStatusMatrix = React.useMemo(() => {
+    const regionSet = Array.from(new Set((projects as any[]).map((p:any)=>p.region).filter(Boolean))).sort() as string[];
+    const statusSet  = projectStatusGroups.slice(0,8).map(([s])=>s);
+    const matrix: Record<string, Record<string,number>> = {};
+    regionSet.forEach(r => { matrix[r]={};  statusSet.forEach(s => matrix[r][s]=0); });
+    (projects as any[]).forEach((p:any) => {
+      const r=p.region, s=(p as any).projectStatus||'Not Set';
+      if (r && matrix[r] && statusSet.includes(s)) matrix[r][s]=(matrix[r][s]||0)+1;
+    });
+    return { regionSet, statusSet, matrix };
+  }, [projects, projectStatusGroups]);
 
   const statusData = [
     { name:'PO Open',   value:projects.filter((p:any)=>(p as any).poStatus==='Open').length,   color:'#059669' },
@@ -641,11 +666,102 @@ export default function ReportsPage() {
 
             {/* ── Project Status ── */}
             {active==='status' && (
-              <div style={card}>
-                <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>
-                  All Projects — Status Overview <span style={{ fontSize:12, fontWeight:400, color:T.textMuted }}>({projects.length} records)</span>
+              <div>
+                {/* Status Funnel */}
+                <div style={card}>
+                  <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>
+                    📁 Project Status Funnel <span style={{ fontSize:12, fontWeight:400, color:T.textMuted }}>({(projects as any[]).length} total — click to filter table)</span>
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column' as const, gap:5 }}>
+                    {projectStatusGroups.map(([sName, count], i) => {
+                      const pct = (projects as any[]).length ? Math.round(count/(projects as any[]).length*100) : 0;
+                      const isActive = statusFilter === sName;
+                      const COLOR = ['#2563EB','#DC2626','#16A34A','#D97706','#7C3AED','#6B7280','#0D9488','#EC4899','#F97316','#84CC16'][i%10];
+                      return (
+                        <div key={sName} onClick={()=>{setStatusFilter(isActive?null:sName);setStatusPage(1);}}
+                          style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderRadius:8,
+                            background:isActive?`${COLOR}15`:T.bg, cursor:'pointer',
+                            border:isActive?`1px solid ${COLOR}`:'1px solid transparent', transition:'all 0.15s' }}>
+                          <div style={{ width:4, height:32, borderRadius:2, background:COLOR, flexShrink:0 }} />
+                          <span style={{ fontSize:12, fontWeight:isActive?700:500, color:T.text, width:260, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{sName}</span>
+                          <div style={{ flex:1, height:6, background:T.border, borderRadius:3 }}>
+                            <div style={{ height:'100%', width:`${pct}%`, background:COLOR, borderRadius:3 }} />
+                          </div>
+                          <span style={{ fontSize:13, fontWeight:800, color:COLOR, minWidth:40, textAlign:'right' as const }}>{count}</span>
+                          <span style={{ fontSize:11, color:T.textMuted, minWidth:38, textAlign:'right' as const }}>{pct}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
+
+                {/* Region × Status Matrix */}
+                <div style={card}>
+                  <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>🗺️ Region × Status Matrix</div>
+                  <div style={{ overflowX:'auto' as const }}>
+                    <table style={{ width:'100%', borderCollapse:'collapse' as const, fontSize:11 }}>
+                      <thead>
+                        <tr>
+                          <th style={{ padding:'6px 10px', textAlign:'left' as const, fontWeight:700, color:T.textMuted, borderBottom:`1px solid ${T.border}` }}>Region</th>
+                          {regionStatusMatrix.statusSet.map(s=>(
+                            <th key={s} style={{ padding:'6px 8px', textAlign:'center' as const, fontWeight:600, color:T.primary, borderBottom:`1px solid ${T.border}`, whiteSpace:'nowrap' as const, fontSize:10, maxWidth:80 }}>{s}</th>
+                          ))}
+                          <th style={{ padding:'6px 8px', textAlign:'center' as const, fontWeight:700, color:T.text, borderBottom:`1px solid ${T.border}` }}>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {regionStatusMatrix.regionSet.map((r,i)=>{
+                          const rowTotal = regionStatusMatrix.statusSet.reduce((a,s)=>a+(regionStatusMatrix.matrix[r]?.[s]||0),0);
+                          return (
+                            <tr key={r} style={{ background:i%2===0?'#fff':T.bg }}>
+                              <td style={{ padding:'6px 10px', fontWeight:600, color:T.text }}>{r}</td>
+                              {regionStatusMatrix.statusSet.map(s=>{
+                                const val = regionStatusMatrix.matrix[r]?.[s]||0;
+                                return <td key={s} style={{ padding:'6px 8px', textAlign:'center' as const, color:val>0?T.primary:T.textMuted, fontWeight:val>0?700:400 }}>{val||'—'}</td>;
+                              })}
+                              <td style={{ padding:'6px 8px', textAlign:'center' as const, fontWeight:800, color:T.text }}>{rowTotal}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Filters + Aging buckets */}
+                <div style={card}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+                    <div style={{ fontSize:14, fontWeight:600, color:T.text }}>
+                      All Projects — Status Overview
+                      <span style={{ fontSize:12, fontWeight:400, color:T.textMuted, marginLeft:6 }}>({statusFilteredProjects.length} of {(projects as any[]).length} records)</span>
+                    </div>
+                    <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                      {/* PM Filter */}
+                      <select value={pmFilter} onChange={e=>{setPmFilter(e.target.value);setStatusPage(1);}}
+                        style={{ border:`1px solid ${T.border}`, borderRadius:7, padding:'5px 10px', fontSize:12, outline:'none', background:'#fff' }}>
+                        <option value="All">All PMs</option>
+                        {Array.from(new Set((projects as any[]).map((p:any)=>p.pm).filter(Boolean))).sort().map((pm:any)=>(
+                          <option key={pm} value={pm}>{pm}</option>
+                        ))}
+                      </select>
+                      {/* Clear filters */}
+                      {(agingFilter||statusFilter||pmFilter!=='All') && (
+                        <button onClick={()=>{setAgingFilter(null);setStatusFilter(null);setPmFilter('All');setStatusPage(1);}}
+                          style={{ padding:'5px 12px', borderRadius:7, border:`1px solid ${T.danger}`, background:'#FEF2F2', color:T.danger, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                          ✕ Clear Filters
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {/* Active filter pills */}
+                  {(statusFilter||agingFilter||pmFilter!=='All') && (
+                    <div style={{ display:'flex', gap:6, marginBottom:10, flexWrap:'wrap' as const }}>
+                      {statusFilter && <span style={{ fontSize:11, fontWeight:600, color:T.primary, background:T.primaryLight, padding:'2px 10px', borderRadius:20 }}>Status: {statusFilter}</span>}
+                      {agingFilter && <span style={{ fontSize:11, fontWeight:600, color:'#D97706', background:'#FFFBEB', padding:'2px 10px', borderRadius:20 }}>Aging: {agingFilter.min}–{agingFilter.max===99999?'∞':agingFilter.max}d</span>}
+                      {pmFilter!=='All' && <span style={{ fontSize:11, fontWeight:600, color:'#7C3AED', background:'#F5F3FF', padding:'2px 10px', borderRadius:20 }}>PM: {pmFilter}</span>}
+                    </div>
+                  )}
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
                   {[
                     { label:'0–30 Days',    min:0,   max:30,  color:'#059669', bg:'#D1FAE5' },
                     { label:'31–60 Days',   min:31,  max:60,  color:'#2563EB', bg:'#EFF6FF' },
@@ -698,6 +814,7 @@ export default function ReportsPage() {
                       </div>
                     </div>
                   )}
+                </div>
                 </div>
               </div>
             )}
