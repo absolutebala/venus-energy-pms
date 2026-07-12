@@ -229,6 +229,38 @@ export default function ReportsPage() {
   const totalUnpaidInvoices = invoices.filter(i=>i.paymentStatus!=='Paid').reduce((a,i)=>a+Number(i.invoiceAmount||0),0);
   const totalPending = totalBilled - totalPaid;
 
+  // Executive Summary metrics — computed at component level
+  const execMetrics = React.useMemo(() => {
+    const total       = (projects as any[]).length;
+    const wccRaised   = (projects as any[]).filter(p=>(p as any).projectStatus==='WCC Raised').length;
+    const wccPct      = total ? Math.round(wccRaised/total*100) : 0;
+    const avgAging    = total ? Math.round((projects as any[]).reduce((a,p:any)=>a+(p.aging||0),0)/total) : 0;
+    const delayed     = (projects as any[]).filter(p=>p.aging>90).length;
+    const poOpen      = (projects as any[]).filter(p=>(p as any).poStatus==='Open').length;
+    const poClosed    = (projects as any[]).filter(p=>(p as any).poStatus==='Closed').length;
+    const today       = new Date();
+    const WCC_DONE    = ['WCC Raised','Work Completed / Approval Pending','Invoice Submitted – Payment Pending','Invoice Submitted – Payment Received','Billing Shared','Already Billed with Another PO'];
+    const wccAlertCount = (projects as any[]).filter(p => {
+      if (WCC_DONE.some(s=>s===(p as any).projectStatus)) return false;
+      const projExp = expenses.filter((e:any)=>e.projectId===p.id&&e.paidAt&&e.status==='paid');
+      if (!projExp.length) return false;
+      const firstPaid = new Date(projExp.sort((a:any,b:any)=>new Date(a.paidAt as string).getTime()-new Date(b.paidAt as string).getTime())[0].paidAt as string);
+      return Math.floor((today.getTime()-firstPaid.getTime())/(1000*60*60*24))>15;
+    }).length;
+    const negProjCount = (projects as any[]).filter(p=>{const b=Number((p as any).billedAmount||0),pd=Number((p as any).paidAmount||0);return b>0&&(b-pd)<0;}).length;
+    const nearlyCount  = (projects as any[]).filter(p=>(p as any).projectStatus==='Work Completed / Approval Pending'&&poItems.some(m=>m.projectId===p.id&&m.utilisedStatus!=='pm_approved')).length;
+    const stnTotal     = poItems.length;
+    const stnApproved  = poItems.filter(m=>m.utilisedStatus==='pm_approved').length;
+    const stnPending   = poItems.filter(m=>m.utilisedStatus==='submitted').length;
+    const stnNotSub    = poItems.filter(m=>m.utilisedStatus==='pending'||!m.utilisedStatus).length;
+    const stnApprPct   = stnTotal ? Math.round(stnApproved/stnTotal*100) : 0;
+    const ptwRaised    = new Set(materials.map((m:any)=>m.projectId)).size;
+    const ptwCoverage  = total ? Math.round(ptwRaised/total*100) : 0;
+    return { total, wccRaised, wccPct, avgAging, delayed, poOpen, poClosed,
+      wccAlertCount, negProjCount, nearlyCount,
+      stnTotal, stnApproved, stnPending, stnNotSub, stnApprPct, ptwRaised, ptwCoverage };
+  }, [projects, expenses, poItems, materials]);
+
   const statusData = [
     { name:'PO Open',   value:projects.filter((p:any)=>(p as any).poStatus==='Open').length,   color:'#059669' },
     { name:'PO Closed', value:projects.filter((p:any)=>(p as any).poStatus==='Closed').length, color:'#DC2626' },
@@ -478,41 +510,123 @@ export default function ReportsPage() {
             {/* ── Executive Summary ── */}
             {active==='executive' && (
               <div>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:16 }}>
-                  <KPI label="Total Invoices Unpaid" value={fmt(totalUnpaidInvoices)}                                                  color={T.danger}  sub="Invoices pending payment" />
-                  <KPI label="Total PO Value"    value={fmtCr(totalPO)}                                                             color={T.text}    sub="Across all projects" />
-                  <KPI label="Total Billed"      value={fmt(totalBilled)}                                                           color={T.info}    sub="Total paid invoice amount" />
-                  <KPI label="Total Paid"        value={fmt(totalPaid)}                                                             color={T.success} sub="Total paid expense amount" />
+                {/* Row 1 — Portfolio Overview */}
+                <div style={{ fontSize:13, fontWeight:700, color:T.textMuted, textTransform:'uppercase' as const, letterSpacing:0.5, marginBottom:8 }}>Portfolio Overview</div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10, marginBottom:16 }}>
+                  <KPI label="Total Projects"  value={execMetrics.total}       color={T.primary}  sub="All projects" />
+                  <KPI label="PO Open"         value={execMetrics.poOpen}      color='#059669'    sub="Active POs" />
+                  <KPI label="PO Closed"       value={execMetrics.poClosed}    color={T.danger}   sub="Closed POs" />
+                  <KPI label="WCC Raised"      value={`${execMetrics.wccPct}%`} color={T.success} sub={`${execMetrics.wccRaised} of ${execMetrics.total} projects`} />
+                  <KPI label="Avg Aging"       value={`${execMetrics.avgAging}d`} color={execMetrics.avgAging>90?T.danger:execMetrics.avgAging>60?T.warning:T.success} sub="Across all projects" />
+                  <KPI label="Delayed (>90d)"  value={execMetrics.delayed}     color={T.warning}  sub="Projects overdue" />
                 </div>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:16 }}>
-                  <KPI label="Regions"           value={new Set(projects.map((p:any)=>p.region).filter(Boolean)).size}             color='#7C3AED'   sub="Unique regions" />
-                  <KPI label="Aging (60d+)"      value={projects.filter((p:any)=>getAging(p.startDate,p.status,p.endDate)>60).length} color={T.warning} sub="Projects overdue" />
-                  <KPI label="PO Open"           value={projects.filter((p:any)=>(p as any).poStatus==='Open').length}             color='#059669'   />
-                  <KPI label="PO Closed"         value={projects.filter((p:any)=>(p as any).poStatus==='Closed').length}           color={T.danger}  />
+
+                {/* Row 2 — Financial Health */}
+                <div style={{ fontSize:13, fontWeight:700, color:T.textMuted, textTransform:'uppercase' as const, letterSpacing:0.5, marginBottom:8 }}>Financial Health</div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:16 }}>
+                  <KPI label="Total PO Value"      value={fmtCr(totalPO)}              color={T.text}    sub="Across all projects" />
+                  <KPI label="Total Billed"         value={fmt(totalBilled)}             color={T.info}    sub="Paid invoice amount" />
+                  <KPI label="Total Paid (Expenses)"value={fmt(totalPaid)}              color={T.success} sub="Paid expense amount" />
+                  <KPI label="Invoices Unpaid"      value={fmt(totalUnpaidInvoices)}    color={T.danger}  sub="Pending payment" />
                 </div>
+
+                {/* Row 3 — Alert Summary */}
+                <div style={{ fontSize:13, fontWeight:700, color:T.textMuted, textTransform:'uppercase' as const, letterSpacing:0.5, marginBottom:8 }}>Alerts & Action Required</div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
+                  <div onClick={()=>setActiveWithUrl('pm')} style={{ ...card, cursor:'pointer', borderLeft:`4px solid ${T.danger}`, marginBottom:0, padding:'14px 16px' }}>
+                    <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>⏱️ WCC Aging Alert</div>
+                    <div style={{ fontSize:28, fontWeight:800, color:T.danger }}>{execMetrics.wccAlertCount}</div>
+                    <div style={{ fontSize:11, color:T.textMuted }}>projects with expense &gt;15d, no WCC</div>
+                  </div>
+                  <div onClick={()=>setActiveWithUrl('pm')} style={{ ...card, cursor:'pointer', borderLeft:`4px solid #7C3AED`, marginBottom:0, padding:'14px 16px' }}>
+                    <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>📉 Negative Projection</div>
+                    <div style={{ fontSize:28, fontWeight:800, color:'#7C3AED' }}>{execMetrics.negProjCount}</div>
+                    <div style={{ fontSize:11, color:T.textMuted }}>projects where billed &lt; paid expenses</div>
+                  </div>
+                  <div onClick={()=>setActiveWithUrl('pm')} style={{ ...card, cursor:'pointer', borderLeft:`4px solid ${T.warning}`, marginBottom:0, padding:'14px 16px' }}>
+                    <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>🏁 Nearly Completing</div>
+                    <div style={{ fontSize:28, fontWeight:800, color:T.warning }}>{execMetrics.nearlyCount}</div>
+                    <div style={{ fontSize:11, color:T.textMuted }}>WC/Approval Pending with pending STN</div>
+                  </div>
+                </div>
+
+                {/* Row 4 — STN/SRN + PTW Summary */}
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:16 }}>
+                  <div style={card}>
+                    <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>📦 STN Summary</div>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+                      {[
+                        { label:'Total Items', value:execMetrics.stnTotal, color:T.primary },
+                        { label:'Approved', value:execMetrics.stnApproved, color:T.success },
+                        { label:'Pending Approval', value:execMetrics.stnPending, color:T.warning },
+                        { label:'Not Submitted', value:execMetrics.stnNotSub, color:'#6B7280' },
+                      ].map(m=>(
+                        <div key={m.label} style={{ background:T.bg, borderRadius:8, padding:'10px 12px', textAlign:'center' as const }}>
+                          <div style={{ fontSize:10, color:T.textMuted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
+                          <div style={{ fontSize:20, fontWeight:800, color:m.color }}>{m.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ marginTop:10, height:6, background:T.border, borderRadius:3 }}>
+                      <div style={{ height:'100%', width:`${execMetrics.stnApprPct}%`, background:T.success, borderRadius:3 }} />
+                    </div>
+                    <div style={{ fontSize:11, color:T.textMuted, marginTop:4 }}>{execMetrics.stnApprPct}% approval rate</div>
+                  </div>
+                  <div style={card}>
+                    <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:12 }}>🔐 PTW Coverage</div>
+                    <div style={{ display:'flex', alignItems:'center', gap:20 }}>
+                      <div style={{ textAlign:'center' as const }}>
+                        <div style={{ fontSize:40, fontWeight:800, color:execMetrics.ptwCoverage>=50?T.success:T.warning }}>{execMetrics.ptwCoverage}%</div>
+                        <div style={{ fontSize:12, color:T.textMuted }}>projects with PTW raised</div>
+                      </div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ marginBottom:8 }}>
+                          <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:3 }}>
+                            <span style={{ color:T.textMuted }}>PTW Raised</span>
+                            <span style={{ fontWeight:700, color:T.success }}>{execMetrics.ptwRaised}</span>
+                          </div>
+                          <div style={{ height:6, background:T.border, borderRadius:3 }}>
+                            <div style={{ height:'100%', width:`${execMetrics.ptwCoverage}%`, background:T.success, borderRadius:3 }} />
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:3 }}>
+                            <span style={{ color:T.textMuted }}>Not Raised</span>
+                            <span style={{ fontWeight:700, color:T.danger }}>{execMetrics.total-execMetrics.ptwRaised}</span>
+                          </div>
+                          <div style={{ height:6, background:T.border, borderRadius:3 }}>
+                            <div style={{ height:'100%', width:`${100-execMetrics.ptwCoverage}%`, background:T.danger, borderRadius:3 }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 5 — Charts */}
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
                   <div style={card}>
-                    <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>Status Distribution</div>
+                    <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>📊 Project Status Distribution</div>
                     <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-                      <ResponsiveContainer width={130} height={130}>
+                      <ResponsiveContainer width={130} height={160}>
                         <PieChart><Pie data={statusData} cx="50%" cy="50%" innerRadius={35} outerRadius={60} dataKey="value" paddingAngle={3}>
                           {statusData.map((d,i)=><Cell key={i} fill={d.color} />)}
                         </Pie><Tooltip contentStyle={{ fontSize:12 }} /></PieChart>
                       </ResponsiveContainer>
-                      <div style={{ flex:1 }}>
+                      <div style={{ flex:1, maxHeight:160, overflowY:'auto' as const }}>
                         {statusData.map((d,i)=>(
-                          <div key={i} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
-                            <div style={{ width:8, height:8, borderRadius:2, background:d.color }} />
-                            <span style={{ fontSize:12, color:T.textMuted, flex:1 }}>{d.name}</span>
-                            <span style={{ fontSize:12, fontWeight:700 }}>{d.value}</span>
+                          <div key={i} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:5 }}>
+                            <div style={{ width:8, height:8, borderRadius:2, background:d.color, flexShrink:0 }} />
+                            <span style={{ fontSize:11, color:T.textMuted, flex:1 }}>{d.name}</span>
+                            <span style={{ fontSize:11, fontWeight:700 }}>{d.value}</span>
                           </div>
                         ))}
                       </div>
                     </div>
                   </div>
                   <div style={card}>
-                    <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>PO Aging Overview</div>
-                    <ResponsiveContainer width="100%" height={130}>
+                    <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>⏳ PO Aging Distribution</div>
+                    <ResponsiveContainer width="100%" height={160}>
                       <BarChart data={agingData} barSize={32}>
                         <XAxis dataKey="range" tick={{ fontSize:11 }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fontSize:11 }} axisLine={false} tickLine={false} />
