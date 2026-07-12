@@ -2281,11 +2281,11 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:8 }}>
                               {[
                                 ['Paid Amount (₹)', fmt(c1.paidAmount)],
-                                [`Profit 1 (${invSettings.investor1_profit1_pct}%)`, fmt(c1.profit1)],
-                                [`Profit 2 (${invSettings.investor1_profit2_pct}%)`, fmt(c1.profit2)],
-                                [`Additional Capital (${invSettings.investor1_additional_capital_pct}%)`, fmt(c1.additionalCapital)],
+                                [`Profit 1 (${invSettings.investor1_profit1_pct}% of Payment Received)`, fmt(c1.profit1)],
+                                [`Profit 2 (${invSettings.investor1_profit2_pct}% of Payment Received)`, fmt(c1.profit2)],
+                                [`Additional Capital (${invSettings.investor1_additional_capital_pct}% of Paid Amount)`, fmt(c1.additionalCapital)],
                                 [`Interest (${invSettings.investor1_interest_pct}%)`, fmt(c1.interest)],
-                                [`Other Expenses (${invSettings.investor1_other_expenses_pct}%)`, fmt(c1.otherExpenses)],
+                                [`Other Expenses (${invSettings.investor1_other_expenses_pct}% of Payment Received)`, fmt(c1.otherExpenses)],
                                 ['M1 Payment (1%)', fmt(c1.m1Payment)],
                                 ['Payment Received (₹)', fmt(c1.paymentReceived)],
                               ].map(([label,val]) => (
@@ -2318,8 +2318,8 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                               {[
                                 ['M1 Payment (1%)', fmt(c2.m1Payment)],
                                 ['Payment Received (₹)', fmt(c2.paymentReceived)],
-                                [`Profit 1 (${invSettings.investor2_profit1_pct}%)`, fmt(c2.profit1)],
-                                [`Profit 2 (${invSettings.investor2_profit2_pct}%)`, fmt(c2.profit2)],
+                                [`Profit 1 (${invSettings.investor2_profit1_pct}% of Payment Received)`, fmt(c2.profit1)],
+                                [`Profit 2 (${invSettings.investor2_profit2_pct}% of Payment Received)`, fmt(c2.profit2)],
                               ].map(([label,val]) => (
                                 <div key={label as string}>
                                   <div style={{ fontSize:10, color:T.textMuted, marginBottom:2 }}>{label}</div>
@@ -2429,11 +2429,11 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:10 }}>
                   {[
                     ['Paid Amount (₹)', fmt(c1.paidAmount)],
-                    [`Profit 1 (${invSettings.investor1_profit1_pct}%)`, fmt(c1.profit1)],
-                    [`Profit 2 (${invSettings.investor1_profit2_pct}%)`, fmt(c1.profit2)],
-                    [`Additional Capital (${invSettings.investor1_additional_capital_pct}%)`, fmt(c1.additionalCapital)],
+                    [`Profit 1 (${invSettings.investor1_profit1_pct}% of Payment Received)`, fmt(c1.profit1)],
+                    [`Profit 2 (${invSettings.investor1_profit2_pct}% of Payment Received)`, fmt(c1.profit2)],
+                    [`Additional Capital (${invSettings.investor1_additional_capital_pct}% of Paid Amount)`, fmt(c1.additionalCapital)],
                     [`Interest (${invSettings.investor1_interest_pct}%)`, fmt(c1.interest)],
-                    [`Other Expenses (${invSettings.investor1_other_expenses_pct}%)`, fmt(c1.otherExpenses)],
+                    [`Other Expenses (${invSettings.investor1_other_expenses_pct}% of Payment Received)`, fmt(c1.otherExpenses)],
                     ['M1 Payment (1%)', fmt(c1.m1Payment)],
                     ['Payment Received (₹)', fmt(c1.paymentReceived)],
                   ].map(([label,val]) => (
@@ -2466,8 +2466,8 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                   {[
                     ['M1 Payment (1%)', fmt(c2.m1Payment)],
                     ['Payment Received (₹)', fmt(c2.paymentReceived)],
-                    [`Profit 1 (${invSettings.investor2_profit1_pct}%)`, fmt(c2.profit1)],
-                    [`Profit 2 (${invSettings.investor2_profit2_pct}%)`, fmt(c2.profit2)],
+                    [`Profit 1 (${invSettings.investor2_profit1_pct}% of Payment Received)`, fmt(c2.profit1)],
+                    [`Profit 2 (${invSettings.investor2_profit2_pct}% of Payment Received)`, fmt(c2.profit2)],
                   ].map(([label,val]) => (
                     <div key={label as string}>
                       <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</div>
