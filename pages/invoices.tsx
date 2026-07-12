@@ -580,11 +580,11 @@ export default function InvoicesPage() {
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:12 }}>
                   {[
                     ['Paid Amount (₹)', fmt(investor1Calc.paidAmount)],
-                    [`Profit 1 (${invSettings.investor1_profit1_pct}%)`, fmt(investor1Calc.profit1)],
-                    [`Profit 2 (${invSettings.investor1_profit2_pct}%)`, fmt(investor1Calc.profit2)],
-                    [`Additional Capital (${invSettings.investor1_additional_capital_pct}%)`, fmt(investor1Calc.additionalCapital)],
-                    [`Interest (${invSettings.investor1_interest_pct}%)`, fmt(investor1Calc.interest)],
-                    [`Other Expenses (${invSettings.investor1_other_expenses_pct}%)`, fmt(investor1OtherExpenses)],
+                    [`Profit 1 (${invSettings.investor1_profit1_pct}% of Basic Amount)`, fmt(investor1Calc.profit1)],
+                    [`Profit 2 (${invSettings.investor1_profit2_pct}% of Basic Amount)`, fmt(investor1Calc.profit2)],
+                    [`Additional Capital (${invSettings.investor1_additional_capital_pct}% of Paid Amount)`, fmt(investor1Calc.additionalCapital)],
+                    [`Interest (${invSettings.investor1_interest_pct}% of Paid Amount)`, fmt(investor1Calc.interest)],
+                    [`Other Expenses (${invSettings.investor1_other_expenses_pct}% of Basic Amount)`, fmt(investor1OtherExpenses)],
                   ].map(([label,val]) => (
                     <div key={label as string}>
                       <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</div>
@@ -612,8 +612,8 @@ export default function InvoicesPage() {
                 <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:10 }}>Investor 2 Details</div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
                   {[
-                    [`Profit 1 (${invSettings.investor2_profit1_pct}%)`, fmt(investor2Calc.profit1)],
-                    [`Profit 2 (${invSettings.investor2_profit2_pct}%)`, fmt(investor2Calc.profit2)],
+                    [`Profit 1 (${invSettings.investor2_profit1_pct}% of Basic Amount)`, fmt(investor2Calc.profit1)],
+                    [`Profit 2 (${invSettings.investor2_profit2_pct}% of Basic Amount)`, fmt(investor2Calc.profit2)],
                   ].map(([label,val]) => (
                     <div key={label as string}>
                       <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</div>
