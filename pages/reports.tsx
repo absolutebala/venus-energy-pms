@@ -803,11 +803,11 @@ export default function ReportsPage() {
                 if (WCC_DONE.some(s => p.projectStatus === s)) return false;
                 const projExp = expenses.filter((e:any) => e.projectId === p.id && e.paidAt && e.status === 'paid');
                 if (!projExp.length) return false;
-                const firstPaid = new Date(projExp.sort((a:any,b:any)=>new Date(a.paidAt).getTime()-new Date(b.paidAt).getTime())[0].paidAt);
+                const firstPaid = new Date(projExp.sort((a:any,b:any)=>new Date(a.paidAt as string).getTime()-new Date(b.paidAt as string).getTime())[0].paidAt as string);
                 return Math.floor((today.getTime()-firstPaid.getTime())/(1000*60*60*24)) > 15;
               }).map(p => {
                 const projExp = expenses.filter((e:any) => e.projectId === p.id && e.paidAt && e.status === 'paid');
-                const firstPaid = new Date(projExp.sort((a:any,b:any)=>new Date(a.paidAt).getTime()-new Date(b.paidAt).getTime())[0].paidAt);
+                const firstPaid = new Date(projExp.sort((a:any,b:any)=>new Date(a.paidAt as string).getTime()-new Date(b.paidAt as string).getTime())[0].paidAt as string);
                 const days = Math.floor((today.getTime()-firstPaid.getTime())/(1000*60*60*24));
                 return { ...p, firstPaidDate: firstPaid.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}), days };
               }).sort((a:any,b:any)=>b.days-a.days);
