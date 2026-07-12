@@ -415,7 +415,7 @@ export default function PMDetailPage() {
                   <strong>{pmName}</strong> · {filteredPmProjects.length} Projects · {stnItems.length} STN · {srnItems.length} SRN
                 </div>
                 <div style={{ fontSize:11, opacity:0.75, marginTop:2 }}>
-                  {datePreset === 'all' ? 'All Time' : datePreset === 'week' ? 'This Week' : datePreset === 'month' ? 'This Month' : `${dateFrom} to ${dateTo}`}
+                  {selectedStatus ? `Filtered: ${selectedStatus}` : 'All Projects'}
                   {' · '}Generated on {new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}
                 </div>
               </div>
