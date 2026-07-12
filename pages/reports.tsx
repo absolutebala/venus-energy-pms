@@ -99,6 +99,9 @@ export default function ReportsPage() {
   const [negPage,  setNegPage]  = useState(1);
   const [nearPage, setNearPage] = useState(1);
   const PM_INSIGHT_PER_PAGE = 10;
+  const [vWccPage,  setVWccPage]  = useState(1);
+  const [vNegPage,  setVNegPage]  = useState(1);
+  const [vNearPage, setVNearPage] = useState(1);
   const [agingFilter, setAgingFilter]  = useState<{min:number;max:number}|null>(null);
   const [statusPage,  setStatusPage]   = useState(1);
   const STATUS_PER_PAGE = 25;
@@ -267,14 +270,17 @@ export default function ReportsPage() {
   const vendors = Array.from(new Set(projects.map((p:any)=>p.vendor).filter(Boolean))) as string[];
   const vendorData = vendors.map(v => {
     const ps = projects.filter((p:any)=>p.vendor===v);
-    const completed = ps.filter((p:any)=>(p as any).projectStatus==='WCC Raised').length;
-    const delayed   = ps.filter((p:any)=>p.aging>90).length;
-    const poValue   = ps.reduce((a,p:any)=>a+Number(p.poValue||0),0);
+    const completed       = ps.filter((p:any)=>(p as any).projectStatus==='WCC Raised').length;
+    const delayed         = ps.filter((p:any)=>p.aging>90).length;
+    const poValue         = ps.reduce((a,p:any)=>a+Number(p.poValue||0),0);
+    const avgAging        = ps.length ? Math.round(ps.reduce((a,p:any)=>a+(p.aging||0),0)/ps.length) : 0;
+    const cleanPct        = ps.length ? Math.round(ps.filter((p:any)=>p.aging<=90).length/ps.length*100) : 0;
+    const completionRate  = ps.length ? Math.round(completed/ps.length*100) : 0;
     return {
       name: v.length>20?v.substring(0,18)+'…':v, fullName:v,
-      total:ps.length, completed, delayed, poValue,
+      total:ps.length, completed, delayed, poValue, avgAging, cleanPct, completionRate,
     };
-  });
+  }).filter(v => v.total > 0);
 
   const regionFinancial = (regions as string[]).map(r=>({
     region: r.length>12?r.substring(0,10)+'…':r,
@@ -945,25 +951,224 @@ export default function ReportsPage() {
             })()}
 
             {/* ── Vendor Performance ── */}
-            {active==='vendor' && (
-              <div style={card}>
-                <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>Vendor Performance Overview</div>
-                <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
-                  <thead><tr>{getVisibleCols('vendor').map(k=>(
-                    <th key={k} style={thS}>{getColLabel('vendor',k)}</th>
-                  ))}</tr></thead>
-                  <tbody>{vendorData.map((v,i)=>(
-                    <tr key={i} style={{ background:i%2===0?'#fff':T.bg, borderBottom:`1px solid ${T.border}` }}>
-                      <td style={{ padding:'10px', fontWeight:600, fontSize:13 }}>{v.fullName}</td>
-                      <td style={{ padding:'10px', textAlign:'center', fontWeight:700 }}>{v.total}</td>
-                      <td style={{ padding:'10px', textAlign:'center', color:T.success, fontWeight:600 }}>{v.completed}</td>
-                      <td style={{ padding:'10px', textAlign:'center', color:v.delayed>0?T.danger:T.success, fontWeight:600 }}>{v.delayed}</td>
-                      <td style={{ padding:'10px', textAlign:'right' as const, fontWeight:700, color:T.primary }}>{fmt(v.poValue)}</td>
-                    </tr>
-                  ))}</tbody>
-                </table>
-              </div>
-            )}
+            {active==='vendor' && (() => {
+              const medal = (i:number) => i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+              const RankRow = ({ rank, name, value, sub, color, bar, barColor }: any) => (
+                <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px',
+                  background:rank===0?'#FFFBEB':rank===1?'#F8FAFC':rank===2?'#FFF7ED':'#fff',
+                  borderRadius:8, marginBottom:6,
+                  border:`1px solid ${rank===0?'#FDE68A':rank===1?'#E2E8F0':rank===2?'#FED7AA':T.border}` }}>
+                  <div style={{ fontSize:18, width:28, textAlign:'center' as const }}>{medal(rank)||`#${rank+1}`}</div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{name}</div>
+                    {sub && <div style={{ fontSize:11, color:T.textMuted }}>{sub}</div>}
+                    {bar !== undefined && (
+                      <div style={{ height:4, background:T.border, borderRadius:2, marginTop:4 }}>
+                        <div style={{ height:'100%', width:`${Math.min(bar,100)}%`, background:barColor||T.primary, borderRadius:2 }} />
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ fontSize:16, fontWeight:800, color:color||T.primary, whiteSpace:'nowrap' as const }}>{value}</div>
+                </div>
+              );
+
+              const today = new Date();
+              const WCC_DONE = ['WCC Raised','Work Completed / Approval Pending',
+                'Invoice Submitted – Payment Pending','Invoice Submitted – Payment Received',
+                'Billing Shared','Already Billed with Another PO'];
+
+              const vWccAlert = (projects as any[]).filter(p => {
+                if (WCC_DONE.some(s => (p as any).projectStatus === s)) return false;
+                const projExp = expenses.filter((e:any) => e.projectId===p.id && e.paidAt && e.status==='paid');
+                if (!projExp.length) return false;
+                const firstPaid = new Date(projExp.sort((a:any,b:any)=>new Date(a.paidAt as string).getTime()-new Date(b.paidAt as string).getTime())[0].paidAt as string);
+                return Math.floor((today.getTime()-firstPaid.getTime())/(1000*60*60*24)) > 15;
+              }).map(p => {
+                const projExp = expenses.filter((e:any) => e.projectId===p.id && e.paidAt && e.status==='paid');
+                const firstPaid = new Date(projExp.sort((a:any,b:any)=>new Date(a.paidAt as string).getTime()-new Date(b.paidAt as string).getTime())[0].paidAt as string);
+                const days = Math.floor((today.getTime()-firstPaid.getTime())/(1000*60*60*24));
+                return { ...p, firstPaidDate: firstPaid.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}), days };
+              }).sort((a:any,b:any)=>b.days-a.days);
+
+              const vNegProj = (projects as any[]).filter(p => {
+                const billed=Number((p as any).billedAmount||0); const paid=Number((p as any).paidAmount||0);
+                return billed>0 && (billed-paid)<0;
+              });
+
+              const vNearlyComp = (projects as any[]).filter(p => (p as any).projectStatus==='Work Completed / Approval Pending').filter(p =>
+                poItems.some((m:any)=>m.projectId===p.id && m.utilisedStatus!=='pm_approved')
+              );
+
+              const thV: React.CSSProperties = { padding:'6px 8px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
+                color:T.primary, background:T.primaryLight, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`, whiteSpace:'nowrap' as const };
+              const tdV: React.CSSProperties = { padding:'6px 8px', fontSize:11, borderBottom:`1px solid ${T.border}` };
+
+              const VPagination = ({ page, total, setPage }: { page:number; total:number; setPage:(n:number)=>void }) =>
+                total > 1 ? (
+                  <div style={{ display:'flex', justifyContent:'center', gap:6, marginTop:10 }}>
+                    <button onClick={()=>setPage(Math.max(1,page-1))} disabled={page===1}
+                      style={{ padding:'3px 10px', borderRadius:6, border:`1px solid ${T.border}`, background:page===1?T.bg:'#fff', cursor:page===1?'default':'pointer', fontSize:11 }}>← Prev</button>
+                    <span style={{ fontSize:11, color:T.textMuted, padding:'3px 8px' }}>Page {page} of {total}</span>
+                    <button onClick={()=>setPage(Math.min(total,page+1))} disabled={page===total}
+                      style={{ padding:'3px 10px', borderRadius:6, border:`1px solid ${T.border}`, background:page===total?T.bg:'#fff', cursor:page===total?'default':'pointer', fontSize:11 }}>Next →</button>
+                  </div>
+                ) : null;
+
+              return (
+                <>
+                {/* Vendor List buttons */}
+                <div style={card}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>🏢 Vendor List — Click to view detailed report</div>
+                  <div style={{ display:'flex', flexWrap:'wrap' as const, gap:8 }}>
+                    {[...vendorData].sort((a,b)=>b.total-a.total).map(v => (
+                      <button key={v.fullName} onClick={()=>router.push(`/reports/vendor/${encodeURIComponent(v.fullName)}`)}
+                        style={{ background:T.primaryLight, color:T.primary, border:`1px solid ${T.primaryMid}`,
+                          borderRadius:8, padding:'8px 16px', fontSize:13, fontWeight:600, cursor:'pointer',
+                          display:'flex', alignItems:'center', gap:6 }}>
+                        🏢 {v.fullName}
+                        <span style={{ fontSize:11, background:T.primary, color:'#fff', borderRadius:20, padding:'1px 7px' }}>{v.total}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Leaderboard */}
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
+                  <div style={card}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>💰 PO Value Champion</div>
+                    {[...vendorData].sort((a,b)=>b.poValue-a.poValue).slice(0,5).map((v,i)=>(
+                      <RankRow key={v.fullName} rank={i} name={v.fullName} value={fmt(v.poValue)}
+                        sub={`${v.total} projects`} color='#7C3AED'
+                        bar={v.poValue/Math.max(...vendorData.map(x=>x.poValue))*100} barColor='#7C3AED' />
+                    ))}
+                  </div>
+                  <div style={card}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>🏁 Completion Race (WCC Raised)</div>
+                    {[...vendorData].sort((a,b)=>b.completionRate-a.completionRate).slice(0,5).map((v,i)=>(
+                      <RankRow key={v.fullName} rank={i} name={v.fullName} value={`${v.completionRate}%`}
+                        sub={`${v.completed} of ${v.total} completed`}
+                        color={v.completionRate>=50?T.success:T.warning}
+                        bar={v.completionRate} barColor={v.completionRate>=50?T.success:T.warning} />
+                    ))}
+                  </div>
+                  <div style={card}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>⚡ Speed Champion <span style={{ fontSize:10, color:T.textMuted, fontWeight:400 }}>(lower avg aging = better)</span></div>
+                    {[...vendorData].sort((a,b)=>a.avgAging-b.avgAging).slice(0,5).map((v,i)=>(
+                      <RankRow key={v.fullName} rank={i} name={v.fullName} value={`${v.avgAging}d`}
+                        sub={`${v.delayed} delayed (>90d)`}
+                        color={v.avgAging<=60?T.success:v.avgAging<=90?T.warning:T.danger} />
+                    ))}
+                  </div>
+                  <div style={card}>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>🛡️ Clean Portfolio <span style={{ fontSize:10, color:T.textMuted, fontWeight:400 }}>(aging ≤90d)</span></div>
+                    {[...vendorData].sort((a,b)=>b.cleanPct-a.cleanPct).slice(0,5).map((v,i)=>(
+                      <RankRow key={v.fullName} rank={i} name={v.fullName} value={`${v.cleanPct}%`}
+                        sub={`${v.total-v.delayed} of ${v.total} on track`}
+                        color={v.cleanPct>=80?T.success:v.cleanPct>=60?T.warning:T.danger}
+                        bar={v.cleanPct} barColor={v.cleanPct>=80?T.success:v.cleanPct>=60?T.warning:T.danger} />
+                    ))}
+                  </div>
+                </div>
+
+                {/* WCC Aging Alert */}
+                <div style={{ ...card, marginTop:14 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:10 }}>
+                    ⏱️ WCC Aging Alert <span style={{ fontSize:11, color:T.textMuted, fontWeight:400 }}>({vWccAlert.length} projects)</span>
+                  </div>
+                  {vWccAlert.length === 0 ? (
+                    <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, padding:'10px 14px', color:'#166534', fontSize:12 }}>✅ No projects pending WCC beyond 15 days.</div>
+                  ) : (
+                    <>
+                    <div style={{ overflowX:'auto' as const }}>
+                      <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+                        <thead><tr>{['Vendor','PM','PO Number','Indus ID','Region','Status','First Expense Paid','Days'].map((h,i)=><th key={i} style={thV}>{h}</th>)}</tr></thead>
+                        <tbody>{vWccAlert.slice((vWccPage-1)*10,vWccPage*10).map((p:any,i:number)=>(
+                          <tr key={p.id} style={{ background:i%2===0?'#fff':T.bg }}>
+                            <td style={{ ...tdV, fontWeight:600 }}>{(p as any).vendor||'—'}</td>
+                            <td style={tdV}>{(p as any).pm||'—'}</td>
+                            <td style={{ ...tdV, color:T.primary, fontWeight:600 }}>{(p as any).poNo||'—'}</td>
+                            <td style={{ ...tdV, color:T.textMuted }}>{(p as any).indusId||'—'}</td>
+                            <td style={tdV}>{(p as any).region||'—'}</td>
+                            <td style={tdV}><span style={{ fontSize:10, background:'#F3F4F6', padding:'2px 8px', borderRadius:10 }}>{(p as any).projectStatus||'—'}</span></td>
+                            <td style={tdV}>{(p as any).firstPaidDate}</td>
+                            <td style={{ ...tdV, fontWeight:700, color:(p as any).days>30?T.danger:T.warning }}>{(p as any).days}d</td>
+                          </tr>
+                        ))}</tbody>
+                      </table>
+                    </div>
+                    <VPagination page={vWccPage} total={Math.ceil(vWccAlert.length/10)} setPage={setVWccPage} />
+                    </>
+                  )}
+                </div>
+
+                {/* Negative Projection */}
+                <div style={{ ...card, marginTop:14 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:10 }}>
+                    📉 Negative Projection <span style={{ fontSize:11, color:T.textMuted, fontWeight:400 }}>({vNegProj.length} projects)</span>
+                  </div>
+                  {vNegProj.length === 0 ? (
+                    <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, padding:'10px 14px', color:'#166534', fontSize:12 }}>✅ No projects with negative projection.</div>
+                  ) : (
+                    <>
+                    <div style={{ overflowX:'auto' as const }}>
+                      <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+                        <thead><tr>{['Vendor','PM','PO Number','Indus ID','Region','Billed','Paid','Projection'].map((h,i)=><th key={i} style={thV}>{h}</th>)}</tr></thead>
+                        <tbody>{vNegProj.slice((vNegPage-1)*10,vNegPage*10).map((p:any,i:number)=>{
+                          const billed=Number((p as any).billedAmount||0); const paid=Number((p as any).paidAmount||0);
+                          return (
+                            <tr key={(p as any).id} style={{ background:i%2===0?'#fff':T.bg }}>
+                              <td style={{ ...tdV, fontWeight:600 }}>{(p as any).vendor||'—'}</td>
+                              <td style={tdV}>{(p as any).pm||'—'}</td>
+                              <td style={{ ...tdV, color:T.primary, fontWeight:600 }}>{(p as any).poNo||'—'}</td>
+                              <td style={{ ...tdV, color:T.textMuted }}>{(p as any).indusId||'—'}</td>
+                              <td style={tdV}>{(p as any).region||'—'}</td>
+                              <td style={tdV}>{fmt(billed)}</td>
+                              <td style={tdV}>{fmt(paid)}</td>
+                              <td style={{ ...tdV, fontWeight:700, color:T.danger }}>{fmt(billed-paid)}</td>
+                            </tr>
+                          );
+                        })}</tbody>
+                      </table>
+                    </div>
+                    <VPagination page={vNegPage} total={Math.ceil(vNegProj.length/10)} setPage={setVNegPage} />
+                    </>
+                  )}
+                </div>
+
+                {/* Nearly Completing */}
+                <div style={{ ...card, marginTop:14 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:10 }}>
+                    🏁 Nearly Completing — Pending STN <span style={{ fontSize:11, color:T.textMuted, fontWeight:400 }}>({vNearlyComp.length} projects)</span>
+                  </div>
+                  {vNearlyComp.length === 0 ? (
+                    <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, padding:'10px 14px', color:'#166534', fontSize:12 }}>✅ No nearly completing projects have pending STN items.</div>
+                  ) : (
+                    <>
+                    <div style={{ overflowX:'auto' as const }}>
+                      <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+                        <thead><tr>{['Vendor','PM','PO Number','Indus ID','Region','Pending STN'].map((h,i)=><th key={i} style={thV}>{h}</th>)}</tr></thead>
+                        <tbody>{vNearlyComp.slice((vNearPage-1)*10,vNearPage*10).map((p:any,i:number)=>{
+                          const pendingStn=poItems.filter((m:any)=>m.projectId===p.id&&m.utilisedStatus!=='pm_approved').length;
+                          return (
+                            <tr key={(p as any).id} style={{ background:i%2===0?'#fff':T.bg }}>
+                              <td style={{ ...tdV, fontWeight:600 }}>{(p as any).vendor||'—'}</td>
+                              <td style={tdV}>{(p as any).pm||'—'}</td>
+                              <td style={{ ...tdV, color:T.primary, fontWeight:600 }}>{(p as any).poNo||'—'}</td>
+                              <td style={{ ...tdV, color:T.textMuted }}>{(p as any).indusId||'—'}</td>
+                              <td style={tdV}>{(p as any).region||'—'}</td>
+                              <td style={{ ...tdV, fontWeight:700, color:T.warning }}>{pendingStn}</td>
+                            </tr>
+                          );
+                        })}</tbody>
+                      </table>
+                    </div>
+                    <VPagination page={vNearPage} total={Math.ceil(vNearlyComp.length/10)} setPage={setVNearPage} />
+                    </>
+                  )}
+                </div>
+                </>
+              );
+            })()}
 
             {/* ── Aging ── */}
             {active==='aging' && (
