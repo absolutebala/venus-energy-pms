@@ -53,6 +53,8 @@ export default function PMDetailPage() {
   const [stnItems, setStnItems] = useState<any[]>([]);
   const [srnItems, setSrnItems] = useState<any[]>([]);
   const [ptwItems, setPtwItems] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [projPage, setProjPage] = useState(1);
   const [projPerPage, setProjPerPage] = useState(PER_PAGE_DEFAULT);
@@ -70,14 +72,18 @@ export default function PMDetailPage() {
   const fetchData = useCallback(async () => {
     if (!projectIds.length) { setLoading(false); return; }
     setLoading(true);
-    const [stnRes, srnRes, ptwRes] = await Promise.all([
+    const [stnRes, srnRes, ptwRes, expRes, actRes] = await Promise.all([
       sb.from('po_items').select('*').in('project_id', projectIds),
       sb.from('srn').select('*').in('project_id', projectIds),
       sb.from('ptw_items').select('*').in('project_id', projectIds),
+      sb.from('expenses').select('id,project_id,paid_at,status,amount').in('project_id', projectIds).eq('status','paid').not('paid_at','is',null),
+      sb.from('activity_log').select('*').eq('by_name', pmName).order('created_at', { ascending: false }),
     ]);
     setStnItems(stnRes.data || []);
     setSrnItems(srnRes.data || []);
     setPtwItems(ptwRes.data || []);
+    setExpenses(expRes.data || []);
+    setActivities(actRes.data || []);
     setLoading(false);
   }, [projectIds.join(',')]);
 
@@ -130,6 +136,25 @@ export default function PMDetailPage() {
     raised:    new Set(filteredPtwItems.map(p => p.project_id)).size,
     notRaised: filteredPmProjects.length - new Set(filteredPtwItems.map(p => p.project_id)).size,
   }), [filteredPtwItems, filteredPmProjects]);
+
+  // WCC Aging Alert — projects with first paid expense > 15 days ago but not yet WCC Raised
+  const wccAlertProjects = React.useMemo(() => {
+    const WCC_DONE = ['WCC Raised','Work Completed / Approval Pending','Invoice Submitted – Payment Pending',
+      'Invoice Submitted – Payment Received','Billing Shared','Already Billed with Another PO'];
+    const today = new Date();
+    return filteredPmProjects.filter(p => {
+      if (WCC_DONE.some(s => (p as any).projectStatus === s)) return false;
+      const projExp = expenses.filter((e:any) => e.project_id === p.id && e.paid_at);
+      if (!projExp.length) return false;
+      const firstPaid = new Date(projExp.sort((a:any,b:any)=>new Date(a.paid_at).getTime()-new Date(b.paid_at).getTime())[0].paid_at);
+      return Math.floor((today.getTime()-firstPaid.getTime())/(1000*60*60*24)) > 15;
+    }).map(p => {
+      const projExp = expenses.filter((e:any) => e.project_id === p.id && e.paid_at);
+      const firstPaid = new Date(projExp.sort((a:any,b:any)=>new Date(a.paid_at).getTime()-new Date(b.paid_at).getTime())[0].paid_at);
+      const days = Math.floor((new Date().getTime()-firstPaid.getTime())/(1000*60*60*24));
+      return { ...p, firstPaidDate: firstPaid.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}), daysSinceFirstExpense: days };
+    }).sort((a:any,b:any) => b.daysSinceFirstExpense - a.daysSinceFirstExpense);
+  }, [filteredPmProjects, expenses]);
 
   // STN/SRN table data (projects that have either STN or SRN)
   const stnSrnTableData = React.useMemo(() =>
