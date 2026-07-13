@@ -2069,7 +2069,8 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
     setSaving(true);
     try {
       const amt = Number(editInvRow.invoiceAmount)||0, gst = amt * 0.18;
-      const editInv1 = calcInvestor1(amt, Number(editInvRow.investor1Incentive)||0);
+      const editPaidAmt = (editInvRow as any).investor1PaidAmountOverride !== undefined && (editInvRow as any).investor1PaidAmountOverride !== '' ? Number((editInvRow as any).investor1PaidAmountOverride)||0 : undefined;
+      const editInv1 = calcInvestor1(amt, Number(editInvRow.investor1Incentive)||0, editPaidAmt);
       const editInv2 = calcInvestor2(amt);
       await updateInvoice(editInvId, {
         invoiceNo: editInvRow.invoiceNo, invoiceDate: editInvRow.invoiceDate,
@@ -2277,13 +2278,20 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                         </div>
                       </div>
                       {editInvRow.investor === 'Investor 1' && (() => {
-                        const c1 = calcInvestor1(Number(editInvRow.invoiceAmount)||0, Number(editInvRow.investor1Incentive)||0);
+                        const editPaidOverride = (editInvRow as any).investor1PaidAmountOverride !== undefined && (editInvRow as any).investor1PaidAmountOverride !== '' ? Number((editInvRow as any).investor1PaidAmountOverride)||0 : undefined;
+                        const c1 = calcInvestor1(Number(editInvRow.invoiceAmount)||0, Number(editInvRow.investor1Incentive)||0, editPaidOverride);
                         return (
                           <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:10, marginBottom:12, background:'#fff' }}>
                             <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 1 Details</div>
                             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:8 }}>
+                              <div>
+                                <div style={{ fontSize:10, color:T.textMuted, marginBottom:2 }}>Paid Amount (₹)</div>
+                                <input type="number" style={{ ...inpS, borderColor:T.primaryMid }}
+                                  value={(editInvRow as any).investor1PaidAmountOverride !== undefined && (editInvRow as any).investor1PaidAmountOverride !== '' ? (editInvRow as any).investor1PaidAmountOverride : paidAmount}
+                                  onChange={e=>setEditInvRow((p:any)=>({...p, investor1PaidAmountOverride:e.target.value}))} />
+                                <div style={{ fontSize:9, color:T.textMuted, marginTop:2 }}>Auto-filled from project paid expenses. Edit to override.</div>
+                              </div>
                               {[
-                                ['Paid Amount (₹)', fmt(c1.paidAmount)],
                                 [`Profit 1 (${invSettings.investor1_profit1_pct}% of Payment Received)`, fmt(c1.profit1)],
                                 [`Profit 2 (${invSettings.investor1_profit2_pct}% of Payment Received)`, fmt(c1.profit2)],
                                 [`Additional Capital (${invSettings.investor1_additional_capital_pct}% of Paid Amount)`, fmt(c1.additionalCapital)],
