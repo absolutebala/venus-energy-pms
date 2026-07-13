@@ -16,8 +16,14 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 const fmt    = fmtINR;
 const fmtCr  = fmtINR;
 const PCT_CLR= (v:number) => v>=80?T.success:v>=50?T.info:T.danger;
-const getAging = (startDate:string, status?:string, endDate?:string) => {
+const WCC_DONE_STATUSES = ['WCC Raised','Invoice Submitted – Payment Pending',
+  'Invoice Submitted – Payment Received','Billing Shared',
+  'Already Billed with Another PO','Work Completed / Approval Pending'];
+const getAging = (startDate:string, status?:string, endDate?:string, projectStatus?:string) => {
   if (!startDate) return 0;
+  // Use endDate if WCC has been raised (project effectively closed at WCC date)
+  if (endDate && projectStatus && WCC_DONE_STATUSES.includes(projectStatus))
+    return Math.floor((new Date(endDate).getTime()-new Date(startDate).getTime())/86400000);
   if (status === "completed" && endDate)
     return Math.floor((new Date(endDate).getTime()-new Date(startDate).getTime())/86400000);
   return Math.floor((Date.now()-new Date(startDate).getTime())/86400000);
@@ -204,7 +210,7 @@ export default function ReportsPage() {
   // Enrich projects with computed fields
   const projects = useMemo(() => {
     return (rawProjects as any[]).map(p => {
-      const aging    = getAging(p.startDate, p.status, p.endDate);
+      const aging    = getAging(p.startDate, p.status, p.endDate, (p as any).projectStatus);
       const progress = PROGRESS_MAP[p.status] || 0;
       const projInvs = invoices.filter(i => i.projectId === p.id);
       const billedAmt = projInvs.filter(i => ['Approved','Submitted','Under Review'].includes(i.invoiceStatus))

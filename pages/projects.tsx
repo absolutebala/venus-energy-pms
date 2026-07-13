@@ -347,15 +347,19 @@ export default function ProjectsPage() {
   };
 
   const agingThreshold = 60; // days
+  const WCC_DONE = ['WCC Raised','Invoice Submitted – Payment Pending',
+    'Invoice Submitted – Payment Received','Billing Shared',
+    'Already Billed with Another PO','Work Completed / Approval Pending'];
   const getAgeDays = (id: string) => {
     const p = (projects as any[]).find((x:any)=>x.id===id);
     if (!p) return 0;
-    // Aging = days since PO date (or start date, or created_at)
     if (dateFrom && p.endDate && p.endDate < dateFrom) return false;
     if (dateTo   && p.endDate && p.endDate > dateTo)   return false;
     const ref = p.poDate || p.startDate || p.createdAt;
     if (!ref) return 0;
-    return Math.floor((new Date().getTime() - new Date(ref).getTime()) / 86400000);
+    // Use endDate as reference when WCC has been raised
+    const endRef = p.endDate && WCC_DONE.includes((p as any).projectStatus) ? new Date(p.endDate) : new Date();
+    return Math.floor((endRef.getTime() - new Date(ref).getTime()) / 86400000);
   };
   const filtered = roleFilteredProjects.filter(p => {
     // Status filter check — was previously an early `return`, which short-circuited the entire
