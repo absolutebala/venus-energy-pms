@@ -589,7 +589,9 @@ export default function InvoicesPage() {
                       value={newInv.investor1PaidAmount !== "" ? newInv.investor1PaidAmount : investor1PaidAmt}
                       onChange={e => setNewInv(p => ({ ...p, investor1PaidAmount: e.target.value }))}
                       style={{ border:`1px solid ${T.primaryMid}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff' }} />
-                    <div style={{ fontSize:10, color:T.textMuted, marginTop:2 }}>Editable — defaults to project paid expenses</div>
+                    <div style={{ fontSize:10, color:T.textMuted, marginTop:2 }}>
+                      Auto-filled from project paid expenses (₹{fmt(Number((formLinkedProject as any)?.paidAmount)||0)}). Edit to override.
+                    </div>
                   </div>
                   {[
                     [`Profit 1 (${invSettings.investor1_profit1_pct}% of Payment Received)`, fmt(investor1Calc.profit1)],
