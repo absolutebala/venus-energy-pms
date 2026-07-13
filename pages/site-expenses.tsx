@@ -245,19 +245,34 @@ export default function SiteExpensesPage() {
   // So each expense row can show "PO paid so far before this expense was raised"
   const poPaidBeforeMap = React.useMemo(() => {
     const map = new Map<string, number>();
-    const paidExpenses = (roleFilteredExpenses as any[]).filter(e => e.status === 'paid');
-    // For each expense, find its PO and sum paid expenses before its date
+    // Build projectId → poNo lookup (O(n) instead of O(n²) find inside loop)
+    const projPoMap = new Map<string, string>();
+    (projects as any[]).forEach(p => { if (p.poNo) projPoMap.set(p.id, p.poNo); });
+
+    // Group paid expenses by PO, sorted by date
+    const byPo = new Map<string, { date: string; amount: number; id: string }[]>();
+    for (const e of roleFilteredExpenses as any[]) {
+      if (e.status !== 'paid') continue;
+      const poNo = projPoMap.get(e.projectId);
+      if (!poNo) continue;
+      if (!byPo.has(poNo)) byPo.set(poNo, []);
+      byPo.get(poNo)!.push({ date: e.paidAt || e.expenseDate || '', amount: Number(e.amount || 0), id: e.id });
+    }
+    // Sort each PO group by date
+    byPo.forEach(arr => arr.sort((a, b) => a.date.localeCompare(b.date)));
+
+    // For each expense, running total = sum of paid expenses in same PO before this date
     for (const exp of roleFilteredExpenses as any[]) {
-      const proj = (projects as any[]).find(p => p.id === exp.projectId);
-      if (!proj?.poNo) continue;
-      const expDate = exp.expenseDate || '';
-      const poTotal = paidExpenses
-        .filter(pe => {
-          const peProj = (projects as any[]).find(p => p.id === pe.projectId);
-          return peProj?.poNo === proj.poNo && (pe.expenseDate || '') < expDate;
-        })
-        .reduce((a, pe) => a + Number(pe.amount || 0), 0);
-      map.set(exp.id, poTotal);
+      const poNo = projPoMap.get(exp.projectId);
+      if (!poNo) continue;
+      const expDate = exp.paidAt || exp.expenseDate || '';
+      const group = byPo.get(poNo) || [];
+      let total = 0;
+      for (const pe of group) {
+        if (pe.date >= expDate) break;
+        total += pe.amount;
+      }
+      map.set(exp.id, total);
     }
     return map;
   }, [roleFilteredExpenses, projects]);
