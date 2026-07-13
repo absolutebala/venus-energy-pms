@@ -2451,7 +2451,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
           </div>
           {newRow.investor === 'Investor 1' && (() => {
             const paidOverride = (newRow as any).investor1PaidAmountOverride !== '' ? Number((newRow as any).investor1PaidAmountOverride)||0 : undefined;
-            const c1 = calcInvestor1(Number(newRow.invoiceAmount)||0, Number(newRow.investor1Incentive)||0);
+            const c1 = calcInvestor1(Number(newRow.invoiceAmount)||0, Number(newRow.investor1Incentive)||0, paidOverride);
             return (
               <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:12, marginBottom:12, background:'#fff' }}>
                 <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 1 Details</div>
