@@ -289,7 +289,7 @@ export default function InvoicesPage() {
       const inv1Interest = investor1Paid * (Number(invSettings.investor1_interest_pct) || 0) / 100;
       const inv1Other = amt * (Number(invSettings.investor1_other_expenses_pct) || 0) / 100;
       const inv1Incentive = Number(newInv.investor1Incentive) || 0;
-      const inv1Balance = amt - investor1Paid - inv1AdditionalCapital - inv1Profit1 - inv1Profit2 - inv1Other - inv1Interest - inv1Incentive;
+      const inv1Balance = amt - investor1Paid - inv1AdditionalCapital - inv1Profit1 - inv1Profit2 - inv1Other - inv1Interest;
       const inv2Profit1 = amt * (Number(invSettings.investor2_profit1_pct) || 0) / 100;
       const inv2Profit2 = amt * (Number(invSettings.investor2_profit2_pct) || 0) / 100;
       await addInvoice({
