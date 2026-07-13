@@ -18,6 +18,11 @@ export default function CapitalPage() {
   const { expenses, loading: expLoading } = useExpenses();
   const { invoices, loading: invLoading } = useInvoices();
   const { projects } = useProjects();
+  const projectMap = React.useMemo(() => {
+    const m = new Map<string, any>();
+    (projects as any[]).forEach(p => m.set(p.id, p));
+    return m;
+  }, [projects]);
 
   const hasAccess = !authLoading && can('capital', 'read');
 
@@ -76,7 +81,7 @@ export default function CapitalPage() {
       if (investorFilter && e.investorType !== investorFilter) return false;
       if (search) {
         const s = search.toLowerCase();
-        const proj = (projects as any[]).find(p => p.id === e.projectId);
+        const proj = projectMap.get(e.projectId);
         const hay = `${e.site||''} ${proj?.poNo||''} ${proj?.indusId||''} ${e.fundType||''}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
@@ -90,7 +95,7 @@ export default function CapitalPage() {
       if (investorFilter && i.investor !== investorFilter) return false;
       if (search) {
         const s = search.toLowerCase();
-        const proj = (projects as any[]).find(p => p.id === i.projectId);
+        const proj = projectMap.get(i.projectId);
         const hay = `${i.invoiceNo||''} ${i.poNo||''} ${proj?.indusId||''} ${proj?.site||''}`.toLowerCase();
         if (!hay.includes(s)) return false;
       }
@@ -250,7 +255,7 @@ export default function CapitalPage() {
                       </thead>
                       <tbody>
                         {filteredExpenseTable.map((e:any, idx:number) => {
-                          const proj = (projects as any[]).find(p => p.id === e.projectId);
+                          const proj = projectMap.get(e.projectId);
                           return (
                             <tr key={e.id} style={{ background: idx % 2 === 0 ? '#fff' : T.bg }}>
                               <td style={{ ...tdS, fontWeight:600 }}>{e.site || '—'}</td>
