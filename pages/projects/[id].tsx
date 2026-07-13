@@ -2051,7 +2051,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
     const additionalCapital = paidAmount * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100;
     const interest = paidAmount * (Number(invSettings.investor1_interest_pct) || 0) / 100;
     const otherExpenses = paymentReceived * (Number(invSettings.investor1_other_expenses_pct) || 0) / 100;
-    const balanceAmount = amt - paidAmount - additionalCapital - profit1 - profit2 - otherExpenses - interest - incentive;
+    const balanceAmount = paymentReceived - paidAmount - additionalCapital - profit1 - profit2 - otherExpenses - interest - incentive;
     return { paidAmount, profit1, profit2, additionalCapital, interest, otherExpenses, incentive, balanceAmount, m1Payment, paymentReceived };
   };
   const calcInvestor2 = (amt: number) => {

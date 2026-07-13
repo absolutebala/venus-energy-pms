@@ -180,9 +180,9 @@ export default function InvoicesPage() {
     additionalCapital: investor1PaidAmt * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100,
     interest: investor1PaidAmt * (Number(invSettings.investor1_interest_pct) || 0) / 100,
   };
-  const investor1BalanceAmount = formInvoiceAmt - investor1Calc.paidAmount - investor1Calc.additionalCapital
-    - investor1Calc.profit1 - investor1Calc.profit2 - investor1OtherExpenses - investor1Calc.interest - investor1Incentive;
   const investor1PaymentReceived = formInvoiceAmt - (formInvoiceAmt * 0.01) - (formInvoiceAmt * (invSettings.investor1_m1_pct / 100)) - investor1Incentive;
+  const investor1BalanceAmount = investor1PaymentReceived - investor1Calc.paidAmount - investor1Calc.additionalCapital
+    - investor1Calc.profit1 - investor1Calc.profit2 - investor1OtherExpenses - investor1Calc.interest;
   const investor1PLPct = investor1PaymentReceived > 0 ? (investor1Calc.paidAmount / investor1PaymentReceived * 100) : 0;
   const investor2Calc = {
     profit1: formInvoiceAmt * (Number(invSettings.investor2_profit1_pct) || 0) / 100,
