@@ -350,8 +350,13 @@ export default function ProjectsPage() {
   const WCC_DONE = ['WCC Raised','Invoice Submitted – Payment Pending',
     'Invoice Submitted – Payment Received','Billing Shared',
     'Already Billed with Another PO','Work Completed / Approval Pending'];
+  const projectsById = React.useMemo(() => {
+    const m = new Map<string, any>();
+    (projects as any[]).forEach(p => m.set(p.id, p));
+    return m;
+  }, [projects]);
   const getAgeDays = (id: string) => {
-    const p = (projects as any[]).find((x:any)=>x.id===id);
+    const p = projectsById.get(id);
     if (!p) return 0;
     if (dateFrom && p.endDate && p.endDate < dateFrom) return false;
     if (dateTo   && p.endDate && p.endDate > dateTo)   return false;

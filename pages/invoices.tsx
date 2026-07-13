@@ -195,7 +195,7 @@ export default function InvoicesPage() {
     const sn = normalize(poSearch);
     const matched = new Set<string>();
     invoices.forEach((inv:any) => {
-      const proj = (projects as any[]).find((p:any) => p.id === inv.projectId);
+      const proj = projectMap.get(inv.projectId);
       const invoiceNoMatch = normalize(inv.invoiceNo || '').includes(sn);
       const poNoMatch = matchesPO(inv.poNo || proj?.poNo || '', poSearch);
       const indusIdMatch = normalize(proj?.indusId || '').includes(sn);
@@ -346,10 +346,10 @@ export default function InvoicesPage() {
     const rows = displayInvoices.map((inv, idx) => ({
       'S.No':           idx + 1,
       'PO No':          (inv as any).poNo || '',
-      'PO Date':        (projects.find((p:any)=>p.id===inv.projectId) as any)?.poDate ? new Date((projects.find((p:any)=>p.id===inv.projectId) as any).poDate) : '',
-      'Indus ID':       (projects.find((p:any)=>p.id===inv.projectId) as any)?.indusId || '',
-      'Project ID':     (projects.find((p:any)=>p.id===inv.projectId) as any)?.projectId || '',
-      'Project':        (projects.find((p:any)=>p.id===inv.projectId) as any)?.site || '',
+      'PO Date':        projectMap.get(inv.projectId)?.poDate ? new Date(projectMap.get(inv.projectId).poDate) : '',
+      'Indus ID':       projectMap.get(inv.projectId)?.indusId || '',
+      'Project ID':     projectMap.get(inv.projectId)?.projectId || '',
+      'Project':        projectMap.get(inv.projectId)?.site || '',
       'WCC No':         (inv as any).wccNo || '',
       'Receipt No':     (inv as any).receiptNo || '',
       'Invoice No':     inv.invoiceNo,
@@ -358,8 +358,8 @@ export default function InvoicesPage() {
       'GST (%)':        inv.invoiceAmount > 0 ? ((inv.gst / inv.invoiceAmount) * 100).toFixed(1) + '%' : '0%',
       'Tax Amount (₹)':  inv.gst,
       'Total Amount':   inv.totalAmount,
-      'Circle':         (projects.find((p:any)=>p.id===inv.projectId) as any)?.region || '',
-      'Project Status': (projects.find((p:any)=>p.id===inv.projectId) as any)?.projectStatus || '',
+      'Circle':         projectMap.get(inv.projectId)?.region || '',
+      'Project Status': projectMap.get(inv.projectId)?.projectStatus || '',
       'Invoice Status': inv.invoiceStatus,
       'Payment Status': inv.paymentStatus,
       'Due Date':       inv.dueDate ? new Date(inv.dueDate) : '',
@@ -681,7 +681,7 @@ export default function InvoicesPage() {
         {(() => {
           const regionGroups: Record<string, { count:number; amount:number }> = {};
           displayInvoices.forEach((inv:any) => {
-            const proj = (projects as any[]).find(p=>p.id===inv.projectId);
+            const proj = projectMap.get(inv.projectId);
             const region = proj?.region || '— Unassigned —';
             if (!regionGroups[region]) regionGroups[region] = { count:0, amount:0 };
             regionGroups[region].count++;
@@ -754,7 +754,7 @@ export default function InvoicesPage() {
                   <tr><td colSpan={17} style={{ padding:32, textAlign:"center" as const, color:T.textDim }}>No invoices found</td></tr>
                 )}
                 {paginatedInv.map((inv, idx) => {
-                  const proj = projects.find((p:any) => p.id === inv.projectId);
+                  const proj = projectMap.get(inv.projectId);
                   return (
                     <React.Fragment key={inv.id}>
                     <tr
