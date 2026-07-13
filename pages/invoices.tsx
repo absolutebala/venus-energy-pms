@@ -93,6 +93,7 @@ export default function InvoicesPage() {
   const [settingsForm, setSettingsForm] = useState({
     investor1_profit1_pct: 5, investor1_profit2_pct: 5,
     investor2_profit1_pct: 5, investor2_profit2_pct: 95,
+    investor1_m1_pct: 1,
   });
   const [settingsSaving, setSettingsSaving] = useState(false);
 
@@ -142,6 +143,7 @@ export default function InvoicesPage() {
     investor1_additional_capital_pct: Number((formLinkedProject as any)?.investor1_additional_capital_pct ?? 2),
     investor1_interest_pct: Number((formLinkedProject as any)?.investor1_interest_pct ?? 2),
     investor1_other_expenses_pct: Number((formLinkedProject as any)?.investor1_other_expenses_pct ?? 0),
+    investor1_m1_pct: Number((formLinkedProject as any)?.investor1_m1_pct ?? 1),
   };
   const openSettings = () => { setSettingsForm(invSettings); setShowSettings(true); };
   const saveInvoiceSettings = async () => {
@@ -156,6 +158,7 @@ export default function InvoicesPage() {
         investor1_additional_capital_pct: Number((settingsForm as any).investor1_additional_capital_pct) || 0,
         investor1_interest_pct: Number((settingsForm as any).investor1_interest_pct) || 0,
         investor1_other_expenses_pct: Number((settingsForm as any).investor1_other_expenses_pct) || 0,
+        investor1_m1_pct: Number((settingsForm as any).investor1_m1_pct) ?? 1,
       };
       await ctxUpdateProjectInv((formLinkedProject as any).id, payload as any, profile?.full_name || undefined);
       setShowSettings(false);
@@ -297,7 +300,7 @@ export default function InvoicesPage() {
         createdBy: profile?.full_name || "",
         basicPaymentNo: newInv.basicPaymentNo||"", basicPaymentDate: newInv.basicPaymentDate||"",
         taxPaymentNo: newInv.taxPaymentNo||"", taxPaymentDate: newInv.taxPaymentDate||"",
-        tds: amt * 0.01, remarks: newInv.remarks||"",
+        tds: amt * (invSettings.investor1_m1_pct / 100), remarks: newInv.remarks||"",
         investor: newInv.investor || "",
         ...(newInv.investor === 'Investor 1' ? {
           investor1PaidAmount: investor1Paid, investor1Profit1: inv1Profit1,
@@ -522,7 +525,7 @@ export default function InvoicesPage() {
                   <label style={{ display:"block", fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:"uppercase" as const }}>{label}</label>
                   {field === 'tds' ? (
                     <div style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px", fontSize:13, background:T.bg, color:T.text }}>
-                      {fmt((Number(newInv.invoiceAmount)||0) * 0.01)}
+                      {fmt((Number(newInv.invoiceAmount)||0) * (invSettings.investor1_m1_pct / 100))}
                     </div>
                   ) : field === 'gst' ? (
                     <div style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:"7px 10px", fontSize:13, background:T.bg, color:T.text }}>
@@ -893,6 +896,12 @@ export default function InvoicesPage() {
                 <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Other Expenses (%)</label>
                 <input type="number" value={(settingsForm as any).investor1_other_expenses_pct}
                   onChange={e=>setSettingsForm((p:any)=>({...p, investor1_other_expenses_pct:e.target.value}))}
+                  style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:11, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>M1 Payment (%)</label>
+                <input type="number" value={(settingsForm as any).investor1_m1_pct ?? 1}
+                  onChange={e=>setSettingsForm((p:any)=>({...p, investor1_m1_pct:e.target.value}))}
                   style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none' }} />
               </div>
             </div>
