@@ -83,7 +83,7 @@ export default function InvoicesPage() {
   const [newInv,      setNewInv]      = useState({
     invoiceNo:"", invoiceDate:"", invoiceAmount:"",
     gst:"18", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
-    wccNo:"", receiptNo:"", investor:"", investor1Incentive:"",
+    wccNo:"", receiptNo:"", investor:"", investor1Incentive:"", investor1PaidAmount:"",
     basicPaymentNo:"", basicPaymentDate:"", taxPaymentNo:"", taxPaymentDate:"", tds:"", remarks:"",
   });
 
@@ -170,7 +170,7 @@ export default function InvoicesPage() {
     }
   };
   const formInvoiceAmt = Number(newInv.invoiceAmount) || 0;
-  const investor1PaidAmt = Number((formLinkedProject as any)?.paidAmount) || 0;
+  const investor1PaidAmt = newInv.investor1PaidAmount !== "" ? Number(newInv.investor1PaidAmount) || 0 : Number((formLinkedProject as any)?.paidAmount) || 0;
   const investor1OtherExpenses = formInvoiceAmt * (Number(invSettings.investor1_other_expenses_pct) || 0) / 100;
   const investor1Incentive = Number(newInv.investor1Incentive) || 0;
   const investor1Calc = {
@@ -282,7 +282,7 @@ export default function InvoicesPage() {
     const linkedProj = matchedProject || projects.find((p:any) => matchesPO(p.poNo, newInv.poNo));
     setSaving(true);
     try {
-      const investor1Paid = Number((linkedProj as any)?.paidAmount) || 0;
+      const investor1Paid = newInv.investor1PaidAmount !== "" ? Number(newInv.investor1PaidAmount) || 0 : Number((linkedProj as any)?.paidAmount) || 0;
       const inv1Profit1 = amt * (Number(invSettings.investor1_profit1_pct) || 0) / 100;
       const inv1Profit2 = amt * (Number(invSettings.investor1_profit2_pct) || 0) / 100;
       const inv1AdditionalCapital = investor1Paid * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100;
@@ -316,7 +316,7 @@ export default function InvoicesPage() {
       });
       setNewInv({ invoiceNo:"", invoiceDate:"", invoiceAmount:"",
         gst:"18", dueDate:"", invoiceStatus:"Draft", paymentStatus:"Pending", poNo:"",
-        wccNo:"", receiptNo:"", investor:"", investor1Incentive:"",
+        wccNo:"", receiptNo:"", investor:"", investor1Incentive:"", investor1PaidAmount:"",
         basicPaymentNo:"", basicPaymentDate:"", taxPaymentNo:"", taxPaymentDate:"", tds:"", remarks:"" });
       setShowForm(false);
       setToast({ msg:"✅ Invoice added successfully", type:"success" });
@@ -583,8 +583,15 @@ export default function InvoicesPage() {
               <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:14, marginBottom:12, background:'#fff' }}>
                 <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:10 }}>Investor 1 Details</div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:12 }}>
+                  <div style={{ marginBottom:12 }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Paid Amount (₹)</div>
+                    <input type="number"
+                      value={newInv.investor1PaidAmount !== "" ? newInv.investor1PaidAmount : investor1PaidAmt}
+                      onChange={e => setNewInv(p => ({ ...p, investor1PaidAmount: e.target.value }))}
+                      style={{ border:`1px solid ${T.primaryMid}`, borderRadius:6, padding:'7px 10px', fontSize:13, width:'100%', boxSizing:'border-box' as const, outline:'none', background:'#fff' }} />
+                    <div style={{ fontSize:10, color:T.textMuted, marginTop:2 }}>Editable — defaults to project paid expenses</div>
+                  </div>
                   {[
-                    ['Paid Amount (₹)', fmt(investor1Calc.paidAmount)],
                     [`Profit 1 (${invSettings.investor1_profit1_pct}% of Payment Received)`, fmt(investor1Calc.profit1)],
                     [`Profit 2 (${invSettings.investor1_profit2_pct}% of Payment Received)`, fmt(investor1Calc.profit2)],
                     [`Additional Capital (${invSettings.investor1_additional_capital_pct}% of Paid Amount)`, fmt(investor1Calc.additionalCapital)],
