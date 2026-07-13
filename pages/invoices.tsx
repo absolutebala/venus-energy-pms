@@ -53,6 +53,11 @@ export default function InvoicesPage() {
   const { profile, can, loading: authLoading } = useAuth();
   const { invoices, loading: invLoading, addInvoice, updateInvoice } = useInvoices();
   const { projects, updateProject: ctxUpdateProjectInv } = useProjects();
+  const projectMap = React.useMemo(() => {
+    const m = new Map<string, any>();
+    (projects as any[]).forEach(p => m.set(p.id, p));
+    return m;
+  }, [projects]);
   const canCreate  = !authLoading && can("invoices", "create");
   const canApprove = !authLoading && (profile?.role === 'super_admin' || profile?.role === 'accounting_team');
 
