@@ -2310,14 +2310,25 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                                   Balance Amount = Received Amount − Paid Amount − Additional Capital − Profit 1 − Profit 2 − Other Expenses − Interest
                                 </div>
                               </div>
-                              <div style={{ gridColumn:'span 2' }}>
-                                <div style={{ fontSize:10, color:T.textMuted, marginBottom:2 }}>P / L</div>
+                              <div style={{ gridColumn:'span 1' }}>
+                                <div style={{ fontSize:10, color:T.textMuted, marginBottom:2 }}>Expense Ratio</div>
                                 {(() => { const plPct = c1.paymentReceived > 0 ? (c1.paidAmount / c1.paymentReceived * 100) : 0; return (
                                   <>
-                                  <div style={{ ...inpS, background: plPct > 100 ? '#FEF2F2' : '#F0FDF4', color: plPct > 100 ? '#DC2626' : '#16A34A', fontWeight:700 }}>
+                                  <div style={{ ...inpS, background: plPct > 90 ? '#FEF2F2' : '#F0FDF4', color: plPct > 90 ? '#DC2626' : '#16A34A', fontWeight:700 }}>
                                     {plPct.toFixed(1)}%
                                   </div>
-                                  <div style={{ fontSize:9, color:T.textMuted, marginTop:3 }}>P / L = (Paid Amount / Received Amount) × 100</div>
+                                  <div style={{ fontSize:9, color:T.textMuted, marginTop:3 }}>(Paid ÷ Received) × 100</div>
+                                  </>
+                                ); })()}
+                              </div>
+                              <div style={{ gridColumn:'span 1' }}>
+                                <div style={{ fontSize:10, color:T.textMuted, marginBottom:2 }}>P / L %</div>
+                                {(() => { const pl = c1.paymentReceived > 0 ? ((c1.paymentReceived - c1.paidAmount) / c1.paymentReceived * 100) : 0; return (
+                                  <>
+                                  <div style={{ ...inpS, background: pl < 0 ? '#FEF2F2' : '#F0FDF4', color: pl < 0 ? '#DC2626' : '#16A34A', fontWeight:700 }}>
+                                    {pl.toFixed(1)}%
+                                  </div>
+                                  <div style={{ fontSize:9, color:T.textMuted, marginTop:3 }}>((Received − Paid) ÷ Received) × 100</div>
                                   </>
                                 ); })()}
                               </div>
@@ -2472,14 +2483,25 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                       Balance Amount = Received Amount − Paid Amount − Additional Capital − Profit 1 − Profit 2 − Other Expenses − Interest
                     </div>
                   </div>
-                  <div style={{ gridColumn:'span 2' }}>
-                    <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>P / L</div>
+                  <div style={{ gridColumn:'span 1' }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Expense Ratio</div>
                     {(() => { const plPct = c1.paymentReceived > 0 ? (c1.paidAmount / c1.paymentReceived * 100) : 0; return (
                       <>
-                      <div style={{ ...inpS, background: plPct > 100 ? '#FEF2F2' : '#F0FDF4', color: plPct > 100 ? '#DC2626' : '#16A34A', fontWeight:700 }}>
+                      <div style={{ ...inpS, background: plPct > 90 ? '#FEF2F2' : '#F0FDF4', color: plPct > 90 ? '#DC2626' : '#16A34A', fontWeight:700 }}>
                         {plPct.toFixed(1)}%
                       </div>
-                      <div style={{ fontSize:9, color:T.textMuted, marginTop:3 }}>P / L = (Paid Amount / Received Amount) × 100</div>
+                      <div style={{ fontSize:9, color:T.textMuted, marginTop:3 }}>(Paid ÷ Received) × 100</div>
+                      </>
+                    ); })()}
+                  </div>
+                  <div style={{ gridColumn:'span 1' }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>P / L %</div>
+                    {(() => { const pl = c1.paymentReceived > 0 ? ((c1.paymentReceived - c1.paidAmount) / c1.paymentReceived * 100) : 0; return (
+                      <>
+                      <div style={{ ...inpS, background: pl < 0 ? '#FEF2F2' : '#F0FDF4', color: pl < 0 ? '#DC2626' : '#16A34A', fontWeight:700 }}>
+                        {pl.toFixed(1)}%
+                      </div>
+                      <div style={{ fontSize:9, color:T.textMuted, marginTop:3 }}>((Received − Paid) ÷ Received) × 100</div>
                       </>
                     ); })()}
                   </div>

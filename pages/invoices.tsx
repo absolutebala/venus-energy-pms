@@ -611,16 +611,31 @@ export default function InvoicesPage() {
                       Balance Amount = Received Amount − Paid Amount − Additional Capital − Profit 1 − Profit 2 − Other Expenses − Interest
                     </div>
                   </div>
-                  <div style={{ gridColumn:'span 2' }}>
-                    <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>P / L</div>
-                    <div style={{ border:`1px solid ${investor1PLPct > 100 ? '#FECACA' : '#BBF7D0'}`, borderRadius:6, padding:'7px 10px', fontSize:13, fontWeight:700,
-                      background: investor1PLPct > 100 ? '#FEF2F2' : '#F0FDF4',
-                      color: investor1PLPct > 100 ? '#DC2626' : '#16A34A' }}>
+                  <div style={{ gridColumn:'span 1' }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Expense Ratio</div>
+                    <div style={{ border:`1px solid ${investor1PLPct > 90 ? '#FECACA' : '#BBF7D0'}`, borderRadius:6, padding:'7px 10px', fontSize:13, fontWeight:700,
+                      background: investor1PLPct > 90 ? '#FEF2F2' : '#F0FDF4',
+                      color: investor1PLPct > 90 ? '#DC2626' : '#16A34A' }}>
                       {investor1PLPct.toFixed(1)}%
                     </div>
                     <div style={{ fontSize:10, color:T.textMuted, marginTop:3 }}>
-                      P / L = (Paid Amount / Received Amount) × 100
+                      (Paid ÷ Received) × 100
                     </div>
+                  </div>
+                  <div style={{ gridColumn:'span 1' }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>P / L %</div>
+                    {(() => { const pl = investor1PaymentReceived > 0 ? ((investor1PaymentReceived - investor1Calc.paidAmount) / investor1PaymentReceived * 100) : 0; return (
+                      <>
+                      <div style={{ border:`1px solid ${pl < 0 ? '#FECACA' : '#BBF7D0'}`, borderRadius:6, padding:'7px 10px', fontSize:13, fontWeight:700,
+                        background: pl < 0 ? '#FEF2F2' : '#F0FDF4',
+                        color: pl < 0 ? '#DC2626' : '#16A34A' }}>
+                        {pl.toFixed(1)}%
+                      </div>
+                      <div style={{ fontSize:10, color:T.textMuted, marginTop:3 }}>
+                        ((Received − Paid) ÷ Received) × 100
+                      </div>
+                      </>
+                    ); })()}
                   </div>
                 </div>
               </div>
