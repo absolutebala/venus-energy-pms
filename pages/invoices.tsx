@@ -182,6 +182,8 @@ export default function InvoicesPage() {
   };
   const investor1BalanceAmount = formInvoiceAmt - investor1Calc.paidAmount - investor1Calc.additionalCapital
     - investor1Calc.profit1 - investor1Calc.profit2 - investor1OtherExpenses - investor1Calc.interest - investor1Incentive;
+  const investor1PaymentReceived = formInvoiceAmt - (formInvoiceAmt * 0.01) - (formInvoiceAmt * (invSettings.investor1_m1_pct / 100)) - investor1Incentive;
+  const investor1PLPct = investor1PaymentReceived > 0 ? (investor1Calc.paidAmount / investor1PaymentReceived * 100) : 0;
   const investor2Calc = {
     profit1: formInvoiceAmt * (Number(invSettings.investor2_profit1_pct) || 0) / 100,
     profit2: formInvoiceAmt * (Number(invSettings.investor2_profit2_pct) || 0) / 100,
@@ -607,6 +609,17 @@ export default function InvoicesPage() {
                     <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:6, padding:'7px 10px', fontSize:13, fontWeight:700, background:T.primaryLight, color:T.primary }}>{fmt(investor1BalanceAmount)}</div>
                     <div style={{ fontSize:10, color:T.textMuted, marginTop:3, lineHeight:1.4 }}>
                       Balance Amount = Received Amount − Paid Amount − Additional Capital − Profit 1 − Profit 2 − Other Expenses − Interest
+                    </div>
+                  </div>
+                  <div style={{ gridColumn:'span 2' }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>P / L</div>
+                    <div style={{ border:`1px solid ${investor1PLPct > 100 ? '#FECACA' : '#BBF7D0'}`, borderRadius:6, padding:'7px 10px', fontSize:13, fontWeight:700,
+                      background: investor1PLPct > 100 ? '#FEF2F2' : '#F0FDF4',
+                      color: investor1PLPct > 100 ? '#DC2626' : '#16A34A' }}>
+                      {investor1PLPct.toFixed(1)}%
+                    </div>
+                    <div style={{ fontSize:10, color:T.textMuted, marginTop:3 }}>
+                      P / L = (Paid Amount / Received Amount) × 100
                     </div>
                   </div>
                 </div>
