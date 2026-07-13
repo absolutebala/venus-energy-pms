@@ -2042,17 +2042,18 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
       setInvSettingsSaving(false);
     }
   };
-  const calcInvestor1 = (amt: number, incentive: number = 0) => {
+  const calcInvestor1 = (amt: number, incentive: number = 0, paidAmountOverride?: number) => {
+    const effectivePaid = paidAmountOverride !== undefined ? paidAmountOverride : paidAmount;
     const tds = amt * 0.01;
     const m1Payment = amt * (Number(invSettings.investor1_m1_pct ?? 1) / 100);
     const paymentReceived = amt - tds - m1Payment - incentive;
     const profit1 = paymentReceived * (Number(invSettings.investor1_profit1_pct) || 0) / 100;
     const profit2 = paymentReceived * (Number(invSettings.investor1_profit2_pct) || 0) / 100;
-    const additionalCapital = paidAmount * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100;
-    const interest = paidAmount * (Number(invSettings.investor1_interest_pct) || 0) / 100;
+    const additionalCapital = effectivePaid * (Number(invSettings.investor1_additional_capital_pct) || 0) / 100;
+    const interest = effectivePaid * (Number(invSettings.investor1_interest_pct) || 0) / 100;
     const otherExpenses = paymentReceived * (Number(invSettings.investor1_other_expenses_pct) || 0) / 100;
-    const balanceAmount = paymentReceived - paidAmount - additionalCapital - profit1 - profit2 - otherExpenses - interest;
-    return { paidAmount, profit1, profit2, additionalCapital, interest, otherExpenses, incentive, balanceAmount, m1Payment, paymentReceived };
+    const balanceAmount = paymentReceived - effectivePaid - additionalCapital - profit1 - profit2 - otherExpenses - interest;
+    return { paidAmount: effectivePaid, profit1, profit2, additionalCapital, interest, otherExpenses, incentive, balanceAmount, m1Payment, paymentReceived };
   };
   const calcInvestor2 = (amt: number) => {
     const tds = amt * 0.01;
@@ -2105,7 +2106,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
   const [newRow,  setNewRow]  = React.useState({
     invoiceNo:'', invoiceDate:'', invoiceAmount:'',
     gst:'18', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo,
-    wccNo:'', receiptNo:'', investor:'', investor1Incentive:'',
+    wccNo:'', receiptNo:'', investor:'', investor1Incentive:'', investor1PaidAmountOverride:'',
     basicPaymentNo:'', basicPaymentDate:'', taxPaymentNo:'', taxPaymentDate:'', tds:'', remarks:''
   });
 
@@ -2142,7 +2143,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
     const amt = Number(newRow.invoiceAmount), gstPct = Number(newRow.gst), gst = amt * gstPct / 100;
     setSaving(true);
     try {
-      const inv1 = calcInvestor1(amt, Number(newRow.investor1Incentive)||0);
+      const inv1 = calcInvestor1(amt, Number(newRow.investor1Incentive)||0, (newRow as any).investor1PaidAmountOverride !== '' ? Number((newRow as any).investor1PaidAmountOverride)||0 : undefined);
       const inv2 = calcInvestor2(amt);
       await addInvoice({
         invoiceNo: newRow.invoiceNo, invoiceDate: newRow.invoiceDate,
@@ -2168,7 +2169,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
       });
       setNewRow({ invoiceNo:'', invoiceDate:'', invoiceAmount:'',
         gst:'18', dueDate:'', invoiceStatus:'Draft', paymentStatus:'Pending', poNo:projectPoNo,
-        wccNo:'', receiptNo:'', investor:'', investor1Incentive:'',
+        wccNo:'', receiptNo:'', investor:'', investor1Incentive:'', investor1PaidAmountOverride:'',
         basicPaymentNo:'', basicPaymentDate:'', taxPaymentNo:'', taxPaymentDate:'', tds:'', remarks:'' });
       setAdding(false);
       logActivity(projectId, `Invoice ${newRow.invoiceNo} added`, profile?.full_name||'', profile?.role||'').catch(console.error);
@@ -2289,7 +2290,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                                 [`Interest (${invSettings.investor1_interest_pct}%)`, fmt(c1.interest)],
                                 [`Other Expenses (${invSettings.investor1_other_expenses_pct}% of Payment Received)`, fmt(c1.otherExpenses)],
                                 [`M1 Payment (${invSettings.investor1_m1_pct ?? 1}% of Basic Amount)`, fmt(c1.m1Payment)],
-                                ['Payment Received (₹)', fmt(c1.paymentReceived)],
+                                ['Payment Received (₹) = Basic − TDS (1%) − M1', fmt(c1.paymentReceived)],
                               ].map(([label,val]) => (
                                 <div key={label as string}>
                                   <div style={{ fontSize:10, color:T.textMuted, marginBottom:2 }}>{label}</div>
@@ -2344,7 +2345,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                             <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
                               {[
                                 [`M1 Payment (${invSettings.investor1_m1_pct ?? 1}% of Basic Amount)`, fmt(c2.m1Payment)],
-                                ['Payment Received (₹)', fmt(c2.paymentReceived)],
+                                ['Payment Received (₹) = Basic − TDS (1%) − M1', fmt(c2.paymentReceived)],
                                 [`Profit 1 (${invSettings.investor2_profit1_pct}% of Payment Received)`, fmt(c2.profit1)],
                                 [`Profit 2 (${invSettings.investor2_profit2_pct}% of Payment Received)`, fmt(c2.profit2)],
                               ].map(([label,val]) => (
@@ -2449,20 +2450,27 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
             </div>
           </div>
           {newRow.investor === 'Investor 1' && (() => {
+            const paidOverride = (newRow as any).investor1PaidAmountOverride !== '' ? Number((newRow as any).investor1PaidAmountOverride)||0 : undefined;
             const c1 = calcInvestor1(Number(newRow.invoiceAmount)||0, Number(newRow.investor1Incentive)||0);
             return (
               <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:8, padding:12, marginBottom:12, background:'#fff' }}>
                 <div style={{ fontSize:12, fontWeight:700, color:T.primary, marginBottom:8 }}>Investor 1 Details</div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:10 }}>
+                  <div style={{ marginBottom:10 }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Paid Amount (₹)</div>
+                    <input type="number" style={{ ...inpS, borderColor:T.primaryMid }}
+                      value={(newRow as any).investor1PaidAmountOverride !== '' ? (newRow as any).investor1PaidAmountOverride : paidAmount}
+                      onChange={e => setNewRow(p => ({ ...p, investor1PaidAmountOverride: e.target.value }))} />
+                    <div style={{ fontSize:9, color:T.textMuted, marginTop:2 }}>Auto-filled from project paid expenses (₹{paidAmount.toLocaleString('en-IN')}). Edit to override.</div>
+                  </div>
                   {[
-                    ['Paid Amount (₹)', fmt(c1.paidAmount)],
                     [`Profit 1 (${invSettings.investor1_profit1_pct}% of Payment Received)`, fmt(c1.profit1)],
                     [`Profit 2 (${invSettings.investor1_profit2_pct}% of Payment Received)`, fmt(c1.profit2)],
                     [`Additional Capital (${invSettings.investor1_additional_capital_pct}% of Paid Amount)`, fmt(c1.additionalCapital)],
                     [`Interest (${invSettings.investor1_interest_pct}%)`, fmt(c1.interest)],
                     [`Other Expenses (${invSettings.investor1_other_expenses_pct}% of Payment Received)`, fmt(c1.otherExpenses)],
                     [`M1 Payment (${invSettings.investor1_m1_pct ?? 1}% of Basic Amount)`, fmt(c1.m1Payment)],
-                    ['Payment Received (₹)', fmt(c1.paymentReceived)],
+                    ['Payment Received (₹) = Basic − TDS (1%) − M1', fmt(c1.paymentReceived)],
                   ].map(([label,val]) => (
                     <div key={label as string}>
                       <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>{label}</div>
@@ -2517,7 +2525,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:10 }}>
                   {[
                     [`M1 Payment (${invSettings.investor1_m1_pct ?? 1}% of Basic Amount)`, fmt(c2.m1Payment)],
-                    ['Payment Received (₹)', fmt(c2.paymentReceived)],
+                    ['Payment Received (₹) = Basic − TDS (1%) − M1', fmt(c2.paymentReceived)],
                     [`Profit 1 (${invSettings.investor2_profit1_pct}% of Payment Received)`, fmt(c2.profit1)],
                     [`Profit 2 (${invSettings.investor2_profit2_pct}% of Payment Received)`, fmt(c2.profit2)],
                   ].map(([label,val]) => (
