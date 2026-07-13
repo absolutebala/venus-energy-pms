@@ -605,6 +605,9 @@ export default function InvoicesPage() {
                   <div style={{ gridColumn:"span 2" }}>
                     <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Balance Amount (₹)</div>
                     <div style={{ border:`1px solid ${T.primaryMid}`, borderRadius:6, padding:'7px 10px', fontSize:13, fontWeight:700, background:T.primaryLight, color:T.primary }}>{fmt(investor1BalanceAmount)}</div>
+                    <div style={{ fontSize:10, color:T.textMuted, marginTop:3, lineHeight:1.4 }}>
+                      Basic − Paid Amount − M1 ({invSettings.investor1_m1_pct}%) − TDS − Additional Capital − Profit 1 − Profit 2 − Other Expenses − Interest − Incentive
+                    </div>
                   </div>
                 </div>
               </div>
