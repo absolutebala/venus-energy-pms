@@ -2307,7 +2307,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                                 <div style={{ fontSize:10, color:T.textMuted, marginBottom:2 }}>Balance Amount (₹)</div>
                                 <div style={{ ...inpS, background:T.primaryLight, color:T.primary, fontWeight:700 }}>{fmt(c1.balanceAmount)}</div>
                                 <div style={{ fontSize:9, color:T.textMuted, marginTop:3, lineHeight:1.4 }}>
-                                  Basic − Paid Amt − M1 ({invSettings.investor1_m1_pct ?? 1}%) − TDS − Add. Capital − Profit 1 − Profit 2 − Other Exp − Interest − Incentive
+                                  Balance Amount = Received Amount − Paid Amount − Additional Capital − Profit 1 − Profit 2 − Other Expenses − Interest
                                 </div>
                               </div>
                             </div>
@@ -2458,7 +2458,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                     <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:4, textTransform:'uppercase' as const }}>Balance Amount (₹)</div>
                     <div style={{ ...inpS, background:T.primaryLight, color:T.primary, fontWeight:700 }}>{fmt(c1.balanceAmount)}</div>
                     <div style={{ fontSize:9, color:T.textMuted, marginTop:3, lineHeight:1.4 }}>
-                      Basic − Paid Amt − M1 ({invSettings.investor1_m1_pct ?? 1}%) − TDS − Add. Capital − Profit 1 − Profit 2 − Other Exp − Interest − Incentive
+                      Balance Amount = Received Amount − Paid Amount − Additional Capital − Profit 1 − Profit 2 − Other Expenses − Interest
                     </div>
                   </div>
                 </div>
