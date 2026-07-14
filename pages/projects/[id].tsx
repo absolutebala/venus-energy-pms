@@ -1330,9 +1330,8 @@ function SRNSectionNew({ projectId, role, onAllReceived, onCountChange, canAdd: 
       setItems(updatedItems);
       const allDone = updatedItems.length > 0 && updatedItems.every((i:any) => i.received === true);
       if (allDone && received) {
-        await updateProj(projectId, { projectStatus: 'WCC Raised' } as any, profile?.full_name ?? undefined);
-        setToast({ msg:'✅ All SRN items received — Project status set to WCC Raised', type:'success' });
-        logSRNAct(projectId, 'All SRN items received — project status set to WCC Raised', profile?.full_name||'', profile?.role||'').catch(()=>{});
+        setToast({ msg:'✅ All SRN items received', type:'success' });
+        logSRNAct(projectId, 'All SRN items received', profile?.full_name||'', profile?.role||'').catch(()=>{});
       } else {
         setToast({ msg: received ? '✅ Marked as Received' : '❌ Marked as Not Received', type: received ? 'success' : 'info' });
       }
