@@ -49,12 +49,33 @@ export function WorkProgressProvider({ children }: { children: React.ReactNode }
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from('work_progress').select('*').order('work_date', { ascending: false });
-    if (data) setItems(data.map(mapRow));
+    const BATCH = 1000;
+    let allRows: any[] = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase.from('work_progress').select('*')
+        .order('work_date', { ascending: false }).range(from, from + BATCH - 1);
+      if (error) break;
+      const rows = data || [];
+      allRows = allRows.concat(rows);
+      if (rows.length < BATCH) break;
+      from += BATCH;
+    }
+    setItems(allRows.map(mapRow));
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchItems(); }, [fetchItems]);
+
+  // Re-fetch when auth session is established (fixes empty data after login/refresh)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        fetchItems();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [fetchItems]);
 
   const getByProject = useCallback((projectId: string) =>
     items.filter(i => i.projectId === projectId).sort((a,b) => b.workDate.localeCompare(a.workDate)),
