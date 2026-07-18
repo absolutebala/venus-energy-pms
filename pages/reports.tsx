@@ -558,7 +558,7 @@ export default function ReportsPage() {
                   <KPI label="Total PO Value"      value={fmtCr(totalPO)}              color={T.text}    sub="Across all projects" />
                   <KPI label="Total Billed"         value={fmt(totalBilled)}             color={T.info}    sub="Paid invoice amount" />
                   <KPI label="Total Paid (Expenses)"value={fmt(totalPaid)}              color={T.success} sub="Paid expense amount" />
-                  <KPI label="Invoices Unpaid"      value={fmt(totalUnpaidInvoices)}    color={T.danger}  sub="Pending payment" />
+                  <KPI label="Invoices Unpaid"      value={fmt(totalUnpaidInvoices)}    color={T.danger}  sub="Sum of invoices not yet paid by client" />
                 </div>
 
                 {/* Row 3 — Alert Summary */}
@@ -832,7 +832,7 @@ export default function ReportsPage() {
                   <KPI label="Total PO Value"  value={fmtCr(totalPO)}    color={T.primary} sub="Sum of PO value across all projects" />
                   <KPI label="Total Billed"    value={fmt(totalBilled)}  color={T.info}    sub="Sum of paid invoice amounts" />
                   <KPI label="Total Paid"      value={fmt(totalPaid)}    color={T.success} sub="Sum of paid expenses across all projects" />
-                  <KPI label="Outstanding"     value={fmt(totalPending)} color={T.warning} sub="Total Billed − Total Paid (Expenses)" />
+                  <KPI label="Outstanding"     value={fmt(totalPending)} color={T.warning} sub="Total Billed (Received) − Total Paid (Expenses)" />
                 </div>
                 <div style={card}>
                   <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>Financial by Region (₹ Lakhs)</div>
