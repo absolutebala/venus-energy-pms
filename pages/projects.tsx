@@ -279,6 +279,7 @@ export default function ProjectsPage() {
   // filterVendors and filterPMs now computed as cascading useMemos below
   const [regionFilter,  setRegionFilter]  = useState<string[]>([]);
   const [noVendorFilter, setNoVendorFilter] = useState(false);
+  const [uniquePOFilter, setUniquePOFilter] = React.useState(false);
 
   // Redirect PM
   useEffect(() => {
