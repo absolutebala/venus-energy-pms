@@ -41,17 +41,16 @@ export default function CapitalPage() {
 
   const totalCapitalFund = capitalFundExpenses.reduce((a, e) => a + Number(e.amount||0), 0);
   const totalPersonalFund = personalFundExpenses.reduce((a, e) => a + Number(e.amount||0), 0);
-  // Live Regain Capital — sum of paid expenses (Investor 1 only) for projects that have at least one Paid Investor 1 invoice.
-  const latestRegainCapital = useMemo(() => {
-    const paidInv1ProjectIds = new Set(
-      (invoices as any[]).filter(i => i.paymentStatus === 'Paid' && i.investor === 'Investor 1').map(i => i.projectId)
-    );
-    return (expenses as any[]).filter(e =>
-      e.status === 'paid' &&
-      e.investorType === 'Investor 1' &&
-      paidInv1ProjectIds.has(e.projectId)
-    ).reduce((a, e) => a + Number(e.amount||0), 0);
+  // Regain Capital split by investor
+  const regainCapitalSplit = useMemo(() => {
+    const paidInvoiceProjectIds = new Set((invoices as any[]).filter(i => i.paymentStatus === 'Paid').map(i => i.projectId));
+    const paidExp = (expenses as any[]).filter(e => e.status === 'paid' && paidInvoiceProjectIds.has(e.projectId));
+    const inv1 = paidExp.filter(e => e.investorType === 'Investor 1').reduce((a, e) => a + Number(e.amount||0), 0);
+    const inv2 = paidExp.filter(e => e.investorType === 'Investor 2').reduce((a, e) => a + Number(e.amount||0), 0);
+    const total = paidExp.reduce((a, e) => a + Number(e.amount||0), 0);
+    return { inv1, inv2, total };
   }, [expenses, invoices]);
+  const latestRegainCapital = regainCapitalSplit.total;
   // Pending Invoice Amount = total of ALL paid expenses portal-wide, minus the live Regain Capital figure above
   const totalPaidExpensesAll = useMemo(() => (expenses as any[]).filter(e => e.status === 'paid').reduce((a, e) => a + Number(e.amount||0), 0), [expenses]);
   const pendingInvoiceAmount = totalPaidExpensesAll - latestRegainCapital;
@@ -154,7 +153,11 @@ export default function CapitalPage() {
               <div style={{ ...card, padding:'16px 18px', borderLeft:`4px solid #059669` }}>
                 <div style={{ fontSize:10, fontWeight:600, color:'#059669', textTransform:'uppercase' as const, marginBottom:4 }}>Regain Capital</div>
                 <div style={{ fontSize:20, fontWeight:800, color:'#059669' }}>{fmt(latestRegainCapital)}</div>
-                <div style={{ fontSize:10, color:T.textMuted }}>live, as of now</div>
+                <div style={{ fontSize:10, color:T.textMuted, marginTop:4 }}>
+                  <span style={{ color:'#0D9488' }}>Inv 1: {fmt(regainCapitalSplit.inv1)}</span>
+                  {' · '}
+                  <span style={{ color:'#2563EB' }}>Inv 2: {fmt(regainCapitalSplit.inv2)}</span>
+                </div>
               </div>
               <div style={{ ...card, padding:'16px 18px', borderLeft:`4px solid #DC2626` }}>
                 <div style={{ fontSize:10, fontWeight:600, color:'#DC2626', textTransform:'uppercase' as const, marginBottom:4 }}>Pending Invoice Amount</div>
