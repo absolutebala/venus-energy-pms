@@ -41,15 +41,12 @@ export default function CapitalPage() {
 
   const totalCapitalFund = capitalFundExpenses.reduce((a, e) => a + Number(e.amount||0), 0);
   const totalPersonalFund = personalFundExpenses.reduce((a, e) => a + Number(e.amount||0), 0);
-  // Regain Capital split by investor
+  // Regain Capital = sum of investor1PaidAmount from paid invoices per investor
   const regainCapitalSplit = useMemo(() => {
-    const paidInvoiceProjectIds = new Set((invoices as any[]).filter(i => i.paymentStatus === 'Paid').map(i => i.projectId));
-    const paidExp = (expenses as any[]).filter(e => e.status === 'paid' && paidInvoiceProjectIds.has(e.projectId));
-    const inv1 = paidExp.filter(e => e.investorType === 'Investor 1').reduce((a, e) => a + Number(e.amount||0), 0);
-    const inv2 = paidExp.filter(e => e.investorType === 'Investor 2').reduce((a, e) => a + Number(e.amount||0), 0);
-    const total = paidExp.reduce((a, e) => a + Number(e.amount||0), 0);
-    return { inv1, inv2, total };
-  }, [expenses, invoices]);
+    const inv1 = (invoices as any[]).filter(i => i.paymentStatus === 'Paid' && i.investor === 'Investor 1').reduce((a, i) => a + Number(i.investor1PaidAmount||0), 0);
+    const inv2 = (invoices as any[]).filter(i => i.paymentStatus === 'Paid' && i.investor === 'Investor 2').reduce((a, i) => a + Number(i.investor1PaidAmount||0), 0);
+    return { inv1, inv2, total: inv1 + inv2 };
+  }, [invoices]);
   const latestRegainCapital = regainCapitalSplit.total;
   // Pending Invoice Amount = total of ALL paid expenses portal-wide, minus the live Regain Capital figure above
   const totalPaidExpensesAll = useMemo(() => (expenses as any[]).filter(e => e.status === 'paid').reduce((a, e) => a + Number(e.amount||0), 0), [expenses]);
