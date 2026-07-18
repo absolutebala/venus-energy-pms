@@ -829,10 +829,10 @@ export default function ReportsPage() {
             {active==='financial' && (
               <div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:16 }}>
-                  <KPI label="Total PO Value"  value={fmtCr(totalPO)}    color={T.primary} />
-                  <KPI label="Total Billed"    value={fmt(totalBilled)}  color={T.info}    />
-                  <KPI label="Total Paid"      value={fmt(totalPaid)}    color={T.success} />
-                  <KPI label="Outstanding"     value={fmt(totalPending)} color={T.warning} />
+                  <KPI label="Total PO Value"  value={fmtCr(totalPO)}    color={T.primary} sub="Sum of PO value across all projects" />
+                  <KPI label="Total Billed"    value={fmt(totalBilled)}  color={T.info}    sub="Sum of paid invoice amounts" />
+                  <KPI label="Total Paid"      value={fmt(totalPaid)}    color={T.success} sub="Sum of paid expenses across all projects" />
+                  <KPI label="Outstanding"     value={fmt(totalPending)} color={T.warning} sub="Total Billed − Total Paid (Expenses)" />
                 </div>
                 <div style={card}>
                   <div style={{ fontSize:14, fontWeight:600, color:T.text, marginBottom:14 }}>Financial by Region (₹ Lakhs)</div>
