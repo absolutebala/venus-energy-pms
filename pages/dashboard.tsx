@@ -43,6 +43,7 @@ const TIMELINE = [
 
 const fmt    = fmtINR;
 const fmtCr  = fmtINR;
+const fmtFull = (n: number) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits:0, maximumFractionDigits:0 });
 const STATUS_DISPLAY: Record<string,string> = {
   in_progress:'In Progress', pending:'Pending', delayed:'Delayed',
   completed:'Completed', submitted:'Submitted', pm_approved:'PM Approved',
@@ -592,7 +593,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilt
             <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase' as const, letterSpacing:0.5 }}>Total PO Value</div>
             <div style={{ fontSize:20 }}>💰</div>
           </div>
-          <div style={{ fontSize:26, fontWeight:700, color:'#7C3AED', marginBottom:4 }}>{fmtCr(projects.reduce((a:number,p:any)=>a+Number(p.poValue||0),0))}</div>
+          <div style={{ fontSize:22, fontWeight:700, color:'#7C3AED', marginBottom:4 }}>{fmtFull(projects.reduce((a:number,p:any)=>a+Number(p.poValue||0),0))}</div>
           <div style={{ fontSize:11, color:T.textMuted }}>across {new Set(projects.map((p:any)=>(p as any).poNo).filter(Boolean)).size} POs</div>
         </div>
       </div>
@@ -608,7 +609,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilt
           { label:'Pending Expense Requests', value:expPending.length,             color:'#D97706', icon:'📋', sub:`₹${(expPendingAmt/1000).toFixed(1)}K pending`, href:'/site-expenses' },
           { label:'Paid Expenses',            value:expPaid.length,                color:T.success, icon:'✅', sub:`₹${(expPaidAmt/1000).toFixed(1)}K paid`,    href:'/site-expenses' },
           { label:'Total Invoices',           value:invTotal,                      color:T.primary, icon:'🧾', sub:`${invSubmitted} submitted`,                   href:'/invoices'      },
-          { label:'Total Invoice Value',      value:fmtINR(invTotalValue), color:'#7C3AED', icon:'💰', sub:`${invDraft} drafts`,              href:'/invoices'      },
+          { label:'Total Invoice Value',      value:fmtFull(invTotalValue), color:'#7C3AED', icon:'💰', sub:`${invDraft} drafts`,              href:'/invoices'      },
         ].map((s,i)=>(
           <div key={i} onClick={()=>router.push(s.href)}
             style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px', cursor:'pointer', transition:'all 0.15s' }}
@@ -1134,7 +1135,7 @@ function ViewerDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
         <KpiCard label="Total Projects"  value={projects.length}                                       icon="📁" color={T.primary} />
         <KpiCard label="In Progress"     value={projects.filter(p=>p.status==='in_progress').length}   icon="⚡" color={T.info}    />
         <KpiCard label="Delayed"         value={projects.filter(p=>p.status==='delayed').length}       icon="⚠️" color={T.danger}  />
-        <KpiCard label="Total PO Value"  value={fmtCr(projects.reduce((a,p)=>a+p.poValue,0))}         icon="💰" color={T.success} />
+        <KpiCard label="Total PO Value"  value={fmtFull(projects.reduce((a,p)=>a+p.poValue,0))}         icon="💰" color={T.success} />
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:20 }}>
         <div style={card}>
@@ -1191,7 +1192,7 @@ function AccountingDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
         <KpiCard label="Pending Expenses"  value={expPending.length}                          icon="📋" color={T.warning} sub={`₹${(expPendingAmt/1000).toFixed(1)}K`} />
         <KpiCard label="Paid Expenses"     value={expPaid.length}                             icon="✅" color={T.success} sub={`₹${(expPaidAmt/1000).toFixed(1)}K`} />
         <KpiCard label="Submitted Invoices" value={pending.length}                            icon="🧾" color={T.primary} onClick={()=>router.push('/invoices')} />
-        <KpiCard label="Total Invoice Value" value={fmtINR(invTotalValue)} icon="💰" color='#7C3AED' />
+        <KpiCard label="Total Invoice Value" value={fmtFull(invTotalValue)} icon="💰" color='#7C3AED' />
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
