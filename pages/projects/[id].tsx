@@ -2797,7 +2797,7 @@ export default function ProjectDetailPage() {
       logActivity(projectId, `Document verified: ${docKey} by ${profile?.full_name}`, profile?.full_name||'', profile?.role||'').catch(()=>{});
     }
   };
-  const canUploadDocs     = !loading && can('sec_work_documents',   'create');
+  const canUploadDocs     = false; // Upload hidden for all roles
   const canVerifyDocs     = !loading && ['super_admin','project_manager','region_manager'].includes(role);
   const showSTNSRN        = !loading && can('sec_stn_srn',          'read');
   const showBillingReview = !loading && can('sec_billing_review',   'read');
