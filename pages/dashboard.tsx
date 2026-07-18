@@ -583,7 +583,7 @@ function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilt
             {(() => { const other = projects.filter((p:any)=>!['Open','Closed'].includes((p as any).poStatus||'')).length; return other > 0 ? <span onClick={e=>{e.stopPropagation();router.push(buildProjectsLink({ status:'PO Unclassified' }));}} style={{color:'#D97706',cursor:'pointer',textDecoration:'underline'}}>{other} unclassified →</span> : <span>1% of total</span>; })()}
           </div>
         </div>
-        <div onClick={()=>router.push(buildProjectsLink({}))}
+        <div onClick={()=>router.push(buildProjectsLink({ uniquePO:'1' }))}
           style={{ ...card, padding:'16px 18px', cursor:'pointer', position:'relative' as const, overflow:'hidden', transition:'all 0.15s' }}
           onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(-1px)'}
           onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.transform='translateY(0)'}>
@@ -1379,11 +1379,15 @@ export default function Dashboard() {
       if (dashStatus.length && !dashStatus.includes((p as any).projectStatus||'— Unassigned —')) return false;
       if (dashPM.length     && !dashPM.includes((p as any).pm||'— Unassigned —')) return false;
       if (dashVendor.length && !dashVendor.includes((p as any).vendor||'— Unassigned —')) return false;
-      if (dashDateFrom && p.poDate && p.poDate < dashDateFrom) return false;
-      if (dashDateTo   && p.poDate && p.poDate > dashDateTo)   return false;
+      // Date filter: if date range set, exclude projects with no poDate
+      if (dashDateFrom || dashDateTo) {
+        if (!p.poDate) return false;
+        if (dashDateFrom && p.poDate < dashDateFrom) return false;
+        if (dashDateTo   && p.poDate > dashDateTo)   return false;
+      }
       return true;
     });
-  }, [dbProjects, dashRegion, dashType, dashDateFrom, dashDateTo, dashStatus, dashPM, dashVendor, role, fullName]);
+  }, [projectsWithAging, dashRegion, dashType, dashDateFrom, dashDateTo, dashStatus, dashPM, dashVendor, role, fullName]);
 
   return (
     <Layout>

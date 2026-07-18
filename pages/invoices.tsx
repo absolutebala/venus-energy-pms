@@ -348,27 +348,58 @@ export default function InvoicesPage() {
       datePreset !== 'all' || poSearch
     );
     if (!hasAnyFilter) { setShowExportWarning(true); return; }
-    const rows = displayInvoices.map((inv, idx) => ({
-      'S.No':           idx + 1,
-      'PO No':          (inv as any).poNo || '',
-      'PO Date':        projectMap.get(inv.projectId)?.poDate ? new Date(projectMap.get(inv.projectId).poDate) : '',
-      'Indus ID':       projectMap.get(inv.projectId)?.indusId || '',
-      'Project ID':     projectMap.get(inv.projectId)?.projectId || '',
-      'Project':        projectMap.get(inv.projectId)?.site || '',
-      'WCC No':         (inv as any).wccNo || '',
-      'Receipt No':     (inv as any).receiptNo || '',
-      'Invoice No':     inv.invoiceNo,
-      'Invoice Date':   inv.invoiceDate ? new Date(inv.invoiceDate) : '',
-      'Basic Amount':   inv.invoiceAmount,
-      'GST (%)':        inv.invoiceAmount > 0 ? ((inv.gst / inv.invoiceAmount) * 100).toFixed(1) + '%' : '0%',
-      'Tax Amount (₹)':  inv.gst,
-      'Total Amount':   inv.totalAmount,
-      'Circle':         projectMap.get(inv.projectId)?.region || '',
-      'Project Status': projectMap.get(inv.projectId)?.projectStatus || '',
-      'Invoice Status': inv.invoiceStatus,
-      'Payment Status': inv.paymentStatus,
-      'Due Date':       inv.dueDate ? new Date(inv.dueDate) : '',
-    }));
+    const rows = displayInvoices.map((inv, idx) => {
+      const proj = projectMap.get(inv.projectId);
+      const basic = Number((inv as any).invoiceAmount || 0);
+      const gstAmt = Number((inv as any).gst || 0);
+      const tds = Number((inv as any).tds || 0);
+      const m1 = Number((inv as any).m1Payment || 0);
+      const received = Number((inv as any).paymentReceived || 0);
+      const paid = Number((inv as any).investor1PaidAmount || 0);
+      const p1 = Number((inv as any).investor1Profit1 || 0);
+      const p2 = Number((inv as any).investor1Profit2 || 0);
+      const addCap = Number((inv as any).investor1AdditionalCapital || 0);
+      const otherExp = Number((inv as any).investor1OtherExpenses || 0);
+      const interest = Number((inv as any).investor1Interest || 0);
+      const incentive = Number((inv as any).investor1Incentive || 0);
+      const balance = Number((inv as any).investor1BalanceAmount || 0);
+      const expRatio = received > 0 ? (paid / received * 100).toFixed(1) + '%' : '—';
+      return {
+        'S.No':                idx + 1,
+        'Project No':          proj?.projectId || '',
+        'PO No':               (inv as any).poNo || '',
+        'PO Date':             proj?.poDate ? new Date(proj.poDate) : '',
+        'Indus ID':            proj?.indusId || '',
+        'Project ID':          proj?.projectId || '',
+        'Project':             proj?.site || '',
+        'WCC No':              (inv as any).wccNo || '',
+        'Receipt No':          (inv as any).receiptNo || '',
+        'Invoice No':          inv.invoiceNo,
+        'Invoice Date':        inv.invoiceDate ? new Date(inv.invoiceDate) : '',
+        'Basic Amount (₹)':    basic,
+        'GST (%)':             basic > 0 ? (gstAmt / basic * 100).toFixed(1) + '%' : '0%',
+        'Tax Amount (₹)':      gstAmt,
+        'Total Amount (₹)':    basic + gstAmt,
+        'Circle':              proj?.region || '',
+        'Project Status':      proj?.projectStatus || '',
+        'Invoice Status':      inv.invoiceStatus,
+        'Payment Status':      inv.paymentStatus,
+        'Remarks':             (inv as any).remarks || '',
+        'TDS (₹)':             tds,
+        'M1 Payment (₹)':      m1,
+        'Payment Received (₹)':received,
+        'Investor Type':       (inv as any).investor || '',
+        'Paid Amount (₹)':     paid,
+        'Profit 1 (₹)':        p1,
+        'Profit 2 (₹)':        p2,
+        'Additional Capital (₹)': addCap,
+        'Other Expenses (₹)':  otherExp,
+        'Interest (₹)':        interest,
+        'Incentive (₹)':       incentive,
+        'Balance Amount (₹)':  balance,
+        'Expense Ratio':       expRatio,
+      };
+    });
     const ws = XLSX.utils.json_to_sheet(rows, { cellDates: true, dateNF: 'dd-mm-yyyy' });
     ws['!cols'] = [{wch:6},{wch:16},{wch:14},{wch:16},{wch:14},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14}];
     // Enable AutoFilter on header row

@@ -305,6 +305,7 @@ export default function ProjectsPage() {
     setVendorFilter(params.vendor ? decodeURIComponent(params.vendor).split(',').filter(Boolean) : []);
     setRegionFilter(params.region ? decodeURIComponent(params.region).split(',').filter(Boolean) : []);
     setNoVendorFilter(params.noVendor === '1');
+    setUniquePOFilter(params.uniquePO === '1');
     setProjectStatusFilter(params.projStatus ? decodeURIComponent(params.projStatus).split(',').filter(Boolean) : []);
     if (params.ageMin) setAgeMin(Number(params.ageMin)); else setAgeMin(null);
     if (params.ageMax) setAgeMax(Number(params.ageMax)); else setAgeMax(null);
@@ -366,7 +367,19 @@ export default function ProjectsPage() {
     const endRef = p.endDate && WCC_DONE.includes((p as any).projectStatus) ? new Date(p.endDate) : new Date();
     return Math.floor((endRef.getTime() - new Date(ref).getTime()) / 86400000);
   };
-  const filtered = roleFilteredProjects.filter(p => {
+  // Apply uniquePO deduplication — show only first project per PO number
+  const uniquePOBase = React.useMemo(() => {
+    if (!uniquePOFilter) return roleFilteredProjects;
+    const seen = new Set<string>();
+    return roleFilteredProjects.filter((p:any) => {
+      const key = p.poNo || p.id;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [roleFilteredProjects, uniquePOFilter]);
+
+  const filtered = uniquePOBase.filter(p => {
     // Status filter check — was previously an early `return`, which short-circuited the entire
     // function and silently skipped every other active filter (Type, Age, PM, Region, Vendor,
     // search) whenever a PO Open/Closed/Unclassified/project-status filter was selected.
