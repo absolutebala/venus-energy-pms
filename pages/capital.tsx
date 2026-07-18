@@ -41,11 +41,16 @@ export default function CapitalPage() {
 
   const totalCapitalFund = capitalFundExpenses.reduce((a, e) => a + Number(e.amount||0), 0);
   const totalPersonalFund = personalFundExpenses.reduce((a, e) => a + Number(e.amount||0), 0);
-  // Live Regain Capital — recalculated right now, same formula used in the Make Payment modal:
-  // sum of paid expenses for projects that have at least one Paid invoice.
+  // Live Regain Capital — sum of paid expenses (Investor 1 only) for projects that have at least one Paid Investor 1 invoice.
   const latestRegainCapital = useMemo(() => {
-    const paidInvoiceProjectIds = new Set((invoices as any[]).filter(i => i.paymentStatus === 'Paid').map(i => i.projectId));
-    return (expenses as any[]).filter(e => e.status === 'paid' && paidInvoiceProjectIds.has(e.projectId)).reduce((a, e) => a + Number(e.amount||0), 0);
+    const paidInv1ProjectIds = new Set(
+      (invoices as any[]).filter(i => i.paymentStatus === 'Paid' && i.investor === 'Investor 1').map(i => i.projectId)
+    );
+    return (expenses as any[]).filter(e =>
+      e.status === 'paid' &&
+      e.investorType === 'Investor 1' &&
+      paidInv1ProjectIds.has(e.projectId)
+    ).reduce((a, e) => a + Number(e.amount||0), 0);
   }, [expenses, invoices]);
   // Pending Invoice Amount = total of ALL paid expenses portal-wide, minus the live Regain Capital figure above
   const totalPaidExpensesAll = useMemo(() => (expenses as any[]).filter(e => e.status === 'paid').reduce((a, e) => a + Number(e.amount||0), 0), [expenses]);
