@@ -317,7 +317,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
         canvas.width  = viewport.width;
         canvas.height = viewport.height;
         const ctx = canvas.getContext('2d')!;
-        await page.render({ canvasContext: ctx, viewport }).promise;
+        await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
         const b64 = canvas.toDataURL('image/jpeg', 0.85).replace('data:image/jpeg;base64,', '');
         images.push(b64);
       }
