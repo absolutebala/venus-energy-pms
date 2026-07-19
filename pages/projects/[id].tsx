@@ -1480,7 +1480,6 @@ function SRNSectionNew({ projectId, role, onAllReceived, onCountChange, canAdd: 
           document_no: it.document_no || '',
           boq_req_no:  it.boq_req_no || '',
           sort_order:  items.length + i + 1,
-          created_by:  profile?.full_name || '',
         };
         if (it.lifted_date)   payload.lifted_date   = it.lifted_date;
         if (it.gate_entry_no) payload.gate_entry_no = it.gate_entry_no;
