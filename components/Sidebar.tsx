@@ -68,6 +68,7 @@ const ADMIN_NAV: NavItem[] = [
   { href:'/admin/roles',      label:'Role & Permissions', icon:<Lock {...iconProps} /> },
   { href:'/admin/activities', label:'Activities',         icon:<Activity {...iconProps} /> },
   { href:'/admin/settings',   label:'Settings',           icon:<Settings {...iconProps} /> },
+  { href:'/admin/backups',    label:'Backups',            icon:<Database {...iconProps} /> },
 ];
 
 interface Props { collapsed: boolean; onCollapse: (v: boolean) => void; }
