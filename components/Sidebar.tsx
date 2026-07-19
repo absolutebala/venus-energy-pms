@@ -146,18 +146,19 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
           {item.icon}
         </span>
         {!collapsed && (
-          <span style={{ fontSize:13, fontWeight: active ? 600 : 400, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-            {item.label}
-          </span>
-          {item.alert && backupAlert && (
-            <span style={{ marginLeft:'auto', width:7, height:7, borderRadius:'50%', background:'#DC2626', flexShrink:0 }} />
-          )}
+          <>
+            <span style={{ fontSize:13, fontWeight: active ? 600 : 400, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+              {item.label}
+            </span>
+            {item.alert && backupAlert ? (
+              <span style={{ marginLeft:'auto', width:7, height:7, borderRadius:'50%', background:'#DC2626', flexShrink:0 }} />
+            ) : active ? (
+              <span style={{ marginLeft:'auto', width:5, height:5, borderRadius:'50%', background:T.primary, flexShrink:0 }} />
+            ) : null}
+          </>
         )}
         {collapsed && item.alert && backupAlert && (
           <span style={{ position:'absolute', top:6, right:6, width:7, height:7, borderRadius:'50%', background:'#DC2626' }} />
-        )}
-        {!collapsed && active && !backupAlert && (
-          <span style={{ marginLeft:'auto', width:5, height:5, borderRadius:'50%', background:T.primary, flexShrink:0 }} />
         )}
       </Link>
     );
