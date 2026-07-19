@@ -6,7 +6,7 @@ import {
   LayoutDashboard, FolderOpen, Building2, Package, Wallet,
   FileText, BarChart3, Shield, User, Users, Lock,
   ChevronLeft, ChevronRight, Boxes, ClipboardList,
-  Settings, Bell, TrendingUp, Activity, Landmark
+  Settings, Bell, TrendingUp, Activity, Landmark, Archive
 } from 'lucide-react';
 
 interface NavItem { href: string; label: string; icon: React.ReactNode; module?: string; }
@@ -68,7 +68,7 @@ const ADMIN_NAV: NavItem[] = [
   { href:'/admin/roles',      label:'Role & Permissions', icon:<Lock {...iconProps} /> },
   { href:'/admin/activities', label:'Activities',         icon:<Activity {...iconProps} /> },
   { href:'/admin/settings',   label:'Settings',           icon:<Settings {...iconProps} /> },
-  { href:'/admin/backups',    label:'Backups',            icon:<Database {...iconProps} /> },
+  { href:'/admin/backups',    label:'Backups',            icon:<Archive {...iconProps} /> },
 ];
 
 interface Props { collapsed: boolean; onCollapse: (v: boolean) => void; }
