@@ -1523,13 +1523,68 @@ function SRNSectionNew({ projectId, role, onAllReceived, onCountChange, canAdd: 
     <div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
         <div style={{ fontSize:12, color:T.textMuted }}>{items.length} item{items.length!==1?'s':''}</div>
-        {canAdd && (
-          <button onClick={()=>setAdding(true)}
-            style={{ background:T.primary, color:'#fff', border:'none', borderRadius:7, padding:'5px 14px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
-            + Add SRN Item
-          </button>
-        )}
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          {canAdd && (
+            <button onClick={()=>setAdding(true)}
+              style={{ background:T.primary, color:'#fff', border:'none', borderRadius:7, padding:'5px 14px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+              + Add Item
+            </button>
+          )}
+          {canAdd && (
+            <label style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600,
+              color:'#1E40AF', background:'#EFF6FF', border:'1px solid #BFDBFE',
+              borderRadius:6, padding:'4px 10px', cursor: srnPdfUploading ? 'not-allowed' : 'pointer',
+              opacity: srnPdfUploading ? 0.7 : 1 }}>
+              {srnPdfUploading ? '⏳ Parsing PDF...' : '📄 Import Challan'}
+              <input ref={srnPdfRef} type="file" accept=".pdf" style={{ display:'none' }}
+                disabled={srnPdfUploading}
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadSrnPdf(f); }} />
+            </label>
+          )}
+        </div>
       </div>
+
+      {/* SRN PDF Review Modal */}
+      {srnPdfItems && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.6)', zIndex:1200,
+          display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+          onClick={()=>setSrnPdfItems(null)}>
+          <div style={{ background:'#fff', borderRadius:14, padding:24, width:'100%', maxWidth:900,
+            maxHeight:'90vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.3)' }}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{ fontSize:16, fontWeight:700, color:T.text, marginBottom:4 }}>📄 Review SRN Items from Delivery Challan</div>
+            <div style={{ fontSize:12, color:T.textMuted, marginBottom:16 }}>{srnPdfItems.length} item{srnPdfItems.length!==1?'s':''} extracted. Review and edit before saving.</div>
+            {srnPdfItems.map((it:any, idx:number) => (
+              <div key={idx} style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:12, marginBottom:10 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:8 }}>Item {idx+1}</div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
+                  {[
+                    ['Description *','description','text'],['HSN / Item Code','hsn_code','text'],['UOM','uom','text'],
+                    ['Quantity *','quantity','number'],['Serial No','serial_no','text'],['Amount (₹)','amount','number'],
+                    ['Document No','document_no','text'],['Gate Entry No','gate_entry_no','text'],['Vehicle No','vehicle_no','text'],
+                    ['BOQ Req No','boq_req_no','text'],['Lifted Date','lifted_date','date'],
+                  ].map(([label,field,type]) => (
+                    <div key={field as string}>
+                      <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{label}</div>
+                      <input type={type as string} value={it[field as string]||''} style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'6px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none' }}
+                        onChange={e=>setSrnPdfItems(prev=>prev!.map((r:any,i:number)=>i===idx?{...r,[field as string]:e.target.value}:r))} />
+                    </div>
+                  ))}
+                </div>
+                <button onClick={()=>setSrnPdfItems(prev=>prev!.filter((_:any,i:number)=>i!==idx))}
+                  style={{ marginTop:8, fontSize:11, color:T.danger, background:'none', border:'none', cursor:'pointer' }}>🗑 Remove this item</button>
+              </div>
+            ))}
+            <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:16 }}>
+              <button onClick={()=>setSrnPdfItems(null)} style={{ padding:'8px 18px', borderRadius:8, border:`1px solid ${T.border}`, background:'#fff', cursor:'pointer', fontSize:13 }}>Cancel</button>
+              <button onClick={saveSrnPdfItems} disabled={saving==='pdf'||srnPdfItems.length===0}
+                style={{ padding:'8px 18px', borderRadius:8, background:T.primary, color:'#fff', border:'none', cursor:saving==='pdf'?'not-allowed':'pointer', fontSize:13, fontWeight:600, opacity:saving==='pdf'?0.7:1 }}>
+                {saving==='pdf' ? '⏳ Saving...' : `✅ Save ${srnPdfItems.length} Item${srnPdfItems.length!==1?'s':''}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {adding && (
         <div style={{ background:T.primaryLight, border:`1px solid ${T.primaryMid}`, borderRadius:10, padding:16, marginBottom:16 }}>
