@@ -31,7 +31,9 @@ export default function BackupsPage() {
     try {
       const token = await getToken();
       const res = await fetch('/api/backup/list', { headers: { Authorization: `Bearer ${token}` } });
-      const json = await res.json();
+      const text = await res.text();
+      let json: any;
+      try { json = JSON.parse(text); } catch { setError('API error: ' + text.slice(0, 200)); return; }
       if (!res.ok) { setError(json.error || 'Failed to load backups'); return; }
       setBackups(json.backups || []);
     } catch (e: any) {
