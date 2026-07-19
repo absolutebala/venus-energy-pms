@@ -1776,8 +1776,14 @@ function SRNSectionNew({ projectId, role, onAllReceived, onCountChange, canAdd: 
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
             <thead>
               <tr>
-                {['#','Description','HSN','UOM','Qty','Rate','GST%','Amount','Serial No','Doc No','BOQ Req','Return Qty','Return Date','Lifted Date','Gate Entry No','Vehicle No','Received','Actions'].map((h,i)=>(
-                  <th key={i} style={{ ...thS, textAlign:i>=4&&i<=7?'right' as const:'left' as const }}>{h}</th>
+                {[
+                  {h:'#',w:28},{h:'Description',w:260},{h:'HSN',w:130},{h:'UOM',w:50},
+                  {h:'Qty',w:50},{h:'Rate',w:60},{h:'GST%',w:50},{h:'Amount',w:80},
+                  {h:'Serial No',w:100},{h:'Doc No',w:100},{h:'BOQ Req',w:90},
+                  {h:'Return Qty',w:70},{h:'Return Date',w:90},{h:'Lifted Date',w:90},
+                  {h:'Gate Entry No',w:90},{h:'Vehicle No',w:90},{h:'Received',w:80},{h:'Actions',w:80},
+                ].map(({h,w},i)=>(
+                  <th key={i} style={{ ...thS, minWidth:w, textAlign:i>=4&&i<=7?'right' as const:'left' as const }}>{h}</th>
                 ))}
               </tr>
             </thead>
