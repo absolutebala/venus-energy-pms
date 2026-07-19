@@ -296,6 +296,55 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
   const [poCommentPopup,  setPoCommentPopup]  = React.useState<any>(null);
   const [newRow,   setNewRow]   = React.useState({ description:'', hsnCode:'', uom:'', quantity:'', gstRate:'18', serialNo:'', documentNo:'', boqReqNo:'', amount:'', liftedDate:'', gateEntryNo:'', vehicleNo:'' });
   const [editRow,  setEditRow]  = React.useState<any>({});
+  const [stnPdfUploading, setStnPdfUploading] = React.useState(false);
+  const [stnPdfItems,     setStnPdfItems]     = React.useState<any[]|null>(null);
+  const [stnPdfMeta,      setStnPdfMeta]      = React.useState<any>({});
+  const stnPdfRef = React.useRef<HTMLInputElement>(null);
+
+  const uploadStnPdf = async (file: File) => {
+    setStnPdfUploading(true);
+    try {
+      const { data: { session } } = await (await import('@/lib/supabase')).createClient().auth.getSession();
+      const token = session?.access_token || '';
+      const fd = new FormData(); fd.append('file', file);
+      const res = await fetch('/api/upload/extract-stn', {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd,
+      });
+      const json = await res.json();
+      if (!res.ok) { setToast({ msg: '❌ ' + (json.error || 'Failed'), type: 'error' }); return; }
+      const { documentNo, liftedDate, gateEntryNo, vehicleNo, items: extracted } = json.data;
+      setStnPdfMeta({ documentNo: documentNo||'', liftedDate: liftedDate||'', gateEntryNo: gateEntryNo||'', vehicleNo: vehicleNo||'' });
+      setStnPdfItems((extracted||[]).map((it:any) => ({
+        description: it.description||'', hsnCode: it.hsnCode||'', uom: it.uom||'Nos',
+        quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
+        documentNo: documentNo||'', liftedDate: liftedDate||'', gateEntryNo: gateEntryNo||'', vehicleNo: vehicleNo||'',
+        boqReqNo: '',
+      })));
+    } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); }
+    finally { setStnPdfUploading(false); if (stnPdfRef.current) stnPdfRef.current.value = ''; }
+  };
+
+  const saveStnPdfItems = async () => {
+    if (!stnPdfItems?.length) return;
+    setSaving(true);
+    let added = 0;
+    for (let i = 0; i < stnPdfItems.length; i++) {
+      const it = stnPdfItems[i];
+      if (!it.description) continue;
+      try {
+        await addItem({ projectId, description:it.description, hsnCode:it.hsnCode, uom:it.uom,
+          quantity:Number(it.quantity)||1, rate:0, gstRate:18, amount:Number(it.amount)||0,
+          sortOrder:items.length+i+1, serialNo:it.serialNo, documentNo:it.documentNo,
+          boqReqNo:it.boqReqNo, liftedDate:it.liftedDate||null,
+          gateEntryNo:it.gateEntryNo||null, vehicleNo:it.vehicleNo||null } as any);
+        added++;
+      } catch(e) { console.error(e); }
+    }
+    setStnPdfItems(null);
+    setSaving(false);
+    setToast({ msg:`✅ ${added} STN item${added!==1?'s':''} added from delivery challan`, type:'success' });
+    logActivity(projectId, `${added} STN items imported from delivery challan PDF`, poProfile?.full_name||'', poProfile?.role||'').catch(()=>{});
+  };
 
   // Check localStorage for pending STN items (set by projects page Upload PO flow)
   React.useEffect(() => {
@@ -473,6 +522,78 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
             <div style={{ marginTop:14, textAlign:'right' as const }}>
               <button onClick={()=>setPoCommentPopup(null)}
                 style={{ padding:'7px 18px', borderRadius:8, border:'1px solid #E5E7EB', background:'#fff', cursor:'pointer', fontSize:13 }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* STN PDF Upload */}
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+        <label style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12, fontWeight:600,
+          color:'#1E40AF', background:'#EFF6FF', border:'1px solid #BFDBFE',
+          borderRadius:6, padding:'5px 12px', cursor: stnPdfUploading ? 'not-allowed' : 'pointer',
+          opacity: stnPdfUploading ? 0.7 : 1 }}>
+          {stnPdfUploading ? '⏳ Parsing PDF...' : '📄 Import from Delivery Challan'}
+          <input ref={stnPdfRef} type="file" accept=".pdf" style={{ display:'none' }}
+            disabled={stnPdfUploading}
+            onChange={e => { const f = e.target.files?.[0]; if (f) uploadStnPdf(f); }} />
+        </label>
+      </div>
+
+      {/* Review modal for PDF-extracted STN items */}
+      {stnPdfItems && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.6)', zIndex:1200,
+          display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+          onClick={()=>setStnPdfItems(null)}>
+          <div style={{ background:'#fff', borderRadius:14, padding:24, width:'100%', maxWidth:900,
+            maxHeight:'90vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.3)' }}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{ fontSize:16, fontWeight:700, color:T.text, marginBottom:4 }}>
+              📄 Review STN Items from Delivery Challan
+            </div>
+            <div style={{ fontSize:12, color:T.textMuted, marginBottom:16 }}>
+              {stnPdfItems.length} item{stnPdfItems.length!==1?'s':''} extracted. Review and edit before saving.
+            </div>
+            {stnPdfItems.map((it:any, idx:number) => (
+              <div key={idx} style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:12, marginBottom:10 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:8 }}>Item {idx+1}</div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
+                  {[
+                    ['Description *', 'description', 'text'],
+                    ['HSN / Item Code', 'hsnCode', 'text'],
+                    ['UOM', 'uom', 'text'],
+                    ['Quantity *', 'quantity', 'number'],
+                    ['Serial No', 'serialNo', 'text'],
+                    ['Amount (₹)', 'amount', 'number'],
+                    ['Document No', 'documentNo', 'text'],
+                    ['Gate Entry No', 'gateEntryNo', 'text'],
+                    ['Vehicle No', 'vehicleNo', 'text'],
+                    ['BOQ Req No', 'boqReqNo', 'text'],
+                    ['Lifted Date', 'liftedDate', 'date'],
+                  ].map(([label, field, type]) => (
+                    <div key={field as string}>
+                      <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{label}</div>
+                      <input type={type as string} value={it[field as string]||''} style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'6px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none' }}
+                        onChange={e=>setStnPdfItems(prev=>prev!.map((r:any,i:number)=>i===idx?{...r,[field as string]:e.target.value}:r))} />
+                    </div>
+                  ))}
+                </div>
+                <button onClick={()=>setStnPdfItems(prev=>prev!.filter((_:any,i:number)=>i!==idx))}
+                  style={{ marginTop:8, fontSize:11, color:T.danger, background:'none', border:'none', cursor:'pointer' }}>
+                  🗑 Remove this item
+                </button>
+              </div>
+            ))}
+            <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:16 }}>
+              <button onClick={()=>setStnPdfItems(null)}
+                style={{ padding:'8px 18px', borderRadius:8, border:`1px solid ${T.border}`, background:'#fff', cursor:'pointer', fontSize:13 }}>
+                Cancel
+              </button>
+              <button onClick={saveStnPdfItems} disabled={saving||stnPdfItems.length===0}
+                style={{ padding:'8px 18px', borderRadius:8, background:T.primary, color:'#fff', border:'none',
+                  cursor:saving?'not-allowed':'pointer', fontSize:13, fontWeight:600, opacity:saving?0.7:1 }}>
+                {saving ? '⏳ Saving...' : `✅ Save ${stnPdfItems.length} Item${stnPdfItems.length!==1?'s':''}`}
+              </button>
             </div>
           </div>
         </div>
