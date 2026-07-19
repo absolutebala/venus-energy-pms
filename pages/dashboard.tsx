@@ -77,7 +77,6 @@ const AlertBanner = ({ count, msg, color, link }: any) => count > 0 ? (
 
 const ProjectRow = ({ p, href }: { p:any; href:string }) => {
   const router = useRouter();
-  const openNew = (url: string) => window.open(url, '_blank');
   return (
     <tr onClick={()=>openNew(href)} style={{ cursor:'pointer' }}
       onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
@@ -487,6 +486,8 @@ function ProjectTypeDistribution({ projects }: { projects: any[] }) {
     </div>
   );
 }
+
+const openNew = (url: string) => typeof window !== 'undefined' && window.open(url, '_blank');
 
 function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilters }: { projects: any[]; loading?: boolean; activeFilters?: Record<string,string[]> }) {
   const projects = propProjects;
