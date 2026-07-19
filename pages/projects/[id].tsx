@@ -527,18 +527,10 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
         </div>
       )}
 
-      {/* STN PDF Upload */}
-      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-        <label style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12, fontWeight:600,
-          color:'#1E40AF', background:'#EFF6FF', border:'1px solid #BFDBFE',
-          borderRadius:6, padding:'5px 12px', cursor: stnPdfUploading ? 'not-allowed' : 'pointer',
-          opacity: stnPdfUploading ? 0.7 : 1 }}>
-          {stnPdfUploading ? '⏳ Parsing PDF...' : '📄 Import from Delivery Challan'}
-          <input ref={stnPdfRef} type="file" accept=".pdf" style={{ display:'none' }}
-            disabled={stnPdfUploading}
-            onChange={e => { const f = e.target.files?.[0]; if (f) uploadStnPdf(f); }} />
-        </label>
-      </div>
+      {/* STN PDF hidden input — triggered from title area */}
+      <input ref={stnPdfRef} data-stn-pdf="1" type="file" accept=".pdf" style={{ display:'none' }}
+        disabled={stnPdfUploading}
+        onChange={e => { const f = e.target.files?.[0]; if (f) uploadStnPdf(f); }} />
 
       {/* Review modal for PDF-extracted STN items */}
       {stnPdfItems && (
@@ -3611,14 +3603,25 @@ export default function ProjectDetailPage() {
         {/* ── STN ── */}
         <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('📋','STN', 'poitems', role!=='vendor' && canEdit, undefined,
-            ['super_admin','region_manager','project_manager'].includes(role) && (
-              <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
-                <input type="checkbox" checked={stnApplicable} disabled={getSTNItems(p.id).length > 0}
-                  title={getSTNItems(p.id).length > 0 ? 'Cannot change — STN items already exist for this project' : undefined}
-                  onChange={e=>toggleApplicable('stn_applicable', e.target.checked)} />
-                Applicable
-              </label>
-            )
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              {['super_admin','region_manager','project_manager'].includes(role) && (
+                <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
+                  <input type="checkbox" checked={stnApplicable} disabled={getSTNItems(p.id).length > 0}
+                    title={getSTNItems(p.id).length > 0 ? 'Cannot change — STN items already exist for this project' : undefined}
+                    onChange={e=>toggleApplicable('stn_applicable', e.target.checked)} />
+                  Applicable
+                </label>
+              )}
+              {(canEdit || role==='vendor') && stnApplicable && (
+                <button
+                  onClick={()=>{ const el=document.querySelector('input[data-stn-pdf]') as HTMLInputElement; el?.click(); }}
+                  style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600,
+                    color:'#1E40AF', background:'#EFF6FF', border:'1px solid #BFDBFE',
+                    borderRadius:6, padding:'4px 10px', cursor:'pointer' }}>
+                  📄 Import Challan
+                </button>
+              )}
+            </div>
           )}
           <POItemsSection projectId={p.id} editing={editing('poitems')} canAdd={canEdit && stnApplicable} isVendorRole={role==='vendor'} />
         </div>
