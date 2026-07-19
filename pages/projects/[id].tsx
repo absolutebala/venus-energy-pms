@@ -331,13 +331,13 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
       });
       const json = await res.json();
       if (!res.ok) { setToast({ msg: '❌ ' + (json.error || 'Failed'), type: 'error' }); return; }
-      const { documentNo, liftedDate, gateEntryNo, vehicleNo, items: extracted } = json.data;
-      setStnPdfMeta({ documentNo: documentNo||'', liftedDate: liftedDate||'', gateEntryNo: gateEntryNo||'', vehicleNo: vehicleNo||'' });
+      const { documentNo, liftedDate, gateEntryNo, vehicleNo, boqReqNo, items: extracted } = json.data;
+      setStnPdfMeta({ documentNo: documentNo||'', liftedDate: liftedDate||'', gateEntryNo: gateEntryNo||'', vehicleNo: vehicleNo||'', boqReqNo: boqReqNo||'' });
       setStnPdfItems((extracted||[]).map((it:any) => ({
         description: it.description||'', hsnCode: it.hsnCode||'', uom: it.uom||'Nos',
         quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
         documentNo: documentNo||'', liftedDate: liftedDate||'', gateEntryNo: gateEntryNo||'', vehicleNo: vehicleNo||'',
-        boqReqNo: '',
+        boqReqNo: it.boqReqNo || boqReqNo||'',
       })));
     } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); }
     finally { setStnPdfUploading(false); if (stnPdfRef.current) stnPdfRef.current.value = ''; }
