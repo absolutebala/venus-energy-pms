@@ -786,9 +786,9 @@ export default function InvoicesPage() {
                 </tr>
               </thead>
               <tbody>
-                {invLoading && <tr><td colSpan={17} style={{ padding:30, textAlign:"center" as const, color:T.textMuted }}>Loading invoices...</td></tr>}
+                {invLoading && <tr><td colSpan={18} style={{ padding:30, textAlign:"center" as const, color:T.textMuted }}>Loading invoices...</td></tr>}
                 {!invLoading && displayInvoices.length === 0 && (
-                  <tr><td colSpan={17} style={{ padding:32, textAlign:"center" as const, color:T.textDim }}>No invoices found</td></tr>
+                  <tr><td colSpan={18} style={{ padding:32, textAlign:"center" as const, color:T.textDim }}>No invoices found</td></tr>
                 )}
                 {paginatedInv.map((inv, idx) => {
                   const proj = projectMap.get(inv.projectId);
@@ -906,7 +906,7 @@ export default function InvoicesPage() {
               {displayInvoices.length > 0 && (
                 <tfoot>
                   <tr style={{ background:T.primaryLight, fontWeight:700 }}>
-                    <td colSpan={11} style={{ ...tdS, color:T.primary }}>Total</td>
+                    <td colSpan={12} style={{ ...tdS, color:T.primary }}>Total</td>
                     <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>{fmt(totalInvoiced)}</td>
                     <td style={{ ...tdS, textAlign:"right" as const, color:T.textMuted }}>{fmt(totalGST)}</td>
                     <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>{fmt(totalAmount)}</td>
