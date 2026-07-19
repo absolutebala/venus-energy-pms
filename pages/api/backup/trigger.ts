@@ -21,9 +21,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const timestamp = new Date().toISOString().split('T')[0];
     const backup: Record<string, any[]> = {};
 
+    // Same tables as weekly-export.ts — complete backup
     const tables = [
-      'projects','invoices','expenses','po_items','srn',
-      'activity_log','ptw_items','profiles','role_permissions',
+      'projects','invoices','expenses','work_documents','po_items',
+      'material_items','activity_log','safety_checks','ptw_items',
+      'profiles','role_permissions','notifications','report_configs',
+      'project_drafts','srn','work_progress','lookup_options',
     ];
 
     for (const table of tables) {
@@ -32,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       let from = 0;
       while (true) {
         const { data, error } = await admin.from(table).select('*').range(from, from + BATCH - 1);
-        if (error) break;
+        if (error) { console.warn(`Skipping ${table}:`, error.message); break; }
         const rows = data || [];
         allRows = allRows.concat(rows);
         if (rows.length < BATCH) break;
