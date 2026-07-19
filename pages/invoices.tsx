@@ -519,10 +519,10 @@ export default function InvoicesPage() {
         {/* Clickable summary cards */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
           {[
-            { label:"Total Invoices",   value:dateFilteredInvoices.length, sub:fmt(dateFilteredInvoices.reduce((a,i)=>a+i.totalAmount,0)), color:T.primary,  filter:null,              icon:"📄" },
-            { label:"Pending Approval", value:pendingApproval.length, sub:`${pendingApproval.length} need review`, color:"#2563EB",  filter:"pendingApproval", icon:"⏳" },
-            { label:"Pending Payment",  value:pendingPayment.length,  sub:fmt(pendingPayment.reduce((a,i)=>a+i.totalAmount,0)), color:"#D97706", filter:"pendingPayment", icon:"💳" },
-            { label:"Invoices Paid",    value:overdue.length, sub:fmt(overdue.reduce((a,i)=>a+i.totalAmount,0)), color:T.success, filter:"overdue", icon:"✅" },
+            { label:"Total Invoices",   value:dateFilteredInvoices.length, sub:fmt(dateFilteredInvoices.reduce((a,i)=>a+i.invoiceAmount,0)), color:T.primary,  filter:null,              icon:"📄", showExclTax:true },
+            { label:"Pending Approval", value:pendingApproval.length, sub:`${pendingApproval.length} need review`, color:"#2563EB",  filter:"pendingApproval", icon:"⏳", showExclTax:false },
+            { label:"Pending Payment",  value:pendingPayment.length,  sub:fmt(pendingPayment.reduce((a,i)=>a+i.invoiceAmount,0)), color:"#D97706", filter:"pendingPayment", icon:"💳", showExclTax:true },
+            { label:"Invoices Paid",    value:overdue.length, sub:fmt(overdue.reduce((a,i)=>a+i.invoiceAmount,0)), color:T.success, filter:"overdue", icon:"✅", showExclTax:true },
           ].map(s => (
             <div key={s.label} onClick={() => setCardFilter(cardFilter === s.filter ? null : s.filter)}
               style={{ ...card, padding:"16px 18px", cursor:"pointer", position:"relative" as const,
@@ -532,6 +532,7 @@ export default function InvoicesPage() {
               <div style={{ fontSize:24, fontWeight:800, color:s.color, marginBottom:2 }}>{s.value}</div>
               <div style={{ fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", marginBottom:4 }}>{s.label}</div>
               <div style={{ fontSize:11, color:T.textDim }}>{s.sub}</div>
+              {(s as any).showExclTax && <div style={{ fontSize:10, color:T.textMuted, marginTop:2, fontStyle:'italic' }}>Excl. Tax</div>}
               {cardFilter === s.filter && s.filter && (
                 <div style={{ position:"absolute" as const, top:8, right:8, fontSize:10, color:s.color,
                   background:`${s.color}15`, padding:"2px 6px", borderRadius:4, fontWeight:600 }}>FILTERED</div>
