@@ -304,11 +304,30 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
   const uploadStnPdf = async (file: File) => {
     setStnPdfUploading(true);
     try {
+      // Render PDF pages to images client-side using PDF.js
+      const arrayBuf = await file.arrayBuffer();
+      const pdfjsLib = await import('pdfjs-dist');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuf) }).promise;
+      const images: string[] = [];
+      for (let i = 1; i <= Math.min(pdf.numPages, 3); i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement('canvas');
+        canvas.width  = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d')!;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        const b64 = canvas.toDataURL('image/jpeg', 0.85).replace('data:image/jpeg;base64,', '');
+        images.push(b64);
+      }
+      // Send images to API
       const { data: { session } } = await (await import('@/lib/supabase')).createClient().auth.getSession();
       const token = session?.access_token || '';
-      const fd = new FormData(); fd.append('file', file);
       const res = await fetch('/api/upload/extract-stn', {
-        method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd,
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ images }),
       });
       const json = await res.json();
       if (!res.ok) { setToast({ msg: '❌ ' + (json.error || 'Failed'), type: 'error' }); return; }
