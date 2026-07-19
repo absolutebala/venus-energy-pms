@@ -192,14 +192,26 @@ export default function BackupsPage() {
         })()}
         {tab==='github' && status?.codeAlert && (() => {
           const lastBackup = status.lastCodeBackup ? new Date(status.lastCodeBackup).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : null;
+          const commitDate = status.latestCommit?.date ? new Date(status.latestCommit.date).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : null;
+          const commitMsg = status.latestCommit?.message?.split('
+')[0] || '';
+          const commitSha = status.latestCommit?.sha || '';
           return (
-            <div style={{ background:'#F5F3FF', border:'1px solid #DDD6FE', borderRadius:8, padding:'12px 16px', marginBottom:12,
-              display:'flex', alignItems:'center', gap:10, fontSize:13 }}>
-              <span style={{ fontSize:18 }}>💻</span>
-              <div>
+            <div style={{ background:'#F5F3FF', border:'1px solid #DDD6FE', borderRadius:8, padding:'12px 16px', marginBottom:12, fontSize:13 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                <span style={{ fontSize:18 }}>💻</span>
                 <div style={{ fontWeight:700, color:'#5B21B6' }}>New commits since last backup</div>
-                <div style={{ color:'#7C3AED', fontSize:12, marginTop:2 }}>
-                  {lastBackup ? `Last code backup: ${lastBackup}.` : 'No code backup found.'} Click "Backup Code Now" to save the latest version.
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                <div style={{ background:'#EDE9FE', borderRadius:6, padding:'8px 12px' }}>
+                  <div style={{ fontSize:10, fontWeight:600, color:'#7C3AED', textTransform:'uppercase' as const, marginBottom:3 }}>Latest Commit</div>
+                  <div style={{ fontWeight:600, color:'#5B21B6', fontSize:12 }}>{commitMsg || '—'}</div>
+                  <div style={{ color:'#7C3AED', fontSize:11, marginTop:2 }}>{commitDate || '—'} · {commitSha}</div>
+                </div>
+                <div style={{ background:'#EDE9FE', borderRadius:6, padding:'8px 12px' }}>
+                  <div style={{ fontSize:10, fontWeight:600, color:'#7C3AED', textTransform:'uppercase' as const, marginBottom:3 }}>Last Code Backup</div>
+                  <div style={{ fontWeight:600, color:'#5B21B6', fontSize:12 }}>{lastBackup || 'No backup found'}</div>
+                  <div style={{ color:'#7C3AED', fontSize:11, marginTop:2 }}>Click "Backup Code Now" to update</div>
                 </div>
               </div>
             </div>

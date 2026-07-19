@@ -41,6 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const lastZip = zipFiles[0]?.LastModified;
 
     let githubDebug: any = {};
+    let latestCommit: any = null;
     if (process.env.GITHUB_TOKEN && process.env.GITHUB_REPO) {
       try {
         const ghRes = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPO}/branches/main`, {
@@ -53,6 +54,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           githubDebug.latestCommit = latestCommitDate;
           githubDebug.lastZip = lastZip;
           codeAlert = !lastZip || latestCommitDate > new Date(lastZip);
+          latestCommit = {
+            date: latestCommitDate,
+            message: ghData.commit.commit.message,
+            sha: ghData.commit.sha.slice(0, 7),
+          };
         } else {
           githubDebug.error = await ghRes.text();
         }
@@ -66,6 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       codeAlert,
       lastSchemaBackup: lastSchema || null,
       lastCodeBackup: lastZip || null,
+      latestCommit,
       githubDebug,
     });
   } catch (err: any) {
