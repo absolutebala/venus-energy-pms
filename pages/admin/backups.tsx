@@ -193,8 +193,7 @@ export default function BackupsPage() {
         {tab==='github' && status?.codeAlert && (() => {
           const lastBackup = status.lastCodeBackup ? new Date(status.lastCodeBackup).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : null;
           const commitDate = status.latestCommit?.date ? new Date(status.latestCommit.date).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : null;
-          const commitMsg = status.latestCommit?.message?.split('
-')[0] || '';
+          const commitMsg = (status.latestCommit?.message || '').split('\n')[0];
           const commitSha = status.latestCommit?.sha || '';
           return (
             <div style={{ background:'#F5F3FF', border:'1px solid #DDD6FE', borderRadius:8, padding:'12px 16px', marginBottom:12, fontSize:13 }}>
