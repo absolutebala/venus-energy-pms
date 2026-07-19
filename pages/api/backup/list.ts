@@ -38,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }));
 
     const backups = (result.Contents || [])
-      .filter(obj => obj.Key?.endsWith('.json'))
+      .filter(obj => obj.Key?.endsWith('.json') || obj.Key?.endsWith('.sql') || obj.Key?.endsWith('.zip'))
       .sort((a, b) => (b.LastModified?.getTime() || 0) - (a.LastModified?.getTime() || 0))
       .map(obj => ({
         key:          obj.Key,
