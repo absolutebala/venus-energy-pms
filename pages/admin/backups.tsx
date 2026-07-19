@@ -14,6 +14,29 @@ export default function BackupsPage() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
   const [running, setRunning] = useState(false);
+  const [exportingSchema, setExportingSchema] = useState(false);
+
+  const exportSchema = async () => {
+    if (!window.confirm('Export current database schema to R2?')) return;
+    setExportingSchema(true);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/backup/schema', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const text = await res.text();
+      let json: any;
+      try { json = JSON.parse(text); } catch { setToast({ msg: '❌ ' + text.slice(0,200), type:'error' }); return; }
+      if (!res.ok) { setToast({ msg: '❌ ' + json.error, type: 'error' }); return; }
+      setToast({ msg: `✅ Schema exported — ${json.tables} tables, ${json.indexes} indexes, ${json.policies} policies`, type: 'success' });
+      fetchBackups();
+    } catch (e: any) {
+      setToast({ msg: '❌ ' + e.message, type: 'error' });
+    } finally {
+      setExportingSchema(false);
+    }
+  };
 
   const runBackup = async () => {
     if (!window.confirm('Run a manual backup now? This may take 1-2 minutes.')) return;
@@ -127,6 +150,12 @@ export default function BackupsPage() {
           <p style={{ fontSize: 13, color: T.textMuted, margin: '4px 0 0' }}>Weekly automated backups stored in Cloudflare R2</p>
         </div>
         <div style={{ display:'flex', gap:8 }}>
+          <button onClick={exportSchema} disabled={exportingSchema}
+            style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid #BFDBFE`,
+              background: '#EFF6FF', color: '#1E40AF', cursor: exportingSchema ? 'not-allowed' : 'pointer',
+              fontSize: 13, fontWeight: 600, opacity: exportingSchema ? 0.7 : 1 }}>
+            {exportingSchema ? '⏳ Exporting...' : '🗂️ Export Schema'}
+          </button>
           <button onClick={runBackup} disabled={running}
             style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${T.primaryMid}`,
               background: T.primaryLight, color: T.primary, cursor: running ? 'not-allowed' : 'pointer',
