@@ -307,7 +307,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
       // Render PDF pages to images client-side using PDF.js
       const arrayBuf = await file.arrayBuffer();
       const pdfjsLib = await import('pdfjs-dist');
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
       const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuf) }).promise;
       const images: string[] = [];
       for (let i = 1; i <= Math.min(pdf.numPages, 3); i++) {
