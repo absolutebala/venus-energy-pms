@@ -13,6 +13,29 @@ export default function BackupsPage() {
   const [downloading, setDownloading] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
+  const [running, setRunning] = useState(false);
+
+  const runBackup = async () => {
+    if (!window.confirm('Run a manual backup now? This may take 1-2 minutes.')) return;
+    setRunning(true);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/backup/trigger', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const text = await res.text();
+      let json: any;
+      try { json = JSON.parse(text); } catch { setToast({ msg: '❌ ' + text.slice(0,200), type:'error' }); return; }
+      if (!res.ok) { setToast({ msg: '❌ ' + json.error, type: 'error' }); return; }
+      setToast({ msg: `✅ Backup complete — ${json.summary?.total_records} records saved`, type: 'success' });
+      fetchBackups();
+    } catch (e: any) {
+      setToast({ msg: '❌ ' + e.message, type: 'error' });
+    } finally {
+      setRunning(false);
+    }
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -103,11 +126,19 @@ export default function BackupsPage() {
           <h2 style={{ fontSize: 20, fontWeight: 800, color: T.text, margin: 0 }}>🗄️ Database Backups</h2>
           <p style={{ fontSize: 13, color: T.textMuted, margin: '4px 0 0' }}>Weekly automated backups stored in Cloudflare R2</p>
         </div>
-        <button onClick={fetchBackups} disabled={loading}
-          style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${T.border}`, background: '#fff',
-            color: T.primary, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-          🔄 Refresh
-        </button>
+        <div style={{ display:'flex', gap:8 }}>
+          <button onClick={runBackup} disabled={running}
+            style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${T.primaryMid}`,
+              background: T.primaryLight, color: T.primary, cursor: running ? 'not-allowed' : 'pointer',
+              fontSize: 13, fontWeight: 600, opacity: running ? 0.7 : 1 }}>
+            {running ? '⏳ Running...' : '▶️ Run Backup Now'}
+          </button>
+          <button onClick={fetchBackups} disabled={loading}
+            style={{ padding: '8px 16px', borderRadius: 8, border: `1px solid ${T.border}`, background: '#fff',
+              color: T.primary, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+            🔄 Refresh
+          </button>
+        </div>
       </div>
 
       <div style={card}>
