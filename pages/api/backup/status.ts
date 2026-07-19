@@ -40,17 +40,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const zipFiles = files.filter(f => f.Key?.endsWith('.zip')).sort((a,b)=>(b.LastModified?.getTime()||0)-(a.LastModified?.getTime()||0));
     const lastZip = zipFiles[0]?.LastModified;
 
+    let githubDebug: any = {};
     if (process.env.GITHUB_TOKEN && process.env.GITHUB_REPO) {
       try {
         const ghRes = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPO}/branches/main`, {
           headers: { Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json' },
         });
+        githubDebug.status = ghRes.status;
         if (ghRes.ok) {
           const ghData = await ghRes.json();
           const latestCommitDate = new Date(ghData.commit.commit.committer.date);
+          githubDebug.latestCommit = latestCommitDate;
+          githubDebug.lastZip = lastZip;
           codeAlert = !lastZip || latestCommitDate > new Date(lastZip);
+        } else {
+          githubDebug.error = await ghRes.text();
         }
-      } catch {}
+      } catch(e: any) { githubDebug.exception = e.message; }
+    } else {
+      githubDebug.missing = { token: !process.env.GITHUB_TOKEN, repo: !process.env.GITHUB_REPO };
     }
 
     return res.status(200).json({
@@ -58,6 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       codeAlert,
       lastSchemaBackup: lastSchema || null,
       lastCodeBackup: lastZip || null,
+      githubDebug,
     });
   } catch (err: any) {
     return res.status(200).json({ schemaAlert: false, codeAlert: false });
