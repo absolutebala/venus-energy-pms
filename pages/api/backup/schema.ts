@@ -16,110 +16,95 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
     if (profile?.role !== 'super_admin') return res.status(403).json({ error: 'Forbidden' });
 
-    // Get all tables in public schema
-    const { data: tables } = await admin.rpc('get_schema_sql') as any;
-    
-    // Fallback: query information_schema directly
-    const { data: cols } = await admin
-      .from('information_schema.columns' as any)
-      .select('table_name, column_name, data_type, column_default, is_nullable, character_maximum_length, numeric_precision, numeric_scale, ordinal_position')
-      .eq('table_schema', 'public')
-      .order('table_name')
-      .order('ordinal_position');
+    const projectRef = process.env.SUPABASE_PROJECT_REF;
+    const accessToken = process.env.SUPABASE_ACCESS_TOKEN;
+    if (!projectRef || !accessToken) {
+      return res.status(500).json({ error: 'SUPABASE_PROJECT_REF or SUPABASE_ACCESS_TOKEN not configured' });
+    }
 
-    const { data: tableList } = await admin
-      .from('information_schema.tables' as any)
-      .select('table_name, table_type')
-      .eq('table_schema', 'public')
-      .eq('table_type', 'BASE TABLE');
+    // Use Supabase Management API to run schema export SQL
+    const schemaQuery = `
+      SELECT 
+        'CREATE TABLE IF NOT EXISTS public.' || table_name || ' (' ||
+        string_agg(
+          column_name || ' ' || 
+          upper(data_type) || 
+          CASE WHEN character_maximum_length IS NOT NULL THEN '(' || character_maximum_length || ')' ELSE '' END ||
+          CASE WHEN column_default IS NOT NULL THEN ' DEFAULT ' || column_default ELSE '' END ||
+          CASE WHEN is_nullable = 'NO' THEN ' NOT NULL' ELSE '' END,
+          ', ' ORDER BY ordinal_position
+        ) || ');' AS create_stmt,
+        table_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+      GROUP BY table_name
+      ORDER BY table_name;
+    `;
 
-    const { data: constraints } = await admin
-      .from('information_schema.table_constraints' as any)
-      .select('table_name, constraint_name, constraint_type')
-      .eq('table_schema', 'public');
+    const indexQuery = `SELECT indexdef || ';' AS idx FROM pg_indexes WHERE schemaname = 'public' AND indexdef NOT LIKE '%_pkey%';`;
 
-    const { data: indexes } = await admin
-      .from('pg_indexes' as any)
-      .select('tablename, indexname, indexdef')
-      .eq('schemaname', 'public');
+    const policyQuery = `
+      SELECT 
+        'CREATE POLICY "' || policyname || '" ON public.' || tablename || 
+        ' AS ' || permissive || ' FOR ' || cmd ||
+        CASE WHEN qual IS NOT NULL THEN ' USING (' || qual || ')' ELSE '' END ||
+        CASE WHEN with_check IS NOT NULL THEN ' WITH CHECK (' || with_check || ')' ELSE '' END ||
+        ';' AS policy_stmt
+      FROM pg_policies WHERE schemaname = 'public';
+    `;
 
-    const { data: policies } = await admin
-      .from('pg_policies' as any)
-      .select('tablename, policyname, permissive, roles, cmd, qual, with_check')
-      .eq('schemaname', 'public');
+    const runQuery = async (sql: string) => {
+      const r = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/database/query`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: sql }),
+      });
+      if (!r.ok) throw new Error(`Management API error: ${await r.text()}`);
+      return r.json();
+    };
 
-    // Generate SQL
-    const lines: string[] = [
-      `-- Venus Energy PMS Schema Export`,
+    const [tables, indexes, policies] = await Promise.all([
+      runQuery(schemaQuery),
+      runQuery(indexQuery),
+      runQuery(policyQuery),
+    ]);
+
+    const lines = [
+      `-- Venus Energy PMS — Database Schema Export`,
       `-- Generated: ${new Date().toISOString()}`,
+      `-- Tables: ${tables.length} | Indexes: ${indexes.length} | Policies: ${policies.length}`,
       `-- ============================================`,
-      '',
+      ``,
+      `-- ENABLE RLS ON ALL TABLES`,
     ];
 
-    // Group columns by table
-    const colsByTable: Record<string, any[]> = {};
-    (cols || []).forEach((col: any) => {
-      if (!colsByTable[col.table_name]) colsByTable[col.table_name] = [];
-      colsByTable[col.table_name].push(col);
-    });
+    tables.forEach((t: any) => lines.push(`ALTER TABLE public.${t.table_name} ENABLE ROW LEVEL SECURITY;`));
+    lines.push('');
+    lines.push('-- ============================================');
+    lines.push('-- TABLE DEFINITIONS');
+    lines.push('-- ============================================');
+    tables.forEach((t: any) => { lines.push(''); lines.push(t.create_stmt); });
 
-    // Generate CREATE TABLE statements
-    (tableList || []).forEach((t: any) => {
-      const tableCols = colsByTable[t.table_name] || [];
-      lines.push(`-- Table: ${t.table_name}`);
-      lines.push(`CREATE TABLE IF NOT EXISTS public.${t.table_name} (`);
-      tableCols.sort((a: any, b: any) => a.ordinal_position - b.ordinal_position).forEach((col: any, i: number) => {
-        let type = col.data_type.toUpperCase();
-        if (col.character_maximum_length) type += `(${col.character_maximum_length})`;
-        else if (col.numeric_precision && col.data_type === 'numeric') type += `(${col.numeric_precision},${col.numeric_scale||0})`;
-        let colDef = `  ${col.column_name} ${type}`;
-        if (col.column_default) colDef += ` DEFAULT ${col.column_default}`;
-        if (col.is_nullable === 'NO') colDef += ' NOT NULL';
-        if (i < tableCols.length - 1) colDef += ',';
-        lines.push(colDef);
-      });
-      lines.push(');');
-      lines.push('');
-    });
-
-    // Add indexes
+    lines.push('');
     lines.push('-- ============================================');
     lines.push('-- INDEXES');
     lines.push('-- ============================================');
-    (indexes || []).forEach((idx: any) => {
-      if (!idx.indexdef.includes('PRIMARY KEY')) {
-        lines.push(`${idx.indexdef};`);
-      }
-    });
-    lines.push('');
+    indexes.forEach((i: any) => lines.push(i.idx));
 
-    // Add RLS policies
+    lines.push('');
     lines.push('-- ============================================');
-    lines.push('-- ROW LEVEL SECURITY POLICIES');
+    lines.push('-- RLS POLICIES');
     lines.push('-- ============================================');
-    (policies || []).forEach((p: any) => {
-      lines.push(`-- Policy: ${p.policyname} on ${p.tablename}`);
-      lines.push(`CREATE POLICY "${p.policyname}" ON public.${p.tablename}`);
-      lines.push(`  AS ${p.permissive} FOR ${p.cmd}`);
-      if (p.roles?.length) lines.push(`  TO ${p.roles.join(', ')}`);
-      if (p.qual) lines.push(`  USING (${p.qual})`);
-      if (p.with_check) lines.push(`  WITH CHECK (${p.with_check})`);
-      lines.push(';');
-      lines.push('');
-    });
+    policies.forEach((p: any) => lines.push(p.policy_stmt));
 
     const schemaSQL = lines.join('\n');
     const timestamp = new Date().toISOString().split('T')[0];
 
-    // Upload to R2
     const s3 = new S3Client({
       region: 'auto',
       endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
       forcePathStyle: true,
-      credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-      },
+      credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID!, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY! },
     });
 
     const key = `backups/venus-energy-schema-${timestamp}.sql`;
@@ -130,13 +115,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ContentType: 'text/plain',
     }));
 
-    return res.status(200).json({
-      success: true,
-      key,
-      tables: (tableList || []).length,
-      indexes: (indexes || []).length,
-      policies: (policies || []).length,
-    });
+    return res.status(200).json({ success: true, key, tables: tables.length, indexes: indexes.length, policies: policies.length });
   } catch (err: any) {
     console.error('Schema export error:', err);
     return res.status(500).json({ error: err.message });
