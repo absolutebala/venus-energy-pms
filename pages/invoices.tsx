@@ -810,6 +810,7 @@ export default function InvoicesPage() {
                       <td style={tdS}>{(inv as any).receiptNo || "—"}</td>
                       <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{inv.invoiceNo}</td>
                       <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{fmtDate(inv.invoiceDate)}</td>
+                      <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{inv.dueDate ? fmtDate(inv.dueDate) : "—"}</td>
                       <td style={{ ...tdS, textAlign:"right" as const, fontWeight:600 }}>{fmt(inv.invoiceAmount)}</td>
                       <td style={{ ...tdS, textAlign:"right" as const, color:T.textMuted }}>
                         {inv.invoiceAmount > 0 ? ((inv.gst / inv.invoiceAmount) * 100).toFixed(1) + '%' : '—'}
@@ -820,7 +821,6 @@ export default function InvoicesPage() {
                       <td style={tdS}>{proj ? <StatusPill label={(proj as any).projectStatus||'—'} cfg={{bg:'#F3F4F6',color:'#6B7280'}} /> : "—"}</td>
                       <td style={tdS}><StatusPill label={inv.invoiceStatus||'—'} cfg={INV_STATUS_CFG[inv.invoiceStatus]||INV_STATUS_CFG.Draft} /></td>
                       <td style={tdS}><StatusPill label={inv.paymentStatus||'—'} cfg={PAY_STATUS_CFG[inv.paymentStatus]||PAY_STATUS_CFG.Pending} /></td>
-                      <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{fmtDate(inv.dueDate)}</td>
                       <td style={tdS}>{(inv as any).investor || "—"}</td>
                       <td style={tdS}>{(inv as any).basicPaymentNo || "—"}</td>
                       <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{fmtDate((inv as any).basicPaymentDate)}</td>
