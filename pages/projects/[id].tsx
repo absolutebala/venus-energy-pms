@@ -1463,26 +1463,39 @@ function SRNSectionNew({ projectId, role, onAllReceived, onCountChange, canAdd: 
     if (!srnPdfItems?.length) return;
     setSaving('pdf');
     let added = 0;
+    const errors: string[] = [];
     for (let i = 0; i < srnPdfItems.length; i++) {
       const it = srnPdfItems[i];
-      if (!it.description) continue;
       try {
-        const { error } = await sb.from('srn').insert({
-          project_id: projectId, description: it.description, hsn_code: it.hsn_code,
-          uom: it.uom, quantity: Number(it.quantity)||1, rate: 0, gst_rate: 18,
-          amount: Number(it.amount)||0, serial_no: it.serial_no, document_no: it.document_no,
-          boq_req_no: it.boq_req_no, lifted_date: it.lifted_date||null,
-          gate_entry_no: it.gate_entry_no||null, vehicle_no: it.vehicle_no||null,
-          sort_order: items.length + i + 1, created_by: profile?.full_name||'',
-        });
-        if (!error) added++;
-      } catch(e) { console.error(e); }
+        const payload: any = {
+          project_id:  projectId,
+          description: it.description || 'Item ' + (i+1),
+          hsn_code:    it.hsn_code || '',
+          uom:         it.uom || 'Nos',
+          quantity:    Number(it.quantity) || 1,
+          rate:        0,
+          gst_rate:    18,
+          amount:      Number(it.amount) || 0,
+          serial_no:   it.serial_no || '',
+          document_no: it.document_no || '',
+          boq_req_no:  it.boq_req_no || '',
+          sort_order:  items.length + i + 1,
+          created_by:  profile?.full_name || '',
+        };
+        if (it.lifted_date)   payload.lifted_date   = it.lifted_date;
+        if (it.gate_entry_no) payload.gate_entry_no = it.gate_entry_no;
+        if (it.vehicle_no)    payload.vehicle_no    = it.vehicle_no;
+        const { error } = await sb.from('srn').insert(payload);
+        if (error) { console.error('SRN insert error:', error); errors.push(error.message); }
+        else added++;
+      } catch(e:any) { console.error('SRN insert exception:', e); errors.push(e.message); }
     }
     await fetchItems();
     setSrnPdfItems(null);
     setSaving(null);
-    setToast({ msg:`✅ ${added} SRN item${added!==1?'s':''} added from delivery challan`, type:'success' });
-    logSRNAct(projectId, `${added} SRN items imported from delivery challan PDF`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+    if (errors.length) setToast({ msg:`⚠️ ${added} saved, ${errors.length} failed: ${errors[0]}`, type:'error' });
+    else setToast({ msg:`✅ ${added} SRN item${added!==1?'s':''} added from delivery challan`, type:'success' });
+    if (added > 0) logSRNAct(projectId, `${added} SRN items imported from delivery challan PDF`, profile?.full_name||'', profile?.role||'').catch(()=>{});
   };
 
   const addItem = async () => {
