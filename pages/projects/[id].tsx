@@ -546,7 +546,27 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
         </div>
       )}
 
-      {/* STN PDF hidden input — triggered from title area */}
+      {/* STN Add + Import Challan buttons at top */}
+      {canAdd && (
+        <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:8 }}>
+          {!adding && (
+            <button onClick={()=>setAdding(true)}
+              style={{ background:T.primary, color:'#fff', border:'none', borderRadius:7, padding:'5px 14px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+              + Add Item
+            </button>
+          )}
+          <label style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600,
+            color:'#1E40AF', background:'#EFF6FF', border:'1px solid #BFDBFE',
+            borderRadius:6, padding:'4px 10px', cursor: stnPdfUploading ? 'not-allowed' : 'pointer',
+            opacity: stnPdfUploading ? 0.7 : 1 }}>
+            {stnPdfUploading ? '⏳ Parsing PDF...' : '📄 Import Challan'}
+            <input ref={stnPdfRef} data-stn-pdf="1" type="file" accept=".pdf" style={{ display:'none' }}
+              disabled={stnPdfUploading}
+              onChange={e => { const f = e.target.files?.[0]; if (f) uploadStnPdf(f); }} />
+          </label>
+        </div>
+      )}
+      {/* STN PDF hidden input */}
       <input ref={stnPdfRef} data-stn-pdf="1" type="file" accept=".pdf" style={{ display:'none' }}
         disabled={stnPdfUploading}
         onChange={e => { const f = e.target.files?.[0]; if (f) uploadStnPdf(f); }} />
@@ -814,13 +834,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
 
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:14 }}>
 
-      {canAdd && !adding && (
-          <button onClick={()=>setAdding(true)}
-            style={{ background:'#fff', border:`1.5px solid ${T.primary}`, borderRadius:8,
-              padding:'8px 18px', color:T.primary, cursor:'pointer', fontSize:13, fontWeight:700 }}>
-            + Add Item
-          </button>
-        )}
+      {/* Add Item moved to top */}
         {items.length > 0 && (
           <div style={{ marginLeft:'auto', fontSize:13, fontWeight:700, color:T.primary,
             background:T.primaryLight, padding:'8px 18px', borderRadius:8 }}>
@@ -1229,8 +1243,12 @@ function SRNSection({ projectId, role, onAllApproved }: { projectId:string; role
         <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
           <thead>
             <tr>
-              {['#','Code','Description','UOM','Issued','Utilised','Status','PM Approved','Balance','Comments','Return Qty','Return Date','Return Received','Actions'].map((h,i)=>(
-                <th key={i} style={{ ...thS, textAlign:i>=4&&i<=9?'right' as const:'left' as const }}>{h}</th>
+              {[
+                {h:'#',w:28},{h:'Code',w:120},{h:'Description',w:260},{h:'UOM',w:50},
+                {h:'Issued',w:60},{h:'Utilised',w:70},{h:'Status',w:90},{h:'PM Approved',w:90},
+                {h:'Balance',w:70},{h:'Comments',w:120},{h:'Return Qty',w:80},{h:'Return Date',w:90},{h:'Return Received',w:100},{h:'Actions',w:80},
+              ].map(({h,w},i)=>(
+                <th key={i} style={{ ...thS, minWidth:w, textAlign:i>=4&&i<=9?'right' as const:'left' as const }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -3756,25 +3774,14 @@ export default function ProjectDetailPage() {
         {/* ── STN ── */}
         <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('📋','STN', 'poitems', false, undefined,
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              {['super_admin','region_manager','project_manager'].includes(role) && (
-                <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
-                  <input type="checkbox" checked={stnApplicable} disabled={getSTNItems(p.id).length > 0}
-                    title={getSTNItems(p.id).length > 0 ? 'Cannot change — STN items already exist for this project' : undefined}
-                    onChange={e=>toggleApplicable('stn_applicable', e.target.checked)} />
-                  Applicable
-                </label>
-              )}
-              {(canEdit || role==='vendor') && stnApplicable && (
-                <button
-                  onClick={()=>{ const el=document.querySelector('input[data-stn-pdf]') as HTMLInputElement; el?.click(); }}
-                  style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600,
-                    color:'#1E40AF', background:'#EFF6FF', border:'1px solid #BFDBFE',
-                    borderRadius:6, padding:'4px 10px', cursor:'pointer' }}>
-                  📄 Import Challan
-                </button>
-              )}
-            </div>
+            ['super_admin','region_manager','project_manager'].includes(role) && (
+              <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
+                <input type="checkbox" checked={stnApplicable} disabled={getSTNItems(p.id).length > 0}
+                  title={getSTNItems(p.id).length > 0 ? 'Cannot change — STN items already exist for this project' : undefined}
+                  onChange={e=>toggleApplicable('stn_applicable', e.target.checked)} />
+                Applicable
+              </label>
+            )
           )}
           <POItemsSection projectId={p.id} editing={editing('poitems')} canAdd={canEdit && stnApplicable} isVendorRole={role==='vendor'} />
         </div>
@@ -3808,7 +3815,7 @@ export default function ProjectDetailPage() {
 
         {/* ── PTW — Permit to Work ── */}
         {showPTW && <div style={{ ...card, marginBottom:16 }}>
-          {sectionTitle('🔑','PTW — Permit to Work', 'ptw', canEditPTW, undefined,
+          {sectionTitle('🔑','PTW — Permit to Work', 'ptw', false, undefined,
             ['super_admin','region_manager','project_manager'].includes(role) && (
               <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
                 <input type="checkbox" checked={ptwApplicable} disabled={ptwItemCount > 0}
@@ -3818,7 +3825,7 @@ export default function ProjectDetailPage() {
               </label>
             )
           )}
-          <PTWSectionCard projectId={p.id} vendorContact={p.vendorContact||''} canEdit={editing('ptw') && canEditPTW} canAdd={canEditPTW && ptwApplicable} onCountChange={setPtwItemCount} />
+          <PTWSectionCard projectId={p.id} vendorContact={p.vendorContact||''} canEdit={canEditPTW} canAdd={canEditPTW && ptwApplicable} onCountChange={setPtwItemCount} />
         </div>}
 
 
