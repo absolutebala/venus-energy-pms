@@ -664,7 +664,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
                       ) : <span style={{ fontSize:11, color:T.textMuted }}>—</span>}
                     </td>
                     <td style={{ ...tdS, width:120 }}>
-                      {editing && canAdd ? (
+                      {(item as any).utilisedStatus !== 'submitted' && (item as any).utilisedStatus !== 'pm_approved' && canAdd ? (
                         <div style={{ display:'flex', gap:4 }}>
                           <button onClick={()=>{ setEditId(editId===item.id?null:item.id); setEditRow({...item}); }}
                             style={{ background: editId===item.id ? T.primary : 'none', color: editId===item.id ? '#fff' : T.primary, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:12 }}>✏️</button>
@@ -3621,7 +3621,7 @@ export default function ProjectDetailPage() {
 
         {/* ── STN ── */}
         <div style={{ ...card, marginBottom:16 }}>
-          {sectionTitle('📋','STN', 'poitems', role!=='vendor' && canEdit, undefined,
+          {sectionTitle('📋','STN', 'poitems', false, undefined,
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               {['super_admin','region_manager','project_manager'].includes(role) && (
                 <label style={{ display:'flex', alignItems:'center', gap:5, fontSize:12, color:T.textMuted, cursor:'pointer' }}>
