@@ -908,6 +908,7 @@ export default function InvoicesPage() {
                   <tr style={{ background:T.primaryLight, fontWeight:700 }}>
                     <td colSpan={12} style={{ ...tdS, color:T.primary }}>Total</td>
                     <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>{fmt(totalInvoiced)}</td>
+                    <td style={{ ...tdS, textAlign:"right" as const, color:T.textMuted, fontSize:11 }}>18%</td>
                     <td style={{ ...tdS, textAlign:"right" as const, color:T.textMuted }}>{fmt(totalGST)}</td>
                     <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>{fmt(totalAmount)}</td>
                     <td colSpan={3} style={tdS}></td>
