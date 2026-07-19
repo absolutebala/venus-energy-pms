@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
+import { createClient } from '@/lib/supabase';
 import {
   LayoutDashboard, FolderOpen, Building2, Package, Wallet,
   FileText, BarChart3, Shield, User, Users, Lock,
@@ -9,7 +10,7 @@ import {
   Settings, Bell, TrendingUp, Activity, Landmark, Archive
 } from 'lucide-react';
 
-interface NavItem { href: string; label: string; icon: React.ReactNode; module?: string; }
+interface NavItem { href: string; label: string; icon: React.ReactNode; module?: string; alert?: boolean; }
 
 const iconSize = 17;
 const iconProps = { size: iconSize, strokeWidth: 1.75 };
@@ -68,7 +69,7 @@ const ADMIN_NAV: NavItem[] = [
   { href:'/admin/roles',      label:'Role & Permissions', icon:<Lock {...iconProps} /> },
   { href:'/admin/activities', label:'Activities',         icon:<Activity {...iconProps} /> },
   { href:'/admin/settings',   label:'Settings',           icon:<Settings {...iconProps} /> },
-  { href:'/admin/backups',    label:'Backups',            icon:<Archive {...iconProps} /> },
+  { href:'/admin/backups',    label:'Backups',            icon:<Archive {...iconProps} />, alert: true },
 ];
 
 interface Props { collapsed: boolean; onCollapse: (v: boolean) => void; }
@@ -80,6 +81,24 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
   const isRM         = !loading && profile?.role === 'region_manager';
   const isAccounting = !loading && profile?.role === 'accounting_team';
   const isSuperAdmin = !loading && profile?.role === 'super_admin';
+
+  const [backupAlert, setBackupAlert] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isSuperAdmin) return;
+    const checkAlerts = async () => {
+      try {
+        const { data: { session } } = await createClient().auth.getSession();
+        const token = session?.access_token || '';
+        if (!token) return;
+        const res = await fetch('/api/backup/status', { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) return;
+        const json = await res.json();
+        setBackupAlert(json.schemaAlert || json.codeAlert);
+      } catch {}
+    };
+    checkAlerts();
+  }, [isSuperAdmin]);
 
   const isActive = (href: string) => {
     if (pathname === href) return true;
@@ -130,8 +149,14 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
           <span style={{ fontSize:13, fontWeight: active ? 600 : 400, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
             {item.label}
           </span>
+          {item.alert && backupAlert && (
+            <span style={{ marginLeft:'auto', width:7, height:7, borderRadius:'50%', background:'#DC2626', flexShrink:0 }} />
+          )}
         )}
-        {!collapsed && active && (
+        {collapsed && item.alert && backupAlert && (
+          <span style={{ position:'absolute', top:6, right:6, width:7, height:7, borderRadius:'50%', background:'#DC2626' }} />
+        )}
+        {!collapsed && active && !backupAlert && (
           <span style={{ marginLeft:'auto', width:5, height:5, borderRadius:'50%', background:T.primary, flexShrink:0 }} />
         )}
       </Link>
