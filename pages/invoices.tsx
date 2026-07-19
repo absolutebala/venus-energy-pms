@@ -371,7 +371,8 @@ export default function InvoicesPage() {
         'PO Date':             proj?.poDate ? new Date(proj.poDate) : '',
         'Indus ID':            proj?.indusId || '',
         'Project ID':          proj?.projectId || '',
-        'Project':             proj?.site || '',
+        'Site Name':           proj?.site || '',
+        'Project Name':        proj?.type || '',
         'WCC No':              (inv as any).wccNo || '',
         'Receipt No':          (inv as any).receiptNo || '',
         'Invoice No':          inv.invoiceNo,
@@ -767,7 +768,7 @@ export default function InvoicesPage() {
               <thead>
                 <tr>
                   <th style={thS()}>#</th>
-                  {([["poNo","PO No"],["invoiceDate","PO Date"],["invoiceDate","Indus ID"],["invoiceNo","Project ID"],["invoiceNo","Project"],
+                  {([["poNo","PO No"],["invoiceDate","PO Date"],["invoiceDate","Indus ID"],["invoiceNo","Project ID"],["invoiceNo","Site Name"],["invoiceNo","Project Name"],
                      ["invoiceNo","WCC No"],["invoiceNo","Receipt No"],["invoiceNo","Invoice No"],["invoiceDate","Invoice Date"],
                      ["dueDate","Due Date"],
                      ["invoiceAmount","Basic Amt (₹)"],["gst","GST (%)"],["gst","Tax Amt (₹)"],["totalAmount","Total Amt (₹)"],
@@ -804,6 +805,7 @@ export default function InvoicesPage() {
                       <td style={{ ...tdS, color:T.textMuted }}>{proj ? (proj as any).indusId || "—" : "—"}</td>
                       <td style={{ ...tdS, color:T.textMuted, fontSize:11 }}>{proj ? (proj as any).projectId || "—" : "—"}</td>
                       <td style={{ ...tdS, maxWidth:120 }}><div style={{ fontSize:12, color:T.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{proj ? (proj as any).site || "—" : "—"}</div></td>
+                      <td style={{ ...tdS, maxWidth:120 }}><div style={{ fontSize:12, color:T.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{proj ? (proj as any).type || "—" : "—"}</div></td>
                       <td style={tdS}>{(inv as any).wccNo || "—"}</td>
                       <td style={tdS}>{(inv as any).receiptNo || "—"}</td>
                       <td style={{ ...tdS, fontWeight:700, color:T.primary }}>{inv.invoiceNo}</td>
