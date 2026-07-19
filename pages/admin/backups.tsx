@@ -15,11 +15,20 @@ export default function BackupsPage() {
   const [running, setRunning] = useState(false);
   const [exportingSchema, setExportingSchema] = useState(false);
   const [backingUpGithub, setBackingUpGithub] = useState(false);
+  const [status, setStatus] = useState<any>(null);
   const [error, setError] = useState('');
   const [toast, setToast] = useState<{msg:string;type:string}|null>(null);
 
   useEffect(() => { if (toast) { const t = setTimeout(()=>setToast(null), 5000); return ()=>clearTimeout(t); } }, [toast]);
-  useEffect(() => { if (!authLoading && profile?.role==='super_admin') fetchBackups(); }, [authLoading, profile]);
+  useEffect(() => { if (!authLoading && profile?.role==='super_admin') { fetchBackups(); fetchStatus(); } }, [authLoading, profile]);
+
+  const fetchStatus = async () => {
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/backup/status', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) setStatus(await res.json());
+    } catch {}
+  };
 
   const getToken = async () => {
     const { data: { session } } = await createClient().auth.getSession();
@@ -66,6 +75,7 @@ export default function BackupsPage() {
       if (!res.ok) { setToast({ msg:'❌ '+json.error, type:'error' }); return; }
       setToast({ msg: onSuccess(json), type:'success' });
       fetchBackups();
+      fetchStatus();
     } catch (e: any) { setToast({ msg:'❌ '+e.message, type:'error' }); }
     finally { setLoading(false); }
   };
@@ -162,7 +172,41 @@ export default function BackupsPage() {
       </div>
 
       <div style={card}>
-        {loading ? (
+        {/* Alert banners per tab */}
+        {tab==='schema' && status?.schemaAlert && (() => {
+          const days = status.lastSchemaBackup
+            ? Math.floor((Date.now() - new Date(status.lastSchemaBackup).getTime()) / (1000*60*60*24))
+            : null;
+          return (
+            <div style={{ background:'#FFFBEB', border:'1px solid #FDE68A', borderRadius:8, padding:'12px 16px', marginBottom:12,
+              display:'flex', alignItems:'center', gap:10, fontSize:13 }}>
+              <span style={{ fontSize:18 }}>⚠️</span>
+              <div>
+                <div style={{ fontWeight:700, color:'#92400E' }}>Schema backup is outdated</div>
+                <div style={{ color:'#B45309', fontSize:12, marginTop:2 }}>
+                  {days !== null ? `Last exported ${days} day${days!==1?'s':''} ago.` : 'No schema backup found.'} Export schema if DB changes were made recently.
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+        {tab==='github' && status?.codeAlert && (() => {
+          const lastBackup = status.lastCodeBackup ? new Date(status.lastCodeBackup).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : null;
+          return (
+            <div style={{ background:'#F5F3FF', border:'1px solid #DDD6FE', borderRadius:8, padding:'12px 16px', marginBottom:12,
+              display:'flex', alignItems:'center', gap:10, fontSize:13 }}>
+              <span style={{ fontSize:18 }}>💻</span>
+              <div>
+                <div style={{ fontWeight:700, color:'#5B21B6' }}>New commits since last backup</div>
+                <div style={{ color:'#7C3AED', fontSize:12, marginTop:2 }}>
+                  {lastBackup ? `Last code backup: ${lastBackup}.` : 'No code backup found.'} Click "Backup Code Now" to save the latest version.
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+      {loading ? (
           <div style={{ color:T.textMuted, textAlign:'center' as const, padding:40 }}>Loading...</div>
         ) : error ? (
           <div style={{ color:T.danger, padding:20 }}>❌ {error}</div>
