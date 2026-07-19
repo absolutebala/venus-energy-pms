@@ -1417,6 +1417,73 @@ function SRNSectionNew({ projectId, role, onAllReceived, onCountChange, canAdd: 
   const canEdit = ['super_admin','pm','rm','project_manager','super_admin','region_manager'].includes(role);
   const [editId,  setEditId]  = React.useState<string|null>(null);
   const [editRow, setEditRow] = React.useState<any>({});
+  const [srnPdfUploading, setSrnPdfUploading] = React.useState(false);
+  const [srnPdfItems,     setSrnPdfItems]     = React.useState<any[]|null>(null);
+  const srnPdfRef = React.useRef<HTMLInputElement>(null);
+
+  const uploadSrnPdf = async (file: File) => {
+    setSrnPdfUploading(true);
+    try {
+      const pdfjsLib = await import('pdfjs-dist');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+      const arrayBuf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuf) }).promise;
+      const images: string[] = [];
+      for (let i = 1; i <= Math.min(pdf.numPages, 3); i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width; canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d')!;
+        await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
+        images.push(canvas.toDataURL('image/jpeg', 0.85).replace('data:image/jpeg;base64,', ''));
+      }
+      const { data: { session } } = await (await import('@/lib/supabase')).createClient().auth.getSession();
+      const token = session?.access_token || '';
+      const res = await fetch('/api/upload/extract-stn', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ images }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setToast({ msg:'❌ ' + (json.error||'Failed'), type:'error' }); return; }
+      const { documentNo, liftedDate, gateEntryNo, vehicleNo, boqReqNo, items: extracted } = json.data;
+      setSrnPdfItems((extracted||[]).map((it:any) => ({
+        description: it.description||'', hsn_code: it.hsnCode||'', uom: it.uom||'Nos',
+        quantity: String(it.quantity||1), serial_no: it.serialNo||'', amount: String(it.amount||0),
+        document_no: documentNo||'', lifted_date: liftedDate||'', gate_entry_no: gateEntryNo||'',
+        vehicle_no: vehicleNo||'', boq_req_no: it.boqReqNo||boqReqNo||'',
+        rate:'', gst_rate:'18', return_qty:'', return_date:'',
+      })));
+    } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); }
+    finally { setSrnPdfUploading(false); if (srnPdfRef.current) srnPdfRef.current.value = ''; }
+  };
+
+  const saveSrnPdfItems = async () => {
+    if (!srnPdfItems?.length) return;
+    setSaving('pdf');
+    let added = 0;
+    for (let i = 0; i < srnPdfItems.length; i++) {
+      const it = srnPdfItems[i];
+      if (!it.description) continue;
+      try {
+        const { error } = await sb.from('srn').insert({
+          project_id: projectId, description: it.description, hsn_code: it.hsn_code,
+          uom: it.uom, quantity: Number(it.quantity)||1, rate: 0, gst_rate: 18,
+          amount: Number(it.amount)||0, serial_no: it.serial_no, document_no: it.document_no,
+          boq_req_no: it.boq_req_no, lifted_date: it.lifted_date||null,
+          gate_entry_no: it.gate_entry_no||null, vehicle_no: it.vehicle_no||null,
+          sort_order: items.length + i + 1, created_by: profile?.full_name||'',
+        });
+        if (!error) added++;
+      } catch(e) { console.error(e); }
+    }
+    await fetchItems();
+    setSrnPdfItems(null);
+    setSaving(null);
+    setToast({ msg:`✅ ${added} SRN item${added!==1?'s':''} added from delivery challan`, type:'success' });
+    logSRNAct(projectId, `${added} SRN items imported from delivery challan PDF`, profile?.full_name||'', profile?.role||'').catch(()=>{});
+  };
 
   const addItem = async () => {
     if (!newRow.description.trim()) { setToast({ msg:'Description is required', type:'error' }); return; }
