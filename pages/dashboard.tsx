@@ -666,9 +666,12 @@ function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilt
                   <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{pm || 'Unassigned'}</span>
                   <span style={{ fontSize:11, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10 }}>{(ps as any[]).length} →</span>
                 </div>
-                <div style={{ display:'flex', gap:5, flexWrap:'wrap' as const }}>
-                  {(ps as any[]).filter((p:any)=>p.status==='in_progress').length>0 && <span style={{ fontSize:10, color:T.info, background:`${T.info}15`, padding:'1px 7px', borderRadius:8 }}>{(ps as any[]).filter((p:any)=>p.status==='in_progress').length} active</span>}
-                  {(ps as any[]).filter((p:any)=>p.status==='delayed').length>0 && <span style={{ fontSize:10, color:T.danger, background:`${T.danger}15`, padding:'1px 7px', borderRadius:8 }}>{(ps as any[]).filter((p:any)=>p.status==='delayed').length} delayed</span>}
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <div style={{ display:'flex', gap:5, flexWrap:'wrap' as const }}>
+                    {(ps as any[]).filter((p:any)=>p.status==='in_progress').length>0 && <span style={{ fontSize:10, color:T.info, background:`${T.info}15`, padding:'1px 7px', borderRadius:8 }}>{(ps as any[]).filter((p:any)=>p.status==='in_progress').length} active</span>}
+                    {(ps as any[]).filter((p:any)=>p.status==='delayed').length>0 && <span style={{ fontSize:10, color:T.danger, background:`${T.danger}15`, padding:'1px 7px', borderRadius:8 }}>{(ps as any[]).filter((p:any)=>p.status==='delayed').length} delayed</span>}
+                  </div>
+                  <div style={{ fontSize:11, color:T.textMuted }}>{fmtINR((ps as any[]).reduce((a:number,p:any)=>a+p.poValue,0))} total PO</div>
                 </div>
               </div>
             ))}
