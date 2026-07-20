@@ -279,7 +279,7 @@ function WorkProgressSection({ projectId, role }: { projectId: string; role: str
 }
 
 
-function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }: { projectId: string; editing: boolean; canAdd?: boolean; isVendorRole?: boolean }) {
+function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, indusId='' }: { projectId: string; editing: boolean; canAdd?: boolean; isVendorRole?: boolean; indusId?: string }) {
   const { getByProject, addItem, updateItem, deleteItem, loading } = usePOItems();
   const { logActivity } = useActivity();
   const { profile: poProfile } = useAuth();
@@ -582,6 +582,30 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false }:
             <div style={{ fontSize:16, fontWeight:700, color:T.text, marginBottom:4 }}>
               📄 Review STN Items from Delivery Challan
             </div>
+            {/* Project ID validation */}
+            {stnPdfMeta.siteId && (() => {
+              const pdfSiteId = (stnPdfMeta.siteId||'').trim().toUpperCase();
+              const projIndusId = (indusId||'').trim().toUpperCase();
+              const matches = projIndusId && pdfSiteId === projIndusId;
+              const mismatch = projIndusId && pdfSiteId !== projIndusId;
+              return (
+                <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px', borderRadius:8, marginBottom:12,
+                  background: matches ? '#F0FDF4' : mismatch ? '#FEF2F2' : '#FFFBEB',
+                  border:`1px solid ${matches ? '#BBF7D0' : mismatch ? '#FECACA' : '#FDE68A'}` }}>
+                  <span style={{ fontSize:18 }}>{matches ? '✅' : mismatch ? '⚠️' : '🔍'}</span>
+                  <div style={{ fontSize:12 }}>
+                    <span style={{ fontWeight:600, color: matches ? '#166534' : mismatch ? '#DC2626' : '#92400E' }}>
+                      {matches ? 'Project ID Match' : mismatch ? 'Project ID Mismatch!' : 'Verify Project ID'}
+                    </span>
+                    <div style={{ fontSize:11, color:T.textMuted, marginTop:2 }}>
+                      PDF Site ID: <strong>{stnPdfMeta.siteId}</strong>
+                      {projIndusId && <span> · Project Indus ID: <strong>{indusId}</strong></span>}
+                      {mismatch && <span style={{ color:'#DC2626', marginLeft:6 }}>— These do not match. Please verify before saving.</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
             <div style={{ fontSize:12, color:T.textMuted, marginBottom:16 }}>
               {stnPdfItems.length} item{stnPdfItems.length!==1?'s':''} extracted. Review and edit before saving.
             </div>
@@ -3789,7 +3813,7 @@ export default function ProjectDetailPage() {
               </label>
             )
           )}
-          <POItemsSection projectId={p.id} editing={editing('poitems')} canAdd={canEdit && stnApplicable} isVendorRole={role==='vendor'} />
+          <POItemsSection projectId={p.id} editing={editing('poitems')} canAdd={canEdit && stnApplicable} isVendorRole={role==='vendor'} indusId={(p as any).indusId||''} />
         </div>
 
         {/* ── SRN ── */}
