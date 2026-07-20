@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 
-export const config = { api: { bodyParser: { sizeLimit: '10mb' } } };
+export const config = { api: { bodyParser: { sizeLimit: '25mb' } } };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -20,34 +20,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const content: any[] = [
       {
         type: 'text',
-        text: `You are parsing a delivery challan / STN from Indus Towers / Venus Energy. Extract all fields with high precision.
+        text: `You are parsing one or more delivery challans / STNs from Indus Towers / Venus Energy. Extract ALL line items from ALL pages.
 
 CRITICAL INSTRUCTIONS:
-1. "Gate Entry No" — This appears in a rubber stamp or handwritten area at the BOTTOM of the document, often labeled "Gate Entry No" or "Gate Entg No". Read EVERY digit carefully. Common mistake: missing digits. Double-check the full number.
-2. "HSN" — numeric code like 83119000. Do NOT confuse with Item Code.
-3. "Item Code" — product code like "12-440000-0-01-ZZ-ZZ-000". This is DIFFERENT from HSN.
-4. "Serial No" — from the "Serial No" column. If empty, use "Lot No" value instead.
-5. "Site ID" — a code like "IN-1038303" from the Destination section.
-6. "Document No" — main document number from Source section.
-7. "BOQ Req No" or "BOQ Req. No" — numeric reference.
-8. "Vehicle No" — like TS15UC2295.
+1. Extract EVERY item row from ALL pages — do not stop after 2-3 items. This PDF may have 20+ items.
+2. "Gate Entry No" — in the rubber stamp at the BOTTOM. Read EVERY digit carefully.
+3. "HSN" — numeric code like 83119000. Different from Item Code.
+4. "Item Code" — product code like "17-120000-0-01-ZZ-ZZ-133". Different from HSN.
+5. "Serial No" — from Serial No column. If empty, use Lot No value.
+6. "Site ID" — like "IN-1245636" from Destination section.
+7. If multiple challans exist, use the first document's header fields and combine ALL items.
 
-Return ONLY valid JSON with NO markdown:
+Return ONLY valid JSON, no markdown:
 {
   "documentNo": "document number",
   "liftedDate": "YYYY-MM-DD",
-  "gateEntryNo": "FULL gate entry number - read every digit from the stamp at bottom",
+  "gateEntryNo": "full gate entry number from stamp",
   "vehicleNo": "vehicle number",
   "boqReqNo": "BOQ req number",
-  "siteId": "Site ID e.g. IN-1038303",
+  "siteId": "Site ID e.g. IN-1245636",
   "items": [
     {
       "description": "item description",
-      "hsnCode": "HSN number only e.g. 83119000",
-      "itemCode": "item code e.g. 12-440000-0-01-ZZ-ZZ-000",
+      "hsnCode": "HSN number only",
+      "itemCode": "item code",
       "uom": "unit of measure",
       "quantity": 1,
-      "serialNo": "serial number or lot number if serial is empty",
+      "serialNo": "serial number or lot number",
       "amount": 0
     }
   ]
@@ -62,7 +61,7 @@ Return ONLY valid JSON with NO markdown:
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
-      body: JSON.stringify({ model: 'gpt-4o', max_tokens: 2000, messages: [{ role: 'user', content }] })
+      body: JSON.stringify({ model: 'gpt-4o', max_tokens: 8000, messages: [{ role: 'user', content }] })
     });
 
     if (!openaiRes.ok) {
