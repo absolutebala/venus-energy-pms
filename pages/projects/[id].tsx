@@ -331,10 +331,10 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
       });
       const json = await res.json();
       if (!res.ok) { setToast({ msg: '❌ ' + (json.error || 'Failed'), type: 'error' }); return; }
-      const { documentNo, liftedDate, gateEntryNo, vehicleNo, boqReqNo, items: extracted } = json.data;
-      setStnPdfMeta({ documentNo: documentNo||'', liftedDate: liftedDate||'', gateEntryNo: gateEntryNo||'', vehicleNo: vehicleNo||'', boqReqNo: boqReqNo||'' });
+      const { documentNo, liftedDate, gateEntryNo, vehicleNo, boqReqNo, siteId, items: extracted } = json.data;
+      setStnPdfMeta({ documentNo: documentNo||'', liftedDate: liftedDate||'', gateEntryNo: gateEntryNo||'', vehicleNo: vehicleNo||'', boqReqNo: boqReqNo||'', siteId: siteId||'' });
       setStnPdfItems((extracted||[]).map((it:any) => ({
-        description: it.description||'', hsnCode: it.hsnCode||'', uom: it.uom||'Nos',
+        description: it.description||'', hsnCode: it.itemCode||it.hsnCode||'', uom: it.uom||'Nos',
         quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
         documentNo: documentNo||'', liftedDate: liftedDate||'', gateEntryNo: gateEntryNo||'', vehicleNo: vehicleNo||'',
         boqReqNo: it.boqReqNo || boqReqNo||'',
