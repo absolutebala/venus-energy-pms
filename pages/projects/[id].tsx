@@ -614,22 +614,23 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
                 <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:8 }}>Item {idx+1}</div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
                   {[
-                    ['Description *', 'description', 'text'],
-                    ['HSN / Item Code', 'hsnCode', 'text'],
-                    ['UOM', 'uom', 'text'],
-                    ['Quantity *', 'quantity', 'number'],
-                    ['Serial No', 'serialNo', 'text'],
-                    ['Amount (₹)', 'amount', 'number'],
-                    ['Document No', 'documentNo', 'text'],
-                    ['Gate Entry No', 'gateEntryNo', 'text'],
-                    ['Vehicle No', 'vehicleNo', 'text'],
-                    ['BOQ Req No', 'boqReqNo', 'text'],
-                    ['Lifted Date', 'liftedDate', 'date'],
-                  ].map(([label, field, type]) => (
+                    ['Description *', 'description', 'text', ''],
+                    ['HSN / Item Code', 'hsnCode', 'text', ''],
+                    ['UOM', 'uom', 'text', ''],
+                    ['Quantity *', 'quantity', 'number', ''],
+                    ['Serial No', 'serialNo', 'text', ''],
+                    ['Amount (₹)', 'amount', 'number', ''],
+                    ['Document No', 'documentNo', 'text', ''],
+                    ['Gate Entry No', 'gateEntryNo', 'text', '⚠️ Verify against stamp at bottom of challan'],
+                    ['Vehicle No', 'vehicleNo', 'text', ''],
+                    ['BOQ Req No', 'boqReqNo', 'text', ''],
+                    ['Lifted Date', 'liftedDate', 'date', ''],
+                  ].map(([label, field, type, hint]) => (
                     <div key={field as string}>
                       <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{label}</div>
-                      <input type={type as string} value={it[field as string]||''} style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'6px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none' }}
+                      <input type={type as string} value={it[field as string]||''} style={{ border:`1px solid ${field==='gateEntryNo'?'#FCD34D':T.border}`, borderRadius:6, padding:'6px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none' }}
                         onChange={e=>setStnPdfItems(prev=>prev!.map((r:any,i:number)=>i===idx?{...r,[field as string]:e.target.value}:r))} />
+                      {hint && <div style={{ fontSize:9, color:'#D97706', marginTop:2 }}>{hint as string}</div>}
                     </div>
                   ))}
                 </div>

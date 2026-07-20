@@ -20,34 +20,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const content: any[] = [
       {
         type: 'text',
-        text: `You are parsing a delivery challan / STN (Stock Transfer Note) from Indus Towers / Venus Energy.
+        text: `You are parsing a delivery challan / STN from Indus Towers / Venus Energy. Extract all fields with high precision.
 
-Extract fields carefully. Pay special attention to:
-- "HSN" or "HSN No" field — this is a numeric code like 83119000. Do NOT confuse with Item Code.
-- "Item Code" — this is the product code like "12-440000-0-01-ZZ-ZZ-000". This is DIFFERENT from HSN.
-- "Gate Entry No" — look at the outward stamp/seal at the bottom of the document. Read every digit carefully.
-- "Serial No" — look specifically in the "Serial No" column. If empty, use the "Lot No" value instead.
-- "Site ID" or "Site Id" — a code like "IN-1038303". Extract this for project validation.
-- "Document No" — the main document number (e.g. 11270165101).
-- "Vehicle No" — like TS15UC2295.
-- "BOQ Req No" or "BOQ Req. No" — a numeric reference.
+CRITICAL INSTRUCTIONS:
+1. "Gate Entry No" — This appears in a rubber stamp or handwritten area at the BOTTOM of the document, often labeled "Gate Entry No" or "Gate Entg No". Read EVERY digit carefully. Common mistake: missing digits. Double-check the full number.
+2. "HSN" — numeric code like 83119000. Do NOT confuse with Item Code.
+3. "Item Code" — product code like "12-440000-0-01-ZZ-ZZ-000". This is DIFFERENT from HSN.
+4. "Serial No" — from the "Serial No" column. If empty, use "Lot No" value instead.
+5. "Site ID" — a code like "IN-1038303" from the Destination section.
+6. "Document No" — main document number from Source section.
+7. "BOQ Req No" or "BOQ Req. No" — numeric reference.
+8. "Vehicle No" — like TS15UC2295.
 
 Return ONLY valid JSON with NO markdown:
 {
-  "documentNo": "document number from Source section",
-  "liftedDate": "document date in YYYY-MM-DD format",
-  "gateEntryNo": "gate entry number from the outward stamp at bottom - read every digit carefully",
+  "documentNo": "document number",
+  "liftedDate": "YYYY-MM-DD",
+  "gateEntryNo": "FULL gate entry number - read every digit from the stamp at bottom",
   "vehicleNo": "vehicle number",
   "boqReqNo": "BOQ req number",
-  "siteId": "Site ID from destination section e.g. IN-1038303",
+  "siteId": "Site ID e.g. IN-1038303",
   "items": [
     {
-      "description": "item description text",
-      "hsnCode": "HSN number only e.g. 83119000 - NOT the item code",
+      "description": "item description",
+      "hsnCode": "HSN number only e.g. 83119000",
       "itemCode": "item code e.g. 12-440000-0-01-ZZ-ZZ-000",
       "uom": "unit of measure",
       "quantity": 1,
-      "serialNo": "serial number from Serial No column, or Lot No if serial no is empty",
+      "serialNo": "serial number or lot number if serial is empty",
       "amount": 0
     }
   ]
@@ -74,13 +74,11 @@ Return ONLY valid JSON with NO markdown:
     const text = openaiData.choices?.[0]?.message?.content || '';
     try {
       const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const parsed = JSON.parse(clean);
-      return res.status(200).json({ success: true, data: parsed });
+      return res.status(200).json({ success: true, data: JSON.parse(clean) });
     } catch {
       return res.status(500).json({ error: 'Failed to parse OpenAI response', raw: text });
     }
   } catch (err: any) {
-    console.error('STN extract error:', err);
     return res.status(500).json({ error: err.message });
   }
 }
