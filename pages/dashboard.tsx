@@ -686,11 +686,13 @@ function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilt
                 style={{ padding:'9px 11px', background:T.bg, borderRadius:8, cursor:'pointer', transition:'all 0.15s' }}
                 onMouseEnter={e=>(e.currentTarget as HTMLDivElement).style.background=T.primaryLight}
                 onMouseLeave={e=>(e.currentTarget as HTMLDivElement).style.background=T.bg}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
-                  <span style={{ fontSize:12, fontWeight:600, color:T.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const, maxWidth:160 }}>{v}</span>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:2 }}>
+                  <div style={{ overflow:'hidden', flex:1, marginRight:8 }}>
+                    <span style={{ fontSize:12, fontWeight:600, color:T.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const, display:'block' }}>{v}</span>
+                    <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginTop:1 }}>₹{((ps as any[]).reduce((a:number,p:any)=>a+p.poValue,0)).toLocaleString('en-IN')}</div>
+                  </div>
                   <span style={{ fontSize:11, fontWeight:700, color:T.primary, background:T.primaryLight, padding:'2px 8px', borderRadius:10, flexShrink:0 }}>{(ps as any[]).length} →</span>
                 </div>
-                <div style={{ fontSize:11, color:T.textMuted }}>{fmtINR((ps as any[]).reduce((a:number,p:any)=>a+p.poValue,0))} total PO</div>
               </div>
             ))}
           </div>
