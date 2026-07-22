@@ -383,8 +383,8 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
       const maxSno = snos.length ? snos[snos.length-1] : 0;
       const missingSno: number[] = [];
       for (let s = 1; s <= maxSno; s++) { if (!snos.includes(s)) missingSno.push(s); }
-      const missingImages = [...new Set(missingSno.map(s => pageImageBySno[s-1]||pageImageBySno[s+1]||'').filter(Boolean)), ...emptyPageImages];
-      if (missingSno.length > 0) setStnEmptyPages([...new Set(missingImages)]);
+      const missingImages = Array.from(new Set(missingSno.map(s => pageImageBySno[s-1]||pageImageBySno[s+1]||'').filter(Boolean))).concat(emptyPageImages);
+      if (missingSno.length > 0) setStnEmptyPages(Array.from(new Set(missingImages)));
 
       setStnPdfItems(allExtracted.map((it:any) => ({
         description: it.description||'', hsnCode: it.itemCode||it.hsnCode||'', uom: it.uom||'Nos',
