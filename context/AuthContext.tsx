@@ -98,6 +98,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error ? error.message : null };
   };
 
+  // Check is_active on profile load — sign out inactive users
+  useEffect(() => {
+    if (profile && profile.is_active === false) {
+      supabase.auth.signOut().then(() => {
+        window.location.href = '/?error=inactive';
+      });
+    }
+  }, [profile]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null); setProfile(null); setPermissions({});

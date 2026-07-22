@@ -267,7 +267,13 @@ export default function AdminUsersPage() {
   };
 
   const toggleActive = async (u: UserRow) => {
-    await supabase.from('profiles').update({ is_active: !u.is_active }).eq('id', u.id);
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || '';
+    await fetch('/api/admin/toggle-active', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: u.id, is_active: !u.is_active }),
+    });
     fetchUsers();
   };
 
