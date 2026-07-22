@@ -302,56 +302,56 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
   const [stnBatchInfo,    setStnBatchInfo]     = React.useState<{current:number;total:number;allImages:string[]}>({current:0,total:0,allImages:[]});
   const stnPdfRef = React.useRef<HTMLInputElement>(null);
 
+  const STNBATCH = 7;
+
+  const processStnBatch = async (allImages: string[], batchIndex: number, meta: any) => {
+    setStnPdfUploading(true);
+    try {
+      const images = allImages.slice(batchIndex * STNBATCH, (batchIndex + 1) * STNBATCH);
+      if (!images.length) { setStnPdfUploading(false); return; }
+      const { data: { session } } = await (await import('@/lib/supabase')).createClient().auth.getSession();
+      const token = session?.access_token || '';
+      const res = await fetch('/api/upload/extract-stn', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ images }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setToast({ msg:'❌ ' + (json.error||'Failed'), type:'error' }); return; }
+      const usedMeta = batchIndex === 0 ? json.data : meta;
+      setStnPdfMeta({ documentNo: usedMeta.documentNo||'', liftedDate: usedMeta.liftedDate||'', gateEntryNo: usedMeta.gateEntryNo||'', vehicleNo: usedMeta.vehicleNo||'', boqReqNo: usedMeta.boqReqNo||'', siteId: usedMeta.siteId||'' });
+      setStnBatchInfo({ current: batchIndex, total: Math.ceil(allImages.length / STNBATCH), allImages });
+      setStnPdfItems((json.data.items||[]).map((it:any) => ({
+        description: it.description||'', hsnCode: it.itemCode||it.hsnCode||'', uom: it.uom||'Nos',
+        quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
+        documentNo: usedMeta.documentNo||'', liftedDate: usedMeta.liftedDate||'', gateEntryNo: usedMeta.gateEntryNo||'', vehicleNo: usedMeta.vehicleNo||'',
+        boqReqNo: it.boqReqNo||usedMeta.boqReqNo||'',
+      })));
+    } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); }
+    finally { setStnPdfUploading(false); }
+  };
+
   const uploadStnPdf = async (file: File) => {
     setStnPdfUploading(true);
     try {
-      // Render PDF pages to images client-side using PDF.js
       const arrayBuf = await file.arrayBuffer();
       const pdfjsLib = await import('pdfjs-dist');
       pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
       const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuf) }).promise;
-      const totalPages = pdf.numPages;
-      // Render all pages to images
       const allImages: string[] = [];
-      for (let i = 1; i <= totalPages; i++) {
+      for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const viewport = page.getViewport({ scale: 0.8 });
         const canvas = document.createElement('canvas');
-        canvas.width  = viewport.width;
-        canvas.height = viewport.height;
+        canvas.width = viewport.width; canvas.height = viewport.height;
         const ctx = canvas.getContext('2d')!;
         await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
         allImages.push(canvas.toDataURL('image/jpeg', 0.65).replace('data:image/jpeg;base64,', ''));
       }
-      // Batch pages into groups of 8 to stay within size limits
-      const BATCH = 8;
-      const { data: { session } } = await (await import('@/lib/supabase')).createClient().auth.getSession();
-      const token = session?.access_token || '';
-      let allExtracted: any[] = [];
-      let firstMeta: any = {};
-      for (let b = 0; b < allImages.length; b += BATCH) {
-        const images = allImages.slice(b, b + BATCH);
-        const res = await fetch('/api/upload/extract-stn', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ images, batchIndex: b }),
-        });
-        const json = await res.json();
-        if (!res.ok) { setToast({ msg: '❌ ' + (json.error || 'Failed'), type: 'error' }); return; }
-        if (b === 0) firstMeta = json.data;
-        allExtracted = allExtracted.concat(json.data.items || []);
-      }
-      const json = { data: { ...firstMeta, items: allExtracted } };
-      const { documentNo, liftedDate, gateEntryNo, vehicleNo, boqReqNo, siteId, items: extracted } = json.data;
-      setStnPdfMeta({ documentNo: documentNo||'', liftedDate: liftedDate||'', gateEntryNo: gateEntryNo||'', vehicleNo: vehicleNo||'', boqReqNo: boqReqNo||'', siteId: siteId||'' });
-      setStnPdfItems((extracted||[]).map((it:any) => ({
-        description: it.description||'', hsnCode: it.itemCode||it.hsnCode||'', uom: it.uom||'Nos',
-        quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
-        documentNo: documentNo||'', liftedDate: liftedDate||'', gateEntryNo: gateEntryNo||'', vehicleNo: vehicleNo||'',
-        boqReqNo: it.boqReqNo || boqReqNo||'',
-      })));
-    } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); }
-    finally { setStnPdfUploading(false); if (stnPdfRef.current) stnPdfRef.current.value = ''; }
+      setStnBatchInfo({ current: 0, total: Math.ceil(allImages.length / STNBATCH), allImages });
+      await processStnBatch(allImages, 0, {});
+    } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); setStnPdfUploading(false); }
+    finally { if (stnPdfRef.current) stnPdfRef.current.value = ''; }
   };
 
   const saveStnPdfItems = async () => {
