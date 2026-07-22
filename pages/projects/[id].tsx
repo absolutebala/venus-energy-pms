@@ -601,7 +601,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
             color:'#1E40AF', background:'#EFF6FF', border:'1px solid #BFDBFE',
             borderRadius:6, padding:'4px 10px', cursor: stnPdfUploading ? 'not-allowed' : 'pointer',
             opacity: stnPdfUploading ? 0.7 : 1 }}>
-            {stnPdfUploading ? `⏳ Parsing...${stnBatchInfo.allImages.length > 0 ? ` (${stnBatchInfo.allImages.length} page${stnBatchInfo.allImages.length!==1?'s':''}, ${stnBatchInfo.total} batch${stnBatchInfo.total!==1?'es':''})` : ''}` : '📄 Import Challan (PDF/Image)'}
+            {stnPdfUploading ? (stnParseProgress || '⏳ Parsing...') : '📄 Import Challan (PDF/Image)'}
             <input ref={stnPdfRef} data-stn-pdf="1" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display:'none' }}
               disabled={stnPdfUploading}
               onChange={e => { const f = e.target.files?.[0]; if (f) uploadStnPdf(f); }} />
@@ -653,9 +653,31 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
                 </div>
               );
             })()}
-            <div style={{ fontSize:12, color:T.textMuted, marginBottom:16 }}>
+            <div style={{ fontSize:12, color:T.textMuted, marginBottom:8 }}>
               {stnPdfItems.length} item{stnPdfItems.length!==1?'s':''} extracted. Review and edit before saving.
             </div>
+            {/* Grand Total Checksum */}
+            {stnGrandTotal !== null && (() => {
+              const extractedTotal = stnPdfItems.reduce((a:number, it:any) => a + (Number(it.amount)||0), 0);
+              const matches = Math.abs(extractedTotal - stnGrandTotal) < 1;
+              return (
+                <div style={{ padding:'10px 14px', borderRadius:8, marginBottom:14,
+                  background: matches ? '#F0FDF4' : '#FEF2F2',
+                  border: `1px solid ${matches ? '#BBF7D0' : '#FECACA'}` }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    <div>
+                      <span style={{ fontSize:13, fontWeight:700, color: matches ? '#166534' : '#DC2626' }}>
+                        {matches ? '✅ Amount Verified' : '⚠️ Amount Mismatch — Items May Be Missing'}
+                      </span>
+                      <div style={{ fontSize:11, color:T.textMuted, marginTop:2 }}>
+                        Extracted: ₹{extractedTotal.toLocaleString('en-IN')} · Challan Total: ₹{stnGrandTotal.toLocaleString('en-IN')}
+                        {!matches && <span style={{ color:'#DC2626', marginLeft:8 }}>· Difference: ₹{Math.abs(stnGrandTotal - extractedTotal).toLocaleString('en-IN')}</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
             {stnPdfItems.map((it:any, idx:number) => (
               <div key={idx} style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:12, marginBottom:10 }}>
                 <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:8 }}>Item {idx+1}</div>
@@ -695,9 +717,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
               <button onClick={saveStnPdfItems} disabled={saving||stnPdfItems.length===0}
                 style={{ padding:'8px 18px', borderRadius:8, background:T.primary, color:'#fff', border:'none',
                   cursor:saving?'not-allowed':'pointer', fontSize:13, fontWeight:600, opacity:saving?0.7:1 }}>
-                {saving ? '⏳ Saving...' : stnBatchInfo.total > 1 && stnBatchInfo.current + 1 < stnBatchInfo.total
-                  ? `✅ Save & Load Batch ${stnBatchInfo.current+2} of ${stnBatchInfo.total} →`
-                  : `✅ Save ${stnPdfItems.length} Item${stnPdfItems.length!==1?'s':''}`}
+                {saving ? '⏳ Saving...' : `✅ Save ${stnPdfItems.length} Item${stnPdfItems.length!==1?'s':''}`}
               </button>
             </div>
           </div>
