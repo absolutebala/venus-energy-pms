@@ -299,6 +299,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
   const [stnPdfUploading, setStnPdfUploading] = React.useState(false);
   const [stnPdfItems,     setStnPdfItems]     = React.useState<any[]|null>(null);
   const [stnPdfMeta,      setStnPdfMeta]      = React.useState<any>({});
+  const [stnBatchInfo,    setStnBatchInfo]     = React.useState<{current:number;total:number;allImages:string[]}>({current:0,total:0,allImages:[]});
   const stnPdfRef = React.useRef<HTMLInputElement>(null);
 
   const uploadStnPdf = async (file: File) => {
@@ -371,8 +372,16 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
     }
     setStnPdfItems(null);
     setSaving(false);
-    setToast({ msg:`✅ ${added} STN item${added!==1?'s':''} added from delivery challan`, type:'success' });
+    setToast({ msg:`✅ ${added} STN item${added!==1?'s':''} added`, type:'success' });
     logActivity(projectId, `${added} STN items imported from delivery challan PDF`, poProfile?.full_name||'', poProfile?.role||'').catch(()=>{});
+    // Auto-process next batch if available
+    const nextBatch = stnBatchInfo.current + 1;
+    if (nextBatch < stnBatchInfo.total) {
+      setToast({ msg:`✅ ${added} items saved. Loading batch ${nextBatch+1} of ${stnBatchInfo.total}...`, type:'success' });
+      await processStnBatch(stnBatchInfo.allImages, nextBatch, stnPdfMeta);
+    } else if (stnBatchInfo.total > 1) {
+      setToast({ msg:`✅ All batches complete!`, type:'success' });
+    }
   };
 
   // Check localStorage for pending STN items (set by projects page Upload PO flow)
@@ -591,6 +600,11 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
             onClick={e=>e.stopPropagation()}>
             <div style={{ fontSize:16, fontWeight:700, color:T.text, marginBottom:4 }}>
               📄 Review STN Items from Delivery Challan
+              {stnBatchInfo.total > 1 && (
+                <span style={{ fontSize:12, fontWeight:400, color:T.textMuted, marginLeft:10 }}>
+                  Batch {stnBatchInfo.current+1} of {stnBatchInfo.total}
+                </span>
+              )}
             </div>
             {/* Project ID validation */}
             {stnPdfMeta.siteId && (() => {
@@ -658,7 +672,9 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
               <button onClick={saveStnPdfItems} disabled={saving||stnPdfItems.length===0}
                 style={{ padding:'8px 18px', borderRadius:8, background:T.primary, color:'#fff', border:'none',
                   cursor:saving?'not-allowed':'pointer', fontSize:13, fontWeight:600, opacity:saving?0.7:1 }}>
-                {saving ? '⏳ Saving...' : `✅ Save ${stnPdfItems.length} Item${stnPdfItems.length!==1?'s':''}`}
+                {saving ? '⏳ Saving...' : stnBatchInfo.total > 1 && stnBatchInfo.current + 1 < stnBatchInfo.total
+                  ? `✅ Save & Load Next Batch →`
+                  : `✅ Save ${stnPdfItems.length} Item${stnPdfItems.length!==1?'s':''}`}
               </button>
             </div>
           </div>
