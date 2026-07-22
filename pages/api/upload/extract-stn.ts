@@ -20,33 +20,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const content: any[] = [
       {
         type: 'text',
-        text: `You are parsing one or more delivery challans / STNs from Indus Towers / Venus Energy. Extract ALL line items from ALL pages.
+        text: `You are parsing a delivery challan / STN from Indus Towers / Venus Energy.
 
 CRITICAL INSTRUCTIONS:
-1. Extract EVERY item row from ALL pages — do not stop after 2-3 items. This PDF may have 20+ items.
-2. "Gate Entry No" — in the rubber stamp at the BOTTOM. Read EVERY digit carefully.
-3. "HSN" — numeric code like 83119000. Different from Item Code.
-4. "Item Code" — product code like "17-120000-0-01-ZZ-ZZ-133". Different from HSN.
-5. "Serial No" — from Serial No column. If empty, use Lot No value.
-6. "Site ID" — like "IN-1245636" from Destination section.
-7. If multiple challans exist, use the first document's header fields and combine ALL items.
+1. NUMBER OF ITEMS: Use the "S.No." column to count items. Each S.No. number = exactly ONE item. Do NOT split a single row into multiple items even if the description spans multiple lines.
+2. DESCRIPTION: Combine all lines of text within a single table row into ONE description string. Multi-line descriptions in the same row belong to the SAME item.
+3. ITEM ORDER: Extract items in the exact order they appear (S.No. 1, 2, 3...). Do not reorder.
+4. "Gate Entry No" — read from the rubber stamp at the bottom. Read EVERY digit carefully.
+5. "HSN" — numeric code like 83119000. Different from Item Code.
+6. "Item Code" — product code like "17-120000-0-01-ZZ-ZZ-133". Read EVERY character precisely.
+7. "Serial No" — from Serial No column. If empty, use Lot No value.
+8. "Site ID" — like "IN-1245636" from Destination section.
 
 Return ONLY valid JSON, no markdown:
 {
   "documentNo": "document number",
   "liftedDate": "YYYY-MM-DD",
-  "gateEntryNo": "full gate entry number from stamp",
+  "gateEntryNo": "full gate entry number from stamp - read every digit",
   "vehicleNo": "vehicle number",
   "boqReqNo": "BOQ req number",
   "siteId": "Site ID e.g. IN-1245636",
   "items": [
     {
-      "description": "item description",
-      "hsnCode": "HSN number only",
-      "itemCode": "item code",
+      "description": "complete item description - combine all lines within the same S.No. row",
+      "hsnCode": "HSN number only e.g. 83119000",
+      "itemCode": "item code e.g. 17-120000-0-01-ZZ-ZZ-133",
       "uom": "unit of measure",
       "quantity": 1,
-      "serialNo": "serial number or lot number",
+      "serialNo": "serial number or lot number if serial is empty",
       "amount": 0
     }
   ]
