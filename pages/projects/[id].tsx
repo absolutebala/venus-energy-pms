@@ -312,13 +312,13 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
       const images: string[] = [];
       for (let i = 1; i <= Math.min(pdf.numPages, 15); i++) {
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 1.2 });
+        const viewport = page.getViewport({ scale: 0.8 });
         const canvas = document.createElement('canvas');
         canvas.width  = viewport.width;
         canvas.height = viewport.height;
         const ctx = canvas.getContext('2d')!;
         await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
-        const b64 = canvas.toDataURL('image/jpeg', 0.80).replace('data:image/jpeg;base64,', '');
+        const b64 = canvas.toDataURL('image/jpeg', 0.65).replace('data:image/jpeg;base64,', '');
         images.push(b64);
       }
       // Send images to API
@@ -1474,12 +1474,12 @@ function SRNSectionNew({ projectId, role, onAllReceived, onCountChange, canAdd: 
       const images: string[] = [];
       for (let i = 1; i <= Math.min(pdf.numPages, 15); i++) {
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 1.2 });
+        const viewport = page.getViewport({ scale: 0.8 });
         const canvas = document.createElement('canvas');
         canvas.width = viewport.width; canvas.height = viewport.height;
         const ctx = canvas.getContext('2d')!;
         await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
-        images.push(canvas.toDataURL('image/jpeg', 0.80).replace('data:image/jpeg;base64,', ''));
+        images.push(canvas.toDataURL('image/jpeg', 0.65).replace('data:image/jpeg;base64,', ''));
       }
       const { data: { session } } = await (await import('@/lib/supabase')).createClient().auth.getSession();
       const token = session?.access_token || '';
