@@ -218,8 +218,10 @@ export default function SRNReturnPage() {
         }
       }
       setImportItems(null);
-      setImportProject(null);
       setImportToast({ msg:`✅ ${added} ${type.toUpperCase()} item${added!==1?'s':''} added from delivery challan`, type:'success' });
+      // Open project in new tab for verification
+      if (importProject?.id) window.open(`/projects/${importProject.id}`, '_blank');
+      setImportProject(null);
     } catch(e:any) { setImportToast({ msg:'❌ '+e.message, type:'error' }); }
     finally { setImportSaving(false); }
   };
