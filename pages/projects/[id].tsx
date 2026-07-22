@@ -301,79 +301,82 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
   const [stnPdfMeta,      setStnPdfMeta]      = React.useState<any>({});
   const [stnBatchInfo,    setStnBatchInfo]     = React.useState<{current:number;total:number;allImages:string[]}>({current:0,total:0,allImages:[]});
   const stnBatchRef = React.useRef<{current:number;total:number;allImages:string[]}>({current:0,total:0,allImages:[]});
+  const [stnParseProgress, setStnParseProgress] = React.useState('');
+  const [stnGrandTotal,    setStnGrandTotal]    = React.useState<number|null>(null);
   const stnPdfRef = React.useRef<HTMLInputElement>(null);
-
-  const STNBATCH = 3;
-
-  const processStnBatch = async (allImages: string[], batchIndex: number, meta: any) => {
-    setStnPdfUploading(true);
-    try {
-      const images = allImages.slice(batchIndex * STNBATCH, (batchIndex + 1) * STNBATCH);
-      if (!images.length) { setStnPdfUploading(false); return; }
-      const { data: { session } } = await (await import('@/lib/supabase')).createClient().auth.getSession();
-      const token = session?.access_token || '';
-      const res = await fetch('/api/upload/extract-stn', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ images }),
-      });
-      const json = await res.json();
-      if (!res.ok) { setToast({ msg:'❌ ' + (json.error||'Failed'), type:'error' }); return; }
-      const usedMeta = batchIndex === 0 ? json.data : meta;
-      setStnPdfMeta({ documentNo: usedMeta.documentNo||'', liftedDate: usedMeta.liftedDate||'', gateEntryNo: usedMeta.gateEntryNo||'', vehicleNo: usedMeta.vehicleNo||'', boqReqNo: usedMeta.boqReqNo||'', siteId: usedMeta.siteId||'' });
-      const batchState = { current: batchIndex, total: Math.ceil(allImages.length / STNBATCH), allImages };
-      setStnBatchInfo(batchState);
-      stnBatchRef.current = batchState;
-      setStnPdfItems((json.data.items||[]).map((it:any) => ({
-        description: it.description||'', hsnCode: it.itemCode||it.hsnCode||'', uom: it.uom||'Nos',
-        quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
-        documentNo: usedMeta.documentNo||'', liftedDate: usedMeta.liftedDate||'', gateEntryNo: usedMeta.gateEntryNo||'', vehicleNo: usedMeta.vehicleNo||'',
-        boqReqNo: it.boqReqNo||usedMeta.boqReqNo||'',
-      })));
-    } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); }
-    finally { setStnPdfUploading(false); }
-  };
 
   const uploadStnPdf = async (file: File) => {
     setStnPdfUploading(true);
+    setStnParseProgress('');
+    setStnGrandTotal(null);
     try {
+      const { data: { session } } = await (await import('@/lib/supabase')).createClient().auth.getSession();
+      const token = session?.access_token || '';
       const isImage = file.type.startsWith('image/');
+      let allImages: string[] = [];
+
       if (isImage) {
-        // Direct image upload — convert to base64 and send immediately
         const b64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => resolve((reader.result as string).replace(/^data:image\/[a-z]+;base64,/, ''));
           reader.onerror = reject;
           reader.readAsDataURL(file);
         });
-        const allImages = [b64];
-        const imgBatch = { current: 0, total: 1, allImages };
-        setStnBatchInfo(imgBatch);
-        stnBatchRef.current = imgBatch;
-        await processStnBatch(allImages, 0, {});
+        allImages = [b64];
       } else {
-        // PDF — render pages using PDF.js
         const arrayBuf = await file.arrayBuffer();
         const pdfjsLib = await import('pdfjs-dist');
         pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
         const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuf) }).promise;
-        const allImages: string[] = [];
+        setStnParseProgress(`Rendering ${pdf.numPages} pages...`);
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 1.5 });
+          const viewport = page.getViewport({ scale: 2.0 });
           const canvas = document.createElement('canvas');
           canvas.width = viewport.width; canvas.height = viewport.height;
           const ctx = canvas.getContext('2d')!;
           await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
-          allImages.push(canvas.toDataURL('image/jpeg', 0.82).replace('data:image/jpeg;base64,', ''));
+          allImages.push(canvas.toDataURL('image/jpeg', 0.88).replace('data:image/jpeg;base64,', ''));
         }
-        const pdfBatch = { current: 0, total: Math.ceil(allImages.length / STNBATCH), allImages };
-        setStnBatchInfo(pdfBatch);
-        stnBatchRef.current = pdfBatch;
-        await processStnBatch(allImages, 0, {});
       }
-    } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); setStnPdfUploading(false); }
-    finally { if (stnPdfRef.current) stnPdfRef.current.value = ''; }
+
+      // 1 page per API call for maximum accuracy
+      const allExtracted: any[] = [];
+      let meta: any = {};
+      let grandTotal: number|null = null;
+
+      for (let i = 0; i < allImages.length; i++) {
+        setStnParseProgress(`⏳ Parsing page ${i+1} of ${allImages.length}...`);
+        try {
+          const res = await fetch('/api/upload/extract-stn', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ images: [allImages[i]] }),
+          });
+          const json = await res.json();
+          if (!res.ok) continue;
+          if (i === 0 && json.data?.documentNo) meta = json.data;
+          if (json.data?.grandTotal) grandTotal = Number(json.data.grandTotal);
+          (json.data?.items||[]).forEach((it:any) => {
+            if (it.description || it.itemCode) allExtracted.push(it);
+          });
+        } catch { continue; }
+      }
+
+      setStnGrandTotal(grandTotal);
+      setStnPdfMeta({ documentNo: meta.documentNo||'', liftedDate: meta.liftedDate||'', gateEntryNo: meta.gateEntryNo||'', vehicleNo: meta.vehicleNo||'', boqReqNo: meta.boqReqNo||'', siteId: meta.siteId||'' });
+      const batchState = { current: 0, total: 1, allImages };
+      setStnBatchInfo(batchState);
+      stnBatchRef.current = batchState;
+      setStnPdfItems(allExtracted.map((it:any) => ({
+        description: it.description||'', hsnCode: it.itemCode||it.hsnCode||'', uom: it.uom||'Nos',
+        quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
+        documentNo: meta.documentNo||'', liftedDate: meta.liftedDate||'', gateEntryNo: meta.gateEntryNo||'', vehicleNo: meta.vehicleNo||'',
+        boqReqNo: it.boqReqNo||meta.boqReqNo||'',
+      })));
+      setStnParseProgress('');
+    } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); }
+    finally { setStnPdfUploading(false); if (stnPdfRef.current) stnPdfRef.current.value = ''; }
   };
 
   const saveStnPdfItems = async () => {
