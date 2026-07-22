@@ -302,7 +302,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
   const [stnBatchInfo,    setStnBatchInfo]     = React.useState<{current:number;total:number;allImages:string[]}>({current:0,total:0,allImages:[]});
   const stnPdfRef = React.useRef<HTMLInputElement>(null);
 
-  const STNBATCH = 7;
+  const STNBATCH = 3;
 
   const processStnBatch = async (allImages: string[], batchIndex: number, meta: any) => {
     setStnPdfUploading(true);
@@ -341,12 +341,12 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
       const allImages: string[] = [];
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 0.8 });
+        const viewport = page.getViewport({ scale: 1.5 });
         const canvas = document.createElement('canvas');
         canvas.width = viewport.width; canvas.height = viewport.height;
         const ctx = canvas.getContext('2d')!;
         await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
-        allImages.push(canvas.toDataURL('image/jpeg', 0.65).replace('data:image/jpeg;base64,', ''));
+        allImages.push(canvas.toDataURL('image/jpeg', 0.82).replace('data:image/jpeg;base64,', ''));
       }
       setStnBatchInfo({ current: 0, total: Math.ceil(allImages.length / STNBATCH), allImages });
       await processStnBatch(allImages, 0, {});
