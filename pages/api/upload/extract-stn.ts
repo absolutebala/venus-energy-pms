@@ -3,6 +3,10 @@ import { createAdminClient } from '@/lib/supabaseAdmin';
 
 export const config = { api: { bodyParser: { sizeLimit: '10mb' } } };
 
+// GPT-4o pricing (per 1M tokens)
+const INPUT_COST_PER_M  = 2.50;
+const OUTPUT_COST_PER_M = 10.00;
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
@@ -14,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: { user }, error: authErr } = await admin.auth.getUser(token);
     if (authErr || !user) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { images } = req.body as { images: string[] };
+    const { images, source = 'stn', projectId } = req.body as { images: string[]; source?: string; projectId?: string };
     if (!images?.length) return res.status(400).json({ error: 'No images provided' });
 
     const content: any[] = [
@@ -25,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 CRITICAL INSTRUCTIONS:
 1. Extract ALL item rows visible on this page. Each S.No. = ONE item.
 2. ALWAYS include the S.No. value for each item — this is critical for detecting missing items.
-3. CONTINUATION PAGE: If this page has no column headers but has data rows, extract every visible row. Look for numbered rows (1, 2, 3...) even without headers.
+3. CONTINUATION PAGE: If this page has no column headers but has data rows, extract every visible row.
 4. DESCRIPTION: Combine all lines within a single table row into ONE description string.
 5. STAMPS: If a rubber stamp overlaps the table, extract whatever data is still visible.
 6. GRAND TOTAL: If this page shows "Total Value" or "Value" at the bottom, extract that number.
@@ -76,6 +80,23 @@ Return ONLY valid JSON, no markdown:
 
     const openaiData = await openaiRes.json();
     const text = openaiData.choices?.[0]?.message?.content || '';
+
+    // Log token usage
+    const inputTokens  = openaiData.usage?.prompt_tokens || 0;
+    const outputTokens = openaiData.usage?.completion_tokens || 0;
+    const costUsd = (inputTokens / 1_000_000 * INPUT_COST_PER_M) + (outputTokens / 1_000_000 * OUTPUT_COST_PER_M);
+
+    try {
+      await admin.from('api_usage').insert({
+        source,
+        project_id: projectId || null,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        cost_usd: costUsd,
+        user_id: user.id,
+      });
+    } catch(logErr) { console.error('Usage log error:', logErr); }
+
     try {
       const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       return res.status(200).json({ success: true, data: JSON.parse(clean) });

@@ -305,6 +305,19 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
   const [stnGrandTotal,    setStnGrandTotal]    = React.useState<number|null>(null);
   const [stnEmptyPages,    setStnEmptyPages]    = React.useState<string[]>([]);
   const [stnRetrying,      setStnRetrying]      = React.useState(false);
+  const [apiUsage,         setApiUsage]         = React.useState<any>(null);
+
+  React.useEffect(() => {
+    if (poProfile?.role !== 'super_admin') return;
+    (async () => {
+      try {
+        const { data: { session } } = await (await import('@/lib/supabase')).createClient().auth.getSession();
+        const token = session?.access_token || '';
+        const res = await fetch('/api/upload/api-usage', { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) setApiUsage(await res.json());
+      } catch {}
+    })();
+  }, [poProfile?.role]);
   const stnPdfRef = React.useRef<HTMLInputElement>(null);
 
   const uploadStnPdf = async (file: File) => {
@@ -640,7 +653,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
 
       {/* STN Add + Import Challan buttons at top */}
       {canAdd && (
-        <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:8 }}>
+        <div style={{ display:'flex', gap:8, alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
           {!adding && (
             <button onClick={()=>setAdding(true)}
               style={{ background:T.primary, color:'#fff', border:'none', borderRadius:7, padding:'5px 14px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
@@ -656,6 +669,19 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
               disabled={stnPdfUploading}
               onChange={e => { const f = e.target.files?.[0]; if (f) uploadStnPdf(f); }} />
           </label>
+          {/* OpenAI usage indicator - super_admin only */}
+          {poProfile?.role === 'super_admin' && apiUsage && (
+            <div title={`STN: $${apiUsage.stnCost?.toFixed(4)} · SRN: $${apiUsage.srnCost?.toFixed(4)} · ${apiUsage.callCount} calls`}
+              style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:T.textMuted,
+                background:T.bg, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 10px', cursor:'default' }}>
+              <div style={{ width:60, height:5, background:T.border, borderRadius:3, overflow:'hidden' }}>
+                <div style={{ width:`${Math.min(100,apiUsage.percentUsed||0)}%`, height:'100%',
+                  background: apiUsage.percentUsed > 80 ? '#DC2626' : apiUsage.percentUsed > 50 ? '#D97706' : T.primary,
+                  borderRadius:3, transition:'width 0.3s' }} />
+              </div>
+              <span>${(apiUsage.totalCost||0).toFixed(3)} / $10</span>
+            </div>
+          )}
         </div>
       )}
       {/* STN PDF hidden input */}
