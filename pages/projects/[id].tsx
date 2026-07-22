@@ -578,7 +578,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
             color:'#1E40AF', background:'#EFF6FF', border:'1px solid #BFDBFE',
             borderRadius:6, padding:'4px 10px', cursor: stnPdfUploading ? 'not-allowed' : 'pointer',
             opacity: stnPdfUploading ? 0.7 : 1 }}>
-            {stnPdfUploading ? '⏳ Parsing PDF...' : '📄 Import Challan'}
+            {stnPdfUploading ? `⏳ Parsing PDF${stnBatchInfo.allImages.length > 0 ? ` (${stnBatchInfo.allImages.length} pages, ${stnBatchInfo.total} batch${stnBatchInfo.total!==1?'es':''})` : '...'}` : '📄 Import Challan'}
             <input ref={stnPdfRef} data-stn-pdf="1" type="file" accept=".pdf" style={{ display:'none' }}
               disabled={stnPdfUploading}
               onChange={e => { const f = e.target.files?.[0]; if (f) uploadStnPdf(f); }} />
