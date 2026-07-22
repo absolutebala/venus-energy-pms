@@ -347,7 +347,9 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
           reader.readAsDataURL(file);
         });
         const allImages = [b64];
-        setStnBatchInfo({ current: 0, total: 1, allImages });
+        const imgBatch = { current: 0, total: 1, allImages };
+        setStnBatchInfo(imgBatch);
+        stnBatchRef.current = imgBatch;
         await processStnBatch(allImages, 0, {});
       } else {
         // PDF — render pages using PDF.js
@@ -365,7 +367,9 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
           await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
           allImages.push(canvas.toDataURL('image/jpeg', 0.82).replace('data:image/jpeg;base64,', ''));
         }
-        setStnBatchInfo({ current: 0, total: Math.ceil(allImages.length / STNBATCH), allImages });
+        const pdfBatch = { current: 0, total: Math.ceil(allImages.length / STNBATCH), allImages };
+        setStnBatchInfo(pdfBatch);
+        stnBatchRef.current = pdfBatch;
         await processStnBatch(allImages, 0, {});
       }
     } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); setStnPdfUploading(false); }
