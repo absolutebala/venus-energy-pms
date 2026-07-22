@@ -13,7 +13,7 @@ export default function SRNReturnPage() {
   const router = useRouter();
   const { profile } = useAuth();
   const { projects, loading: projLoading } = useProjects();
-  const { items: stnAllItems, loading: stnLoading } = usePOItems();
+  const { items: stnAllItems, loading: stnLoading, addItem: addStnItem } = usePOItems();
   const sb = createClient();
 
   const [srnRawItems, setSrnRawItems] = useState<any[]>([]);
@@ -25,6 +25,130 @@ export default function SRNReturnPage() {
   const [commentPopup, setCommentPopup] = useState<{text:string;title:string}|null>(null);
   const [srnRejectTarget, setSrnRejectTarget] = useState<any>(null);
   const [srnRejectComment, setSrnRejectComment] = useState('');
+
+  // Import Challan state
+  const [importProject,   setImportProject]   = useState<{id:string;type:'stn'|'srn';indusId?:string}|null>(null);
+  const [importUploading, setImportUploading] = useState(false);
+  const [importProgress,  setImportProgress]  = useState('');
+  const [importItems,     setImportItems]     = useState<any[]|null>(null);
+  const [importMeta,      setImportMeta]      = useState<any>({});
+  const [importGrandTotal,setImportGrandTotal]= useState<number|null>(null);
+  const [importEmptyPages,setImportEmptyPages]= useState<string[]>([]);
+  const [importRetrying,  setImportRetrying]  = useState(false);
+  const [importSaving,    setImportSaving]    = useState(false);
+  const [importToast,     setImportToast]     = useState<any>(null);
+  const importFileRef = React.useRef<HTMLInputElement>(null);
+
+  const uploadChallan = async (file: File, proj: {id:string;type:'stn'|'srn';indusId?:string}) => {
+    setImportUploading(true);
+    setImportProgress('');
+    setImportGrandTotal(null);
+    setImportEmptyPages([]);
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const token = session?.access_token || '';
+      const isImage = file.type.startsWith('image/');
+      let allImages: string[] = [];
+      if (isImage) {
+        const b64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string).replace(/^data:image\/[a-z]+;base64,/, ''));
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        allImages = [b64];
+      } else {
+        const arrayBuf = await file.arrayBuffer();
+        const pdfjsLib = await import('pdfjs-dist');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuf) }).promise;
+        setImportProgress(`Rendering ${pdf.numPages} pages...`);
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 2.0 });
+          const canvas = document.createElement('canvas');
+          canvas.width = viewport.width; canvas.height = viewport.height;
+          const ctx = canvas.getContext('2d')!;
+          await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
+          allImages.push(canvas.toDataURL('image/jpeg', 0.88).replace('data:image/jpeg;base64,', ''));
+        }
+      }
+      const allExtracted: any[] = [];
+      let meta: any = {};
+      let grandTotal: number|null = null;
+      const emptyPages: string[] = [];
+      for (let i = 0; i < allImages.length; i++) {
+        setImportProgress(`⏳ Parsing page ${i+1} of ${allImages.length}...`);
+        try {
+          const res = await fetch('/api/upload/extract-stn', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ images: [allImages[i]], source: proj.type, projectId: proj.id }),
+          });
+          const json = await res.json();
+          if (!res.ok) { emptyPages.push(allImages[i]); continue; }
+          if (i === 0 && json.data?.documentNo) meta = json.data;
+          if (json.data?.grandTotal) grandTotal = Number(json.data.grandTotal);
+          const pageItems = (json.data?.items||[]).filter((it:any) => it.description || it.itemCode);
+          if (pageItems.length === 0) emptyPages.push(allImages[i]);
+          else allExtracted.push(...pageItems);
+        } catch { emptyPages.push(allImages[i]); continue; }
+      }
+      setImportEmptyPages(emptyPages);
+      setImportGrandTotal(grandTotal);
+      setImportMeta({ documentNo: meta.documentNo||'', liftedDate: meta.liftedDate||'', gateEntryNo: meta.gateEntryNo||'', vehicleNo: meta.vehicleNo||'', boqReqNo: meta.boqReqNo||'', siteId: meta.siteId||'' });
+      setImportItems(allExtracted.map((it:any) => ({
+        description: it.description||'', hsnCode: it.itemCode||it.hsnCode||'', uom: it.uom||'Nos',
+        quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
+        documentNo: meta.documentNo||'', liftedDate: meta.liftedDate||'', gateEntryNo: meta.gateEntryNo||'', vehicleNo: meta.vehicleNo||'',
+        boqReqNo: it.boqReqNo||meta.boqReqNo||'', sno: it.sno||0,
+      })));
+      setImportProgress('');
+    } catch(e:any) { setImportToast({ msg:'❌ '+e.message, type:'error' }); }
+    finally { setImportUploading(false); if (importFileRef.current) importFileRef.current.value = ''; }
+  };
+
+  const saveImportItems = async () => {
+    if (!importItems?.length || !importProject) return;
+    setImportSaving(true);
+    let added = 0;
+    const type = importProject.type;
+    const meta = importMeta;
+    try {
+      for (let i = 0; i < importItems.length; i++) {
+        const it = importItems[i];
+        if (!it.description) continue;
+        if (type === 'stn') {
+          try {
+            await addStnItem({
+              projectId: importProject.id, description: it.description, hsnCode: it.hsnCode,
+              uom: it.uom, quantity: Number(it.quantity)||1, rate: 0, gstRate: 18,
+              amount: Number(it.amount)||0, sortOrder: i+1,
+              serialNo: it.serialNo, documentNo: it.documentNo, boqReqNo: it.boqReqNo,
+              liftedDate: it.liftedDate||null, gateEntryNo: it.gateEntryNo||null, vehicleNo: it.vehicleNo||null,
+            } as any);
+            added++;
+          } catch(e) { console.error(e); }
+        } else {
+          try {
+            const { error } = await sb.from('srn').insert({
+              project_id: importProject.id, description: it.description, hsn_code: it.hsnCode,
+              uom: it.uom, quantity: Number(it.quantity)||1, rate: 0, gst_rate: 18,
+              amount: Number(it.amount)||0, serial_no: it.serialNo, document_no: it.documentNo,
+              boq_req_no: it.boqReqNo, lifted_date: it.liftedDate||null,
+              gate_entry_no: it.gateEntryNo||null, vehicle_no: it.vehicleNo||null,
+              sort_order: i+1,
+            });
+            if (!error) added++;
+          } catch(e) { console.error(e); }
+        }
+      }
+      setImportItems(null);
+      setImportProject(null);
+      setImportToast({ msg:`✅ ${added} ${type.toUpperCase()} item${added!==1?'s':''} added from delivery challan`, type:'success' });
+    } catch(e:any) { setImportToast({ msg:'❌ '+e.message, type:'error' }); }
+    finally { setImportSaving(false); }
+  };
 
   // View toggles + card filter
   const [showSRN, setShowSRN] = useState(true);
@@ -881,6 +1005,27 @@ export default function SRNReturnPage() {
                   <div style={{ display:'flex', gap:8, alignItems:'center' }}>
                     {showSTN && stnItems.length > 0 && <span style={{ fontSize:11, fontWeight:700, color:stnAllDone?'#0D9488':'#D97706', background:stnAllDone?'#F0FDFA':'#FFFBEB', padding:'3px 10px', borderRadius:20 }}>📦 STN: {stnApproved}/{stnItems.length}</span>}
                     {showSRN && srnItems.length > 0 && <span style={{ fontSize:11, fontWeight:700, color:srnAllDone?'#0D9488':'#DC2626', background:srnAllDone?'#F0FDFA':'#FEF2F2', padding:'3px 10px', borderRadius:20 }}>🔄 SRN: {srnReceived}/{srnItems.length}</span>}
+                    {/* Import Challan buttons */}
+                    {showSTN && (
+                      <label style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600,
+                        color:'#1E40AF', background:'#EFF6FF', border:'1px solid #BFDBFE',
+                        borderRadius:6, padding:'3px 8px', cursor:'pointer' }}
+                        title="Import STN from Delivery Challan">
+                        📄 STN
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display:'none' }}
+                          onChange={e=>{const f=e.target.files?.[0];if(f){setImportProject({id:project.projectId,type:'stn',indusId:project.indusId});uploadChallan(f,{id:project.projectId,type:'stn',indusId:project.indusId});}}} />
+                      </label>
+                    )}
+                    {showSRN && (
+                      <label style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600,
+                        color:'#7C3AED', background:'#F5F3FF', border:'1px solid #DDD6FE',
+                        borderRadius:6, padding:'3px 8px', cursor:'pointer' }}
+                        title="Import SRN from Delivery Challan">
+                        📄 SRN
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display:'none' }}
+                          onChange={e=>{const f=e.target.files?.[0];if(f){setImportProject({id:project.projectId,type:'srn',indusId:project.indusId});uploadChallan(f,{id:project.projectId,type:'srn',indusId:project.indusId});}}} />
+                      </label>
+                    )}
                     <button onClick={e=>{e.stopPropagation();
                       const wb = XLSX.utils.book_new();
                       if (stnItems.length > 0) {
@@ -1060,6 +1205,94 @@ export default function SRNReturnPage() {
         )}
 
       {/* Comment Popup */}
+      {/* Import toast */}
+      {importToast && (
+        <div style={{ position:'fixed', top:20, right:20, zIndex:9999,
+          background: importToast.type==='error'?'#FEF2F2':'#F0FDF4',
+          border:`1px solid ${importToast.type==='error'?'#FECACA':'#BBF7D0'}`,
+          color: importToast.type==='error'?'#DC2626':'#16A34A',
+          borderRadius:10, padding:'12px 20px', fontSize:13, fontWeight:600,
+          boxShadow:'0 4px 20px rgba(0,0,0,0.1)' }}>
+          {importToast.msg}
+          <span onClick={()=>setImportToast(null)} style={{ marginLeft:12, cursor:'pointer', opacity:0.6 }}>✕</span>
+        </div>
+      )}
+
+      {/* Import Challan uploading indicator */}
+      {importUploading && (
+        <div style={{ position:'fixed', top:20, left:'50%', transform:'translateX(-50%)', zIndex:9999,
+          background:'#1E293B', color:'#fff', borderRadius:10, padding:'12px 24px', fontSize:13, fontWeight:600,
+          boxShadow:'0 4px 20px rgba(0,0,0,0.3)' }}>
+          {importProgress || '⏳ Parsing...'}
+        </div>
+      )}
+
+      {/* Import Challan Review Modal */}
+      {importItems && importProject && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.6)', zIndex:1200,
+          display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+          onClick={()=>setImportItems(null)}>
+          <div style={{ background:'#fff', borderRadius:14, padding:24, width:'100%', maxWidth:900,
+            maxHeight:'90vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.3)' }}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{ fontSize:16, fontWeight:700, color:Theme.text, marginBottom:4 }}>
+              📄 Review {importProject.type.toUpperCase()} Items from Delivery Challan
+            </div>
+            {/* Project ID validation */}
+            {importMeta.siteId && (
+              <div style={{ padding:'8px 12px', borderRadius:8, marginBottom:10,
+                background: importMeta.siteId===importProject.indusId?'#F0FDF4':'#FEF2F2',
+                border:`1px solid ${importMeta.siteId===importProject.indusId?'#BBF7D0':'#FECACA'}` }}>
+                <span style={{ fontSize:13, fontWeight:600, color: importMeta.siteId===importProject.indusId?'#166534':'#DC2626' }}>
+                  {importMeta.siteId===importProject.indusId?'✅ Project ID Match':'⚠️ Project ID Mismatch!'}
+                </span>
+                <span style={{ fontSize:11, color:Theme.textMuted, marginLeft:8 }}>
+                  PDF: {importMeta.siteId} · Project: {importProject.indusId}
+                </span>
+              </div>
+            )}
+            {/* Empty pages warning */}
+            {importEmptyPages.length > 0 && (
+              <div style={{ padding:'8px 12px', borderRadius:8, marginBottom:10, background:'#FFFBEB', border:'1px solid #FDE68A' }}>
+                <span style={{ fontSize:12, fontWeight:600, color:'#92400E' }}>⚠️ {importEmptyPages.length} page{importEmptyPages.length!==1?'s':''} returned no items — some items may be missing</span>
+              </div>
+            )}
+            <div style={{ fontSize:12, color:Theme.textMuted, marginBottom:16 }}>
+              {importItems.length} item{importItems.length!==1?'s':''} extracted. Review and edit before saving.
+            </div>
+            {importItems.map((it:any, idx:number) => (
+              <div key={idx} style={{ border:`1px solid ${Theme.border}`, borderRadius:8, padding:12, marginBottom:10 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:Theme.primary, marginBottom:8 }}>Item {it.sno||idx+1}</div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
+                  {[['Description *','description','text'],['HSN / Item Code','hsnCode','text'],['UOM','uom','text'],
+                    ['Quantity *','quantity','number'],['Serial No','serialNo','text'],['Amount (₹)','amount','number'],
+                    ['Document No','documentNo','text'],['Gate Entry No','gateEntryNo','text'],['Vehicle No','vehicleNo','text'],
+                    ['BOQ Req No','boqReqNo','text'],['Lifted Date','liftedDate','date'],
+                  ].map(([label,field,type])=>(
+                    <div key={field as string}>
+                      <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{label}</div>
+                      <input type={type as string} value={it[field as string]||''} style={{ border:`1px solid ${field==='gateEntryNo'?'#FCD34D':Theme.border}`, borderRadius:6, padding:'6px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none' }}
+                        onChange={e=>setImportItems(prev=>prev!.map((r:any,i:number)=>i===idx?{...r,[field as string]:e.target.value}:r))} />
+                      {field==='gateEntryNo' && <div style={{ fontSize:9, color:'#D97706', marginTop:2 }}>⚠️ Verify against stamp at bottom</div>}
+                    </div>
+                  ))}
+                </div>
+                <button onClick={()=>setImportItems(prev=>prev!.filter((_:any,i:number)=>i!==idx))}
+                  style={{ marginTop:8, fontSize:11, color:Theme.danger, background:'none', border:'none', cursor:'pointer' }}>🗑 Remove</button>
+              </div>
+            ))}
+            <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:16 }}>
+              <button onClick={()=>setImportItems(null)} style={{ padding:'8px 18px', borderRadius:8, border:`1px solid ${Theme.border}`, background:'#fff', cursor:'pointer', fontSize:13 }}>Cancel</button>
+              <button onClick={saveImportItems} disabled={importSaving||importItems.length===0}
+                style={{ padding:'8px 18px', borderRadius:8, background:Theme.primary, color:'#fff', border:'none',
+                  cursor:importSaving?'not-allowed':'pointer', fontSize:13, fontWeight:600, opacity:importSaving?0.7:1 }}>
+                {importSaving?'⏳ Saving...':`✅ Save ${importItems.length} ${importProject.type.toUpperCase()} Item${importItems.length!==1?'s':''}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {commentPopup && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:1000,
           display:'flex', alignItems:'center', justifyContent:'center' }}
