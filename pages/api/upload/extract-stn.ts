@@ -14,40 +14,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: { user }, error: authErr } = await admin.auth.getUser(token);
     if (authErr || !user) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { images } = req.body as { images: string[] };
+    const { images, batchStartPage } = req.body as { images: string[]; batchStartPage?: number };
     if (!images?.length) return res.status(400).json({ error: 'No images provided' });
 
     const content: any[] = [
       {
         type: 'text',
-        text: `You are parsing a delivery challan / STN from Indus Towers / Venus Energy.
+        text: `You are parsing delivery challan / STN pages from Indus Towers / Venus Energy.
 
 CRITICAL INSTRUCTIONS:
-1. NUMBER OF ITEMS: Use the "S.No." column to count items. Each S.No. number = exactly ONE item. Do NOT split a single row into multiple items even if the description spans multiple lines.
-2. DESCRIPTION: Combine all lines of text within a single table row into ONE description string. Multi-line descriptions in the same row belong to the SAME item.
-3. ITEM ORDER: Extract items in the exact order they appear (S.No. 1, 2, 3...). Do not reorder.
-4. "Gate Entry No" — read from the rubber stamp at the bottom. Read EVERY digit carefully.
-5. "HSN" — numeric code like 83119000. Different from Item Code.
-6. "Item Code" — product code like "17-120000-0-01-ZZ-ZZ-133". Read EVERY character precisely.
-7. "Serial No" — from Serial No column. If empty, use Lot No value.
-8. "Site ID" — like "IN-1245636" from Destination section.
+1. CONTINUATION PAGES: Some pages may be continuation of a table from the previous page — they will NOT have column headers visible but will have rows of data. Extract ALL rows you can see, even if there are no column headers on that page.
+2. NUMBER OF ITEMS: Use S.No. column to identify items. Each S.No. = ONE item. If S.No. is not visible (continuation page), extract each visible data row as a separate item.
+3. DESCRIPTION: Combine all lines within a single table row into ONE description. Multi-line text in the same row = same item.
+4. STAMPS: If a rubber stamp overlaps the table, extract whatever data is still visible around the stamp.
+5. MULTIPLE CHALLANS: If this page belongs to a different challan than previous pages, still extract all items.
+6. Gate Entry No: Read from rubber stamp at bottom — read EVERY digit carefully.
+7. Item Code: Read EVERY character precisely e.g. "17-120000-0-01-ZZ-ZZ-133".
+8. Site ID: e.g. "IN-1245636" from Destination section.
 
 Return ONLY valid JSON, no markdown:
 {
-  "documentNo": "document number",
-  "liftedDate": "YYYY-MM-DD",
-  "gateEntryNo": "full gate entry number from stamp - read every digit",
-  "vehicleNo": "vehicle number",
-  "boqReqNo": "BOQ req number",
-  "siteId": "Site ID e.g. IN-1245636",
+  "documentNo": "document number or empty if not visible",
+  "liftedDate": "YYYY-MM-DD or empty",
+  "gateEntryNo": "gate entry number or empty",
+  "vehicleNo": "vehicle number or empty",
+  "boqReqNo": "BOQ req number or empty",
+  "siteId": "Site ID or empty",
   "items": [
     {
-      "description": "complete item description - combine all lines within the same S.No. row",
-      "hsnCode": "HSN number only e.g. 83119000",
-      "itemCode": "item code e.g. 17-120000-0-01-ZZ-ZZ-133",
+      "description": "item description",
+      "hsnCode": "HSN number",
+      "itemCode": "item code",
       "uom": "unit of measure",
       "quantity": 1,
-      "serialNo": "serial number or lot number if serial is empty",
+      "serialNo": "serial number or lot number",
       "amount": 0
     }
   ]
