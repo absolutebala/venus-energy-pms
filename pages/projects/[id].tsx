@@ -300,6 +300,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
   const [stnPdfItems,     setStnPdfItems]     = React.useState<any[]|null>(null);
   const [stnPdfMeta,      setStnPdfMeta]      = React.useState<any>({});
   const [stnBatchInfo,    setStnBatchInfo]     = React.useState<{current:number;total:number;allImages:string[]}>({current:0,total:0,allImages:[]});
+  const stnBatchRef = React.useRef<{current:number;total:number;allImages:string[]}>({current:0,total:0,allImages:[]});
   const stnPdfRef = React.useRef<HTMLInputElement>(null);
 
   const STNBATCH = 3;
@@ -320,7 +321,9 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
       if (!res.ok) { setToast({ msg:'❌ ' + (json.error||'Failed'), type:'error' }); return; }
       const usedMeta = batchIndex === 0 ? json.data : meta;
       setStnPdfMeta({ documentNo: usedMeta.documentNo||'', liftedDate: usedMeta.liftedDate||'', gateEntryNo: usedMeta.gateEntryNo||'', vehicleNo: usedMeta.vehicleNo||'', boqReqNo: usedMeta.boqReqNo||'', siteId: usedMeta.siteId||'' });
-      setStnBatchInfo({ current: batchIndex, total: Math.ceil(allImages.length / STNBATCH), allImages });
+      const batchState = { current: batchIndex, total: Math.ceil(allImages.length / STNBATCH), allImages };
+      setStnBatchInfo(batchState);
+      stnBatchRef.current = batchState;
       setStnPdfItems((json.data.items||[]).map((it:any) => ({
         description: it.description||'', hsnCode: it.itemCode||it.hsnCode||'', uom: it.uom||'Nos',
         quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
@@ -389,13 +392,14 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
     setSaving(false);
     setToast({ msg:`✅ ${added} STN item${added!==1?'s':''} added`, type:'success' });
     logActivity(projectId, `${added} STN items imported from delivery challan PDF`, poProfile?.full_name||'', poProfile?.role||'').catch(()=>{});
-    // Auto-process next batch if available
-    const nextBatch = stnBatchInfo.current + 1;
-    if (nextBatch < stnBatchInfo.total) {
-      setToast({ msg:`✅ ${added} items saved. Loading batch ${nextBatch+1} of ${stnBatchInfo.total}...`, type:'success' });
-      await processStnBatch(stnBatchInfo.allImages, nextBatch, stnPdfMeta);
-    } else if (stnBatchInfo.total > 1) {
-      setToast({ msg:`✅ All batches complete!`, type:'success' });
+    // Auto-process next batch using ref to avoid stale closure
+    const batchState = stnBatchRef.current;
+    const nextBatch = batchState.current + 1;
+    if (nextBatch < batchState.total) {
+      setToast({ msg:`✅ ${added} items saved. Loading batch ${nextBatch+1} of ${batchState.total}...`, type:'success' });
+      await processStnBatch(batchState.allImages, nextBatch, stnPdfMeta);
+    } else if (batchState.total > 1) {
+      setToast({ msg:`✅ All ${batchState.total} batches complete!`, type:'success' });
     }
   };
 
@@ -688,7 +692,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
                 style={{ padding:'8px 18px', borderRadius:8, background:T.primary, color:'#fff', border:'none',
                   cursor:saving?'not-allowed':'pointer', fontSize:13, fontWeight:600, opacity:saving?0.7:1 }}>
                 {saving ? '⏳ Saving...' : stnBatchInfo.total > 1 && stnBatchInfo.current + 1 < stnBatchInfo.total
-                  ? `✅ Save & Load Next Batch →`
+                  ? `✅ Save & Load Batch ${stnBatchInfo.current+2} of ${stnBatchInfo.total} →`
                   : `✅ Save ${stnPdfItems.length} Item${stnPdfItems.length!==1?'s':''}`}
               </button>
             </div>
