@@ -397,17 +397,8 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
     }
     setStnPdfItems(null);
     setSaving(false);
-    setToast({ msg:`✅ ${added} STN item${added!==1?'s':''} added`, type:'success' });
-    logActivity(projectId, `${added} STN items imported from delivery challan PDF`, poProfile?.full_name||'', poProfile?.role||'').catch(()=>{});
-    // Auto-process next batch using ref to avoid stale closure
-    const batchState = stnBatchRef.current;
-    const nextBatch = batchState.current + 1;
-    if (nextBatch < batchState.total) {
-      setToast({ msg:`✅ ${added} items saved. Loading batch ${nextBatch+1} of ${batchState.total}...`, type:'success' });
-      await processStnBatch(batchState.allImages, nextBatch, stnPdfMeta);
-    } else if (batchState.total > 1) {
-      setToast({ msg:`✅ All ${batchState.total} batches complete!`, type:'success' });
-    }
+    setToast({ msg:`✅ ${added} STN item${added!==1?'s':''} added from delivery challan`, type:'success' });
+    if (added > 0) logActivity(projectId, `${added} STN items imported from delivery challan PDF`, poProfile?.full_name||'', poProfile?.role||'').catch(()=>{});
   };
 
   // Check localStorage for pending STN items (set by projects page Upload PO flow)
