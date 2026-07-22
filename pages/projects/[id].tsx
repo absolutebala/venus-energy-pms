@@ -309,8 +309,10 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
       const pdfjsLib = await import('pdfjs-dist');
       pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
       const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuf) }).promise;
-      const images: string[] = [];
-      for (let i = 1; i <= Math.min(pdf.numPages, 15); i++) {
+      const totalPages = pdf.numPages;
+      // Render all pages to images
+      const allImages: string[] = [];
+      for (let i = 1; i <= totalPages; i++) {
         const page = await pdf.getPage(i);
         const viewport = page.getViewport({ scale: 0.8 });
         const canvas = document.createElement('canvas');
@@ -318,19 +320,27 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
         canvas.height = viewport.height;
         const ctx = canvas.getContext('2d')!;
         await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
-        const b64 = canvas.toDataURL('image/jpeg', 0.65).replace('data:image/jpeg;base64,', '');
-        images.push(b64);
+        allImages.push(canvas.toDataURL('image/jpeg', 0.65).replace('data:image/jpeg;base64,', ''));
       }
-      // Send images to API
+      // Batch pages into groups of 8 to stay within size limits
+      const BATCH = 8;
       const { data: { session } } = await (await import('@/lib/supabase')).createClient().auth.getSession();
       const token = session?.access_token || '';
-      const res = await fetch('/api/upload/extract-stn', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ images }),
-      });
-      const json = await res.json();
-      if (!res.ok) { setToast({ msg: '❌ ' + (json.error || 'Failed'), type: 'error' }); return; }
+      let allExtracted: any[] = [];
+      let firstMeta: any = {};
+      for (let b = 0; b < allImages.length; b += BATCH) {
+        const images = allImages.slice(b, b + BATCH);
+        const res = await fetch('/api/upload/extract-stn', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ images, batchIndex: b }),
+        });
+        const json = await res.json();
+        if (!res.ok) { setToast({ msg: '❌ ' + (json.error || 'Failed'), type: 'error' }); return; }
+        if (b === 0) firstMeta = json.data;
+        allExtracted = allExtracted.concat(json.data.items || []);
+      }
+      const json = { data: { ...firstMeta, items: allExtracted } };
       const { documentNo, liftedDate, gateEntryNo, vehicleNo, boqReqNo, siteId, items: extracted } = json.data;
       setStnPdfMeta({ documentNo: documentNo||'', liftedDate: liftedDate||'', gateEntryNo: gateEntryNo||'', vehicleNo: vehicleNo||'', boqReqNo: boqReqNo||'', siteId: siteId||'' });
       setStnPdfItems((extracted||[]).map((it:any) => ({
