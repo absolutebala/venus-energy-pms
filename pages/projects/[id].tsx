@@ -303,6 +303,8 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
   const stnBatchRef = React.useRef<{current:number;total:number;allImages:string[]}>({current:0,total:0,allImages:[]});
   const [stnParseProgress, setStnParseProgress] = React.useState('');
   const [stnGrandTotal,    setStnGrandTotal]    = React.useState<number|null>(null);
+  const [stnEmptyPages,    setStnEmptyPages]    = React.useState<string[]>([]);
+  const [stnRetrying,      setStnRetrying]      = React.useState(false);
   const stnPdfRef = React.useRef<HTMLInputElement>(null);
 
   const uploadStnPdf = async (file: File) => {
@@ -344,6 +346,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
       const allExtracted: any[] = [];
       let meta: any = {};
       let grandTotal: number|null = null;
+      const emptyPageImages: string[] = [];
 
       for (let i = 0; i < allImages.length; i++) {
         setStnParseProgress(`⏳ Parsing page ${i+1} of ${allImages.length}...`);
@@ -354,15 +357,16 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
             body: JSON.stringify({ images: [allImages[i]] }),
           });
           const json = await res.json();
-          if (!res.ok) continue;
+          if (!res.ok) { emptyPageImages.push(allImages[i]); continue; }
           if (i === 0 && json.data?.documentNo) meta = json.data;
           if (json.data?.grandTotal) grandTotal = Number(json.data.grandTotal);
-          (json.data?.items||[]).forEach((it:any) => {
-            if (it.description || it.itemCode) allExtracted.push(it);
-          });
-        } catch { continue; }
+          const pageItems = (json.data?.items||[]).filter((it:any) => it.description || it.itemCode);
+          if (pageItems.length === 0) emptyPageImages.push(allImages[i]);
+          else allExtracted.push(...pageItems);
+        } catch { emptyPageImages.push(allImages[i]); continue; }
       }
 
+      setStnEmptyPages(emptyPageImages);
       setStnGrandTotal(grandTotal);
       setStnPdfMeta({ documentNo: meta.documentNo||'', liftedDate: meta.liftedDate||'', gateEntryNo: meta.gateEntryNo||'', vehicleNo: meta.vehicleNo||'', boqReqNo: meta.boqReqNo||'', siteId: meta.siteId||'' });
       const batchState = { current: 0, total: 1, allImages };
@@ -377,6 +381,44 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
       setStnParseProgress('');
     } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); }
     finally { setStnPdfUploading(false); if (stnPdfRef.current) stnPdfRef.current.value = ''; }
+  };
+
+  const retryStnEmptyPages = async () => {
+    if (!stnEmptyPages.length) return;
+    setStnRetrying(true);
+    try {
+      const { data: { session } } = await (await import('@/lib/supabase')).createClient().auth.getSession();
+      const token = session?.access_token || '';
+      const newItems: any[] = [];
+      for (let i = 0; i < stnEmptyPages.length; i++) {
+        setStnParseProgress(`⏳ Retrying page ${i+1} of ${stnEmptyPages.length}...`);
+        try {
+          const res = await fetch('/api/upload/extract-stn', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ images: [stnEmptyPages[i]] }),
+          });
+          const json = await res.json();
+          if (!res.ok) continue;
+          (json.data?.items||[]).filter((it:any) => it.description || it.itemCode).forEach((it:any) => newItems.push(it));
+        } catch { continue; }
+      }
+      setStnEmptyPages([]);
+      setStnParseProgress('');
+      if (newItems.length > 0) {
+        const meta = stnPdfMeta;
+        setStnPdfItems(prev => [...(prev||[]), ...newItems.map((it:any) => ({
+          description: it.description||'', hsnCode: it.itemCode||it.hsnCode||'', uom: it.uom||'Nos',
+          quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
+          documentNo: meta.documentNo||'', liftedDate: meta.liftedDate||'', gateEntryNo: meta.gateEntryNo||'', vehicleNo: meta.vehicleNo||'',
+          boqReqNo: it.boqReqNo||meta.boqReqNo||'',
+        }))]);
+        setToast({ msg:`✅ Found ${newItems.length} more item${newItems.length!==1?'s':''} on retry`, type:'success' });
+      } else {
+        setToast({ msg:'No additional items found on retry', type:'error' });
+      }
+    } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); }
+    finally { setStnRetrying(false); }
   };
 
   const saveStnPdfItems = async () => {
@@ -650,28 +692,19 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
             <div style={{ fontSize:12, color:T.textMuted, marginBottom:8 }}>
               {stnPdfItems.length} item{stnPdfItems.length!==1?'s':''} extracted. Review and edit before saving.
             </div>
-            {/* Grand Total Checksum */}
-            {stnGrandTotal !== null && (() => {
-              const extractedTotal = stnPdfItems.reduce((a:number, it:any) => a + (Number(it.amount)||0), 0);
-              const matches = Math.abs(extractedTotal - stnGrandTotal) < 1;
-              return (
-                <div style={{ padding:'10px 14px', borderRadius:8, marginBottom:14,
-                  background: matches ? '#F0FDF4' : '#FEF2F2',
-                  border: `1px solid ${matches ? '#BBF7D0' : '#FECACA'}` }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                    <div>
-                      <span style={{ fontSize:13, fontWeight:700, color: matches ? '#166534' : '#DC2626' }}>
-                        {matches ? '✅ Amount Verified' : '⚠️ Amount Mismatch — Items May Be Missing'}
-                      </span>
-                      <div style={{ fontSize:11, color:T.textMuted, marginTop:2 }}>
-                        Extracted: ₹{extractedTotal.toLocaleString('en-IN')} · Challan Total: ₹{stnGrandTotal.toLocaleString('en-IN')}
-                        {!matches && <span style={{ color:'#DC2626', marginLeft:8 }}>· Difference: ₹{Math.abs(stnGrandTotal - extractedTotal).toLocaleString('en-IN')}</span>}
-                      </div>
-                    </div>
-                  </div>
+            {/* Empty pages retry */}
+            {stnEmptyPages.length > 0 && (
+              <div style={{ padding:'10px 14px', borderRadius:8, marginBottom:10, background:'#FFFBEB', border:'1px solid #FDE68A', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:700, color:'#92400E' }}>⚠️ {stnEmptyPages.length} page{stnEmptyPages.length!==1?'s':''} returned no items</div>
+                  <div style={{ fontSize:11, color:'#B45309', marginTop:2 }}>These pages may contain items that weren't extracted. Click Retry to process them again.</div>
                 </div>
-              );
-            })()}
+                <button onClick={retryStnEmptyPages} disabled={stnRetrying}
+                  style={{ padding:'6px 14px', borderRadius:7, background:'#F59E0B', color:'#fff', border:'none', cursor:stnRetrying?'not-allowed':'pointer', fontSize:12, fontWeight:600, flexShrink:0, marginLeft:12 }}>
+                  {stnRetrying ? (stnParseProgress||'⏳ Retrying...') : '🔄 Retry Pages'}
+                </button>
+              </div>
+            )}
             {stnPdfItems.map((it:any, idx:number) => (
               <div key={idx} style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:12, marginBottom:10 }}>
                 <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:8 }}>Item {idx+1}</div>
