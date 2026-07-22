@@ -39,6 +39,80 @@ export default function SRNReturnPage() {
   const [importToast,     setImportToast]     = useState<any>(null);
   const importFileRef = React.useRef<HTMLInputElement>(null);
 
+  const uploadChallanAuto = async (file: File, type: 'stn'|'srn') => {
+    setImportUploading(true);
+    setImportProgress('');
+    setImportGrandTotal(null);
+    setImportEmptyPages([]);
+    setImportProject({ id:'', type, indusId:'' });
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const token = session?.access_token || '';
+      const isImage = file.type.startsWith('image/');
+      let allImages: string[] = [];
+      if (isImage) {
+        const b64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string).replace(/^data:image\/[a-z]+;base64,/, ''));
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        allImages = [b64];
+      } else {
+        const arrayBuf = await file.arrayBuffer();
+        const pdfjsLib = await import('pdfjs-dist');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuf) }).promise;
+        setImportProgress(`Rendering ${pdf.numPages} pages...`);
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 2.0 });
+          const canvas = document.createElement('canvas');
+          canvas.width = viewport.width; canvas.height = viewport.height;
+          const ctx = canvas.getContext('2d')!;
+          await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
+          allImages.push(canvas.toDataURL('image/jpeg', 0.88).replace('data:image/jpeg;base64,', ''));
+        }
+      }
+      const allExtracted: any[] = [];
+      let meta: any = {};
+      let grandTotal: number|null = null;
+      const emptyPages: string[] = [];
+      for (let i = 0; i < allImages.length; i++) {
+        setImportProgress(`⏳ Parsing page ${i+1} of ${allImages.length}...`);
+        try {
+          const res = await fetch('/api/upload/extract-stn', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ images: [allImages[i]], source: type }),
+          });
+          const json = await res.json();
+          if (!res.ok) { emptyPages.push(allImages[i]); continue; }
+          if (i === 0 && json.data?.documentNo) meta = json.data;
+          if (json.data?.grandTotal) grandTotal = Number(json.data.grandTotal);
+          const pageItems = (json.data?.items||[]).filter((it:any) => it.description || it.itemCode);
+          if (pageItems.length === 0) emptyPages.push(allImages[i]);
+          else allExtracted.push(...pageItems);
+        } catch { emptyPages.push(allImages[i]); continue; }
+      }
+      // Auto-match project by Site ID
+      const siteId = meta.siteId || '';
+      const matchedProject = siteId ? (projects as any[]).find(p => p.indusId === siteId) : null;
+      setImportEmptyPages(emptyPages);
+      setImportGrandTotal(grandTotal);
+      setImportMeta({ documentNo: meta.documentNo||'', liftedDate: meta.liftedDate||'', gateEntryNo: meta.gateEntryNo||'', vehicleNo: meta.vehicleNo||'', boqReqNo: meta.boqReqNo||'', siteId });
+      setImportProject({ id: matchedProject?.id||'', type, indusId: matchedProject?.indusId||siteId });
+      setImportItems(allExtracted.map((it:any) => ({
+        description: it.description||'', hsnCode: it.itemCode||it.hsnCode||'', uom: it.uom||'Nos',
+        quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
+        documentNo: meta.documentNo||'', liftedDate: meta.liftedDate||'', gateEntryNo: meta.gateEntryNo||'', vehicleNo: meta.vehicleNo||'',
+        boqReqNo: it.boqReqNo||meta.boqReqNo||'', sno: it.sno||0,
+      })));
+      setImportProgress('');
+    } catch(e:any) { setImportToast({ msg:'❌ '+e.message, type:'error' }); }
+    finally { setImportUploading(false); }
+  };
+
   const uploadChallan = async (file: File, proj: {id:string;type:'stn'|'srn';indusId?:string}) => {
     setImportUploading(true);
     setImportProgress('');
@@ -672,9 +746,27 @@ export default function SRNReturnPage() {
               {isLoading ? 'Loading...' : `${filteredProjects.length} projects · ${roleStnItems.length} STN items · ${roleSrnItems.length} SRN items`}
             </div>
           </div>
-          <input value={search} onChange={e=>setSearch(e.target.value)}
-            placeholder="Search project, vendor, PO…"
-            style={{ border:`1px solid ${Theme.border}`, borderRadius:8, padding:'8px 14px', fontSize:13, outline:'none', width:260 }} />
+          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            <label style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12, fontWeight:600,
+              color:'#1E40AF', background:'#EFF6FF', border:'1px solid #BFDBFE',
+              borderRadius:8, padding:'7px 14px', cursor: importUploading ? 'not-allowed' : 'pointer',
+              opacity: importUploading ? 0.7 : 1 }}>
+              {importUploading && importProject?.type==='stn' ? (importProgress||'⏳ Parsing...') : '📄 Import STN'}
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display:'none' }} disabled={importUploading}
+                onChange={e=>{const f=e.target.files?.[0];if(f){setImportProject({id:'',type:'stn',indusId:''});uploadChallanAuto(f,'stn');}}} />
+            </label>
+            <label style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12, fontWeight:600,
+              color:'#7C3AED', background:'#F5F3FF', border:'1px solid #DDD6FE',
+              borderRadius:8, padding:'7px 14px', cursor: importUploading ? 'not-allowed' : 'pointer',
+              opacity: importUploading ? 0.7 : 1 }}>
+              {importUploading && importProject?.type==='srn' ? (importProgress||'⏳ Parsing...') : '📄 Import SRN'}
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display:'none' }} disabled={importUploading}
+                onChange={e=>{const f=e.target.files?.[0];if(f){setImportProject({id:'',type:'srn',indusId:''});uploadChallanAuto(f,'srn');}}} />
+            </label>
+            <input value={search} onChange={e=>setSearch(e.target.value)}
+              placeholder="Search project, vendor, PO…"
+              style={{ border:`1px solid ${Theme.border}`, borderRadius:8, padding:'8px 14px', fontSize:13, outline:'none', width:220 }} />
+          </div>
         </div>
 
         {/* KPI Cards */}
@@ -1005,27 +1097,6 @@ export default function SRNReturnPage() {
                   <div style={{ display:'flex', gap:8, alignItems:'center' }}>
                     {showSTN && stnItems.length > 0 && <span style={{ fontSize:11, fontWeight:700, color:stnAllDone?'#0D9488':'#D97706', background:stnAllDone?'#F0FDFA':'#FFFBEB', padding:'3px 10px', borderRadius:20 }}>📦 STN: {stnApproved}/{stnItems.length}</span>}
                     {showSRN && srnItems.length > 0 && <span style={{ fontSize:11, fontWeight:700, color:srnAllDone?'#0D9488':'#DC2626', background:srnAllDone?'#F0FDFA':'#FEF2F2', padding:'3px 10px', borderRadius:20 }}>🔄 SRN: {srnReceived}/{srnItems.length}</span>}
-                    {/* Import Challan buttons */}
-                    {showSTN && (
-                      <label style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600,
-                        color:'#1E40AF', background:'#EFF6FF', border:'1px solid #BFDBFE',
-                        borderRadius:6, padding:'3px 8px', cursor:'pointer' }}
-                        title="Import STN from Delivery Challan">
-                        📄 STN
-                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display:'none' }}
-                          onChange={e=>{const f=e.target.files?.[0];if(f){setImportProject({id:project.projectId,type:'stn',indusId:project.indusId});uploadChallan(f,{id:project.projectId,type:'stn',indusId:project.indusId});}}} />
-                      </label>
-                    )}
-                    {showSRN && (
-                      <label style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600,
-                        color:'#7C3AED', background:'#F5F3FF', border:'1px solid #DDD6FE',
-                        borderRadius:6, padding:'3px 8px', cursor:'pointer' }}
-                        title="Import SRN from Delivery Challan">
-                        📄 SRN
-                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display:'none' }}
-                          onChange={e=>{const f=e.target.files?.[0];if(f){setImportProject({id:project.projectId,type:'srn',indusId:project.indusId});uploadChallan(f,{id:project.projectId,type:'srn',indusId:project.indusId});}}} />
-                      </label>
-                    )}
                     <button onClick={e=>{e.stopPropagation();
                       const wb = XLSX.utils.book_new();
                       if (stnItems.length > 0) {
@@ -1238,19 +1309,24 @@ export default function SRNReturnPage() {
             <div style={{ fontSize:16, fontWeight:700, color:Theme.text, marginBottom:4 }}>
               📄 Review {importProject.type.toUpperCase()} Items from Delivery Challan
             </div>
-            {/* Project ID validation */}
-            {importMeta.siteId && (
-              <div style={{ padding:'8px 12px', borderRadius:8, marginBottom:10,
-                background: importMeta.siteId===importProject.indusId?'#F0FDF4':'#FEF2F2',
-                border:`1px solid ${importMeta.siteId===importProject.indusId?'#BBF7D0':'#FECACA'}` }}>
-                <span style={{ fontSize:13, fontWeight:600, color: importMeta.siteId===importProject.indusId?'#166534':'#DC2626' }}>
-                  {importMeta.siteId===importProject.indusId?'✅ Project ID Match':'⚠️ Project ID Mismatch!'}
-                </span>
-                <span style={{ fontSize:11, color:Theme.textMuted, marginLeft:8 }}>
-                  PDF: {importMeta.siteId} · Project: {importProject.indusId}
-                </span>
-              </div>
-            )}
+            {/* Auto-matched project */}
+            {importMeta.siteId && (() => {
+              const matched = (projects as any[]).find(p=>p.indusId===importMeta.siteId);
+              return (
+                <div style={{ padding:'10px 14px', borderRadius:8, marginBottom:10,
+                  background: matched?'#F0FDF4':'#FEF2F2',
+                  border:`1px solid ${matched?'#BBF7D0':'#FECACA'}` }}>
+                  <div style={{ fontSize:13, fontWeight:700, color: matched?'#166534':'#DC2626' }}>
+                    {matched ? '✅ Project Auto-Matched' : '⚠️ No Matching Project Found'}
+                  </div>
+                  <div style={{ fontSize:11, color:Theme.textMuted, marginTop:2 }}>
+                    PDF Site ID: <strong>{importMeta.siteId}</strong>
+                    {matched && <span> → <strong>{matched.site}</strong> ({matched.id})</span>}
+                    {!matched && <span style={{ color:'#DC2626' }}> — Cannot save without a matching project</span>}
+                  </div>
+                </div>
+              );
+            })()}
             {/* Empty pages warning */}
             {importEmptyPages.length > 0 && (
               <div style={{ padding:'8px 12px', borderRadius:8, marginBottom:10, background:'#FFFBEB', border:'1px solid #FDE68A' }}>
