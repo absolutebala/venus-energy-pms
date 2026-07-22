@@ -334,22 +334,37 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
   const uploadStnPdf = async (file: File) => {
     setStnPdfUploading(true);
     try {
-      const arrayBuf = await file.arrayBuffer();
-      const pdfjsLib = await import('pdfjs-dist');
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
-      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuf) }).promise;
-      const allImages: string[] = [];
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 1.5 });
-        const canvas = document.createElement('canvas');
-        canvas.width = viewport.width; canvas.height = viewport.height;
-        const ctx = canvas.getContext('2d')!;
-        await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
-        allImages.push(canvas.toDataURL('image/jpeg', 0.82).replace('data:image/jpeg;base64,', ''));
+      const isImage = file.type.startsWith('image/');
+      if (isImage) {
+        // Direct image upload — convert to base64 and send immediately
+        const b64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string).replace(/^data:image\/[a-z]+;base64,/, ''));
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const allImages = [b64];
+        setStnBatchInfo({ current: 0, total: 1, allImages });
+        await processStnBatch(allImages, 0, {});
+      } else {
+        // PDF — render pages using PDF.js
+        const arrayBuf = await file.arrayBuffer();
+        const pdfjsLib = await import('pdfjs-dist');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuf) }).promise;
+        const allImages: string[] = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 1.5 });
+          const canvas = document.createElement('canvas');
+          canvas.width = viewport.width; canvas.height = viewport.height;
+          const ctx = canvas.getContext('2d')!;
+          await page.render({ canvasContext: ctx, viewport, canvas } as any).promise;
+          allImages.push(canvas.toDataURL('image/jpeg', 0.82).replace('data:image/jpeg;base64,', ''));
+        }
+        setStnBatchInfo({ current: 0, total: Math.ceil(allImages.length / STNBATCH), allImages });
+        await processStnBatch(allImages, 0, {});
       }
-      setStnBatchInfo({ current: 0, total: Math.ceil(allImages.length / STNBATCH), allImages });
-      await processStnBatch(allImages, 0, {});
     } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); setStnPdfUploading(false); }
     finally { if (stnPdfRef.current) stnPdfRef.current.value = ''; }
   };
@@ -578,8 +593,8 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
             color:'#1E40AF', background:'#EFF6FF', border:'1px solid #BFDBFE',
             borderRadius:6, padding:'4px 10px', cursor: stnPdfUploading ? 'not-allowed' : 'pointer',
             opacity: stnPdfUploading ? 0.7 : 1 }}>
-            {stnPdfUploading ? `⏳ Parsing PDF${stnBatchInfo.allImages.length > 0 ? ` (${stnBatchInfo.allImages.length} pages, ${stnBatchInfo.total} batch${stnBatchInfo.total!==1?'es':''})` : '...'}` : '📄 Import Challan'}
-            <input ref={stnPdfRef} data-stn-pdf="1" type="file" accept=".pdf" style={{ display:'none' }}
+            {stnPdfUploading ? `⏳ Parsing...${stnBatchInfo.allImages.length > 0 ? ` (${stnBatchInfo.allImages.length} page${stnBatchInfo.allImages.length!==1?'s':''}, ${stnBatchInfo.total} batch${stnBatchInfo.total!==1?'es':''})` : ''}` : '📄 Import Challan (PDF/Image)'}
+            <input ref={stnPdfRef} data-stn-pdf="1" type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display:'none' }}
               disabled={stnPdfUploading}
               onChange={e => { const f = e.target.files?.[0]; if (f) uploadStnPdf(f); }} />
           </label>
