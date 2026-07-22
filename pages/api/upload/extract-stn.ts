@@ -24,13 +24,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 CRITICAL INSTRUCTIONS:
 1. Extract ALL item rows visible on this page. Each S.No. = ONE item.
-2. CONTINUATION PAGE: If this page has no column headers but has data rows, extract every visible row.
-3. DESCRIPTION: Combine all lines within a single table row into ONE description string.
-4. STAMPS: If a rubber stamp overlaps the table, extract whatever data is still visible.
-5. GRAND TOTAL: If this page shows "Total Value" or "Value" or "Grand Total" at the bottom, extract that number.
-6. Item Code: Read EVERY character precisely e.g. "17-120000-0-01-ZZ-ZZ-133".
-7. Gate Entry No: Read from rubber stamp — read EVERY digit.
-8. HSN: numeric code only e.g. 83119000. Different from Item Code.
+2. ALWAYS include the S.No. value for each item — this is critical for detecting missing items.
+3. CONTINUATION PAGE: If this page has no column headers but has data rows, extract every visible row. Look for numbered rows (1, 2, 3...) even without headers.
+4. DESCRIPTION: Combine all lines within a single table row into ONE description string.
+5. STAMPS: If a rubber stamp overlaps the table, extract whatever data is still visible.
+6. GRAND TOTAL: If this page shows "Total Value" or "Value" at the bottom, extract that number.
+7. Item Code: Read EVERY character precisely e.g. "17-120000-0-01-ZZ-ZZ-133".
+8. Gate Entry No: Read from rubber stamp — read EVERY digit.
+9. HSN: numeric code only e.g. 83119000. Different from Item Code.
 
 Return ONLY valid JSON, no markdown:
 {
@@ -41,8 +42,10 @@ Return ONLY valid JSON, no markdown:
   "boqReqNo": "BOQ req number or empty",
   "siteId": "Site ID e.g. IN-1245636 or empty",
   "grandTotal": 0,
+  "totalItemsOnPage": 0,
   "items": [
     {
+      "sno": 1,
       "description": "item description",
       "hsnCode": "HSN number",
       "itemCode": "item code",

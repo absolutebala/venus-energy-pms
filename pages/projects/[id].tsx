@@ -347,6 +347,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
       let meta: any = {};
       let grandTotal: number|null = null;
       const emptyPageImages: string[] = [];
+      const pageImageBySno: Record<number, string> = {};
 
       for (let i = 0; i < allImages.length; i++) {
         setStnParseProgress(`⏳ Parsing page ${i+1} of ${allImages.length}...`);
@@ -362,7 +363,12 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
           if (json.data?.grandTotal) grandTotal = Number(json.data.grandTotal);
           const pageItems = (json.data?.items||[]).filter((it:any) => it.description || it.itemCode);
           if (pageItems.length === 0) emptyPageImages.push(allImages[i]);
-          else allExtracted.push(...pageItems);
+          else {
+            pageItems.forEach((it:any) => {
+              if (it.sno) pageImageBySno[it.sno] = allImages[i];
+            });
+            allExtracted.push(...pageItems);
+          }
         } catch { emptyPageImages.push(allImages[i]); continue; }
       }
 
@@ -372,11 +378,19 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
       const batchState = { current: 0, total: 1, allImages };
       setStnBatchInfo(batchState);
       stnBatchRef.current = batchState;
+      // Detect S.No. gaps
+      const snos = allExtracted.map((it:any) => Number(it.sno)).filter(n => n > 0).sort((a,b)=>a-b);
+      const maxSno = snos.length ? snos[snos.length-1] : 0;
+      const missingSno: number[] = [];
+      for (let s = 1; s <= maxSno; s++) { if (!snos.includes(s)) missingSno.push(s); }
+      const missingImages = [...new Set(missingSno.map(s => pageImageBySno[s-1]||pageImageBySno[s+1]||'').filter(Boolean)), ...emptyPageImages];
+      if (missingSno.length > 0) setStnEmptyPages([...new Set(missingImages)]);
+
       setStnPdfItems(allExtracted.map((it:any) => ({
         description: it.description||'', hsnCode: it.itemCode||it.hsnCode||'', uom: it.uom||'Nos',
         quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
         documentNo: meta.documentNo||'', liftedDate: meta.liftedDate||'', gateEntryNo: meta.gateEntryNo||'', vehicleNo: meta.vehicleNo||'',
-        boqReqNo: it.boqReqNo||meta.boqReqNo||'',
+        boqReqNo: it.boqReqNo||meta.boqReqNo||'', sno: it.sno||0,
       })));
       setStnParseProgress('');
     } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); }
@@ -692,19 +706,27 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
             <div style={{ fontSize:12, color:T.textMuted, marginBottom:8 }}>
               {stnPdfItems.length} item{stnPdfItems.length!==1?'s':''} extracted. Review and edit before saving.
             </div>
-            {/* Empty pages retry */}
-            {stnEmptyPages.length > 0 && (
-              <div style={{ padding:'10px 14px', borderRadius:8, marginBottom:10, background:'#FFFBEB', border:'1px solid #FDE68A', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <div>
-                  <div style={{ fontSize:13, fontWeight:700, color:'#92400E' }}>⚠️ {stnEmptyPages.length} page{stnEmptyPages.length!==1?'s':''} returned no items</div>
-                  <div style={{ fontSize:11, color:'#B45309', marginTop:2 }}>These pages may contain items that weren't extracted. Click Retry to process them again.</div>
+            {/* Empty/missing pages retry */}
+            {stnEmptyPages.length > 0 && (() => {
+              const snos = (stnPdfItems||[]).map((it:any)=>Number(it.sno)).filter((n:number)=>n>0).sort((a:number,b:number)=>a-b);
+              const maxSno = snos.length ? snos[snos.length-1] : 0;
+              const missing: number[] = [];
+              for (let s=1; s<=maxSno; s++) { if (!snos.includes(s)) missing.push(s); }
+              return (
+                <div style={{ padding:'10px 14px', borderRadius:8, marginBottom:10, background:'#FFFBEB', border:'1px solid #FDE68A', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <div>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#92400E' }}>
+                      ⚠️ {missing.length > 0 ? `S.No. ${missing.join(', ')} missing` : `${stnEmptyPages.length} page${stnEmptyPages.length!==1?'s':''} returned no items`}
+                    </div>
+                    <div style={{ fontSize:11, color:'#B45309', marginTop:2 }}>Click Retry to reprocess and recover missing items.</div>
+                  </div>
+                  <button onClick={retryStnEmptyPages} disabled={stnRetrying}
+                    style={{ padding:'6px 14px', borderRadius:7, background:'#F59E0B', color:'#fff', border:'none', cursor:stnRetrying?'not-allowed':'pointer', fontSize:12, fontWeight:600, flexShrink:0, marginLeft:12 }}>
+                    {stnRetrying ? (stnParseProgress||'⏳ Retrying...') : '🔄 Retry Missing'}
+                  </button>
                 </div>
-                <button onClick={retryStnEmptyPages} disabled={stnRetrying}
-                  style={{ padding:'6px 14px', borderRadius:7, background:'#F59E0B', color:'#fff', border:'none', cursor:stnRetrying?'not-allowed':'pointer', fontSize:12, fontWeight:600, flexShrink:0, marginLeft:12 }}>
-                  {stnRetrying ? (stnParseProgress||'⏳ Retrying...') : '🔄 Retry Pages'}
-                </button>
-              </div>
-            )}
+              );
+            })()}
             {stnPdfItems.map((it:any, idx:number) => (
               <div key={idx} style={{ border:`1px solid ${T.border}`, borderRadius:8, padding:12, marginBottom:10 }}>
                 <div style={{ fontSize:11, fontWeight:700, color:T.primary, marginBottom:8 }}>Item {idx+1}</div>
