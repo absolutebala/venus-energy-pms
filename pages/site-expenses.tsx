@@ -458,6 +458,7 @@ export default function SiteExpensesPage() {
                   if (!hasAnyFilter) { setShowExportWarning(true); return; }
                   const rows = allExpenses.map((e:any, idx:number) => ({
                     'S.No': idx+1,
+                    'Project No': e.projectId || '',
                     'Date': e.expenseDate ? new Date(e.expenseDate) : '',
                     'PO Number': (projects as any[]).find((p:any)=>p.id===e.projectId)?.poNo || e.projectId || '',
                     'Indus ID': (projects as any[]).find((p:any)=>p.id===e.projectId)?.indusId || '',

@@ -511,6 +511,7 @@ export default function ProjectsPage() {
 
     const rows = filtered.map((p: any, idx: number) => ({
       'S.No.':           idx + 1,
+      'Project No':      p.id || '',
       'PO Number':       p.poNo || '',
       'PO Date':         p.poDate ? new Date(p.poDate) : '',
       'PO Count':        projects.filter((p2: any) => p2.poNo === p.poNo).length,

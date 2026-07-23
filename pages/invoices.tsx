@@ -366,7 +366,7 @@ export default function InvoicesPage() {
       const expRatio = received > 0 ? (paid / received * 100).toFixed(1) + '%' : '—';
       return {
         'S.No':                idx + 1,
-        'Project No':          proj?.projectId || '',
+        'Project No':          proj?.id || '',
         'PO No':               (inv as any).poNo || '',
         'PO Date':             proj?.poDate ? new Date(proj.poDate) : '',
         'Indus ID':            proj?.indusId || '',
