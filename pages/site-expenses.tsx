@@ -490,7 +490,7 @@ export default function SiteExpensesPage() {
             <table style={{ width:"100%", borderCollapse:"collapse" as const, minWidth:1100 }}>
               <thead>
                 <tr>
-                  {["#","Req. Date","PO Number","Indus ID","Remarks","Expense Type","Amount (₹)","TXN Ref","Payment Mode","Txn Date","Status","Project Status",""].map((h,i)=>(
+                  {["#","Project No","Req. Date","PO Number","Indus ID","Remarks","Expense Type","Amount (₹)","TXN Ref","Payment Mode","Txn Date","Status","Project Status",""].map((h,i)=>(
                     <th key={i} style={{ ...thS, textAlign:i===6?"right" as const:"left" as const }}>{h}</th>
                   ))}
                 </tr>
@@ -510,6 +510,7 @@ export default function SiteExpensesPage() {
                       onMouseEnter={el=>(el.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
                       onMouseLeave={el=>(el.currentTarget as HTMLTableRowElement).style.background=isPending?'#FFFBEB':idx%2===0?"#fff":T.bg}>
                       <td style={{ ...tdS, color:T.textMuted, width:36 }}>{(page-1)*PER_PAGE+idx+1}</td>
+                      <td style={{ ...tdS, fontWeight:700, color:T.primary, fontSize:11, whiteSpace:"nowrap" as const }}>{e.projectId||'—'}</td>
                       <td style={{ ...tdS, whiteSpace:"nowrap" as const }}>{fmtD(e.expenseDate)}</td>
                       <td style={tdS} onClick={()=>{ if(e.projectId) window.open(`/projects/${e.projectId}`, '_blank'); }}>
                         <div style={{ fontWeight:600, fontSize:13, color:T.primary, cursor:'pointer' }}>{proj?.poNo || e.projectId || '—'}</div>

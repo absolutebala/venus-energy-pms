@@ -784,7 +784,7 @@ export default function ProjectsPage() {
                     onClick={()=>setSortDir(d=>d==='asc'?'desc':'asc')}>
                     S.No. {sortDir==='asc'?'↑':'↓'}
                   </th>
-                  {['PO Number','PO Count','Aging','PO Status','Project Name','Project ID','Indus ID','Site Name','Project Status','Delivery Date',...(profile?.role==='super_admin'?['Delete']:[])].map((h,i)=>(
+                  {['Project No','PO Number','PO Count','Aging','PO Status','Project Name','Project ID','Indus ID','Site Name','Project Status','Delivery Date',...(profile?.role==='super_admin'?['Delete']:[])].map((h,i)=>(
                     <th key={i} style={{ padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
                       color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`,
                       whiteSpace:'nowrap' as const, background:T.primaryLight }}>
@@ -832,6 +832,7 @@ export default function ProjectsPage() {
                       onMouseEnter={e=>(e.currentTarget as HTMLTableRowElement).style.background=T.primaryLight}
                       onMouseLeave={e=>(e.currentTarget as HTMLTableRowElement).style.background=idx%2===0?'#fff':T.bg}>
                       <td style={{ padding:'10px 12px', color:T.textMuted, fontSize:12, borderBottom:`1px solid ${T.border}` }}>{sortDir==='asc'?(page-1)*PER_PAGE+idx+1:filtered.length-(page-1)*PER_PAGE-idx}</td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontWeight:700, color:T.primary, fontSize:12, whiteSpace:'nowrap' as const }}>{p.id}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
                         <div style={{ fontWeight:700, color:T.primary, fontSize:13 }}>{p.poNo || '—'}</div>
                         <div style={{ fontSize:10, color:T.textMuted }}>{p.poDate ? new Date(p.poDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</div>

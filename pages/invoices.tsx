@@ -769,7 +769,7 @@ export default function InvoicesPage() {
               <thead>
                 <tr>
                   <th style={thS()}>#</th>
-                  {([["poNo","PO No"],["invoiceDate","PO Date"],["invoiceDate","Indus ID"],["invoiceNo","Project ID"],["invoiceNo","Site Name"],["invoiceNo","Project Name"],
+                  {([["invoiceNo","Project No"],["poNo","PO No"],["invoiceDate","PO Date"],["invoiceDate","Indus ID"],["invoiceNo","Project ID"],["invoiceNo","Site Name"],["invoiceNo","Project Name"],
                      ["invoiceNo","WCC No"],["invoiceNo","Receipt No"],["invoiceNo","Invoice No"],["invoiceDate","Invoice Date"],
                      ["dueDate","Due Date"],
                      ["invoiceAmount","Basic Amt (₹)"],["gst","GST (%)"],["gst","Tax Amt (₹)"],["totalAmount","Total Amt (₹)"],
@@ -801,6 +801,7 @@ export default function InvoicesPage() {
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = T.primaryLight}
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = idx % 2 === 0 ? "#fff" : T.bg}>
                       <td style={{ ...tdS, color:T.textMuted, width:36 }}>{(invPage-1)*INV_PER_PAGE+idx+1}</td>
+                      <td style={{ ...tdS, fontWeight:700, color:T.primary, fontSize:11, whiteSpace:"nowrap" as const }}>{proj ? (proj as any).id || "—" : "—"}</td>
                       <td style={{ ...tdS, fontWeight:700, color:T.primary, whiteSpace:"nowrap" as const }}>{inv.poNo || "—"}</td>
                       <td style={{ ...tdS, color:T.textMuted, whiteSpace:"nowrap" as const }}>{proj ? fmtDate((proj as any).poDate) : "—"}</td>
                       <td style={{ ...tdS, color:T.textMuted }}>{proj ? (proj as any).indusId || "—" : "—"}</td>
