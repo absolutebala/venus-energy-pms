@@ -630,7 +630,7 @@ export default function SiteExpensesPage() {
                   <tr style={{ background:T.primaryLight, fontWeight:700 }}>
                     <td colSpan={5} style={{ ...tdS, color:T.primary }}>Total</td>
                     <td style={{ ...tdS, textAlign:"right" as const, color:T.primary }}>
-                      {(() => { const t = roleFilteredExpenses.reduce((a:number,e:any)=>a+Number(e.amount),0); return <><div>{fmt(t)}</div><div style={{ fontSize:10, fontWeight:400, color:T.textMuted }}>{inWords(t)}</div></>; })()}
+                      {(() => { const t = allExpenses.reduce((a:number,e:any)=>a+Number(e.amount),0); return <><div>{fmt(t)}</div><div style={{ fontSize:10, fontWeight:400, color:T.textMuted }}>{inWords(t)}</div></>; })()}
                     </td>
                     <td colSpan={6} style={tdS}></td>
                   </tr>
