@@ -2671,7 +2671,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
 
   return (
     <div>
-      {loading && invs.length === 0 && <div style={{ color:T.textMuted, fontSize:13 }}>Loading invoices...</div>}
+      {loading && items.length === 0 && <div style={{ color:T.textMuted, fontSize:13 }}>Loading invoices...</div>}
       {items.length > 0 && (
         <div style={{ overflowX:'auto' as const }}>
           <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:900 }}>
