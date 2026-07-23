@@ -117,8 +117,6 @@ export default function InvoicesPage() {
         basicPaymentNo: editInvRow.basicPaymentNo||'', basicPaymentDate: editInvRow.basicPaymentDate||'',
         taxPaymentNo: editInvRow.taxPaymentNo||'', taxPaymentDate: editInvRow.taxPaymentDate||'',
         tds: Number(editInvRow.tds)||0, remarks: editInvRow.remarks||'',
-        investor: editInvRow.investor||'',
-        investor1PaidAmount: Number(editInvRow.investor1PaidAmount)||0,
       } as any);
       setEditInvId(null); setEditInvRow({});
       setToast({ msg:'✅ Invoice updated', type:'success' });
