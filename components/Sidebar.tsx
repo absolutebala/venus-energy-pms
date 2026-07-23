@@ -174,9 +174,8 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
       {/* Logo */}
       <div style={{ padding: collapsed ? '18px 0' : '18px 20px', borderBottom:`1px solid ${T.border}`,
         display:'flex', alignItems:'center', gap:10, justifyContent: collapsed ? 'center' : 'flex-start' }}>
-        <div style={{ width:32, height:32, borderRadius:9, background:`linear-gradient(135deg,${T.primary},#0F766E)`,
-          display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-          <Boxes size={18} color="#fff" strokeWidth={1.75} />
+        <div style={{ width:36, height:36, borderRadius:8, overflow:'hidden', flexShrink:0, background:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <img src="/venus-logo.jpg" alt="Venus Energy" style={{ width:36, height:36, objectFit:'contain' }} />
         </div>
         {!collapsed && (
           <div>

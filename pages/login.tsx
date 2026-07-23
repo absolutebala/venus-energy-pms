@@ -57,7 +57,9 @@ export default function LoginPage() {
         <div style={{ width:'100%', maxWidth:420 }}>
           {/* Logo */}
           <div style={{ textAlign:'center', marginBottom:28 }}>
-            <div style={{ width:56, height:56, background:`linear-gradient(135deg, ${T.primary}, #0F766E)`, borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, margin:'0 auto 14px', boxShadow:`0 8px 25px ${T.primary}35` }}>⚡</div>
+            <div style={{ margin:'0 auto 14px', width:80, height:80 }}>
+              <img src="/venus-logo.jpg" alt="Venus Energy" style={{ width:80, height:80, objectFit:'contain' }} />
+            </div>
             <h1 style={{ fontSize:22, fontWeight:700, color:T.text, marginBottom:4 }}>Venus Energy</h1>
             <p style={{ fontSize:13, color:T.textMuted }}>Project Management System</p>
           </div>
