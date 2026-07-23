@@ -511,7 +511,7 @@ export default function ProjectsPage() {
 
     const rows = filtered.map((p: any, idx: number) => ({
       'S.No.':           idx + 1,
-      'PO Number':       p.poNo ? Number(p.poNo) : '',
+      'PO Number':       p.poNo || '',
       'PO Date':         p.poDate ? new Date(p.poDate) : '',
       'PO Count':        projects.filter((p2: any) => p2.poNo === p.poNo).length,
       'Aging (Days)':    getAgeDays(p.id),
@@ -530,7 +530,7 @@ export default function ProjectsPage() {
 
     // Ensure all cells are clean — strip hidden chars, set correct types
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    const numCols = ['S.No.', 'PO Number', 'PO Count', 'Aging (Days)'];
+    const numCols = ['S.No.', 'PO Count', 'Aging (Days)'];
     const dateCols = ['PO Date', 'Delivery Date'];
     const headerRow = rows.length > 0 ? Object.keys(rows[0]) : [];
     for (let r = 1; r <= range.e.r; r++) {
