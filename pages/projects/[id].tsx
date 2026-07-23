@@ -2710,7 +2710,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
                   <td style={{ ...tdS, whiteSpace:'nowrap' as const }}>
                     <div style={{ display:'flex', gap:4 }}>
                       {canAdd && (
-                        <button onClick={()=>{ setEditInvId(editInvId===item.id?null:item.id); setEditInvRow({...item, investor1PaidAmountOverride: item.investor1PaidAmount > 0 ? String(item.investor1PaidAmount) : ''}); }}
+                        <button onClick={()=>{ setEditInvId(editInvId===item.id?null:item.id); setEditInvRow({...item, investor1PaidAmountOverride: (item.investor1PaidAmount||0) > 0 ? String(item.investor1PaidAmount) : ''}); }}
                           style={{ background:editInvId===item.id?T.primary:'#F0FDFA', color:editInvId===item.id?'#fff':'#0D9488',
                             border:`1px solid #99F6E4`, borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>✏️</button>
                       )}
