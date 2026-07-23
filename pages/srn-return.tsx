@@ -762,6 +762,18 @@ export default function SRNReturnPage() {
             </div>
           </div>
           <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+            {profile?.role === 'super_admin' && navApiUsage && (
+              <div title={`STN: $${navApiUsage.stnCost?.toFixed(4)} · SRN: $${navApiUsage.srnCost?.toFixed(4)} · ${navApiUsage.callCount} calls`}
+                style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:Theme.textMuted,
+                  background:Theme.bg, border:`1px solid ${Theme.border}`, borderRadius:6, padding:'5px 12px', cursor:'default' }}>
+                <div style={{ width:60, height:5, background:Theme.border, borderRadius:3, overflow:'hidden' }}>
+                  <div style={{ width:`${Math.min(100,navApiUsage.percentUsed||0)}%`, height:'100%',
+                    background: navApiUsage.percentUsed > 80 ? '#DC2626' : navApiUsage.percentUsed > 50 ? '#D97706' : Theme.primary,
+                    borderRadius:3 }} />
+                </div>
+                <span>${(navApiUsage.totalCost||0).toFixed(3)} / $10</span>
+              </div>
+            )}
             <label style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12, fontWeight:600,
               color:'#1E40AF', background:'#EFF6FF', border:'1px solid #BFDBFE',
               borderRadius:8, padding:'7px 14px', cursor: importUploading ? 'not-allowed' : 'pointer',
