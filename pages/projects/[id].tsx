@@ -799,7 +799,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
         </div>
       )}
 
-      {loading && <div style={{ color:T.textMuted, fontSize:13 }}>Loading STN items...</div>}
+      {loading && items.length === 0 && <div style={{ color:T.textMuted, fontSize:13 }}>Loading STN items...</div>}
       {items.length > 0 && (
         <div style={{ overflowX:'auto' as const }}>
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
@@ -2256,7 +2256,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
 
   return (
     <div>
-      {loading && <div style={{ color:T.textMuted, fontSize:13 }}>Loading expenses...</div>}
+      {loading && expenses.length === 0 && <div style={{ color:T.textMuted, fontSize:13 }}>Loading expenses...</div>}
       {items.length > 0 && (
         <div style={{ overflowX:'auto' as const }}>
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
@@ -2671,7 +2671,7 @@ function InvoiceSection({ projectId, canAdd, projectPoNo='', paidAmount=0, inves
 
   return (
     <div>
-      {loading && <div style={{ color:T.textMuted, fontSize:13 }}>Loading invoices...</div>}
+      {loading && invs.length === 0 && <div style={{ color:T.textMuted, fontSize:13 }}>Loading invoices...</div>}
       {items.length > 0 && (
         <div style={{ overflowX:'auto' as const }}>
           <table style={{ width:'100%', borderCollapse:'collapse' as const, minWidth:900 }}>
