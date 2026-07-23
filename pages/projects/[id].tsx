@@ -2256,7 +2256,7 @@ function ExpensesSection({ projectId, canAdd }: { projectId:string; canAdd:boole
 
   return (
     <div>
-      {loading && expenses.length === 0 && <div style={{ color:T.textMuted, fontSize:13 }}>Loading expenses...</div>}
+      {loading && items.length === 0 && <div style={{ color:T.textMuted, fontSize:13 }}>Loading expenses...</div>}
       {items.length > 0 && (
         <div style={{ overflowX:'auto' as const }}>
           <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
