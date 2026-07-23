@@ -58,7 +58,7 @@ export default function LoginPage() {
           {/* Logo */}
           <div style={{ textAlign:'center', marginBottom:28 }}>
             <div style={{ margin:'0 auto 14px', width:80, height:80 }}>
-              <img src="/venus-logo.jpg" alt="Venus Energy" style={{ width:80, height:80, objectFit:'contain' }} />
+              <img src="/venus-logo.png" alt="Venus Energy" style={{ width:80, height:80, objectFit:'contain' }} />
             </div>
             <h1 style={{ fontSize:22, fontWeight:700, color:T.text, marginBottom:4 }}>Venus Energy</h1>
             <p style={{ fontSize:13, color:T.textMuted }}>Project Management System</p>

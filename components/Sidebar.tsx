@@ -175,7 +175,7 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
       <div style={{ padding: collapsed ? '18px 0' : '18px 20px', borderBottom:`1px solid ${T.border}`,
         display:'flex', alignItems:'center', gap:10, justifyContent: collapsed ? 'center' : 'flex-start' }}>
         <div style={{ width:36, height:36, borderRadius:8, overflow:'hidden', flexShrink:0, background:'#fff', display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <img src="/venus-logo.jpg" alt="Venus Energy" style={{ width:36, height:36, objectFit:'contain' }} />
+          <img src="/venus-logo.png" alt="Venus Energy" style={{ width:36, height:36, objectFit:'contain' }} />
         </div>
         {!collapsed && (
           <div>
