@@ -37,7 +37,20 @@ export default function SRNReturnPage() {
   const [importRetrying,  setImportRetrying]  = useState(false);
   const [importSaving,    setImportSaving]    = useState(false);
   const [importToast,     setImportToast]     = useState<any>(null);
+  const [navApiUsage,     setNavApiUsage]     = useState<any>(null);
   const importFileRef = React.useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (profile?.role !== 'super_admin') return;
+    (async () => {
+      try {
+        const { data: { session } } = await sb.auth.getSession();
+        const token = session?.access_token || '';
+        const res = await fetch('/api/upload/api-usage', { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) setNavApiUsage(await res.json());
+      } catch {}
+    })();
+  }, [profile?.role]);
 
   const uploadChallanAuto = async (file: File, type: 'stn'|'srn') => {
     setImportUploading(true);

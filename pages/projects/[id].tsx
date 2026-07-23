@@ -1605,6 +1605,19 @@ function SRNSectionNew({ projectId, role, onAllReceived, onCountChange, canAdd: 
   const [editId,  setEditId]  = React.useState<string|null>(null);
   const [editRow, setEditRow] = React.useState<any>({});
   const [srnPdfUploading, setSrnPdfUploading] = React.useState(false);
+  const [srnApiUsage,     setSrnApiUsage]     = React.useState<any>(null);
+
+  React.useEffect(() => {
+    if (profile?.role !== 'super_admin') return;
+    (async () => {
+      try {
+        const { data: { session } } = await (await import('@/lib/supabase')).createClient().auth.getSession();
+        const token = session?.access_token || '';
+        const res = await fetch('/api/upload/api-usage', { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) setSrnApiUsage(await res.json());
+      } catch {}
+    })();
+  }, [profile?.role]);
   const [srnPdfItems,     setSrnPdfItems]     = React.useState<any[]|null>(null);
   const srnPdfRef = React.useRef<HTMLInputElement>(null);
 
@@ -1806,6 +1819,18 @@ function SRNSectionNew({ projectId, role, onAllReceived, onCountChange, canAdd: 
                 disabled={srnPdfUploading}
                 onChange={e => { const f = e.target.files?.[0]; if (f) uploadSrnPdf(f); }} />
             </label>
+          )}
+          {profile?.role === 'super_admin' && srnApiUsage && (
+            <div title={`STN: $${srnApiUsage.stnCost?.toFixed(4)} · SRN: $${srnApiUsage.srnCost?.toFixed(4)} · ${srnApiUsage.callCount} calls`}
+              style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:T.textMuted,
+                background:T.bg, border:`1px solid ${T.border}`, borderRadius:6, padding:'3px 10px', cursor:'default' }}>
+              <div style={{ width:60, height:5, background:T.border, borderRadius:3, overflow:'hidden' }}>
+                <div style={{ width:`${Math.min(100,srnApiUsage.percentUsed||0)}%`, height:'100%',
+                  background: srnApiUsage.percentUsed > 80 ? '#DC2626' : srnApiUsage.percentUsed > 50 ? '#D97706' : T.primary,
+                  borderRadius:3, transition:'width 0.3s' }} />
+              </div>
+              <span>${(srnApiUsage.totalCost||0).toFixed(3)} / $10</span>
+            </div>
           )}
         </div>
       </div>
