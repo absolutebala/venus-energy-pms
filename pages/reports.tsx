@@ -407,10 +407,10 @@ export default function ReportsPage() {
       sheetName = 'Financial Summary';
       rows = regionFinancial.map(r => ({
         'Region': r.region,
-        'PO Value (L)': r.poValue.toFixed(2),
-        'Billed (L)': r.billed.toFixed(2),
-        'Paid (L)': r.paid.toFixed(2),
-        'Pending (L)': (r.billed - r.paid).toFixed(2),
+        'PO Value (L)': Number(r.poValue.toFixed(2)),
+        'Billed (L)': Number(r.billed.toFixed(2)),
+        'Paid (L)': Number(r.paid.toFixed(2)),
+        'Pending (L)': Number((r.billed - r.paid).toFixed(2)),
       }));
     } else if (active === 'pm') {
       sheetName = 'PM Performance';
