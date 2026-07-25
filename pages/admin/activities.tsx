@@ -83,6 +83,7 @@ export default function ActivitiesPage() {
 
   const isLoading = authLoading || projLoading || loading;
   const isSuperAdmin = !authLoading && profile?.role === 'super_admin';
+  const canViewActivities = !authLoading && ['super_admin','region_manager','general_manager','project_manager'].includes(profile?.role||'');
 
   const exportToExcel = () => {
     const wb = XLSX.utils.book_new();
@@ -109,7 +110,7 @@ export default function ActivitiesPage() {
     XLSX.writeFile(wb, `Activities_${dateFrom}_to_${dateTo}.xlsx`);
   };
 
-  if (!authLoading && !isSuperAdmin) {
+  if (!authLoading && !canViewActivities) {
     return (
       <Layout>
         <div style={{ ...card, padding: 40, textAlign: 'center' as const, color: T.textMuted }}>

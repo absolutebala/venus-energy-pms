@@ -42,7 +42,8 @@ const PM_NAV: NavItem[] = [
   { href:'/srn-return',    label:'STN / SRN Status',icon:<Package {...iconProps} />,          module:'srn_return'    },
   { href:'/site-expenses', label:'Expenses',        icon:<Wallet {...iconProps} />,           module:'site_expenses' },
   { href:'/invoices',      label:'Invoices',        icon:<FileText {...iconProps} />,         module:'invoices'      },
-  { href:'/profile',       label:'Profile',         icon:<User {...iconProps} />                                    },
+  { href:'/admin/activities', label:'Activities',   icon:<Activity {...iconProps} />                                },
+  { href:'/profile',          label:'Profile',      icon:<User {...iconProps} />                                    },
 ];
 
 const RM_NAV: NavItem[] = [
@@ -53,6 +54,7 @@ const RM_NAV: NavItem[] = [
   { href:'/invoices',          label:'Invoices',         icon:<FileText {...iconProps} />,         module:'invoices'          },
   { href:'/reports',           label:'Reports',          icon:<BarChart3 {...iconProps} />,        module:'reports'           },
   { href:'/safety-compliance', label:'Safety Compliance',icon:<Shield {...iconProps} />,           module:'safety_compliance' },
+  { href:'/admin/activities',  label:'Activities',         icon:<Activity {...iconProps} />                                        },
 ];
 
 const ACCOUNTING_NAV: NavItem[] = [
