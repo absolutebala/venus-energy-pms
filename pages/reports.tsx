@@ -397,7 +397,7 @@ export default function ReportsPage() {
     if (active === 'status') {
       sheetName = 'Project Status';
       rows = projects.map((p:any) => ({
-        'Project ID': p.id, 'Site': p.site, 'Region': p.region,
+        'Project ID': p.id, 'PO No': p.poNo || '', 'Site': p.site, 'Region': p.region,
         'Status': p.status, 'PM': p.pm, 'RM': p.rm,
         'Start Date': p.startDate, 'End Date': p.endDate,
         'Aging (days)': p.aging, 'PO Value': p.poValue,
@@ -467,6 +467,30 @@ export default function ReportsPage() {
     }
 
     const ws = XLSX.utils.json_to_sheet(rows);
+
+    // Clean hidden chars + enforce correct cell types (matches Projects export fix)
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    const numericLikeCols = ['Aging (days)', 'PO Value', 'Billed', 'Paid', 'Total Projects', 'Completed',
+      'Delayed', 'Value', 'Issued Qty', 'Utilised Qty', 'Return Qty'];
+    const headerRow = rows.length > 0 ? Object.keys(rows[0]) : [];
+    for (let r = 1; r <= range.e.r; r++) {
+      for (let c = 0; c <= range.e.c; c++) {
+        const addr = XLSX.utils.encode_cell({ r, c });
+        if (!ws[addr]) continue;
+        const colName = headerRow[c];
+        const rawVal = ws[addr].v;
+        if (numericLikeCols.includes(colName) && typeof rawVal !== 'string') {
+          ws[addr].t = 'n';
+          ws[addr].v = Number(rawVal);
+          delete ws[addr].z;
+        } else if (typeof rawVal === 'string') {
+          ws[addr].t = 's';
+          ws[addr].v = rawVal.replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ').trim();
+          delete ws[addr].z;
+        }
+      }
+    }
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
     XLSX.writeFile(wb, `Venus_Energy_${sheetName}_${new Date().toISOString().split('T')[0]}.xlsx`);
