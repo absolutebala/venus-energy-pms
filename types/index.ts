@@ -1,6 +1,7 @@
 export type UserRole =
   | 'super_admin'
   | 'region_manager'
+  | 'general_manager'
   | 'project_manager'
   | 'site_engineer'
   | 'viewer'
@@ -10,6 +11,7 @@ export type UserRole =
 export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin:     'Admin',
   region_manager:  'Region Manager',
+  general_manager: 'General Manager',
   project_manager: 'Project Manager',
   site_engineer:   'Site Engineer',
   viewer:          'Viewer',

@@ -6,9 +6,9 @@ import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle } from '@/
 import { ROLE_LABELS, UserRole } from '@/types';
 import { createClient } from '@/lib/supabase';
 
-const ROLES: UserRole[] = ['super_admin','region_manager','project_manager','site_engineer','viewer'];
-const ASSIGNABLE_ROLES: UserRole[] = ['region_manager','project_manager','site_engineer','accounting_team','vendor','viewer'];
-const ADMIN_ASSIGNABLE_ROLES: UserRole[] = ['super_admin','region_manager','project_manager','site_engineer','accounting_team','vendor','viewer'];
+const ROLES: UserRole[] = ['super_admin','region_manager','general_manager','project_manager','site_engineer','viewer'];
+const ASSIGNABLE_ROLES: UserRole[] = ['region_manager','general_manager','project_manager','site_engineer','accounting_team','vendor','viewer'];
+const ADMIN_ASSIGNABLE_ROLES: UserRole[] = ['super_admin','region_manager','general_manager','project_manager','site_engineer','accounting_team','vendor','viewer'];
 
 interface UserRow {
   id: string;
