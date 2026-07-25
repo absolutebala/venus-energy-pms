@@ -402,6 +402,32 @@ export default function InvoicesPage() {
       };
     });
     const ws = XLSX.utils.json_to_sheet(rows, { cellDates: true, dateNF: 'dd-mm-yyyy' });
+
+    // Clean hidden chars + enforce correct cell types (matches Projects export fix)
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    const dateCols = ['PO Date', 'Invoice Date'];
+    const numCols = ['S.No', 'Basic Amount (₹)', 'Tax Amount (₹)', 'Total Amount (₹)', 'TDS (₹)',
+      'M1 Payment (₹)', 'Payment Received (₹)', 'Paid Amount (₹)', 'Profit 1 (₹)', 'Profit 2 (₹)',
+      'Additional Capital (₹)', 'Other Expenses (₹)', 'Interest (₹)', 'Incentive (₹)', 'Balance Amount (₹)'];
+    const headerRow = rows.length > 0 ? Object.keys(rows[0]) : [];
+    for (let r = 1; r <= range.e.r; r++) {
+      for (let c = 0; c <= range.e.c; c++) {
+        const addr = XLSX.utils.encode_cell({ r, c });
+        if (!ws[addr]) continue;
+        const colName = headerRow[c];
+        if (dateCols.includes(colName)) continue;
+        if (numCols.includes(colName)) {
+          ws[addr].t = 'n';
+          ws[addr].v = Number(ws[addr].v);
+          delete ws[addr].z;
+        } else {
+          ws[addr].t = 's';
+          ws[addr].v = String(ws[addr].v).replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ').trim();
+          delete ws[addr].z;
+        }
+      }
+    }
+
     ws['!cols'] = [{wch:6},{wch:16},{wch:14},{wch:16},{wch:14},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14}];
     // Enable AutoFilter on header row
     if (ws['!ref']) ws['!autofilter'] = { ref: ws['!ref'] };

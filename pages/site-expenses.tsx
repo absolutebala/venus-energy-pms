@@ -471,6 +471,30 @@ export default function SiteExpensesPage() {
                     'Txn Ref': e.paidTxnRef||'',
                   }));
                   const ws = XLSX.utils.json_to_sheet(rows, { cellDates: true, dateNF: 'dd-mm-yyyy' });
+
+                  // Clean hidden chars + enforce correct cell types (matches Projects export fix)
+                  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+                  const dateCols = ['Date'];
+                  const numCols = ['S.No', 'Amount (₹)'];
+                  const headerRow = rows.length > 0 ? Object.keys(rows[0]) : [];
+                  for (let r = 1; r <= range.e.r; r++) {
+                    for (let c = 0; c <= range.e.c; c++) {
+                      const addr = XLSX.utils.encode_cell({ r, c });
+                      if (!ws[addr]) continue;
+                      const colName = headerRow[c];
+                      if (dateCols.includes(colName)) continue;
+                      if (numCols.includes(colName)) {
+                        ws[addr].t = 'n';
+                        ws[addr].v = Number(ws[addr].v);
+                        delete ws[addr].z;
+                      } else {
+                        ws[addr].t = 's';
+                        ws[addr].v = String(ws[addr].v).replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ').trim();
+                        delete ws[addr].z;
+                      }
+                    }
+                  }
+
                   ws['!cols'] = [{wch:6},{wch:12},{wch:14},{wch:16},{wch:16},{wch:12},{wch:20},{wch:16},{wch:10},{wch:16}];
                   ws['!autofilter'] = { ref: ws['!ref'] || 'A1' };
                   const wb = XLSX.utils.book_new();
