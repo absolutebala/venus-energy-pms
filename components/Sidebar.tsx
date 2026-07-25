@@ -79,6 +79,7 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
   const { profile, can, loading, isVendor } = useAuth();
   const isPM         = !loading && profile?.role === 'project_manager';
   const isRM         = !loading && profile?.role === 'region_manager';
+  const isGM         = !loading && profile?.role === 'general_manager';
   const isAccounting = !loading && profile?.role === 'accounting_team';
   const isSuperAdmin = !loading && profile?.role === 'super_admin';
 
@@ -116,6 +117,7 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
   const mainNav: NavItem[] = isVendor ? VENDOR_NAV
     : isPM         ? PM_NAV
     : isRM         ? RM_NAV
+    : isGM         ? RM_NAV
     : isAccounting ? ACCOUNTING_NAV
     : SA_NAV;
 
