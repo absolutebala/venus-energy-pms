@@ -1437,6 +1437,8 @@ export default function Dashboard() {
           activeFilters={{ status:dashStatus, region:dashRegion, type:dashType, pm:dashPM, vendor:dashVendor }} />}
         {role === 'region_manager'  && <RegionManagerDashboard projects={isLoading ? [] : filteredProjects} rmName={profile?.full_name||''}
           activeFilters={{ status:dashStatus, region:dashRegion, type:dashType, pm:dashPM, vendor:dashVendor }} />}
+        {role === 'general_manager' && <RegionManagerDashboard projects={isLoading ? [] : filteredProjects} rmName={profile?.full_name||''}
+          activeFilters={{ status:dashStatus, region:dashRegion, type:dashType, pm:dashPM, vendor:dashVendor }} />}
         {role === 'project_manager' && <ProjectManagerDashboard projects={isLoading ? [] : filteredProjects} pmName={profile?.full_name||''}
           activeFilters={{ status:dashStatus, region:dashRegion, type:dashType, pm:dashPM, vendor:dashVendor }} />}
         {role === 'site_engineer'   && <SiteEngineerDashboard  projects={isLoading ? [] : projectsWithAging} />}
