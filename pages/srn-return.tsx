@@ -867,7 +867,7 @@ export default function SRNReturnPage() {
                 {kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='pending_approval' && <div style={{ fontSize:10, color:'#D97706', marginTop:2 }}>● Filtered</div>}
               </div>
               <div style={{ background:'#FEF2F2', borderRadius:8, padding:'10px 14px', border:'2px solid transparent' }}>
-                <div style={{ fontSize:10, fontWeight:600, color:'#991B1B', textTransform:'uppercase' as const, marginBottom:4 }}>⏱ Aging &gt;20 Days</div>
+                <div style={{ fontSize:10, fontWeight:600, color:'#991B1B', textTransform:'uppercase' as const, marginBottom:4 }}>⏱ Lifted &gt;20 Days Ago</div>
                 <div style={{ fontSize:24, fontWeight:800, color:'#DC2626' }}>{stnAgingCount}</div>
               </div>
             </div>
