@@ -8,6 +8,7 @@ import { useProjects } from '@/context/ProjectContext';
 import { usePOItems } from '@/context/POItemContext';
 import { createClient } from '@/lib/supabase';
 import { T as Theme, card } from '@/lib/theme';
+import DateInput from '@/components/DateInput';
 
 export default function SRNReturnPage() {
   const router = useRouter();
@@ -242,6 +243,8 @@ export default function SRNReturnPage() {
   // View toggles + card filter
   const [showSRN, setShowSRN] = useState(true);
   const [showSTN, setShowSTN] = useState(true);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo,   setDateTo]   = useState('');
   // cardFilter: { type:'stn'|'srn', field:'pm'|'region', value:string } | null
   const [cardFilter, setCardFilter] = useState<{type:string;field:string;value:string}|null>(null);
   const [pendingOnly, setPendingOnly] = useState(false);
@@ -625,6 +628,22 @@ export default function SRNReturnPage() {
           if (!match) return false;
         }
       }
+      // Apply STN Lifted Date / SRN Return Date range filter
+      if (dateFrom || dateTo) {
+        const stnMatch = showSTN && proj.stnItems.some((i:any) => {
+          if (!i.liftedDate) return false;
+          if (dateFrom && i.liftedDate < dateFrom) return false;
+          if (dateTo   && i.liftedDate > dateTo)   return false;
+          return true;
+        });
+        const srnMatch = showSRN && proj.srnItems.some((i:any) => {
+          if (!i.return_date) return false;
+          if (dateFrom && i.return_date < dateFrom) return false;
+          if (dateTo   && i.return_date > dateTo)   return false;
+          return true;
+        });
+        if (!stnMatch && !srnMatch) return false;
+      }
       // Apply search
       if (!search) return true;
       const s = search.toLowerCase();
@@ -633,7 +652,7 @@ export default function SRNReturnPage() {
              proj.poNo.toLowerCase().includes(s) ||
              proj.vendor.toLowerCase().includes(s);
     });
-  }, [allProjectIds, srnGrouped, stnGrouped, cardFilter, pendingOnly, statusSubFilter, search, kpiSubFilter, statusDistFilter, agingDistFilter, projects]);
+  }, [allProjectIds, srnGrouped, stnGrouped, cardFilter, pendingOnly, statusSubFilter, search, kpiSubFilter, statusDistFilter, agingDistFilter, projects, dateFrom, dateTo, showSTN, showSRN]);
 
   // ── Pagination ───────────────────────────────────────────────────────────
   const PER_PAGE = 10;
@@ -651,7 +670,7 @@ export default function SRNReturnPage() {
       const p = Number(router.query.page); if(p&&p>0) setPage(p);
     }
   }, [router.isReady]);
-  React.useEffect(() => { setPage(1); router.replace({query:{...router.query,page:1}},undefined,{shallow:true}); }, [search, cardFilter, pendingOnly, statusSubFilter, showSRN, showSTN, kpiSubFilter, statusDistFilter, agingDistFilter]);
+  React.useEffect(() => { setPage(1); router.replace({query:{...router.query,page:1}},undefined,{shallow:true}); }, [search, cardFilter, pendingOnly, statusSubFilter, showSRN, showSTN, kpiSubFilter, statusDistFilter, agingDistFilter, dateFrom, dateTo]);
   const totalPages = Math.ceil(filteredProjects.length / PER_PAGE);
   const paginated  = filteredProjects.slice((page-1)*PER_PAGE, page*PER_PAGE);
   const isLoading  = loading || projLoading || stnLoading;
@@ -793,6 +812,18 @@ export default function SRNReturnPage() {
             <input value={search} onChange={e=>setSearch(e.target.value)}
               placeholder="Search project, vendor, PO…"
               style={{ border:`1px solid ${Theme.border}`, borderRadius:8, padding:'8px 14px', fontSize:13, outline:'none', width:220 }} />
+            <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+              <span style={{ fontSize:11, color:Theme.textMuted, fontWeight:600 }}>Lifted/Return Date</span>
+              <DateInput value={dateFrom} onChange={setDateFrom}
+                style={{ border:`1px solid ${Theme.border}`, borderRadius:8, padding:'7px 10px', fontSize:12, outline:'none' }} />
+              <span style={{ fontSize:12, color:Theme.textMuted }}>to</span>
+              <DateInput value={dateTo} onChange={setDateTo}
+                style={{ border:`1px solid ${Theme.border}`, borderRadius:8, padding:'7px 10px', fontSize:12, outline:'none' }} />
+              {(dateFrom||dateTo) && <button onClick={()=>{ setDateFrom(''); setDateTo(''); }}
+                style={{ fontSize:11, color:Theme.danger||'#DC2626', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:6, padding:'4px 10px', cursor:'pointer' }}>
+                ✕ Clear
+              </button>}
+            </div>
           </div>
         </div>
 
