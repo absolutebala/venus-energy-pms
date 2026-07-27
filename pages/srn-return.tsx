@@ -684,9 +684,13 @@ export default function SRNReturnPage() {
     const stnRows: any[] = [];
     let sno = 1;
     filteredProjects.forEach((proj:any) => {
+      const proj0 = projectMap.get(proj.projectId);
       proj.stnItems.forEach((item:any) => {
         stnRows.push({
           'S.No': sno++,
+          'Project No': proj0?.id || proj.projectId,
+          'Project ID': proj0?.projectId || '—',
+          'Project Status': proj0?.projectStatus || 'Not Set',
           'Indus ID': proj.indusId || '—',
           'Site Name': proj.projectName,
           'PO No': proj.poNo,
@@ -694,8 +698,13 @@ export default function SRNReturnPage() {
           'PM': proj.pm,
           'Region': proj.region,
           'Description': item.description || '—',
+          'BOQ No': item.boqReqNo || '—',
+          'Serial No': item.serialNo || '—',
           'Issued Qty': item.issuedQty ?? '—',
           'Utilised Qty': item.utilisedQty ?? '—',
+          'Remaining Qty': (item.issuedQty != null && item.utilisedQty != null) ? (Number(item.issuedQty) - Number(item.utilisedQty)) : '—',
+          'Total Amount': Number(item.amount || 0),
+          'STN Lifted Date': item.liftedDate || '—',
           'Status': item.utilisedStatus || '—',
           'Gate Entry No': item.gateEntryNo || '—',
           'Vehicle No': item.vehicleNo || '—',
@@ -709,9 +718,13 @@ export default function SRNReturnPage() {
     const srnRows: any[] = [];
     sno = 1;
     filteredProjects.forEach((proj:any) => {
+      const proj0 = projectMap.get(proj.projectId);
       proj.srnItems.forEach((item:any) => {
         srnRows.push({
           'S.No': sno++,
+          'Project No': proj0?.id || proj.projectId,
+          'Project ID': proj0?.projectId || '—',
+          'Project Status': proj0?.projectStatus || 'Not Set',
           'Indus ID': proj.indusId || '—',
           'Site Name': proj.projectName,
           'PO No': proj.poNo,
@@ -719,8 +732,13 @@ export default function SRNReturnPage() {
           'PM': proj.pm,
           'Region': proj.region,
           'Description': item.description || '—',
+          'BOQ No': item.boq_req_no || '—',
+          'Serial No': item.serial_no || '—',
           'Issued Qty': item.quantity ?? '—',
           'Utilised Qty': item.return_qty ?? '—',
+          'Remaining Qty': (item.quantity != null && item.return_qty != null) ? (Number(item.quantity) - Number(item.return_qty)) : '—',
+          'Total Amount': Number(item.amount || 0),
+          'SRN Return Date': item.return_date || '—',
           'Status': item.received ? 'Received' : 'Pending',
           'Gate Entry No': item.gate_entry_no || '—',
           'Vehicle No': item.vehicle_no || '—',
