@@ -4,6 +4,8 @@ import Link from 'next/link';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle , fmtINR} from '@/lib/theme';
+
+const fmtFull = (n: number) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits:0, maximumFractionDigits:0 });
 import DateInput from '@/components/DateInput';
 import Toast from '@/components/Toast';
 import MultiSelect from '@/components/MultiSelect';
@@ -660,8 +662,8 @@ export default function ProjectsPage() {
           const totalPOValue = filtered.reduce((a:number,p:any)=>a+(p.poValue||0),0);
           const summaryCards = [
             { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value: String(filtered.length), color: T.primary, icon:'📁', filter:'All' as string|null, amount:null as string|null },
-            { label:'PO Open',        value: String(poOpen),   color:'#059669', icon:'🟢', filter:'PO Open'  as string|null, amount: fmtINR(poOpenAmount) },
-            { label:'PO Closed',      value: String(poClosed), color:'#DC2626', icon:'🔴', filter:'PO Closed' as string|null, amount: fmtINR(poClosedAmount) },
+            { label:'PO Open',        value: String(poOpen),   color:'#059669', icon:'🟢', filter:'PO Open'  as string|null, amount: fmtFull(poOpenAmount) },
+            { label:'PO Closed',      value: String(poClosed), color:'#DC2626', icon:'🔴', filter:'PO Closed' as string|null, amount: fmtFull(poClosedAmount) },
             { label:'Total PO Value', value: fmtINR(totalPOValue), color:'#7C3AED', icon:'💰', filter:null, amount:null as string|null },
           ];
           return (
