@@ -464,25 +464,34 @@ export default function SiteExpensesPage() {
                     datePreset !== 'all'
                   );
                   if (!hasAnyFilter) { setShowExportWarning(true); return; }
-                  const rows = allExpenses.map((e:any, idx:number) => ({
-                    'S.No': idx+1,
-                    'Project No': e.projectId || '',
-                    'Date': e.expenseDate ? new Date(e.expenseDate) : '',
-                    'PO Number': (projects as any[]).find((p:any)=>p.id===e.projectId)?.poNo || e.projectId || '',
-                    'Indus ID': (projects as any[]).find((p:any)=>p.id===e.projectId)?.indusId || '',
-                    'Site': e.site||'',
-                    'Expense Type': e.expenseType||'',
-                    'Amount (₹)': Number(e.amount||0),
-                    'Remarks': e.remarks||'',
-                    'Vendor': e.vendor||'',
-                    'Status': e.status||'',
-                    'Txn Ref': e.paidTxnRef||'',
-                  }));
+                  const rows = allExpenses.map((e:any, idx:number) => {
+                    const proj = (projects as any[]).find((p:any)=>p.id===e.projectId);
+                    return {
+                      'S.No': idx+1,
+                      'Project No': e.projectId || '',
+                      'Req. Date': e.expenseDate ? new Date(e.expenseDate) : '',
+                      'PO Number': proj?.poNo || e.projectId || '',
+                      'Project': proj?.type || '',
+                      'Indus ID': proj?.indusId || '',
+                      'Site Name': proj?.site || '',
+                      'Project Status': proj?.projectStatus || '',
+                      'Site': e.site||'',
+                      'Remarks': e.remarks||'',
+                      'Expense Type': e.expenseType||'',
+                      'Amount (₹)': Number(e.amount||0),
+                      'Txn Ref': e.paidTxnRef||'',
+                      'Payment Date': e.paidAt ? new Date(e.paidAt.split('T')[0]) : '',
+                      'Payment Status': e.status||'',
+                      'Vendor': e.vendor||'',
+                      'Circle': proj?.region || '',
+                      'PM': proj?.pm || '',
+                    };
+                  });
                   const ws = XLSX.utils.json_to_sheet(rows, { cellDates: true, dateNF: 'dd-mm-yyyy' });
 
                   // Clean hidden chars + enforce correct cell types (matches Projects export fix)
                   const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-                  const dateCols = ['Date'];
+                  const dateCols = ['Req. Date', 'Payment Date'];
                   const numCols = ['S.No', 'Amount (₹)'];
                   const headerRow = rows.length > 0 ? Object.keys(rows[0]) : [];
                   for (let r = 1; r <= range.e.r; r++) {
