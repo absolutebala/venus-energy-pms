@@ -360,8 +360,6 @@ export default function ProjectsPage() {
   const getAgeDays = (id: string) => {
     const p = projectsById.get(id);
     if (!p) return 0;
-    if (dateFrom && p.endDate && p.endDate < dateFrom) return false;
-    if (dateTo   && p.endDate && p.endDate > dateTo)   return false;
     const ref = p.poDate || p.startDate || p.createdAt;
     if (!ref) return 0;
     // Use endDate as reference when WCC has been raised
@@ -400,6 +398,8 @@ export default function ProjectsPage() {
     if (regionFilter.length && !regionFilter.includes((p as any).region||'— Unassigned —')) return false;
     if (noVendorFilter && (p as any).vendor) return false;
     if (vendorFilter.length && !vendorFilter.includes((p as any).vendor||'— Unassigned —')) return false;
+    if (dateFrom && (!p.endDate || p.endDate < dateFrom)) return false;
+    if (dateTo   && (!p.endDate || p.endDate > dateTo))   return false;
     return searchMatch(p);
   });
 
