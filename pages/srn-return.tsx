@@ -722,9 +722,9 @@ export default function SRNReturnPage() {
       <thead>
         <tr>
           <th style={{ textAlign:'left' as const, padding:'4px 6px', color:Theme.textMuted, fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Name</th>
-          <th style={{ textAlign:'right' as const, padding:'4px 6px', color:'#6B7280', fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Not Sub.</th>
+          <th style={{ textAlign:'right' as const, padding:'4px 6px', color:'#6B7280', fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Pending Items</th>
           <th style={{ textAlign:'right' as const, padding:'4px 6px', color:'#DC2626', fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Rejected</th>
-          <th style={{ textAlign:'right' as const, padding:'4px 6px', color:'#D97706', fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Pending</th>
+          <th style={{ textAlign:'right' as const, padding:'4px 6px', color:'#D97706', fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Pending Approval</th>
           <th style={{ textAlign:'right' as const, padding:'4px 6px', color:'#166534', fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Approved</th>
           <th style={{ textAlign:'right' as const, padding:'4px 6px', color:Theme.textMuted, fontWeight:600, borderBottom:`1px solid ${Theme.border}` }}>Total</th>
         </tr>
