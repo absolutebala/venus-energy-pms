@@ -655,12 +655,14 @@ export default function ProjectsPage() {
         {(()=>{
           const poOpen   = filtered.filter((p:any)=>(p as any).poStatus==='Open').length;
           const poClosed = filtered.filter((p:any)=>(p as any).poStatus==='Closed').length;
+          const poOpenAmount   = filtered.filter((p:any)=>(p as any).poStatus==='Open').reduce((a:number,p:any)=>a+(p.poValue||0),0);
+          const poClosedAmount = filtered.filter((p:any)=>(p as any).poStatus==='Closed').reduce((a:number,p:any)=>a+(p.poValue||0),0);
           const totalPOValue = filtered.reduce((a:number,p:any)=>a+(p.poValue||0),0);
           const summaryCards = [
-            { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value: String(filtered.length), color: T.primary, icon:'📁', filter:'All' as string|null },
-            { label:'PO Open',        value: String(poOpen),   color:'#059669', icon:'🟢', filter:'PO Open'  as string|null },
-            { label:'PO Closed',      value: String(poClosed), color:'#DC2626', icon:'🔴', filter:'PO Closed' as string|null },
-            { label:'Total PO Value', value: fmtINR(totalPOValue), color:'#7C3AED', icon:'💰', filter:null },
+            { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value: String(filtered.length), color: T.primary, icon:'📁', filter:'All' as string|null, amount:null as string|null },
+            { label:'PO Open',        value: String(poOpen),   color:'#059669', icon:'🟢', filter:'PO Open'  as string|null, amount: fmtINR(poOpenAmount) },
+            { label:'PO Closed',      value: String(poClosed), color:'#DC2626', icon:'🔴', filter:'PO Closed' as string|null, amount: fmtINR(poClosedAmount) },
+            { label:'Total PO Value', value: fmtINR(totalPOValue), color:'#7C3AED', icon:'💰', filter:null, amount:null as string|null },
           ];
           return (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
@@ -674,6 +676,7 @@ export default function ProjectsPage() {
                     <div>
                       <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase' as const, letterSpacing:0.5, marginBottom:4 }}>{s.label}</div>
                       <div style={{ fontSize:28, fontWeight:700, color:T.text }}>{s.value}</div>
+                      {s.amount && <div style={{ fontSize:12, color:s.color, fontWeight:600, marginTop:2 }}>{s.amount}</div>}
                     </div>
                     <div style={{ fontSize:22 }}>{s.icon}</div>
                   </div>
