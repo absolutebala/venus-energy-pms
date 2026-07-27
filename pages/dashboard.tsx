@@ -610,8 +610,8 @@ function SuperAdminDashboard({ projects: propProjects, loading=false, activeFilt
         {[
           { label:'Pending Expense Requests', value:expPending.length,             color:'#D97706', icon:'📋', sub:`₹${(expPendingAmt/1000).toFixed(1)}K pending`, href:'/site-expenses' },
           { label:'Paid Expenses',            value:expPaid.length,                color:T.success, icon:'✅', sub:`₹${(expPaidAmt/1000).toFixed(1)}K paid`,    href:'/site-expenses' },
-          { label:'Total Invoices',           value:invTotal,                      color:T.primary, icon:'🧾', sub:`${invSubmitted} submitted`,                   href:'/invoices'      },
-          { label:'Total Invoice Value',      value:fmtFull(invTotalValue), color:'#7C3AED', icon:'💰', sub:`${invTotal} invoices · ${invDraft} drafts`,              href:'/invoices'      },
+          { label:'Total Invoices',           value:invTotal,                      color:T.primary, icon:'🧾', sub:invSubmitted>0 ? `${invSubmitted} submitted` : '',                   href:'/invoices'      },
+          { label:'Total Invoice Value',      value:fmtFull(invTotalValue), color:'#7C3AED', icon:'💰', sub:invDraft>0 ? `${invTotal} invoices · ${invDraft} drafts` : `${invTotal} invoices`,              href:'/invoices'      },
         ].map((s,i)=>(
           <div key={i} onClick={()=>openNew(s.href)}
             style={{ ...card, position:'relative', overflow:'hidden', padding:'16px 18px', cursor:'pointer', transition:'all 0.15s' }}
