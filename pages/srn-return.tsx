@@ -385,6 +385,7 @@ export default function SRNReturnPage() {
   const stnPendingCount  = roleStnItems.filter(i => i.utilisedStatus === 'submitted').length;
   const stnRejectedCount = roleStnItems.filter(i => i.utilisedStatus === 'pm_rejected').length;
   const stnApprovedCount = roleStnItems.filter(i => i.utilisedStatus === 'pm_approved').length;
+  const stnAgingCount = roleStnItems.filter((i:any) => i.liftedDate && Math.floor((new Date().getTime() - new Date(i.liftedDate).getTime())/86400000) > 20).length;
   const stnNotSubmittedCount = roleStnItems.filter(i => i.utilisedStatus === 'pending' || !i.utilisedStatus || i.utilisedStatus === '').length;
   const srnPendingCount  = roleSrnItems.filter((i:any) => !i.received).length;
   const srnRejectedCount = roleSrnItems.filter((i:any) => i.received === false && i.pm_comment).length;
@@ -844,7 +845,7 @@ export default function SRNReturnPage() {
                 </span>
               )}
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:10, marginBottom:16 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr 1fr', gap:10, marginBottom:16 }}>
               <div style={{ background:Theme.primaryLight, borderRadius:8, padding:'10px 14px' }}>
                 <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4 }}>Total Items</div>
                 <div style={{ fontSize:24, fontWeight:800, color:Theme.primary }}>{roleStnItems.length}</div>
@@ -864,6 +865,10 @@ export default function SRNReturnPage() {
                 <div style={{ fontSize:10, fontWeight:600, color:'#92400E', textTransform:'uppercase' as const, marginBottom:4 }}>⏳ Pending Approval</div>
                 <div style={{ fontSize:24, fontWeight:800, color:'#D97706' }}>{stnPendingCount}</div>
                 {kpiSubFilter?.type==='stn'&&kpiSubFilter?.status==='pending_approval' && <div style={{ fontSize:10, color:'#D97706', marginTop:2 }}>● Filtered</div>}
+              </div>
+              <div style={{ background:'#FEF2F2', borderRadius:8, padding:'10px 14px', border:'2px solid transparent' }}>
+                <div style={{ fontSize:10, fontWeight:600, color:'#991B1B', textTransform:'uppercase' as const, marginBottom:4 }}>⏱ Aging &gt;20 Days</div>
+                <div style={{ fontSize:24, fontWeight:800, color:'#DC2626' }}>{stnAgingCount}</div>
               </div>
             </div>
           </div>
@@ -1198,7 +1203,7 @@ export default function SRNReturnPage() {
                     <div style={{ overflowX:'auto' as const }}>
                       <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                         <thead>
-                          <tr>{['#','Description','UOM','Qty','Rate','GST%','Amount','Utilised Qty','PM Approved Qty','Comments','Status'].map((h,i)=>(
+                          <tr>{['#','Description','UOM','Qty','Rate','GST%','Amount','Aging (Days)','Utilised Qty','PM Approved Qty','Comments','Status'].map((h,i)=>(
                             <th key={i} style={{ ...thS }}>{h}</th>
                           ))}</tr>
                         </thead>
@@ -1212,6 +1217,9 @@ export default function SRNReturnPage() {
                               <td style={tdS}>{m.rate||'—'}</td>
                               <td style={tdS}>{m.gstRate}%</td>
                               <td style={{ ...tdS, fontWeight:600 }}>{Number(m.amount||0).toLocaleString('en-IN')}</td>
+                              <td style={{ ...tdS, fontWeight:700, color: m.liftedDate ? (Math.floor((new Date().getTime() - new Date(m.liftedDate).getTime())/86400000) > 20 ? '#DC2626' : Theme.text) : Theme.textMuted }}>
+                                {m.liftedDate ? Math.floor((new Date().getTime() - new Date(m.liftedDate).getTime())/86400000) : '—'}
+                              </td>
                               <td style={tdS}>{m.utilisedQty??'—'}</td>
                               <td style={{ ...tdS, fontWeight:700, color:m.utilisedStatus==='pm_approved'?'#0D9488':m.utilisedStatus==='pm_rejected'?'#DC2626':'#D97706' }}>{m.utilisedStatus==='pm_approved'?m.pmApprovedQty:m.utilisedStatus==='pm_rejected'?'Rejected':'Pending'}</td>
                               <td style={{ ...tdS, textAlign:'center' as const }}>
