@@ -83,7 +83,7 @@ export default function ActivitiesPage() {
 
   const isLoading = authLoading || projLoading || loading;
   const isSuperAdmin = !authLoading && profile?.role === 'super_admin';
-  const canViewActivities = !authLoading && ['super_admin','region_manager','general_manager','project_manager'].includes(profile?.role||'');
+  const canViewActivities = !authLoading && ['super_admin','region_manager','general_manager'].includes(profile?.role||'');
 
   const exportToExcel = () => {
     const wb = XLSX.utils.book_new();

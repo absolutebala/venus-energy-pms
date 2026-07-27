@@ -42,7 +42,6 @@ const PM_NAV: NavItem[] = [
   { href:'/srn-return',    label:'STN / SRN Status',icon:<Package {...iconProps} />,          module:'srn_return'    },
   { href:'/site-expenses', label:'Expenses',        icon:<Wallet {...iconProps} />,           module:'site_expenses' },
   { href:'/invoices',      label:'Invoices',        icon:<FileText {...iconProps} />,         module:'invoices'      },
-  { href:'/admin/activities', label:'Activities',   icon:<Activity {...iconProps} />                                },
   { href:'/profile',          label:'Profile',      icon:<User {...iconProps} />                                    },
 ];
 
