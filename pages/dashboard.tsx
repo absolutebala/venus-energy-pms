@@ -1199,7 +1199,7 @@ function AccountingDashboard({ projects }: { projects: typeof ALL_PROJECTS }) {
         <KpiCard label="Pending Expenses"  value={expPending.length}                          icon="📋" color={T.warning} sub={`₹${(expPendingAmt/1000).toFixed(1)}K`} />
         <KpiCard label="Paid Expenses"     value={expPaid.length}                             icon="✅" color={T.success} sub={`₹${(expPaidAmt/1000).toFixed(1)}K`} />
         <KpiCard label="Submitted Invoices" value={pending.length}                            icon="🧾" color={T.primary} onClick={()=>openNew('/invoices')} />
-        <KpiCard label="Total Invoice Value" value={fmtFull(invTotalValue)} icon="💰" color='#7C3AED' />
+        <KpiCard label="Total Invoice Value" value={fmtFull(invTotalValue)} icon="💰" color='#7C3AED' sub={`${invoices.length} invoices`} />
       </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
