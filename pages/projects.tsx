@@ -6,6 +6,13 @@ import { useAuth } from '@/context/AuthContext';
 import { T, card, badge, th, td, btnPrimary, btnSecondary, inputStyle , fmtINR} from '@/lib/theme';
 
 const fmtFull = (n: number) => '₹' + Number(n).toLocaleString('en-IN', { minimumFractionDigits:0, maximumFractionDigits:0 });
+const inWords = (n: number): string => {
+  if (!n || n === 0) return 'Zero';
+  if (n >= 10000000) return `${(n/10000000).toFixed(2)} Crores`;
+  if (n >= 100000)   return `${(n/100000).toFixed(2)} Lakhs`;
+  if (n >= 1000)     return `${(n/1000).toFixed(2)} Thousands`;
+  return `${n.toFixed(2)} Rupees`;
+};
 import DateInput from '@/components/DateInput';
 import Toast from '@/components/Toast';
 import MultiSelect from '@/components/MultiSelect';
@@ -661,10 +668,10 @@ export default function ProjectsPage() {
           const poClosedAmount = filtered.filter((p:any)=>(p as any).poStatus==='Closed').reduce((a:number,p:any)=>a+(p.poValue||0),0);
           const totalPOValue = filtered.reduce((a:number,p:any)=>a+(p.poValue||0),0);
           const summaryCards = [
-            { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value: String(filtered.length), color: T.primary, icon:'📁', filter:'All' as string|null, amount:null as string|null },
-            { label:'PO Open',        value: String(poOpen),   color:'#059669', icon:'🟢', filter:'PO Open'  as string|null, amount: fmtFull(poOpenAmount) },
-            { label:'PO Closed',      value: String(poClosed), color:'#DC2626', icon:'🔴', filter:'PO Closed' as string|null, amount: fmtFull(poClosedAmount) },
-            { label:'Total PO Value', value: fmtINR(totalPOValue), color:'#7C3AED', icon:'💰', filter:null, amount:null as string|null },
+            { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value: String(filtered.length), color: T.primary, icon:'📁', filter:'All' as string|null, amount:null as string|null, words:null as string|null },
+            { label:'PO Open',        value: String(poOpen),   color:'#059669', icon:'🟢', filter:'PO Open'  as string|null, amount: fmtFull(poOpenAmount), words: inWords(poOpenAmount) },
+            { label:'PO Closed',      value: String(poClosed), color:'#DC2626', icon:'🔴', filter:'PO Closed' as string|null, amount: fmtFull(poClosedAmount), words: inWords(poClosedAmount) },
+            { label:'Total PO Value', value: fmtFull(totalPOValue), color:'#7C3AED', icon:'💰', filter:null, amount:null as string|null, words: inWords(totalPOValue) },
           ];
           return (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
@@ -679,6 +686,7 @@ export default function ProjectsPage() {
                       <div style={{ fontSize:11, color:T.textMuted, textTransform:'uppercase' as const, letterSpacing:0.5, marginBottom:4 }}>{s.label}</div>
                       <div style={{ fontSize:28, fontWeight:700, color:T.text }}>{s.value}</div>
                       {s.amount && <div style={{ fontSize:12, color:s.color, fontWeight:600, marginTop:2 }}>{s.amount}</div>}
+                      {(s as any).words && <div style={{ fontSize:10, color:T.textMuted, marginTop:2 }}>{(s as any).words}</div>}
                     </div>
                     <div style={{ fontSize:22 }}>{s.icon}</div>
                   </div>
