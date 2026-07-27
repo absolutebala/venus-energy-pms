@@ -354,6 +354,8 @@ export default function SiteExpensesPage() {
         {(() => {
           const filteredPending = allExpenses.filter((e:any) => e.status === 'pending').reduce((a:number,e:any) => a + Number(e.amount), 0);
           const filteredPaid    = allExpenses.filter((e:any) => e.status === 'paid').reduce((a:number,e:any) => a + Number(e.amount), 0);
+          const filteredPendingCount = allExpenses.filter((e:any) => e.status === 'pending').length;
+          const filteredPaidCount    = allExpenses.filter((e:any) => e.status === 'paid').length;
           return (
             <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
               <div style={{ ...card, padding:"14px 16px" }}>
@@ -361,18 +363,24 @@ export default function SiteExpensesPage() {
                 <div style={{ fontSize:18, fontWeight:800, color:T.primary }}>{allExpenses.length}</div>
               </div>
               <div style={{ ...card, padding:"14px 16px" }}>
-                <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:"uppercase" as const, marginBottom:4 }}>Pending Amount</div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                  <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:"uppercase" as const, marginBottom:4 }}>Pending Amount</div>
+                  <div style={{ fontSize:11, fontWeight:700, color:T.warning, background:"#FFFBEB", border:`1px solid ${T.warning}`, borderRadius:20, padding:"1px 8px" }}>{filteredPendingCount}</div>
+                </div>
                 <div style={{ fontSize:18, fontWeight:800, color:T.warning }}>{fmt(filteredPending)}</div>
                 <div style={{ fontSize:10, color:T.textMuted, marginTop:3 }}>{inWords(filteredPending)}</div>
               </div>
               <div style={{ ...card, padding:"14px 16px" }}>
-                <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:"uppercase" as const, marginBottom:4 }}>Paid Amount</div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                  <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:"uppercase" as const, marginBottom:4 }}>Paid Amount</div>
+                  <div style={{ fontSize:11, fontWeight:700, color:T.success, background:"#F0FDF4", border:`1px solid ${T.success}`, borderRadius:20, padding:"1px 8px" }}>{filteredPaidCount}</div>
+                </div>
                 <div style={{ fontSize:18, fontWeight:800, color:T.success }}>{fmt(filteredPaid)}</div>
                 <div style={{ fontSize:10, color:T.textMuted, marginTop:3 }}>{inWords(filteredPaid)}</div>
               </div>
               <div style={{ ...card, padding:"14px 16px" }}>
-                <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:"uppercase" as const, marginBottom:4 }}>Pending Requests</div>
-                <div style={{ fontSize:18, fontWeight:800, color:T.danger }}>{allExpenses.filter((e:any)=>e.status==="pending").length}</div>
+                <div style={{ fontSize:11, color:T.textMuted, fontWeight:600, textTransform:"uppercase" as const, marginBottom:4 }}>Paid Requests</div>
+                <div style={{ fontSize:18, fontWeight:800, color:T.success }}>{filteredPaidCount}</div>
               </div>
             </div>
           );
