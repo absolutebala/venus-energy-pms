@@ -2,6 +2,15 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
 export async function middleware(request: NextRequest) {
+  // Cron/CRON_SECRET-protected API routes authenticate themselves via a bearer
+  // token, not a browser session cookie. Vercel's cron invoker has no session,
+  // so without this bypass every scheduled run gets redirected to /login before
+  // the route's own CRON_SECRET check ever runs.
+  const cronRoutes = ['/api/backup/weekly-export', '/api/oracle/sync-po'];
+  if (cronRoutes.some((r) => request.nextUrl.pathname.startsWith(r))) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({ request: { headers: request.headers } });
 
   const supabase = createServerClient(
