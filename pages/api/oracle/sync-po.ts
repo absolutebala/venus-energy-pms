@@ -127,7 +127,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           await admin.from('activity_log').insert({
             project_id: projectId,
             action: `Project created from Oracle ERP sync — PO ${po.OrderNumber}`,
-            performed_by: 'Oracle Sync', role: 'system',
+            by_name: 'Oracle Sync', by_role: 'system',
           });
         } catch {}
         created++;
@@ -147,7 +147,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await admin.from('activity_log').insert({
         project_id: 'SYSTEM',
         action: `Oracle ERP PO sync complete — ${created} created, ${oraclePOs.length - newPOs.length} skipped`,
-        performed_by: 'Oracle Sync', role: 'system',
+        by_name: 'Oracle Sync', by_role: 'system',
       });
     } catch {}
 
@@ -159,7 +159,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await admin.from('activity_log').insert({
         project_id: 'SYSTEM',
         action: `Oracle ERP PO sync FAILED: ${err.message}`,
-        performed_by: 'Oracle Sync', role: 'system',
+        by_name: 'Oracle Sync', by_role: 'system',
       });
     } catch {}
     return res.status(500).json({ error: err.message });

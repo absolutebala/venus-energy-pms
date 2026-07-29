@@ -81,10 +81,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // ── 3. Log to activity_log ────────────────────────────────
     try {
       await admin.from('activity_log').insert({
-        project_id:   'SYSTEM',
-        action:       `Weekly backup saved to R2 — ${Object.keys(backup).length} tables, ${totalRecords} records — ${key}`,
-        performed_by: 'System Cron',
-        role:         'system',
+        project_id: 'SYSTEM',
+        action:     `Weekly backup saved to R2 — ${Object.keys(backup).length} tables, ${totalRecords} records — ${key}`,
+        by_name:    'System Cron',
+        by_role:    'system',
       });
     } catch(logErr) { console.error('Log error:', logErr); }
 
@@ -103,10 +103,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Log failure
     try {
       await admin.from('activity_log').insert({
-        project_id:   'SYSTEM',
-        action:       `Weekly backup FAILED: ${err.message}`,
-        performed_by: 'System Cron',
-        role:         'system',
+        project_id: 'SYSTEM',
+        action:     `Weekly backup FAILED: ${err.message}`,
+        by_name:    'System Cron',
+        by_role:    'system',
       });
     } catch(logErr) { console.error('Log error:', logErr); }
 
