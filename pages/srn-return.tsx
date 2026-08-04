@@ -676,6 +676,36 @@ export default function SRNReturnPage() {
   const paginated  = filteredProjects.slice((page-1)*PER_PAGE, page*PER_PAGE);
   const isLoading  = loading || projLoading || stnLoading;
 
+  const cleanExportSheet = (ws: any) => {
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    const numCols = ['S.No', 'Issued Qty', 'Utilised Qty', 'Remaining Qty', 'Total Amount'];
+    const textCols = ['PO No', 'Project No', 'Project ID', 'Indus ID', 'BOQ No', 'Serial No', 'Gate Entry No', 'Vehicle No'];
+    const headerRow: string[] = [];
+    for (let c = 0; c <= range.e.c; c++) {
+      const hAddr = XLSX.utils.encode_cell({ r: 0, c });
+      headerRow.push(ws[hAddr] ? String(ws[hAddr].v) : '');
+    }
+    for (let r = 1; r <= range.e.r; r++) {
+      for (let c = 0; c <= range.e.c; c++) {
+        const addr = XLSX.utils.encode_cell({ r, c });
+        if (!ws[addr]) continue;
+        const colName = headerRow[c];
+        if (numCols.includes(colName)) {
+          const num = Number(ws[addr].v);
+          if (!isNaN(num)) { ws[addr].t = 'n'; ws[addr].v = num; delete ws[addr].z; }
+        } else if (textCols.includes(colName)) {
+          ws[addr].t = 's';
+          ws[addr].v = String(ws[addr].v ?? '').replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ').trim();
+          ws[addr].z = '@';
+        } else {
+          ws[addr].t = 's';
+          ws[addr].v = String(ws[addr].v ?? '').replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ').trim();
+          delete ws[addr].z;
+        }
+      }
+    }
+  };
+
   const exportSRNToExcel = () => {
     const hasAnyFilter = Boolean(search || cardFilter || kpiSubFilter || statusDistFilter || agingDistFilter);
     if (!hasAnyFilter) { setShowExportWarning(true); return; }
@@ -712,6 +742,7 @@ export default function SRNReturnPage() {
       });
     });
     const stnWs = XLSX.utils.json_to_sheet(stnRows);
+    cleanExportSheet(stnWs);
     XLSX.utils.book_append_sheet(wb, stnWs, 'STN Items');
 
     // SRN Sheet
@@ -746,6 +777,7 @@ export default function SRNReturnPage() {
       });
     });
     const srnWs = XLSX.utils.json_to_sheet(srnRows);
+    cleanExportSheet(srnWs);
     XLSX.utils.book_append_sheet(wb, srnWs, 'SRN Items');
 
     XLSX.writeFile(wb, `Venus_STN_SRN_${new Date().toISOString().slice(0,10)}.xlsx`);
