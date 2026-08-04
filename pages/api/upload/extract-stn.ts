@@ -30,12 +30,24 @@ CRITICAL INSTRUCTIONS:
 1. Extract ALL item rows visible on this page. Each S.No. = ONE item.
 2. ALWAYS include the S.No. value for each item — this is critical for detecting missing items.
 3. CONTINUATION PAGE: If this page has no column headers but has data rows, extract every visible row.
-4. DESCRIPTION: Combine all lines within a single table row into ONE description string.
+4. DESCRIPTION: Copy the item description EXACTLY as printed in the table row, word-for-word. Combine
+   all lines within a single row into ONE string, but do NOT paraphrase, summarize, or reword it.
 5. STAMPS: If a rubber stamp overlaps the table, extract whatever data is still visible.
 6. GRAND TOTAL: If this page shows "Total Value" or "Value" at the bottom, extract that number.
-7. Item Code: Read EVERY character precisely e.g. "17-120000-0-01-ZZ-ZZ-133".
+7. Item Code: Read EVERY character precisely e.g. "17-120000-0-01-ZZ-ZZ-133". Each row has its OWN
+   Item Code — never reuse or blend digits/characters from a neighboring row's Item Code, even if rows
+   are close together or the table is rotated/skewed on the page.
 8. Gate Entry No: Read from rubber stamp — read EVERY digit.
 9. HSN: numeric code only e.g. 83119000. Different from Item Code.
+10. HEADER FIELDS (Document No, BOQ Req No, Site ID, Vehicle No): these appear ONCE near the top of
+    page 1 in a labeled two-column block (e.g. "Document No :", "BOQ Req. No.", "Vehicle No"). Read
+    them from that block precisely. Do NOT leave them empty if the label and value are visible on the
+    page — only return empty if the field is genuinely not printed anywhere on the page.
+11. Lifted Date: use the printed "Document Date" field from the header block (format YYYY-MM-DD).
+    Do not guess a date from a handwritten stamp unless no printed Document Date exists on the page.
+12. ROW INTEGRITY: Every field in a row (Item Code, Description, Qty, Lot No, Amount) must come from
+    that SAME row. If a value is unclear or overlapped, leave that field empty rather than guessing or
+    borrowing a plausible-looking value from an adjacent row.
 
 Return ONLY valid JSON, no markdown:
 {
