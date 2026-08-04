@@ -70,7 +70,10 @@ Return ONLY valid JSON, no markdown:
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
-      body: JSON.stringify({ model: 'gpt-4o', max_tokens: 4000, messages: [{ role: 'user', content }] })
+      // temperature:0 + fixed seed — extraction of dense numeric fields (Serial No, Gate Entry No,
+      // Lifted Date, Site ID) was returning DIFFERENT values on repeated runs of the SAME document
+      // because the default temperature (1.0) lets the model sample/guess rather than read precisely.
+      body: JSON.stringify({ model: 'gpt-4o', max_tokens: 4000, temperature: 0, seed: 42, messages: [{ role: 'user', content }] })
     });
 
     if (!openaiRes.ok) {
