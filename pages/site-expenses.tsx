@@ -493,6 +493,7 @@ export default function SiteExpensesPage() {
                   const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
                   const dateCols = ['Req. Date', 'Payment Date'];
                   const numCols = ['S.No', 'Amount (₹)'];
+                  const textCols = ['PO Number', 'Txn Ref']; // VLOOKUP-key columns — must be explicit Text format, not General
                   const headerRow = rows.length > 0 ? Object.keys(rows[0]) : [];
                   for (let r = 1; r <= range.e.r; r++) {
                     for (let c = 0; c <= range.e.c; c++) {
@@ -504,6 +505,10 @@ export default function SiteExpensesPage() {
                         ws[addr].t = 'n';
                         ws[addr].v = Number(ws[addr].v);
                         delete ws[addr].z;
+                      } else if (textCols.includes(colName)) {
+                        ws[addr].t = 's';
+                        ws[addr].v = String(ws[addr].v).replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ').trim();
+                        ws[addr].z = '@';
                       } else {
                         ws[addr].t = 's';
                         ws[addr].v = String(ws[addr].v).replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ').trim();
