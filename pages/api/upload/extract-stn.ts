@@ -3,9 +3,9 @@ import { createAdminClient } from '@/lib/supabaseAdmin';
 
 export const config = { api: { bodyParser: { sizeLimit: '10mb' } } };
 
-// GPT-4o pricing (per 1M tokens)
-const INPUT_COST_PER_M  = 2.50;
-const OUTPUT_COST_PER_M = 10.00;
+// GPT-5.6 Terra pricing (per 1M tokens) — approximate, verify on OpenAI's pricing page.
+const INPUT_COST_PER_M  = 2.00;
+const OUTPUT_COST_PER_M = 12.00;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -85,7 +85,11 @@ Return ONLY valid JSON, no markdown:
       // temperature:0 + fixed seed — extraction of dense numeric fields (Serial No, Gate Entry No,
       // Lifted Date, Site ID) was returning DIFFERENT values on repeated runs of the SAME document
       // because the default temperature (1.0) lets the model sample/guess rather than read precisely.
-      body: JSON.stringify({ model: 'gpt-4o', max_tokens: 4000, temperature: 0, seed: 42, messages: [{ role: 'user', content }] })
+      // Switched from gpt-4o to gpt-5.6-terra (Aug 2026 A/B test) — meaningfully more accurate on
+      // dense/rotated challan tables: exact description text, correct amounts, document numbers, and
+      // item counts where gpt-4o was consistently wrong. gpt-5.6-terra does not accept temperature/seed
+      // the same way gpt-4o did, and uses max_completion_tokens instead of max_tokens.
+      body: JSON.stringify({ model: 'gpt-5.6-terra', max_completion_tokens: 4000, messages: [{ role: 'user', content }] })
     });
 
     if (!openaiRes.ok) {

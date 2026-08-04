@@ -95,7 +95,7 @@ export default function SRNReturnPage() {
       for (let i = 0; i < allImages.length; i++) {
         setImportProgress(`⏳ Parsing page ${i+1} of ${allImages.length}...`);
         try {
-          const res = await fetch('/api/upload/extract-stn-test', {
+          const res = await fetch('/api/upload/extract-stn', {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ images: [allImages[i]], source: type }),
@@ -168,7 +168,7 @@ export default function SRNReturnPage() {
       for (let i = 0; i < allImages.length; i++) {
         setImportProgress(`⏳ Parsing page ${i+1} of ${allImages.length}...`);
         try {
-          const res = await fetch('/api/upload/extract-stn-test', {
+          const res = await fetch('/api/upload/extract-stn', {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ images: [allImages[i]], source: proj.type, projectId: proj.id }),
