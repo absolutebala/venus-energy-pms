@@ -376,7 +376,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
       for (let i = 0; i < allImages.length; i++) {
         setStnParseProgress(`⏳ Parsing page ${i+1} of ${allImages.length}...`);
         try {
-          const res = await fetch('/api/upload/extract-stn', {
+          const res = await fetch('/api/upload/extract-stn-test', {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ images: [allImages[i]] }),
@@ -431,7 +431,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
       for (let i = 0; i < stnEmptyPages.length; i++) {
         setStnParseProgress(`⏳ Retrying page ${i+1} of ${stnEmptyPages.length}...`);
         try {
-          const res = await fetch('/api/upload/extract-stn', {
+          const res = await fetch('/api/upload/extract-stn-test', {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ images: [stnEmptyPages[i]] }),
@@ -1656,7 +1656,7 @@ function SRNSectionNew({ projectId, role, onAllReceived, onCountChange, canAdd: 
       }
       const { data: { session } } = await (await import('@/lib/supabase')).createClient().auth.getSession();
       const token = session?.access_token || '';
-      const res = await fetch('/api/upload/extract-stn', {
+      const res = await fetch('/api/upload/extract-stn-test', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ images }),
