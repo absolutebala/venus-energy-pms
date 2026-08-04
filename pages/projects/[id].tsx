@@ -383,7 +383,13 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
           });
           const json = await res.json();
           if (!res.ok) { emptyPageImages.push(allImages[i]); continue; }
-          if (!meta.documentNo && json.data?.documentNo) meta = json.data;
+          // Merge header fields individually across pages — a page might get documentNo right but
+          // miss vehicleNo (or vice versa), so we keep whichever page found each field, rather than
+          // locking the whole header block to only the first page that had a documentNo.
+          if (json.data) {
+            const hf = ['documentNo','liftedDate','gateEntryNo','vehicleNo','boqReqNo','siteId'];
+            hf.forEach(f => { if (!meta[f] && json.data[f]) meta[f] = json.data[f]; });
+          }
           if (json.data?.grandTotal) grandTotal = Number(json.data.grandTotal);
           const pageItems = (json.data?.items||[]).filter((it:any) => it.description || it.itemCode);
           if (pageItems.length === 0) emptyPageImages.push(allImages[i]);

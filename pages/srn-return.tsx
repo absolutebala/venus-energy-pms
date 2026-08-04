@@ -102,7 +102,13 @@ export default function SRNReturnPage() {
           });
           const json = await res.json();
           if (!res.ok) { emptyPages.push(allImages[i]); continue; }
-          if (i === 0 && json.data?.documentNo) meta = json.data;
+          // Merge header fields individually across pages — a page might get documentNo right but
+          // miss vehicleNo (or vice versa), so we keep whichever page found each field, rather than
+          // locking the whole header block to only page 1.
+          if (json.data) {
+            const hf = ['documentNo','liftedDate','gateEntryNo','vehicleNo','boqReqNo','siteId'];
+            hf.forEach(f => { if (!meta[f] && json.data[f]) meta[f] = json.data[f]; });
+          }
           if (json.data?.grandTotal) grandTotal = Number(json.data.grandTotal);
           const pageItems = (json.data?.items||[]).filter((it:any) => it.description || it.itemCode);
           if (pageItems.length === 0) emptyPages.push(allImages[i]);
@@ -175,7 +181,13 @@ export default function SRNReturnPage() {
           });
           const json = await res.json();
           if (!res.ok) { emptyPages.push(allImages[i]); continue; }
-          if (i === 0 && json.data?.documentNo) meta = json.data;
+          // Merge header fields individually across pages — a page might get documentNo right but
+          // miss vehicleNo (or vice versa), so we keep whichever page found each field, rather than
+          // locking the whole header block to only page 1.
+          if (json.data) {
+            const hf = ['documentNo','liftedDate','gateEntryNo','vehicleNo','boqReqNo','siteId'];
+            hf.forEach(f => { if (!meta[f] && json.data[f]) meta[f] = json.data[f]; });
+          }
           if (json.data?.grandTotal) grandTotal = Number(json.data.grandTotal);
           const pageItems = (json.data?.items||[]).filter((it:any) => it.description || it.itemCode);
           if (pageItems.length === 0) emptyPages.push(allImages[i]);
