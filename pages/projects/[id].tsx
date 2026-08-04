@@ -388,7 +388,8 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
           // locking the whole header block to only the first page that had a documentNo.
           if (json.data) {
             const hf = ['documentNo','liftedDate','gateEntryNo','vehicleNo','boqReqNo','siteId'];
-            hf.forEach(f => { if (!meta[f] && json.data[f]) meta[f] = json.data[f]; });
+            const isPlaceholder = (v:any) => !v || ['n/a','na','n.a','n.a.','-','--','none','nil'].includes(String(v).trim().toLowerCase());
+            hf.forEach(f => { if (isPlaceholder(meta[f]) && !isPlaceholder(json.data[f])) meta[f] = json.data[f]; });
           }
           if (json.data?.grandTotal) grandTotal = Number(json.data.grandTotal);
           const pageItems = (json.data?.items||[]).filter((it:any) => it.description || it.itemCode);
