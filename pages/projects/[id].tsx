@@ -415,7 +415,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
         quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
         documentNo: meta.documentNo||'', liftedDate: meta.liftedDate||'', gateEntryNo: meta.gateEntryNo||'', vehicleNo: meta.vehicleNo||'',
         boqReqNo: it.boqReqNo||meta.boqReqNo||'', sno: it.sno||0,
-      })));
+      })).sort((a:any,b:any)=>(a.sno||0)-(b.sno||0)));
       setStnParseProgress('');
     } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); }
     finally { setStnPdfUploading(false); if (stnPdfRef.current) stnPdfRef.current.value = ''; }
@@ -449,8 +449,8 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
           description: it.description||'', hsnCode: it.itemCode||it.hsnCode||'', uom: it.uom||'Nos',
           quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
           documentNo: meta.documentNo||'', liftedDate: meta.liftedDate||'', gateEntryNo: meta.gateEntryNo||'', vehicleNo: meta.vehicleNo||'',
-          boqReqNo: it.boqReqNo||meta.boqReqNo||'',
-        }))]);
+          boqReqNo: it.boqReqNo||meta.boqReqNo||'', sno: it.sno||0,
+        }))].sort((a:any,b:any)=>(a.sno||0)-(b.sno||0)));
         setToast({ msg:`✅ Found ${newItems.length} more item${newItems.length!==1?'s':''} on retry`, type:'success' });
       } else {
         setToast({ msg:'No additional items found on retry', type:'error' });
