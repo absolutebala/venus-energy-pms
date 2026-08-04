@@ -781,10 +781,15 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
                     ['BOQ Req No', 'boqReqNo', 'text', ''],
                     ['Lifted Date', 'liftedDate', 'date', ''],
                   ].map(([label, field, type, hint]) => (
-                    <div key={field as string}>
+                    <div key={field as string} style={field==='description'?{ gridColumn:'1 / -1' }:undefined}>
                       <div style={{ fontSize:10, fontWeight:600, color:T.textMuted, marginBottom:3, textTransform:'uppercase' as const }}>{label}</div>
-                      <input type={type as string} value={it[field as string]||''} style={{ border:`1px solid ${field==='gateEntryNo'?'#FCD34D':T.border}`, borderRadius:6, padding:'6px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none' }}
-                        onChange={e=>setStnPdfItems(prev=>prev!.map((r:any,i:number)=>i===idx?{...r,[field as string]:e.target.value}:r))} />
+                      {field==='description' ? (
+                        <textarea value={it[field as string]||''} rows={2} style={{ border:`1px solid ${T.border}`, borderRadius:6, padding:'6px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none', resize:'vertical' as const, fontFamily:'inherit' }}
+                          onChange={e=>setStnPdfItems(prev=>prev!.map((r:any,i:number)=>i===idx?{...r,[field as string]:e.target.value}:r))} />
+                      ) : (
+                        <input type={type as string} value={it[field as string]||''} style={{ border:`1px solid ${field==='gateEntryNo'?'#FCD34D':T.border}`, borderRadius:6, padding:'6px 8px', fontSize:12, width:'100%', boxSizing:'border-box' as const, outline:'none' }}
+                          onChange={e=>setStnPdfItems(prev=>prev!.map((r:any,i:number)=>i===idx?{...r,[field as string]:e.target.value}:r))} />
+                      )}
                       {hint && <div style={{ fontSize:9, color:'#D97706', marginTop:2 }}>{hint as string}</div>}
                     </div>
                   ))}
