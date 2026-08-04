@@ -383,7 +383,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
           });
           const json = await res.json();
           if (!res.ok) { emptyPageImages.push(allImages[i]); continue; }
-          if (i === 0 && json.data?.documentNo) meta = json.data;
+          if (!meta.documentNo && json.data?.documentNo) meta = json.data;
           if (json.data?.grandTotal) grandTotal = Number(json.data.grandTotal);
           const pageItems = (json.data?.items||[]).filter((it:any) => it.description || it.itemCode);
           if (pageItems.length === 0) emptyPageImages.push(allImages[i]);
@@ -414,7 +414,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
         description: it.description||'', hsnCode: it.itemCode||it.hsnCode||'', uom: it.uom||'Nos',
         quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
         documentNo: meta.documentNo||'', liftedDate: meta.liftedDate||'', gateEntryNo: meta.gateEntryNo||'', vehicleNo: meta.vehicleNo||'',
-        boqReqNo: it.boqReqNo||meta.boqReqNo||'', sno: it.sno||0,
+        boqReqNo: meta.boqReqNo||'', sno: it.sno||0,
       })).sort((a:any,b:any)=>(a.sno||0)-(b.sno||0)));
       setStnParseProgress('');
     } catch(e:any) { setToast({ msg:'❌ ' + e.message, type:'error' }); }
@@ -449,7 +449,7 @@ function POItemsSection({ projectId, editing, canAdd=true, isVendorRole=false, i
           description: it.description||'', hsnCode: it.itemCode||it.hsnCode||'', uom: it.uom||'Nos',
           quantity: String(it.quantity||1), serialNo: it.serialNo||'', amount: String(it.amount||0),
           documentNo: meta.documentNo||'', liftedDate: meta.liftedDate||'', gateEntryNo: meta.gateEntryNo||'', vehicleNo: meta.vehicleNo||'',
-          boqReqNo: it.boqReqNo||meta.boqReqNo||'', sno: it.sno||0,
+          boqReqNo: meta.boqReqNo||'', sno: it.sno||0,
         }))].sort((a:any,b:any)=>(a.sno||0)-(b.sno||0)));
         setToast({ msg:`✅ Found ${newItems.length} more item${newItems.length!==1?'s':''} on retry`, type:'success' });
       } else {
