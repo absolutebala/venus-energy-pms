@@ -1219,7 +1219,9 @@ export default function SRNReturnPage() {
                           'Issued Qty':item.issuedQty??'—','Utilised Qty':item.utilisedQty??'—',
                           'Status':item.utilisedStatus||'—','Gate Entry No':item.gateEntryNo||'—','Vehicle No':item.vehicleNo||'—',
                         }));
-                        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(stnRows), 'STN');
+                        const stnWs2 = XLSX.utils.json_to_sheet(stnRows);
+                        cleanExportSheet(stnWs2);
+                        XLSX.utils.book_append_sheet(wb, stnWs2, 'STN');
                       }
                       if (srnItems.length > 0) {
                         const srnRows = srnItems.map((item:any, i:number)=>({
@@ -1228,7 +1230,9 @@ export default function SRNReturnPage() {
                           'Issued Qty':item.quantity??'—','Utilised Qty':item.return_qty??'—',
                           'Status':item.received?'Received':'Pending','Gate Entry No':item.gate_entry_no||'—','Vehicle No':item.vehicle_no||'—',
                         }));
-                        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(srnRows), 'SRN');
+                        const srnWs2 = XLSX.utils.json_to_sheet(srnRows);
+                        cleanExportSheet(srnWs2);
+                        XLSX.utils.book_append_sheet(wb, srnWs2, 'SRN');
                       }
                       XLSX.writeFile(wb, `STN_SRN_${project.projectId}_${new Date().toISOString().slice(0,10)}.xlsx`);
                     }}
