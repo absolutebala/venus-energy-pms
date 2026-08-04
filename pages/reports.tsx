@@ -913,9 +913,9 @@ export default function ReportsPage() {
                         const header = headerCell.v;
                         if (numericCols.includes(header)) {
                           const num = Number(cell.v);
-                          if (!isNaN(num)) { cell.t = 'n'; cell.v = num; delete cell.w; }
+                          if (!isNaN(num)) { cell.t = 'n'; cell.v = num; delete cell.w; delete cell.z; }
                         } else if (textCols.includes(header)) {
-                          cell.t = 's'; cell.v = String(cell.v ?? '');
+                          cell.t = 's'; cell.v = String(cell.v ?? ''); cell.z = '@';
                         }
                       });
                       const wb = XLSX.utils.book_new();
