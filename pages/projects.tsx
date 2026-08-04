@@ -542,6 +542,7 @@ export default function ProjectsPage() {
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
     const numCols = ['S.No.', 'PO Count', 'Aging (Days)'];
     const dateCols = ['PO Date', 'Delivery Date'];
+    const textCols = ['PO Number']; // VLOOKUP-key columns — must be explicit Text format, not General
     const headerRow = rows.length > 0 ? Object.keys(rows[0]) : [];
     for (let r = 1; r <= range.e.r; r++) {
       for (let c = 0; c <= range.e.c; c++) {
@@ -557,6 +558,13 @@ export default function ProjectsPage() {
           ws[addr].t = 'n';
           ws[addr].v = Number(ws[addr].v);
           delete ws[addr].z;
+        } else if (textCols.includes(colName)) {
+          // Force clean string AND explicit Text number format — prevents Excel
+          // from leaving the cell in ambiguous "General" format, which breaks
+          // VLOOKUP until the cell is manually touched/re-entered
+          ws[addr].t = 's';
+          ws[addr].v = String(ws[addr].v).replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ').trim();
+          ws[addr].z = '@';
         } else {
           // Force clean string — kills hidden chars
           ws[addr].t = 's';
