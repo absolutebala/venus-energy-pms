@@ -85,13 +85,13 @@ Return ONLY valid JSON, no markdown:
       // temperature:0 + fixed seed — extraction of dense numeric fields (Serial No, Gate Entry No,
       // Lifted Date, Site ID) was returning DIFFERENT values on repeated runs of the SAME document
       // because the default temperature (1.0) lets the model sample/guess rather than read precisely.
-      // Switched from gpt-4o to gpt-5.6-terra (Aug 2026 A/B test) — meaningfully more accurate on
-      // dense/rotated challan tables: exact description text, correct amounts, document numbers, and
-      // item counts where gpt-4o was consistently wrong. Uses max_completion_tokens instead of max_tokens.
-      // Testing temperature:0 to see if gpt-5.6-terra accepts it and whether it tightens up remaining
-      // digit-level noise (Gate Entry No, BOQ Req No, Vehicle No) — if OpenAI rejects this param, the
-      // error will surface directly in the import UI as "OpenAI error: ...".
-      body: JSON.stringify({ model: 'gpt-5.6-terra', max_completion_tokens: 4000, temperature: 0, messages: [{ role: 'user', content }] })
+      // Switched from gpt-4o to gpt-5.6-terra (Aug 2026) — meaningfully more accurate on dense/rotated
+      // challan tables. Uses max_completion_tokens instead of max_tokens.
+      // NOTE: temperature:0 was tested and REJECTED by this model via chat/completions — it caused every
+      // page to fail extraction silently (frontend treats API errors as "page returned no items" rather
+      // than surfacing the real error). Do not re-add temperature/seed without also fixing that error
+      // handling first, or a bad param will look like "0 items extracted" with no visible cause.
+      body: JSON.stringify({ model: 'gpt-5.6-terra', max_completion_tokens: 4000, messages: [{ role: 'user', content }] })
     });
 
     if (!openaiRes.ok) {
