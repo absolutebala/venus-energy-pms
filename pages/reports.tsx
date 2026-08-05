@@ -901,8 +901,10 @@ export default function ReportsPage() {
                       const ws = XLSX.utils.json_to_sheet(rows);
                       ws['!cols'] = [{wch:6},{wch:14},{wch:16},{wch:14},{wch:16},{wch:16},{wch:20},{wch:20},{wch:24},{wch:14},{wch:16},{wch:16},{wch:16}];
                       // Force numeric cells to be numbers so pivot tables work correctly
-                      const numericCols = ['PO Value (₹)', 'Expense Paid (₹)', 'Billed Amount (₹)', 'P/L Projection (₹)'];
-                      const textCols = ['S.No', 'Project No', 'Project ID', 'Indus ID', 'Region', 'PO Number', 'Project Type', 'Site Name', 'Project Status'];
+                      // PO Number switched from Text to Number (Aug 2026) — matches Indus's own PO dump
+                      // .txt→.xlsx conversion, which produces PO Number as Number type.
+                      const numericCols = ['PO Value (₹)', 'Expense Paid (₹)', 'Billed Amount (₹)', 'P/L Projection (₹)', 'PO Number'];
+                      const textCols = ['S.No', 'Project No', 'Project ID', 'Indus ID', 'Region', 'Project Type', 'Site Name', 'Project Status'];
                       Object.keys(ws).filter(k => !k.startsWith('!')).forEach(cellAddr => {
                         const cell = ws[cellAddr];
                         if (!cell || cell.t === undefined) return;

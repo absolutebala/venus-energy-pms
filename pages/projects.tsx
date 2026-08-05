@@ -540,9 +540,12 @@ export default function ProjectsPage() {
 
     // Ensure all cells are clean — strip hidden chars, set correct types
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    const numCols = ['S.No.', 'PO Count', 'Aging (Days)'];
+    // PO Number switched from Text to Number (Aug 2026) — Indus's own PO dump .txt→.xlsx conversion
+    // produces PO Number as Number type, so matching Number here is what makes VLOOKUP against that
+    // dump actually resolve. Safe: PO Numbers are all-digit with no leading zeros.
+    const numCols = ['S.No.', 'PO Count', 'Aging (Days)', 'PO Number'];
     const dateCols = ['PO Date', 'Delivery Date'];
-    const textCols = ['PO Number']; // VLOOKUP-key columns — must be explicit Text format, not General
+    const textCols: string[] = []; // no VLOOKUP-key columns need Text format currently
     const headerRow = rows.length > 0 ? Object.keys(rows[0]) : [];
     for (let r = 1; r <= range.e.r; r++) {
       for (let c = 0; c <= range.e.c; c++) {

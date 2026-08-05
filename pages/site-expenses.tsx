@@ -491,9 +491,11 @@ export default function SiteExpensesPage() {
 
                   // Clean hidden chars + enforce correct cell types (matches Projects export fix)
                   const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+                  // PO Number switched from Text to Number (Aug 2026) — matches Indus's own PO dump
+                  // .txt→.xlsx conversion, which produces PO Number as Number type. Txn Ref stays Text.
                   const dateCols = ['Req. Date', 'Payment Date'];
-                  const numCols = ['S.No', 'Amount (₹)'];
-                  const textCols = ['PO Number', 'Txn Ref']; // VLOOKUP-key columns — must be explicit Text format, not General
+                  const numCols = ['S.No', 'Amount (₹)', 'PO Number'];
+                  const textCols = ['Txn Ref']; // VLOOKUP-key columns — must be explicit Text format, not General
                   const headerRow = rows.length > 0 ? Object.keys(rows[0]) : [];
                   for (let r = 1; r <= range.e.r; r++) {
                     for (let c = 0; c <= range.e.c; c++) {

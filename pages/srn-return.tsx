@@ -692,8 +692,10 @@ export default function SRNReturnPage() {
 
   const cleanExportSheet = (ws: any) => {
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    const numCols = ['S.No', 'Issued Qty', 'Utilised Qty', 'Remaining Qty', 'Total Amount'];
-    const textCols = ['PO No', 'Project No', 'Project ID', 'Indus ID', 'BOQ No', 'Serial No', 'Gate Entry No', 'Vehicle No'];
+    // PO No switched from Text to Number (Aug 2026) — matches Indus's own PO dump .txt→.xlsx
+    // conversion, which produces PO Number as Number type.
+    const numCols = ['S.No', 'Issued Qty', 'Utilised Qty', 'Remaining Qty', 'Total Amount', 'PO No'];
+    const textCols = ['Project No', 'Project ID', 'Indus ID', 'BOQ No', 'Serial No', 'Gate Entry No', 'Vehicle No'];
     const headerRow: string[] = [];
     for (let c = 0; c <= range.e.c; c++) {
       const hAddr = XLSX.utils.encode_cell({ r: 0, c });
