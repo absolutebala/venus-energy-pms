@@ -470,8 +470,10 @@ export default function ReportsPage() {
 
     // Clean hidden chars + enforce correct cell types (matches Projects export fix)
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    // PO No added (Aug 2026) — Project Status Report's PO No column was falling through to the
+    // generic string branch (ambiguous General format), causing VLOOKUP against Indus's PO dump to fail.
     const numericLikeCols = ['Aging (days)', 'PO Value', 'Billed', 'Paid', 'Total Projects', 'Completed',
-      'Delayed', 'Value', 'Issued Qty', 'Utilised Qty', 'Return Qty'];
+      'Delayed', 'Value', 'Issued Qty', 'Utilised Qty', 'Return Qty', 'PO No'];
     const headerRow = rows.length > 0 ? Object.keys(rows[0]) : [];
     for (let r = 1; r <= range.e.r; r++) {
       for (let c = 0; c <= range.e.c; c++) {
