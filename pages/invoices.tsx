@@ -406,9 +406,11 @@ export default function InvoicesPage() {
     // Clean hidden chars + enforce correct cell types (matches Projects export fix)
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
     const dateCols = ['PO Date', 'Invoice Date'];
+    // WCC No added as Number (Aug 2026) — Indus's WCC dump sheet stores WCC No as Number, so
+    // matching Number here is what makes VLOOKUP against that dump resolve.
     const numCols = ['S.No', 'Basic Amount (₹)', 'Tax Amount (₹)', 'Total Amount (₹)', 'TDS (₹)',
       'M1 Payment (₹)', 'Payment Received (₹)', 'Paid Amount (₹)', 'Profit 1 (₹)', 'Profit 2 (₹)',
-      'Additional Capital (₹)', 'Other Expenses (₹)', 'Interest (₹)', 'Incentive (₹)', 'Balance Amount (₹)'];
+      'Additional Capital (₹)', 'Other Expenses (₹)', 'Interest (₹)', 'Incentive (₹)', 'Balance Amount (₹)', 'WCC No'];
     const headerRow = rows.length > 0 ? Object.keys(rows[0]) : [];
     for (let r = 1; r <= range.e.r; r++) {
       for (let c = 0; c <= range.e.c; c++) {
