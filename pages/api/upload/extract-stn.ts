@@ -87,9 +87,11 @@ Return ONLY valid JSON, no markdown:
       // because the default temperature (1.0) lets the model sample/guess rather than read precisely.
       // Switched from gpt-4o to gpt-5.6-terra (Aug 2026 A/B test) — meaningfully more accurate on
       // dense/rotated challan tables: exact description text, correct amounts, document numbers, and
-      // item counts where gpt-4o was consistently wrong. gpt-5.6-terra does not accept temperature/seed
-      // the same way gpt-4o did, and uses max_completion_tokens instead of max_tokens.
-      body: JSON.stringify({ model: 'gpt-5.6-terra', max_completion_tokens: 4000, messages: [{ role: 'user', content }] })
+      // item counts where gpt-4o was consistently wrong. Uses max_completion_tokens instead of max_tokens.
+      // Testing temperature:0 to see if gpt-5.6-terra accepts it and whether it tightens up remaining
+      // digit-level noise (Gate Entry No, BOQ Req No, Vehicle No) — if OpenAI rejects this param, the
+      // error will surface directly in the import UI as "OpenAI error: ...".
+      body: JSON.stringify({ model: 'gpt-5.6-terra', max_completion_tokens: 4000, temperature: 0, messages: [{ role: 'user', content }] })
     });
 
     if (!openaiRes.ok) {
