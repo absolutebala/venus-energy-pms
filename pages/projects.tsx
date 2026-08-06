@@ -675,9 +675,9 @@ export default function ProjectsPage() {
         {(()=>{
           const poOpen   = filtered.filter((p:any)=>(p as any).poStatus==='Open').length;
           const poClosed = filtered.filter((p:any)=>(p as any).poStatus==='Closed').length;
-          const poOpenAmount   = filtered.filter((p:any)=>(p as any).poStatus==='Open').reduce((a:number,p:any)=>a+(p.poValue||0),0);
-          const poClosedAmount = filtered.filter((p:any)=>(p as any).poStatus==='Closed').reduce((a:number,p:any)=>a+(p.poValue||0),0);
-          const totalPOValue = filtered.reduce((a:number,p:any)=>a+(p.poValue||0),0);
+          const poOpenAmount   = filtered.filter((p:any)=>(p as any).poStatus==='Open').reduce((a:number,p:any)=>a+Number(p.poValue||0),0);
+          const poClosedAmount = filtered.filter((p:any)=>(p as any).poStatus==='Closed').reduce((a:number,p:any)=>a+Number(p.poValue||0),0);
+          const totalPOValue = filtered.reduce((a:number,p:any)=>a+Number(p.poValue||0),0);
           const summaryCards = [
             { label: profile?.role === 'super_admin' || profile?.role === 'accounting_team' ? 'Total Projects' : 'My Projects', value: String(filtered.length), color: T.primary, icon:'📁', filter:'All' as string|null, amount:null as string|null, words:null as string|null },
             { label:'PO Open',        value: String(poOpen),   color:'#059669', icon:'🟢', filter:'PO Open'  as string|null, amount: fmtFull(poOpenAmount), words: inWords(poOpenAmount) },
