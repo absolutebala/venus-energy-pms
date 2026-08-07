@@ -595,6 +595,9 @@ export default function SRNReturnPage() {
             if (statusSubFilter.has('rejected') && i.utilisedStatus === 'pm_rejected') return true;
             return false;
           });
+          // A pure 'stn' filter with zero STN items (STN Not Applicable) has nothing to match — exclude it.
+          // Only 'global' filters get the length>0 bypass, since the SRN branch below may still match instead.
+          if (cardFilter.type === 'stn' && proj.stnItems.length === 0) return false;
           if (!match && proj.stnItems.length > 0) return false;
         }
         if (cardFilter.type === 'srn' || cardFilter.type === 'global') {
@@ -603,6 +606,8 @@ export default function SRNReturnPage() {
             if (statusSubFilter.has('rejected') && i.received === false && i.pm_comment) return true;
             return false;
           });
+          // Same fix for pure 'srn' filters with zero SRN items (SRN Not Applicable).
+          if (cardFilter.type === 'srn' && proj.srnItems.length === 0) return false;
           if (!match && proj.srnItems.length > 0) return false;
         }
       }
