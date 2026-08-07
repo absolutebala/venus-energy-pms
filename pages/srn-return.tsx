@@ -255,8 +255,8 @@ export default function SRNReturnPage() {
   };
 
   // View toggles + card filter
-  const [showSRN, setShowSRN] = useState(true);
-  const [showSTN, setShowSTN] = useState(true);
+  const [showSRN, setShowSRN] = useState(false);
+  const [showSTN, setShowSTN] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo,   setDateTo]   = useState('');
   // cardFilter: { type:'stn'|'srn', field:'pm'|'region', value:string } | null
@@ -370,7 +370,11 @@ export default function SRNReturnPage() {
       setKpiSubFilter(null);
     } else {
       setKpiSubFilter({ type, status });
-      setCardFilter(null); setShowSRN(true); setShowSTN(true); // clear PM/Region filter
+      setCardFilter(null); // clear PM/Region filter
+      // Auto-enable only the matching section for a type-specific filter; both for a global one.
+      if (type === 'stn') { setShowSTN(true); setShowSRN(false); }
+      else if (type === 'srn') { setShowSRN(true); setShowSTN(false); }
+      else { setShowSTN(true); setShowSRN(true); }
     }
   };
 
@@ -550,12 +554,20 @@ export default function SRNReturnPage() {
   const handleCardClick = (type: string, field: string, value: string) => {
     if (cardFilter?.type===type && cardFilter?.field===field && cardFilter?.value===value) {
       setCardFilter(null); setPendingOnly(false); setStatusSubFilter(new Set(['all']));
+      setShowSTN(false); setShowSRN(false); // back to default unchecked when filter cleared
     } else {
       setCardFilter({ type, field, value });
       setKpiSubFilter(null); setPendingOnly(false);
+      // Auto-enable only the matching section for a type-specific filter; both for a global one.
+      if (type === 'stn') { setShowSTN(true); setShowSRN(false); }
+      else if (type === 'srn') { setShowSRN(true); setShowSTN(false); }
+      else { setShowSTN(true); setShowSRN(true); }
     }
   };
-  const clearCardFilter = () => { setCardFilter(null); setPendingOnly(false); setStatusSubFilter(new Set(['all'])); };
+  const clearCardFilter = () => {
+    setCardFilter(null); setPendingOnly(false); setStatusSubFilter(new Set(['all']));
+    setShowSTN(false); setShowSRN(false); // back to default unchecked when filter cleared
+  };
 
   // Pending count for the currently selected card filter row (matches the BreakdownTable's own pending number)
   const cardFilterPendingCount = useMemo(() => {
