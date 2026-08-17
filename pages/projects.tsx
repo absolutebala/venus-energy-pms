@@ -18,6 +18,7 @@ import Toast from '@/components/Toast';
 import MultiSelect from '@/components/MultiSelect';
 import { useProjects } from '@/context/ProjectContext';
 import { createClient } from '@/lib/supabase';
+import { useWorkProgress } from '@/context/WorkProgressContext';
 import { useWorkDocs } from '@/context/WorkDocContext';
 import { MOCK_PROJECTS } from '@/lib/projectData';
 import * as XLSX from 'xlsx';
@@ -79,6 +80,25 @@ export default function ProjectsPage() {
   const [newFormErrors, setNewFormErrors] = React.useState<Record<string,string>>({});
   const [extracting,  setExtracting]  = React.useState(false);
   const poFileRef = useRef<HTMLInputElement>(null);
+  const { getByProject: getWorkProgressByProject } = useWorkProgress();
+  const [ptwProjectIds, setPtwProjectIds] = React.useState<Set<string>>(new Set());
+  React.useEffect(() => {
+    (async () => {
+      const supabase = createClient();
+      const BATCH = 1000;
+      let allRows: any[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase.from('ptw_items').select('project_id').range(from, from + BATCH - 1);
+        if (error) break;
+        const rows = data || [];
+        allRows = allRows.concat(rows);
+        if (rows.length < BATCH) break;
+        from += BATCH;
+      }
+      setPtwProjectIds(new Set(allRows.map((r:any) => r.project_id)));
+    })();
+  }, []);
 
   const handlePOUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -530,6 +550,8 @@ export default function ProjectsPage() {
       'Project ID':      clean(p.projectId),
       'Indus ID':        clean(p.indusId),
       'Site Name':       clean(p.site),
+      'PTW':             ptwProjectIds.has(p.id) ? 'Yes' : 'No',
+      'Work Status':     clean(getWorkProgressByProject(p.id)[0]?.workStatus || ''),
       'Project Status':  clean(p.projectStatus),
       'Delivery Date':   p.endDate ? new Date(p.endDate) : '',
       'Circle':          clean(p.region),
@@ -589,6 +611,8 @@ export default function ProjectsPage() {
       { wch: 16 },  // Project ID
       { wch: 14 },  // Indus ID
       { wch: 22 },  // Site Name
+      { wch: 10 },  // PTW
+      { wch: 16 },  // Work Status
       { wch: 18 },  // Project Status
       { wch: 14 },  // Delivery Date
     ];
@@ -808,7 +832,7 @@ export default function ProjectsPage() {
                     onClick={()=>setSortDir(d=>d==='asc'?'desc':'asc')}>
                     S.No. {sortDir==='asc'?'↑':'↓'}
                   </th>
-                  {['Project No','PO Number','PO Count','Aging','PO Status','Project Name','Project ID','Indus ID','Site Name','Project Status','Delivery Date',...(profile?.role==='super_admin'?['Delete']:[])].map((h,i)=>(
+                  {['Project No','PO Number','PO Count','Aging','PO Status','Project Name','Project ID','Indus ID','Site Name','PTW','Work Status','Project Status','Delivery Date',...(profile?.role==='super_admin'?['Delete']:[])].map((h,i)=>(
                     <th key={i} style={{ padding:'10px 12px', fontSize:10, fontWeight:700, textTransform:'uppercase' as const,
                       color:T.primary, textAlign:'left' as const, borderBottom:`2px solid ${T.primaryMid}`,
                       whiteSpace:'nowrap' as const, background:T.primaryLight }}>
@@ -819,13 +843,13 @@ export default function ProjectsPage() {
               </thead>
               <tbody>
                 {projLoading && (
-                  <tr><td colSpan={12} style={{ padding:40, textAlign:'center' as const }}>
+                  <tr><td colSpan={14} style={{ padding:40, textAlign:'center' as const }}>
                     <div className="spinner" style={{ margin:'0 auto', width:32, height:32, borderTopColor:T.primary, borderColor:`${T.primary}30` }} />
                     <div style={{ fontSize:13, color:T.textMuted, marginTop:10 }}>Loading projects...</div>
                   </td></tr>
                 )}
                 {!projLoading && filtered.length === 0 && (
-                  <tr><td colSpan={12} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
+                  <tr><td colSpan={14} style={{ padding:32, textAlign:'center' as const, color:T.textDim }}>No projects found</td></tr>
                 )}
                 {[...filtered].sort((a:any,b:any)=>{ const ai=filtered.indexOf(a), bi=filtered.indexOf(b); return sortDir==='asc'?ai-bi:bi-ai; }).slice((page-1)*PER_PAGE, page*PER_PAGE).map((p:any, idx:number) => {
                   const delDate = p.endDate;
@@ -896,6 +920,10 @@ export default function ProjectsPage() {
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{(p as any).projectId || '—'}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{p.indusId || '—'}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text }}>{p.site || '—'}</td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
+                        <span style={{ fontSize:11, fontWeight:600, color:ptwProjectIds.has(p.id)?'#059669':'#9CA3AF', background:ptwProjectIds.has(p.id)?'#D1FAE5':'#F3F4F6', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{ptwProjectIds.has(p.id)?'Yes':'No'}</span>
+                      </td>
+                      <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}`, fontSize:12, color:T.text, whiteSpace:'nowrap' as const }}>{getWorkProgressByProject(p.id)[0]?.workStatus || '—'}</td>
                       <td style={{ padding:'10px 12px', borderBottom:`1px solid ${T.border}` }}>
                         <span style={{ fontSize:11, fontWeight:600, color:'#0369A1', background:'#E0F2FE', padding:'3px 10px', borderRadius:20, whiteSpace:'nowrap' as const }}>{(p as any).projectStatus || '—'}</span>
                       </td>
