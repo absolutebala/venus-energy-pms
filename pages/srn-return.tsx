@@ -682,7 +682,8 @@ export default function SRNReturnPage() {
       return proj.projectId.toLowerCase().includes(s) ||
              proj.projectName.toLowerCase().includes(s) ||
              proj.poNo.toLowerCase().includes(s) ||
-             proj.vendor.toLowerCase().includes(s);
+             proj.vendor.toLowerCase().includes(s) ||
+             (proj.indusId||'').toLowerCase().includes(s);
     });
   }, [allProjectIds, srnGrouped, stnGrouped, cardFilter, pendingOnly, statusSubFilter, search, kpiSubFilter, statusDistFilter, agingDistFilter, projects, dateFrom, dateTo, showSTN, showSRN]);
 
@@ -865,34 +866,6 @@ export default function SRNReturnPage() {
             </div>
           </div>
           <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-            {profile?.role === 'super_admin' && navApiUsage && (
-              <div title={`STN: $${navApiUsage.stnCost?.toFixed(4)} · SRN: $${navApiUsage.srnCost?.toFixed(4)} · ${navApiUsage.callCount} calls`}
-                style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:Theme.textMuted,
-                  background:Theme.bg, border:`1px solid ${Theme.border}`, borderRadius:6, padding:'5px 12px', cursor:'default' }}>
-                <div style={{ width:60, height:5, background:Theme.border, borderRadius:3, overflow:'hidden' }}>
-                  <div style={{ width:`${Math.min(100,navApiUsage.percentUsed||0)}%`, height:'100%',
-                    background: navApiUsage.percentUsed > 80 ? '#DC2626' : navApiUsage.percentUsed > 50 ? '#D97706' : Theme.primary,
-                    borderRadius:3 }} />
-                </div>
-                <span>${(navApiUsage.totalCost||0).toFixed(3)} / $10</span>
-              </div>
-            )}
-            <label style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12, fontWeight:600,
-              color:'#1E40AF', background:'#EFF6FF', border:'1px solid #BFDBFE',
-              borderRadius:8, padding:'7px 14px', cursor: importUploading ? 'not-allowed' : 'pointer',
-              opacity: importUploading ? 0.7 : 1 }}>
-              {importUploading && importProject?.type==='stn' ? (importProgress||'⏳ Parsing...') : '📄 Import STN'}
-              <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display:'none' }} disabled={importUploading}
-                onChange={e=>{const f=e.target.files?.[0];if(f){setImportProject({id:'',type:'stn',indusId:''});uploadChallanAuto(f,'stn');}}} />
-            </label>
-            <label style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:12, fontWeight:600,
-              color:'#7C3AED', background:'#F5F3FF', border:'1px solid #DDD6FE',
-              borderRadius:8, padding:'7px 14px', cursor: importUploading ? 'not-allowed' : 'pointer',
-              opacity: importUploading ? 0.7 : 1 }}>
-              {importUploading && importProject?.type==='srn' ? (importProgress||'⏳ Parsing...') : '📄 Import SRN'}
-              <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{ display:'none' }} disabled={importUploading}
-                onChange={e=>{const f=e.target.files?.[0];if(f){setImportProject({id:'',type:'srn',indusId:''});uploadChallanAuto(f,'srn');}}} />
-            </label>
             <input value={search} onChange={e=>setSearch(e.target.value)}
               placeholder="Search project, vendor, PO…"
               style={{ border:`1px solid ${Theme.border}`, borderRadius:8, padding:'8px 14px', fontSize:13, outline:'none', width:220 }} />
@@ -1039,7 +1012,7 @@ export default function SRNReturnPage() {
           const matchesCommon = (g:any, sectionType:'stn'|'srn') => {
             if (search) {
               const s = search.toLowerCase();
-              if (!(g.projectId.toLowerCase().includes(s) || (g.projectName||'').toLowerCase().includes(s) || (g.poNo||'').toLowerCase().includes(s))) return false;
+              if (!(g.projectId.toLowerCase().includes(s) || (g.projectName||'').toLowerCase().includes(s) || (g.poNo||'').toLowerCase().includes(s) || (g.indusId||'').toLowerCase().includes(s))) return false;
             }
             if (cardFilter && (cardFilter.type === 'global' || cardFilter.type === sectionType)) {
               const val = cardFilter.field === 'pm' ? g.pm : cardFilter.field === 'vendor' ? g.vendor : g.region;
