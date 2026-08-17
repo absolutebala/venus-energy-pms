@@ -61,6 +61,7 @@ export const MODULE_LABELS: Record<AppModule, string> = {
   vendors:                'Vendors',
   srn_return:             'STN / SRN Status',
   site_expenses:          'Site Expenses',
+  site_expenses_payment:  'Expense — Make Payment',
   ptw:                    'PTW Management',
   invoices:             'Invoices',
   reports:                'Reports',
