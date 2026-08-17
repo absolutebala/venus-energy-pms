@@ -325,8 +325,8 @@ export default function SRNReturnPage() {
   };
 
   // ── Coverage KPI state (Total projects with/without/not-applicable STN & SRN) ──
-  const [coverageFilter, setCoverageFilter] = useState<{type:'stn'|'srn';status:'with'|'without'|'na'}|null>(null);
-  const toggleCoverageFilter = (type: 'stn'|'srn', status: 'with'|'without'|'na') => {
+  const [coverageFilter, setCoverageFilter] = useState<{type:'stn'|'srn';status:'with'|'without'|'na'|'applicable'}|null>(null);
+  const toggleCoverageFilter = (type: 'stn'|'srn', status: 'with'|'without'|'na'|'applicable') => {
     if (coverageFilter?.type===type && coverageFilter?.status===status) {
       setCoverageFilter(null);
       setShowSTN(false); setShowSRN(false);
@@ -432,7 +432,8 @@ export default function SRNReturnPage() {
       const srnNAflag = p.srn_applicable === false;
       if (hasSrn) srnWith++; else if (srnNAflag) srnNA++; else srnWithout++;
     });
-    return { stnWith, stnWithout, stnNA, srnWith, srnWithout, srnNA };
+    return { stnWith, stnWithout, stnNA, srnWith, srnWithout, srnNA,
+      stnApplicable: stnWith + stnWithout, srnApplicable: srnWith + srnWithout };
   }, [roleFilteredProjects, stnHasItemsSet, srnHasItemsSet]);
   const stnPendingCount  = roleStnItems.filter(i => i.utilisedStatus === 'submitted').length;
   const stnRejectedCount = roleStnItems.filter(i => i.utilisedStatus === 'pm_rejected').length;
@@ -651,12 +652,14 @@ export default function SRNReturnPage() {
           if (coverageFilter.status === 'with' && !hasStn) return false;
           if (coverageFilter.status === 'without' && (hasStn || stnNAflag)) return false;
           if (coverageFilter.status === 'na' && !stnNAflag) return false;
+          if (coverageFilter.status === 'applicable' && stnNAflag) return false;
         }
         if (coverageFilter.type === 'srn') {
           const hasSrn = proj.srnItems.length > 0;
           if (coverageFilter.status === 'with' && !hasSrn) return false;
           if (coverageFilter.status === 'without' && (hasSrn || srnNAflag)) return false;
           if (coverageFilter.status === 'na' && !srnNAflag) return false;
+          if (coverageFilter.status === 'applicable' && srnNAflag) return false;
         }
       }
       // Apply card filter (By PM / By Vendor / By Region — global)
@@ -950,15 +953,33 @@ export default function SRNReturnPage() {
           </div>
         </div>
 
-        {/* Coverage Cards — Total projects with/without/not-applicable STN & SRN */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(6, 1fr)', gap:10, marginBottom:20 }}>
+        {/* Coverage Cards — Total projects applicable/with/without/not-applicable STN & SRN */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:10, marginBottom:10 }}>
           {[
-            { type:'stn' as const, status:'without' as const, label:'Without STN', count:coverageCounts.stnWithout, color:'#D97706', bg:'#FFFBEB' },
-            { type:'stn' as const, status:'with' as const,    label:'With STN',    count:coverageCounts.stnWith,    color:'#16A34A', bg:'#F0FDF4' },
-            { type:'stn' as const, status:'na' as const,      label:'STN N/A',     count:coverageCounts.stnNA,      color:'#6B7280', bg:'#F3F4F6' },
-            { type:'srn' as const, status:'without' as const, label:'Without SRN', count:coverageCounts.srnWithout, color:'#D97706', bg:'#FFFBEB' },
-            { type:'srn' as const, status:'with' as const,    label:'With SRN',    count:coverageCounts.srnWith,    color:'#16A34A', bg:'#F0FDF4' },
-            { type:'srn' as const, status:'na' as const,      label:'SRN N/A',     count:coverageCounts.srnNA,      color:'#6B7280', bg:'#F3F4F6' },
+            { type:'stn' as const, status:'applicable' as const, label:'STN Applicable', count:coverageCounts.stnApplicable, color:'#0369A1', bg:'#E0F2FE' },
+            { type:'stn' as const, status:'without' as const,    label:'Without STN',    count:coverageCounts.stnWithout,    color:'#D97706', bg:'#FFFBEB' },
+            { type:'stn' as const, status:'with' as const,       label:'With STN',       count:coverageCounts.stnWith,       color:'#16A34A', bg:'#F0FDF4' },
+            { type:'stn' as const, status:'na' as const,         label:'STN N/A',        count:coverageCounts.stnNA,         color:'#6B7280', bg:'#F3F4F6' },
+          ].map((cc, i) => {
+            const isActive = coverageFilter?.type===cc.type && coverageFilter?.status===cc.status;
+            return (
+              <div key={i} onClick={()=>toggleCoverageFilter(cc.type, cc.status)}
+                style={{ ...card, padding:'12px 14px', cursor:'pointer',
+                  background: isActive ? cc.bg : '#fff',
+                  border: isActive ? `2px solid ${cc.color}` : `1px solid ${Theme.border}`, transition:'all 0.15s' }}>
+                <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4, whiteSpace:'nowrap' as const }}>{cc.label}</div>
+                <div style={{ fontSize:22, fontWeight:800, color:cc.color }}>{cc.count}</div>
+                {isActive && <div style={{ fontSize:9, color:cc.color, marginTop:2 }}>● Filtered</div>}
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:10, marginBottom:20 }}>
+          {[
+            { type:'srn' as const, status:'applicable' as const, label:'SRN Applicable', count:coverageCounts.srnApplicable, color:'#0369A1', bg:'#E0F2FE' },
+            { type:'srn' as const, status:'without' as const,    label:'Without SRN',    count:coverageCounts.srnWithout,    color:'#D97706', bg:'#FFFBEB' },
+            { type:'srn' as const, status:'with' as const,       label:'With SRN',       count:coverageCounts.srnWith,       color:'#16A34A', bg:'#F0FDF4' },
+            { type:'srn' as const, status:'na' as const,         label:'SRN N/A',        count:coverageCounts.srnNA,         color:'#6B7280', bg:'#F3F4F6' },
           ].map((cc, i) => {
             const isActive = coverageFilter?.type===cc.type && coverageFilter?.status===cc.status;
             return (
