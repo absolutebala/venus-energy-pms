@@ -32,6 +32,8 @@ export default function SiteExpensesPage() {
   const { projects } = useProjects();
   const canAdd    = !authLoading && can("site_expenses", "create");
   const canManage = !authLoading && can("site_expenses", "edit") && profile?.role !== 'vendor';
+  // Independent permission — lets a role Make Payment even without general Site Expenses edit rights
+  const canMakePayment = !authLoading && can("site_expenses_payment", "edit") && profile?.role !== 'vendor';
 
   const [selectedVendor,  setSelectedVendor]  = useState("");
   const [selectedProject, setSelectedProject] = useState("");
@@ -611,7 +613,7 @@ export default function SiteExpensesPage() {
                             <button onClick={async ev=>{ ev.stopPropagation(); if(window.confirm('Delete this expense permanently?')){ try { await deleteExpense(e.id); setToast({ msg:'✅ Expense deleted', type:'success' }); } catch(err:any){ setToast({ msg:'❌ '+err.message, type:'error' }); } } }}
                               style={{ background:'#FEF2F2', color:'#DC2626', border:'1px solid #FECACA', borderRadius:6, padding:'3px 8px', fontSize:11, cursor:'pointer' }}>🗑</button>
                           )}
-                          {isPending && canManage && (
+                          {isPending && (canManage || canMakePayment) && (
                             <button onClick={async ev=>{
                               ev.stopPropagation();
                               setPaidModal(e); setPaidForm({ txnRef:"", paymentMode:"NEFT", fromAccount:"", toAccount:(e as any).bankAccount||(e as any).upiId||"", txnDate:new Date().toISOString().split('T')[0], investorType:"", fundSource:"", fundType:"" });

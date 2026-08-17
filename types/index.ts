@@ -33,6 +33,7 @@ export type AppModule =
   | 'vendors'
   | 'srn_return'
   | 'site_expenses'
+  | 'site_expenses_payment'
   | 'ptw'
   | 'reports'
   | 'invoices'
