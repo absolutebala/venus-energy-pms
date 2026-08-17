@@ -324,6 +324,21 @@ export default function SRNReturnPage() {
     finally { setSaving(null); }
   };
 
+  // ── Coverage KPI state (Total projects with/without/not-applicable STN & SRN) ──
+  const [coverageFilter, setCoverageFilter] = useState<{type:'stn'|'srn';status:'with'|'without'|'na'}|null>(null);
+  const toggleCoverageFilter = (type: 'stn'|'srn', status: 'with'|'without'|'na') => {
+    if (coverageFilter?.type===type && coverageFilter?.status===status) {
+      setCoverageFilter(null);
+      setShowSTN(false); setShowSRN(false);
+    } else {
+      setCoverageFilter({ type, status });
+      setCardFilter(null); setKpiSubFilter(null); setStatusDistFilter(null); setAgingDistFilter(null);
+      setPendingOnly(false); setStatusSubFilter(new Set(['all']));
+      if (type === 'stn') { setShowSTN(true); setShowSRN(false); }
+      else { setShowSRN(true); setShowSTN(false); }
+    }
+  };
+
   // ── Project lookup map for O(1) access ──────────────────────────────────
   const projectMap = useMemo(() => {
     const m = new Map<string, any>();
@@ -360,6 +375,25 @@ export default function SRNReturnPage() {
         pm: proj?.pm || '—', region: proj?.region || '—', indusId: proj?.indusId || '—', type: proj?.type || '—', stnItems };
     });
   }, [stnAllItems, projectMap]);
+
+  // ── Coverage counts (respects role-based project visibility) ────────────
+  const roleFilteredProjects = useMemo(() => {
+    return (projects as any[]).filter(p => !roleProjectIds || roleProjectIds.has(p.id));
+  }, [projects, roleProjectIds]);
+  const stnHasItemsSet = useMemo(() => new Set(stnGrouped.filter(g => g.stnItems.length > 0).map(g => g.projectId)), [stnGrouped]);
+  const srnHasItemsSet = useMemo(() => new Set(srnGrouped.filter(g => g.srnItems.length > 0).map(g => g.projectId)), [srnGrouped]);
+  const coverageCounts = useMemo(() => {
+    let stnWith=0, stnWithout=0, stnNA=0, srnWith=0, srnWithout=0, srnNA=0;
+    roleFilteredProjects.forEach((p:any) => {
+      const hasStn = stnHasItemsSet.has(p.id);
+      const stnNAflag = p.stn_applicable === false;
+      if (hasStn) stnWith++; else if (stnNAflag) stnNA++; else stnWithout++;
+      const hasSrn = srnHasItemsSet.has(p.id);
+      const srnNAflag = p.srn_applicable === false;
+      if (hasSrn) srnWith++; else if (srnNAflag) srnNA++; else srnWithout++;
+    });
+    return { stnWith, stnWithout, stnNA, srnWith, srnWithout, srnNA };
+  }, [roleFilteredProjects, stnHasItemsSet, srnHasItemsSet]);
 
   // ── KPI aggregations ─────────────────────────────────────────────────────
   const [kpiSubFilter, setKpiSubFilter] = useState<{type:string;status:string}|null>(null);
@@ -580,19 +614,51 @@ export default function SRNReturnPage() {
 
   // ── Combined project list for display ────────────────────────────────────
   const allProjectIds = useMemo(() => {
+    if (coverageFilter) {
+      // Coverage filter must include projects with ZERO items (e.g. "Without STN" / "Not Applicable"),
+      // which never appear in srnGrouped/stnGrouped since those are built purely from existing items.
+      return (projects as any[])
+        .filter(p => !roleProjectIds || roleProjectIds.has(p.id))
+        .map(p => p.id);
+    }
     const ids = new Set<string>();
     if (showSRN) srnGrouped.forEach(p => { if (!roleProjectIds || roleProjectIds.has(p.projectId)) ids.add(p.projectId); });
     if (showSTN) stnGrouped.forEach(p => { if (!roleProjectIds || roleProjectIds.has(p.projectId)) ids.add(p.projectId); });
     return Array.from(ids);
-  }, [srnGrouped, stnGrouped, showSRN, showSTN]);
+  }, [srnGrouped, stnGrouped, showSRN, showSTN, coverageFilter, projects, roleProjectIds]);
 
   const filteredProjects = useMemo(() => {
     return allProjectIds.map(projectId => {
       const srnProj = srnGrouped.find(p => p.projectId === projectId);
       const stnProj = stnGrouped.find(p => p.projectId === projectId);
-      const proj = srnProj || stnProj!;
+      let proj: any = srnProj || stnProj;
+      if (!proj) {
+        // Zero STN and zero SRN items — build a stub so coverage filters (Without/Not Applicable) still work
+        const p0 = projectMap.get(projectId);
+        proj = { projectId, projectName: p0?.site || p0?.projectName || projectId,
+          poNo: p0?.poNo || '—', vendor: p0?.vendor || '—',
+          pm: p0?.pm || '—', region: p0?.region || '—', indusId: p0?.indusId || '—', type: p0?.type || '—' };
+      }
       return { ...proj, srnItems: srnProj?.srnItems || [], stnItems: stnProj?.stnItems || [] };
     }).filter(proj => {
+      // Apply coverage filter (Total STN/SRN with/without/not-applicable cards)
+      if (coverageFilter) {
+        const p0 = projectMap.get(proj.projectId);
+        const stnNAflag = p0?.stn_applicable === false;
+        const srnNAflag = p0?.srn_applicable === false;
+        if (coverageFilter.type === 'stn') {
+          const hasStn = proj.stnItems.length > 0;
+          if (coverageFilter.status === 'with' && !hasStn) return false;
+          if (coverageFilter.status === 'without' && (hasStn || stnNAflag)) return false;
+          if (coverageFilter.status === 'na' && !stnNAflag) return false;
+        }
+        if (coverageFilter.type === 'srn') {
+          const hasSrn = proj.srnItems.length > 0;
+          if (coverageFilter.status === 'with' && !hasSrn) return false;
+          if (coverageFilter.status === 'without' && (hasSrn || srnNAflag)) return false;
+          if (coverageFilter.status === 'na' && !srnNAflag) return false;
+        }
+      }
       // Apply card filter (By PM / By Vendor / By Region — global)
       if (cardFilter) {
         const val = cardFilter.field === 'pm' ? proj.pm : cardFilter.field === 'vendor' ? proj.vendor : proj.region;
@@ -685,7 +751,7 @@ export default function SRNReturnPage() {
              proj.vendor.toLowerCase().includes(s) ||
              (proj.indusId||'').toLowerCase().includes(s);
     });
-  }, [allProjectIds, srnGrouped, stnGrouped, cardFilter, pendingOnly, statusSubFilter, search, kpiSubFilter, statusDistFilter, agingDistFilter, projects, dateFrom, dateTo, showSTN, showSRN]);
+  }, [allProjectIds, srnGrouped, stnGrouped, cardFilter, pendingOnly, statusSubFilter, search, kpiSubFilter, statusDistFilter, agingDistFilter, projects, dateFrom, dateTo, showSTN, showSRN, coverageFilter, projectMap]);
 
   // ── Pagination ───────────────────────────────────────────────────────────
   const PER_PAGE = 10;
@@ -882,6 +948,30 @@ export default function SRNReturnPage() {
               </button>}
             </div>
           </div>
+        </div>
+
+        {/* Coverage Cards — Total projects with/without/not-applicable STN & SRN */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(6, 1fr)', gap:10, marginBottom:20 }}>
+          {[
+            { type:'stn' as const, status:'without' as const, label:'Without STN', count:coverageCounts.stnWithout, color:'#D97706', bg:'#FFFBEB' },
+            { type:'stn' as const, status:'with' as const,    label:'With STN',    count:coverageCounts.stnWith,    color:'#16A34A', bg:'#F0FDF4' },
+            { type:'stn' as const, status:'na' as const,      label:'STN N/A',     count:coverageCounts.stnNA,      color:'#6B7280', bg:'#F3F4F6' },
+            { type:'srn' as const, status:'without' as const, label:'Without SRN', count:coverageCounts.srnWithout, color:'#D97706', bg:'#FFFBEB' },
+            { type:'srn' as const, status:'with' as const,    label:'With SRN',    count:coverageCounts.srnWith,    color:'#16A34A', bg:'#F0FDF4' },
+            { type:'srn' as const, status:'na' as const,      label:'SRN N/A',     count:coverageCounts.srnNA,      color:'#6B7280', bg:'#F3F4F6' },
+          ].map((cc, i) => {
+            const isActive = coverageFilter?.type===cc.type && coverageFilter?.status===cc.status;
+            return (
+              <div key={i} onClick={()=>toggleCoverageFilter(cc.type, cc.status)}
+                style={{ ...card, padding:'12px 14px', cursor:'pointer',
+                  background: isActive ? cc.bg : '#fff',
+                  border: isActive ? `2px solid ${cc.color}` : `1px solid ${Theme.border}`, transition:'all 0.15s' }}>
+                <div style={{ fontSize:10, fontWeight:600, color:Theme.textMuted, textTransform:'uppercase' as const, marginBottom:4, whiteSpace:'nowrap' as const }}>{cc.label}</div>
+                <div style={{ fontSize:22, fontWeight:800, color:cc.color }}>{cc.count}</div>
+                {isActive && <div style={{ fontSize:9, color:cc.color, marginTop:2 }}>● Filtered</div>}
+              </div>
+            );
+          })}
         </div>
 
         {/* KPI Cards */}
