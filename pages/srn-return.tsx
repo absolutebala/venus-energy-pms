@@ -376,25 +376,6 @@ export default function SRNReturnPage() {
     });
   }, [stnAllItems, projectMap]);
 
-  // ── Coverage counts (respects role-based project visibility) ────────────
-  const roleFilteredProjects = useMemo(() => {
-    return (projects as any[]).filter(p => !roleProjectIds || roleProjectIds.has(p.id));
-  }, [projects, roleProjectIds]);
-  const stnHasItemsSet = useMemo(() => new Set(stnGrouped.filter(g => g.stnItems.length > 0).map(g => g.projectId)), [stnGrouped]);
-  const srnHasItemsSet = useMemo(() => new Set(srnGrouped.filter(g => g.srnItems.length > 0).map(g => g.projectId)), [srnGrouped]);
-  const coverageCounts = useMemo(() => {
-    let stnWith=0, stnWithout=0, stnNA=0, srnWith=0, srnWithout=0, srnNA=0;
-    roleFilteredProjects.forEach((p:any) => {
-      const hasStn = stnHasItemsSet.has(p.id);
-      const stnNAflag = p.stn_applicable === false;
-      if (hasStn) stnWith++; else if (stnNAflag) stnNA++; else stnWithout++;
-      const hasSrn = srnHasItemsSet.has(p.id);
-      const srnNAflag = p.srn_applicable === false;
-      if (hasSrn) srnWith++; else if (srnNAflag) srnNA++; else srnWithout++;
-    });
-    return { stnWith, stnWithout, stnNA, srnWith, srnWithout, srnNA };
-  }, [roleFilteredProjects, stnHasItemsSet, srnHasItemsSet]);
-
   // ── KPI aggregations ─────────────────────────────────────────────────────
   const [kpiSubFilter, setKpiSubFilter] = useState<{type:string;status:string}|null>(null);
   const [statusDistFilter, setStatusDistFilter] = useState<{type:string;value:string}|null>(null);
@@ -434,6 +415,25 @@ export default function SRNReturnPage() {
     if (!roleProjectIds) return srnRawItems;
     return srnRawItems.filter((i:any) => roleProjectIds.has(i.project_id));
   }, [srnRawItems, roleProjectIds]);
+
+  // ── Coverage counts (respects role-based project visibility) ────────────
+  const roleFilteredProjects = useMemo(() => {
+    return (projects as any[]).filter(p => !roleProjectIds || roleProjectIds.has(p.id));
+  }, [projects, roleProjectIds]);
+  const stnHasItemsSet = useMemo(() => new Set(stnGrouped.filter(g => g.stnItems.length > 0).map(g => g.projectId)), [stnGrouped]);
+  const srnHasItemsSet = useMemo(() => new Set(srnGrouped.filter(g => g.srnItems.length > 0).map(g => g.projectId)), [srnGrouped]);
+  const coverageCounts = useMemo(() => {
+    let stnWith=0, stnWithout=0, stnNA=0, srnWith=0, srnWithout=0, srnNA=0;
+    roleFilteredProjects.forEach((p:any) => {
+      const hasStn = stnHasItemsSet.has(p.id);
+      const stnNAflag = p.stn_applicable === false;
+      if (hasStn) stnWith++; else if (stnNAflag) stnNA++; else stnWithout++;
+      const hasSrn = srnHasItemsSet.has(p.id);
+      const srnNAflag = p.srn_applicable === false;
+      if (hasSrn) srnWith++; else if (srnNAflag) srnNA++; else srnWithout++;
+    });
+    return { stnWith, stnWithout, stnNA, srnWith, srnWithout, srnNA };
+  }, [roleFilteredProjects, stnHasItemsSet, srnHasItemsSet]);
   const stnPendingCount  = roleStnItems.filter(i => i.utilisedStatus === 'submitted').length;
   const stnRejectedCount = roleStnItems.filter(i => i.utilisedStatus === 'pm_rejected').length;
   const stnApprovedCount = roleStnItems.filter(i => i.utilisedStatus === 'pm_approved').length;
