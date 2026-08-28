@@ -130,9 +130,13 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
-  // Re-fetch when auth session is established (fixes empty data after login)
+  // Re-fetch when auth session is established (fixes empty data after login).
+  // Skip the FIRST invocation — it always fires immediately with the already-established session,
+  // redundant with the mount-effect fetch. Only react to genuine later sign-in/refresh events.
+  const isInitialAuthEventRef = React.useRef(true);
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (isInitialAuthEventRef.current) { isInitialAuthEventRef.current = false; return; }
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         fetchInvoices();
       }

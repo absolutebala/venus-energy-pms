@@ -174,10 +174,15 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
-  // Re-fetch when auth session is established (fixes empty data after login)
+  // Re-fetch when auth session is established (fixes empty data after login).
+  // The FIRST invocation of this listener always fires immediately with the already-established
+  // session — redundant with the mount-effect fetch above — so skip it and only react to genuine
+  // later events (an actual sign-in or token refresh happening after mount).
+  const isInitialAuthEventRef = React.useRef(true);
   useEffect(() => {
     const supabaseClient = supabase;
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event) => {
+      if (isInitialAuthEventRef.current) { isInitialAuthEventRef.current = false; return; }
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         fetchProjects();
       }
