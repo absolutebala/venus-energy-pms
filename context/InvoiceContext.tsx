@@ -140,10 +140,16 @@ export function InvoiceProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [fetchInvoices]);
   // Re-fetch when browser tab regains focus (avoids stale data after navigation)
+  const lastFocusFetchRef = React.useRef(Date.now());
   useEffect(() => {
-    // Debounce focus refetch to avoid hammering Supabase on every tab switch
+    // Only refetch on focus if data is stale (5+ min old), not on every single tab switch
     let focusTimer: ReturnType<typeof setTimeout>;
-    const onFocus = () => { clearTimeout(focusTimer); focusTimer = setTimeout(() => fetchInvoices(), 500); };
+    const onFocus = () => {
+      const now = Date.now();
+      if (now - lastFocusFetchRef.current < 5 * 60 * 1000) return;
+      lastFocusFetchRef.current = now;
+      clearTimeout(focusTimer); focusTimer = setTimeout(() => fetchInvoices(), 500);
+    };
     window.addEventListener('focus', onFocus);
     return () => { window.removeEventListener('focus', onFocus); clearTimeout(focusTimer); };
   }, [fetchInvoices]);

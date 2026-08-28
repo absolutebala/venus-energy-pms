@@ -129,10 +129,16 @@ export function ExpenseProvider({ children }: { children: React.ReactNode }) {
     });
     return () => subscription.unsubscribe();
   }, [fetchExpenses]);
-  // Re-fetch when browser tab regains focus
+  // Re-fetch on focus — only if data is stale (5+ min old), not on every single tab switch
+  const lastFocusFetchRef = React.useRef(Date.now());
   useEffect(() => {
     let focusTimer: ReturnType<typeof setTimeout>;
-    const onFocus = () => { clearTimeout(focusTimer); focusTimer = setTimeout(() => fetchExpenses(), 500); };
+    const onFocus = () => {
+      const now = Date.now();
+      if (now - lastFocusFetchRef.current < 5 * 60 * 1000) return;
+      lastFocusFetchRef.current = now;
+      clearTimeout(focusTimer); focusTimer = setTimeout(() => fetchExpenses(), 500);
+    };
     window.addEventListener('focus', onFocus);
     return () => { window.removeEventListener('focus', onFocus); clearTimeout(focusTimer); };
   }, [fetchExpenses]);

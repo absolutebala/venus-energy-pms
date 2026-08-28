@@ -70,9 +70,15 @@ export function MaterialProvider({ children }: { children: React.ReactNode }) {
     return () => { supabase.removeChannel(channel); };
   }, [fetchAll]);
 
-  // Re-fetch on window focus
+  // Re-fetch on focus — only if data is stale (5+ min old), not on every single tab switch
+  const lastFocusFetchRef = React.useRef(Date.now());
   useEffect(() => {
-    const onFocus = () => fetchAll();
+    const onFocus = () => {
+      const now = Date.now();
+      if (now - lastFocusFetchRef.current < 5 * 60 * 1000) return;
+      lastFocusFetchRef.current = now;
+      fetchAll();
+    };
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, [fetchAll]);

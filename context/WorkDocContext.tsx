@@ -54,9 +54,15 @@ export function WorkDocProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => { fetchDocs(); }, [fetchDocs]);
-  // Re-fetch when browser tab regains focus (avoids stale data after navigation)
+  // Re-fetch on focus — only if data is stale (5+ min old), not on every single tab switch
+  const lastFocusFetchRef = React.useRef(Date.now());
   useEffect(() => {
-    const onFocus = () => fetchDocs();
+    const onFocus = () => {
+      const now = Date.now();
+      if (now - lastFocusFetchRef.current < 5 * 60 * 1000) return;
+      lastFocusFetchRef.current = now;
+      fetchDocs();
+    };
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, [fetchDocs]);
