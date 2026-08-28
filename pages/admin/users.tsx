@@ -454,7 +454,7 @@ export default function AdminUsersPage() {
             <select value={fManagerId} onChange={e=>setFManagerId(e.target.value)}
               style={{ width:'100%', border:`1px solid ${T.border}`, borderRadius:8, padding:'10px 12px', fontSize:13, outline:'none', background:'#fff' }}>
               <option value="">— No Manager —</option>
-              {users.map(u=><option key={u.id} value={u.id}>{u.full_name || u.email}</option>)}
+              {users.filter(u=>u.role!=='vendor').map(u=><option key={u.id} value={u.id}>{u.full_name || u.email}</option>)}
             </select>
           </div>
           <RoleSelect value={fRole} onChange={setFRole}  roles={profile?.role === "super_admin" ? ADMIN_ASSIGNABLE_ROLES : ASSIGNABLE_ROLES}/>
@@ -500,7 +500,7 @@ export default function AdminUsersPage() {
             <select value={fManagerId} onChange={e=>setFManagerId(e.target.value)}
               style={{ width:'100%', border:`1px solid ${T.border}`, borderRadius:8, padding:'10px 12px', fontSize:13, outline:'none', background:'#fff' }}>
               <option value="">— No Manager —</option>
-              {users.filter(u=>u.id!==editUser?.id).map(u=><option key={u.id} value={u.id}>{u.full_name || u.email}</option>)}
+              {users.filter(u=>u.id!==editUser?.id && u.role!=='vendor').map(u=><option key={u.id} value={u.id}>{u.full_name || u.email}</option>)}
             </select>
           </div>
           <RoleSelect value={fRole} onChange={setFRole}  roles={profile?.role === "super_admin" ? ADMIN_ASSIGNABLE_ROLES : ASSIGNABLE_ROLES}/>
