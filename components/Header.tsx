@@ -92,7 +92,7 @@ export default function Header() {
         link:'/projects', created_at: new Date(now.getTime()-60000).toISOString() });
 
       const { data: ptwExpiring } = await supabase.from('projects').select('id,site,ptw_date_to,ptw_ticket_id')
-        .not('ptw_date_to','is',null).neq('ptw_date_to','').lte('ptw_date_to',in30).gte('ptw_date_to',today);
+        .not('ptw_date_to','is',null).lte('ptw_date_to',in30).gte('ptw_date_to',today);
       ptwExpiring?.forEach((p:any) => notifs.push({ id:`ptw-${p.id}`, type:'warning', is_read:false,
         title:`PTW Expiring: ${p.ptw_ticket_id||p.id}`,
         message:`Expires ${new Date(p.ptw_date_to).toLocaleDateString('en-IN')} — ${p.site}`,
@@ -135,7 +135,7 @@ export default function Header() {
 
         // PTW expiring on their projects
         const { data: ptwExpiring } = await supabase.from('projects').select('id,site,ptw_date_to,ptw_ticket_id')
-          .in('id', myProjectIds).not('ptw_date_to','is',null).neq('ptw_date_to','')
+          .in('id', myProjectIds).not('ptw_date_to','is',null)
           .lte('ptw_date_to',in30).gte('ptw_date_to',today);
         ptwExpiring?.forEach((p:any) => notifs.push({ id:`ptw-${p.id}`, type:'warning', is_read:false,
           title:`PTW Expiring: ${p.ptw_ticket_id||p.id}`,
@@ -254,14 +254,25 @@ export default function Header() {
   const fetchRef = useRef(fetchNotifications);
   useEffect(() => { fetchRef.current = fetchNotifications; }, [fetchNotifications]);
 
-  useEffect(() => { if (profile) fetchNotifications(); }, [profile, fetchNotifications]);
+  // Guard against overlapping fetchNotifications() runs — this function makes 8+ sequential,
+  // unparallelized queries, and can occasionally take longer than the 30s poll interval below.
+  // Without this guard, a slow cycle doesn't finish before the next one starts, and they pile up
+  // (visible as the same query appearing several times at once in the Network tab).
+  const isFetchingNotifsRef = useRef(false);
+  const runFetchNotifications = useCallback(async () => {
+    if (isFetchingNotifsRef.current) return;
+    isFetchingNotifsRef.current = true;
+    try { await fetchRef.current(); } finally { isFetchingNotifsRef.current = false; }
+  }, []);
+
+  useEffect(() => { if (profile) runFetchNotifications(); }, [profile, fetchNotifications, runFetchNotifications]);
 
   // Polling fallback — refresh every 30 seconds
   useEffect(() => {
     if (!profile) return;
-    const interval = setInterval(() => { fetchRef.current(); }, 30000);
+    const interval = setInterval(() => { runFetchNotifications(); }, 30000);
     return () => clearInterval(interval);
-  }, [profile?.role]);
+  }, [profile?.role, runFetchNotifications]);
 
   // Realtime: re-fetch notifications on any project/invoice change
   useEffect(() => {
