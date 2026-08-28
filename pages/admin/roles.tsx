@@ -14,6 +14,7 @@ const ROLES: { key: UserRole; label: string; icon: string; desc: string }[] = [
   { key:'project_manager',label:'Project Manager',icon:'📋', desc:'Project edit, vendor assign, PTW, approve utilisations' },
   { key:'site_engineer',  label:'Site Engineer',  icon:'👷', desc:'Read-only — projects in their region'                   },
   { key:'accounting_team',label:'Accounting',     icon:'💳', desc:'Site Expenses full access, STN/SRN reconciliation'     },
+  { key:'employee',       label:'Employee',       icon:'👤', desc:'Daily check-in/check-out attendance tracking only'      },
   { key:'vendor',         label:'Vendor',         icon:'🏢', desc:'Upload docs, submit utilisation per item'               },
   { key:'viewer',         label:'Viewer',         icon:'👁',  desc:'Read-only access to all modules'                       },
 ];
@@ -29,6 +30,7 @@ const MODULES: { key: string; label: string; icon: string; desc: string; note?: 
   { key:'reports',      label:'Reports',          icon:'📊', desc:'Auto-generated reports — Read only for all roles (no manual create)'               },
   { key:'capital',      label:'Capital',          icon:'🏦', desc:'Capital/Personal Fund summary and Investor 1/2 profit tracking — defaults to Super Admin only' },
   { key:'safety_compliance', label:'Safety Compliance', icon:'🛡', desc:'Site safety inspection tracking — enable per role when ready to use' },
+  { key:'attendance',        label:'Attendance',        icon:'🕐', desc:'Daily check-in/check-out, WFH approval, holiday calendar — available to all roles except Vendor' },
 ];
 
 

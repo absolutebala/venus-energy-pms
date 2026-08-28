@@ -7,8 +7,8 @@ import { ROLE_LABELS, UserRole } from '@/types';
 import { createClient } from '@/lib/supabase';
 
 const ROLES: UserRole[] = ['super_admin','region_manager','general_manager','project_manager','site_engineer','viewer'];
-const ASSIGNABLE_ROLES: UserRole[] = ['region_manager','general_manager','project_manager','site_engineer','accounting_team','vendor','viewer'];
-const ADMIN_ASSIGNABLE_ROLES: UserRole[] = ['super_admin','region_manager','general_manager','project_manager','site_engineer','accounting_team','vendor','viewer'];
+const ASSIGNABLE_ROLES: UserRole[] = ['region_manager','general_manager','project_manager','site_engineer','accounting_team','employee','vendor','viewer'];
+const ADMIN_ASSIGNABLE_ROLES: UserRole[] = ['super_admin','region_manager','general_manager','project_manager','site_engineer','accounting_team','employee','vendor','viewer'];
 
 interface UserRow {
   id: string;

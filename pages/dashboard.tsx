@@ -1445,6 +1445,7 @@ export default function Dashboard() {
         {role === 'vendor'          && <VendorDashboard         projects={isLoading ? [] : projectsWithAging} />}
         {role === 'viewer'          && <ViewerDashboard         projects={isLoading ? [] : projectsWithAging} />}
         {role === 'accounting_team' && <AccountingDashboard     projects={isLoading ? [] : projectsWithAging} />}
+        {role === 'employee'        && <ViewerDashboard          projects={isLoading ? [] : projectsWithAging} />}
       </div>
     </Layout>
   );
