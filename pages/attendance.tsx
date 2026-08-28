@@ -103,6 +103,13 @@ export default function AttendancePage() {
 
   const isSuperAdmin = profile?.role === 'super_admin';
 
+  // Default to Team view for Super Admin and Region Manager, once the role is known
+  React.useEffect(() => {
+    if (profile?.role === 'super_admin' || profile?.role === 'region_manager') {
+      setTab('team');
+    }
+  }, [profile?.role]);
+
   const days: Date[] = React.useMemo(() => {
     if (viewMode === 'week') {
       const start = startOfWeek(anchor);
