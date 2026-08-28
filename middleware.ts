@@ -33,7 +33,21 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  // Guard against a slow/hanging Supabase auth response taking down the ENTIRE site.
+  // Without this, a Supabase outage or latency spike causes every route to 504
+  // (MIDDLEWARE_INVOCATION_TIMEOUT) until Vercel's hard middleware timeout kicks in.
+  // If the session check doesn't resolve within 8s, fail safely: treat as no session
+  // and let the normal redirect-to-login logic below handle it.
+  let session = null;
+  try {
+    const result = await Promise.race([
+      supabase.auth.getSession(),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('session check timed out')), 8000)),
+    ]);
+    session = result.data.session;
+  } catch {
+    session = null;
+  }
   const { pathname } = request.nextUrl;
 
   // Public routes — accessible without auth
