@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { data: callerProfile } = await admin.from('profiles').select('role').eq('id', user.id).single();
   if (!callerProfile || callerProfile.role !== 'super_admin') return res.status(403).json({ error: 'Forbidden' });
 
-  const { email, password, full_name, phone, region, role, vendor_id } = req.body;
+  const { email, password, full_name, phone, region, role, vendor_id, manager_id } = req.body;
   if (!email || !password || !role) return res.status(400).json({ error: 'Email, password, and role are required' });
   if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
@@ -48,6 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     full_name:   full_name   || null,
     phone:       phone       || null,
     vendor_id: vendor_id || null,
+    manager_id:  manager_id  || null,
     region:      region      || null,
     role,
     is_active:   true,

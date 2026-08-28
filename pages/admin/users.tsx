@@ -151,6 +151,7 @@ export default function AdminUsersPage() {
   const [fPhone, setFPhone]           = useState('');
   const [fDesig, setFDesig]           = useState('');
   const [fRegion, setFRegion]         = useState('');
+  const [fManagerId, setFManagerId]   = useState('');
   const [fRole,    setFRole]    = useState<UserRole>('viewer');
   const [fVendorId, setFVendorId] = useState('');
   const [vendorList, setVendorList] = useState<{id:string;name:string}[]>([]);
@@ -208,6 +209,7 @@ export default function AdminUsersPage() {
     setFPhone(u.phone || '');
     setFDesig(u.designation || '');
     setFRegion(u.region || ''); setFVendorId((u as any).vendor_id || '');
+    setFManagerId((u as any).manager_id || '');
     setFRole(u.role);
     setFActive(u.is_active);
     setEditUser(u);
@@ -216,7 +218,7 @@ export default function AdminUsersPage() {
 
   const resetForm = () => {
     setFEmail(''); setFName(''); setFPhone(''); setFDesig('');
-    setFRegion(''); setFRole('viewer'); setFPassword(''); setFActive(true); setFVendorId('');
+    setFRegion(''); setFRole('viewer'); setFPassword(''); setFActive(true); setFVendorId(''); setFManagerId('');
     setEditUser(null); setMsg(null);
   };
 
@@ -243,7 +245,7 @@ export default function AdminUsersPage() {
     const res = await fetch('/api/admin/create-user', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', Authorization: `Bearer ${crSess?.access_token||''}` },
-      body: JSON.stringify({ email:fEmail, password:fPassword, full_name:fName, phone:fPhone, region:fRegion, role:fRole, vendor_id:fRole==='vendor'?fVendorId:null }),
+      body: JSON.stringify({ email:fEmail, password:fPassword, full_name:fName, phone:fPhone, region:fRegion, role:fRole, vendor_id:fRole==='vendor'?fVendorId:null, manager_id:fManagerId||null }),
     });
     const data = await res.json();
     setBusy(false);
@@ -258,7 +260,7 @@ export default function AdminUsersPage() {
     const res = await fetch('/api/admin/update-user', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', Authorization: `Bearer ${edSess?.access_token||''}` },
-      body: JSON.stringify({ userId: editUser.id, full_name:fName, phone:fPhone, region:fRegion, role:fRole, is_active:fActive, vendor_id:fRole==='vendor'?fVendorId:null }),
+      body: JSON.stringify({ userId: editUser.id, full_name:fName, phone:fPhone, region:fRegion, role:fRole, is_active:fActive, vendor_id:fRole==='vendor'?fVendorId:null, manager_id:fManagerId||null }),
     });
     const data = await res.json();
     setBusy(false);
@@ -447,6 +449,14 @@ export default function AdminUsersPage() {
 
             <FormField label="Region" value={fRegion} onChange={setFRegion} placeholder="Tamil Nadu" fkey="cr"  focused={focused} setFocused={setFocused}/>
           </div>
+          <div style={{ marginBottom:12 }}>
+            <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6 }}>MANAGER (OPTIONAL)</label>
+            <select value={fManagerId} onChange={e=>setFManagerId(e.target.value)}
+              style={{ width:'100%', border:`1px solid ${T.border}`, borderRadius:8, padding:'10px 12px', fontSize:13, outline:'none', background:'#fff' }}>
+              <option value="">— No Manager —</option>
+              {users.map(u=><option key={u.id} value={u.id}>{u.full_name || u.email}</option>)}
+            </select>
+          </div>
           <RoleSelect value={fRole} onChange={setFRole}  roles={profile?.role === "super_admin" ? ADMIN_ASSIGNABLE_ROLES : ASSIGNABLE_ROLES}/>
           {fRole === 'vendor' && (
             <div style={{ marginBottom:12 }}>
@@ -484,6 +494,14 @@ export default function AdminUsersPage() {
             <FormField label="Phone" value={fPhone} onChange={setFPhone} fkey="ePhone"  focused={focused} setFocused={setFocused}/>
 
             <FormField label="Region" value={fRegion} onChange={setFRegion} fkey="eRegion"  focused={focused} setFocused={setFocused}/>
+          </div>
+          <div style={{ marginBottom:12 }}>
+            <label style={{ display:'block', fontSize:12, fontWeight:600, color:T.textMuted, marginBottom:6 }}>MANAGER (OPTIONAL)</label>
+            <select value={fManagerId} onChange={e=>setFManagerId(e.target.value)}
+              style={{ width:'100%', border:`1px solid ${T.border}`, borderRadius:8, padding:'10px 12px', fontSize:13, outline:'none', background:'#fff' }}>
+              <option value="">— No Manager —</option>
+              {users.filter(u=>u.id!==editUser?.id).map(u=><option key={u.id} value={u.id}>{u.full_name || u.email}</option>)}
+            </select>
           </div>
           <RoleSelect value={fRole} onChange={setFRole}  roles={profile?.role === "super_admin" ? ADMIN_ASSIGNABLE_ROLES : ASSIGNABLE_ROLES}/>
           {fRole === 'vendor' && (
