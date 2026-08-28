@@ -20,6 +20,17 @@ function formatElapsed(seconds: number): string {
   return `${h}h ${m}m`;
 }
 
+function formatElapsedWithSeconds(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  return `${h}h ${m}m ${s}s`;
+}
+
+function formatClockTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
 export default function AttendanceWidget() {
   const { todayLog, loading, checkingIn, checkingOut, checkIn, checkOut } = useAttendance();
   const [now, setNow] = React.useState(Date.now());
@@ -28,7 +39,7 @@ export default function AttendanceWidget() {
 
   React.useEffect(() => {
     if (!todayLog?.checkInAt || todayLog?.checkOutAt) return;
-    const t = setInterval(() => setNow(Date.now()), 30000);
+    const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, [todayLog?.checkInAt, todayLog?.checkOutAt]);
 
@@ -68,10 +79,13 @@ export default function AttendanceWidget() {
       )}
 
       {isDoneForDay ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: T.bg, border: `1px solid ${T.border}`,
-          borderRadius: 8, padding: '6px 12px', fontSize: 12, color: T.textMuted }}>
-          <span>✅</span>
-          <span>Checked out — {formatElapsed(totalSecondsForDay)} logged</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, background: T.bg, border: `1px solid ${T.border}`,
+          borderRadius: 8, padding: '6px 12px', fontSize: 11, color: T.textMuted }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <span>✅ In: {todayLog?.checkInAt ? formatClockTime(todayLog.checkInAt) : '—'}</span>
+            <span>Out: {todayLog?.checkOutAt ? formatClockTime(todayLog.checkOutAt) : '—'}</span>
+          </div>
+          <div style={{ fontWeight: 700, color: T.text, fontSize: 12 }}>Today Working Hours: {formatElapsed(totalSecondsForDay)}</div>
         </div>
       ) : isCheckedIn ? (
         <>
@@ -80,7 +94,7 @@ export default function AttendanceWidget() {
             <span>{todayLog?.workMode === 'office' ? '🏢' : '🏠'}</span>
             <span>{todayLog?.workMode === 'office' ? 'Office' : 'Home'}{todayLog?.workMode === 'home' && todayLog?.wfhStatus === 'pending' ? ' (pending)' : ''}</span>
             <span style={{ color: T.textMuted, fontWeight: 400 }}>·</span>
-            <span>{formatElapsed(elapsedSeconds)}</span>
+            <span>{formatElapsedWithSeconds(elapsedSeconds)}</span>
           </div>
           <button onClick={handleCheckOut} disabled={checkingOut}
             style={{ background: T.danger, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px',
