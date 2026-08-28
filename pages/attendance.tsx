@@ -44,7 +44,7 @@ function hoursFor(log?: AttLog): string {
 
 interface CellInfo {
   label: string; bg: string; color: string; log?: AttLog; pendingWfh?: AttLog;
-  pendingRequest?: AttReq; approvedRequest?: AttReq; isFuture: boolean; isWeeklyOff: boolean;
+  pendingRequest?: AttReq; approvedRequest?: AttReq; isFuture: boolean; isWeeklyOff: boolean; hoursLabel?: string;
 }
 
 function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[]): CellInfo {
@@ -63,8 +63,10 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[]):
 
   if (approvedRequest) {
     const label = approvedRequest.requested_status === 'present' ? 'Present (marked)' : 'Absent (marked)';
+    const underlyingLog = logs.find(l => l.user_id === userId && l.log_date === dateStr);
     return { label, bg: approvedRequest.requested_status === 'present' ? T.successLight : T.dangerLight,
-      color: approvedRequest.requested_status === 'present' ? T.success : T.danger, approvedRequest, isFuture, isWeeklyOff };
+      color: approvedRequest.requested_status === 'present' ? T.success : T.danger, approvedRequest,
+      hoursLabel: underlyingLog ? hoursFor(underlyingLog) : undefined, isFuture, isWeeklyOff };
   }
 
   const log = logs.find(l => l.user_id === userId && l.log_date === dateStr);
@@ -72,11 +74,11 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[]):
     if (pendingRequest) return { label: 'Absent (Request Pending)', bg: T.warningLight, color: T.warning, pendingRequest, isFuture, isWeeklyOff };
     return { label: 'Absent', bg: T.dangerLight, color: T.danger, isFuture, isWeeklyOff };
   }
-  if (log.work_mode === 'office') return { label: `Office · ${hoursFor(log)}`, bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
+  if (log.work_mode === 'office') return { label: 'Office', hoursLabel: hoursFor(log), bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
   if (log.work_mode === 'home') {
-    if (log.wfh_status === 'approved') return { label: `WFH · ${hoursFor(log)}`, bg: '#EFF6FF', color: '#2563EB', log, isFuture, isWeeklyOff };
+    if (log.wfh_status === 'approved') return { label: 'WFH', hoursLabel: hoursFor(log), bg: '#EFF6FF', color: '#2563EB', log, isFuture, isWeeklyOff };
     if (log.wfh_status === 'rejected') return { label: 'Leave (WFH rejected)', bg: T.dangerLight, color: T.danger, log, isFuture, isWeeklyOff };
-    return { label: `WFH · ${hoursFor(log)} (Pending)`, bg: T.warningLight, color: T.warning, log, pendingWfh: log, isFuture, isWeeklyOff };
+    return { label: 'WFH (Pending)', hoursLabel: hoursFor(log), bg: T.warningLight, color: T.warning, log, pendingWfh: log, isFuture, isWeeklyOff };
   }
   return { label: 'Absent', bg: T.dangerLight, color: T.danger, isFuture, isWeeklyOff };
 }
@@ -309,6 +311,7 @@ export default function AttendancePage() {
                       <td style={{ padding: '9px 10px', fontSize: 12, borderBottom: `1px solid ${T.border}` }}>{fmtDayLabel(d)}</td>
                       <td style={{ padding: '9px 10px', borderBottom: `1px solid ${T.border}` }}>
                         <span style={{ fontSize: 11, fontWeight: 600, color: c.color, background: c.bg, padding: '3px 10px', borderRadius: 20 }}>{c.label}</span>
+                        {c.hoursLabel && <div style={{ fontSize: 10, color: T.textMuted, marginTop: 3 }}>{c.hoursLabel} logged</div>}
                         {renderCellDetail(c)}
                       </td>
                       <td style={{ padding: '9px 10px', borderBottom: `1px solid ${T.border}` }}>
@@ -349,8 +352,9 @@ export default function AttendancePage() {
                         <td key={di} style={{ padding: '6px', borderBottom: `1px solid ${T.border}`, textAlign: 'center' as const }}>
                           <span onClick={() => clickable && setPopupCell({ userId: m.id, date: fmtDate(d), info: c, canManage: true })}
                             style={{ fontSize: 10, fontWeight: 600, color: c.color, background: c.bg, padding: '3px 6px', borderRadius: 6, whiteSpace: 'nowrap' as const, cursor: clickable ? 'pointer' : 'default', display: 'inline-block' }}>
-                            {viewMode === 'month' ? c.label.split(' · ')[0].split(' (')[0] : c.label}
+                            {viewMode === 'month' ? c.label.split(' (')[0] : c.label}
                           </span>
+                          {viewMode === 'week' && c.hoursLabel && <div style={{ fontSize: 9, color: T.textMuted, marginTop: 2 }}>{c.hoursLabel}</div>}
                         </td>
                       );
                     })}
