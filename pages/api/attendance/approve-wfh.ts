@@ -31,13 +31,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
-  const { error } = await admin.from('attendance_logs').update({
+  const { data, error } = await admin.from('attendance_logs').update({
     wfh_status: action === 'approve' ? 'approved' : 'rejected',
     approved_by: user.id,
     approved_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  }).eq('id', logId);
+  }).eq('id', logId).select().single();
 
   if (error) return res.status(500).json({ error: error.message });
-  return res.status(200).json({ success: true });
+  return res.status(200).json({ success: true, log: data });
 }

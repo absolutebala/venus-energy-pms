@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
-  const { error } = await admin.from('attendance_requests').insert({
+  const { data, error } = await admin.from('attendance_requests').insert({
     user_id: targetUserId,
     request_date: requestDate,
     requested_status: newStatus,
@@ -37,8 +37,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     requested_by: user.id,
     approved_by: user.id,
     approved_at: new Date().toISOString(),
-  });
+  }).select().single();
 
   if (error) return res.status(500).json({ error: error.message });
-  return res.status(200).json({ success: true });
+  return res.status(200).json({ success: true, request: data });
 }

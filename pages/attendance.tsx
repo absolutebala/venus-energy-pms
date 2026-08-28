@@ -116,12 +116,21 @@ export default function AttendancePage() {
   const rangeStart = fmtDate(days[0]);
   const rangeEnd = fmtDate(days[days.length - 1]);
 
+  // Name lookup map — fetched ONCE on mount, not on every date-range navigation or after every action
+  React.useEffect(() => {
+    supabase.from('profiles').select('id,full_name,email').then(({ data }) => {
+      const map: Record<string, string> = {};
+      (data || []).forEach((p: any) => { map[p.id] = p.full_name || p.email; });
+      setNameMap(map);
+    });
+  }, []);
+
   const loadData = React.useCallback(async () => {
     if (!profile?.id) return;
     setLoading(true);
 
-    // First wave — everything here is independent, run in parallel instead of one-at-a-time
-    const [ownRes, ownReqRes, membersRes, allProfilesRes] = await Promise.all([
+    // First wave — independent queries run in parallel
+    const [ownRes, ownReqRes, membersRes] = await Promise.all([
       supabase.from('attendance_logs').select('*')
         .eq('user_id', profile.id).gte('log_date', rangeStart).lte('log_date', rangeEnd),
       supabase.from('attendance_requests').select('*')
@@ -129,16 +138,12 @@ export default function AttendancePage() {
       isSuperAdmin
         ? supabase.from('profiles').select('id,full_name,email').neq('id', profile.id).neq('role', 'vendor').order('full_name')
         : supabase.from('profiles').select('id,full_name,email').eq('manager_id', profile.id).neq('role', 'vendor').order('full_name'),
-      supabase.from('profiles').select('id,full_name,email'),
     ]);
 
     setMyLogs(ownRes.data || []);
     setMyRequests(ownReqRes.data || []);
     const members = membersRes.data || [];
     setTeamMembers(members);
-    const map: Record<string, string> = {};
-    (allProfilesRes.data || []).forEach((p: any) => { map[p.id] = p.full_name || p.email; });
-    setNameMap(map);
 
     // Second wave — depends on the team member ids resolved above
     if (members.length > 0) {
@@ -186,7 +191,7 @@ export default function AttendancePage() {
       if (!res.ok) { setToast({ msg: '❌ ' + (json.error || 'Failed'), type: 'error' }); return; }
       setToast({ msg: '✅ Request submitted for approval', type: 'success' });
       setRequestModal(null); setRequestReason('');
-      loadData();
+      if (json.request) setMyRequests(prev => [...prev, json.request]);
     } finally { setBusy(null); }
   };
 
@@ -201,7 +206,10 @@ export default function AttendancePage() {
       if (!res.ok) { setToast({ msg: '❌ ' + (json.error || 'Failed'), type: 'error' }); return; }
       setToast({ msg: `✅ Marked ${newStatus === 'present' ? 'Present' : 'Absent'}`, type: 'success' });
       setPopupCell(null);
-      loadData();
+      if (json.request) {
+        setTeamRequests(prev => [...prev, json.request]);
+        if (userId === profile?.id) setMyRequests(prev => [...prev, json.request]);
+      }
     } finally { setBusy(null); }
   };
 
@@ -212,7 +220,15 @@ export default function AttendancePage() {
         method: 'POST', headers: await authHeader(),
         body: JSON.stringify({ logId, action }),
       });
-      if (res.ok) { setToast({ msg: `✅ WFH ${action === 'approve' ? 'approved' : 'rejected'}`, type: 'success' }); setPopupCell(null); loadData(); }
+      const json = await res.json();
+      if (res.ok && json.log) {
+        setToast({ msg: `✅ WFH ${action === 'approve' ? 'approved' : 'rejected'}`, type: 'success' });
+        setPopupCell(null);
+        setTeamLogs(prev => prev.map(l => l.id === json.log.id ? json.log : l));
+        setMyLogs(prev => prev.map(l => l.id === json.log.id ? json.log : l));
+      } else if (!res.ok) {
+        setToast({ msg: '❌ ' + (json.error || 'Failed'), type: 'error' });
+      }
     } finally { setBusy(null); }
   };
 
@@ -223,7 +239,15 @@ export default function AttendancePage() {
         method: 'POST', headers: await authHeader(),
         body: JSON.stringify({ requestId, action }),
       });
-      if (res.ok) { setToast({ msg: `✅ Request ${action === 'approve' ? 'approved' : 'rejected'}`, type: 'success' }); setPopupCell(null); loadData(); }
+      const json = await res.json();
+      if (res.ok && json.request) {
+        setToast({ msg: `✅ Request ${action === 'approve' ? 'approved' : 'rejected'}`, type: 'success' });
+        setPopupCell(null);
+        setTeamRequests(prev => prev.map(r => r.id === json.request.id ? json.request : r));
+        setMyRequests(prev => prev.map(r => r.id === json.request.id ? json.request : r));
+      } else if (!res.ok) {
+        setToast({ msg: '❌ ' + (json.error || 'Failed'), type: 'error' });
+      }
     } finally { setBusy(null); }
   };
 

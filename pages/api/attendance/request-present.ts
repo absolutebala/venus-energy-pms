@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'requestDate and reason are required' });
   }
 
-  const { error } = await admin.from('attendance_requests').insert({
+  const { data, error } = await admin.from('attendance_requests').insert({
     user_id: user.id,
     request_date: requestDate,
     requested_status: 'present',
@@ -25,8 +25,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     status: 'pending',
     source: 'user',
     requested_by: user.id,
-  });
+  }).select().single();
 
   if (error) return res.status(500).json({ error: error.message });
-  return res.status(200).json({ success: true });
+  return res.status(200).json({ success: true, request: data });
 }

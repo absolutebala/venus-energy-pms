@@ -30,12 +30,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
-  const { error } = await admin.from('attendance_requests').update({
+  const { data, error } = await admin.from('attendance_requests').update({
     status: action === 'approve' ? 'approved' : 'rejected',
     approved_by: user.id,
     approved_at: new Date().toISOString(),
-  }).eq('id', requestId);
+  }).eq('id', requestId).select().single();
 
   if (error) return res.status(500).json({ error: error.message });
-  return res.status(200).json({ success: true });
+  return res.status(200).json({ success: true, request: data });
 }
