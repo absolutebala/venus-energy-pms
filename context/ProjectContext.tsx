@@ -149,23 +149,28 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      // Supabase PostgREST caps at 1000 rows — fetch in batches
+      // Supabase PostgREST caps at 1000 rows — fetch in batches. Update state and clear `loading`
+      // after the FIRST batch arrives (instead of waiting for all batches) so the Projects table
+      // can render immediately with partial data while the rest streams in behind it. Filters/
+      // counts will fill in as later batches arrive rather than being complete on the first paint.
       const PAGE_SIZE = 1000;
       let allData: any[] = [];
       let from = 0;
+      let firstBatch = true;
       while (true) {
         const { data, error: err } = await supabase
           .from('projects')
           .select('*')
           .order('id')
           .range(from, from + PAGE_SIZE - 1);
-        if (err) { setError(err.message); return; }
+        if (err) { setError(err.message); setLoading(false); return; }
         if (!data || data.length === 0) break;
         allData = allData.concat(data);
+        setProjects(allData.map(mapRow));
+        if (firstBatch) { setLoading(false); firstBatch = false; }
         if (data.length < PAGE_SIZE) break;
         from += PAGE_SIZE;
       }
-      setProjects(allData.map(mapRow));
     } catch (e: any) {
       setError(e.message);
     } finally {
