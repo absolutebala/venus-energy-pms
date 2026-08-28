@@ -7,7 +7,7 @@ import {
   LayoutDashboard, FolderOpen, Building2, Package, Wallet,
   FileText, BarChart3, Shield, User, Users, Lock,
   ChevronLeft, ChevronRight, Boxes, ClipboardList,
-  Settings, Bell, TrendingUp, Activity, Landmark, Archive
+  Settings, Bell, TrendingUp, Activity, Landmark, Archive, Clock
 } from 'lucide-react';
 
 interface NavItem { href: string; label: string; icon: React.ReactNode; module?: string; alert?: boolean; }
@@ -26,6 +26,7 @@ const SA_NAV: NavItem[] = [
   { href:'/capital',           label:'Capital',          icon:<Landmark {...iconProps} />,         module:'capital'           },
   { href:'/reports',           label:'Reports',          icon:<BarChart3 {...iconProps} />,        module:'reports'           },
   { href:'/safety-compliance', label:'Safety Compliance',icon:<Shield {...iconProps} />,           module:'safety_compliance' },
+  { href:'/attendance',        label:'Attendance',       icon:<Clock {...iconProps} />,            module:'attendance'        },
 ];
 
 const VENDOR_NAV: NavItem[] = [
@@ -42,6 +43,7 @@ const PM_NAV: NavItem[] = [
   { href:'/srn-return',    label:'STN / SRN Status',icon:<Package {...iconProps} />,          module:'srn_return'    },
   { href:'/site-expenses', label:'Expenses',        icon:<Wallet {...iconProps} />,           module:'site_expenses' },
   { href:'/invoices',      label:'Invoices',        icon:<FileText {...iconProps} />,         module:'invoices'      },
+  { href:'/attendance',    label:'Attendance',      icon:<Clock {...iconProps} />,            module:'attendance'    },
   { href:'/profile',          label:'Profile',      icon:<User {...iconProps} />                                    },
 ];
 
@@ -53,6 +55,7 @@ const RM_NAV: NavItem[] = [
   { href:'/invoices',          label:'Invoices',         icon:<FileText {...iconProps} />,         module:'invoices'          },
   { href:'/reports',           label:'Reports',          icon:<BarChart3 {...iconProps} />,        module:'reports'           },
   { href:'/safety-compliance', label:'Safety Compliance',icon:<Shield {...iconProps} />,           module:'safety_compliance' },
+  { href:'/attendance',        label:'Attendance',       icon:<Clock {...iconProps} />,            module:'attendance'        },
   { href:'/admin/activities',  label:'Activities',         icon:<Activity {...iconProps} />                                        },
 ];
 
@@ -63,6 +66,7 @@ const ACCOUNTING_NAV: NavItem[] = [
   { href:'/invoices',          label:'Invoices',         icon:<FileText {...iconProps} />,         module:'invoices'          },
   { href:'/reports',           label:'Reports',          icon:<BarChart3 {...iconProps} />,        module:'reports'           },
   { href:'/safety-compliance', label:'Safety Compliance',icon:<Shield {...iconProps} />,           module:'safety_compliance' },
+  { href:'/attendance',        label:'Attendance',       icon:<Clock {...iconProps} />,            module:'attendance'        },
 ];
 
 const ADMIN_NAV: NavItem[] = [
