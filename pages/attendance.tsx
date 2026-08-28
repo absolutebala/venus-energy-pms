@@ -117,39 +117,41 @@ export default function AttendancePage() {
   const loadData = React.useCallback(async () => {
     if (!profile?.id) return;
     setLoading(true);
-    const { data: own } = await supabase.from('attendance_logs').select('*')
-      .eq('user_id', profile.id).gte('log_date', rangeStart).lte('log_date', rangeEnd);
-    setMyLogs(own || []);
-    const { data: ownReq } = await supabase.from('attendance_requests').select('*')
-      .eq('user_id', profile.id).gte('request_date', rangeStart).lte('request_date', rangeEnd);
-    setMyRequests(ownReq || []);
 
-    let members: any[] = [];
-    if (isSuperAdmin) {
-      const { data } = await supabase.from('profiles').select('id,full_name,email').neq('id', profile.id).order('full_name');
-      members = data || [];
-    } else {
-      const { data } = await supabase.from('profiles').select('id,full_name,email').eq('manager_id', profile.id).order('full_name');
-      members = data || [];
-    }
+    // First wave — everything here is independent, run in parallel instead of one-at-a-time
+    const [ownRes, ownReqRes, membersRes, allProfilesRes] = await Promise.all([
+      supabase.from('attendance_logs').select('*')
+        .eq('user_id', profile.id).gte('log_date', rangeStart).lte('log_date', rangeEnd),
+      supabase.from('attendance_requests').select('*')
+        .eq('user_id', profile.id).gte('request_date', rangeStart).lte('request_date', rangeEnd),
+      isSuperAdmin
+        ? supabase.from('profiles').select('id,full_name,email').neq('id', profile.id).order('full_name')
+        : supabase.from('profiles').select('id,full_name,email').eq('manager_id', profile.id).order('full_name'),
+      supabase.from('profiles').select('id,full_name,email'),
+    ]);
+
+    setMyLogs(ownRes.data || []);
+    setMyRequests(ownReqRes.data || []);
+    const members = membersRes.data || [];
     setTeamMembers(members);
+    const map: Record<string, string> = {};
+    (allProfilesRes.data || []).forEach((p: any) => { map[p.id] = p.full_name || p.email; });
+    setNameMap(map);
 
+    // Second wave — depends on the team member ids resolved above
     if (members.length > 0) {
-      const ids = members.map(m => m.id);
-      const { data: logs } = await supabase.from('attendance_logs').select('*')
-        .in('user_id', ids).gte('log_date', rangeStart).lte('log_date', rangeEnd);
-      setTeamLogs(logs || []);
-      const { data: reqs } = await supabase.from('attendance_requests').select('*')
-        .in('user_id', ids).gte('request_date', rangeStart).lte('request_date', rangeEnd);
-      setTeamRequests(reqs || []);
+      const ids = members.map((m: any) => m.id);
+      const [logsRes, reqsRes] = await Promise.all([
+        supabase.from('attendance_logs').select('*')
+          .in('user_id', ids).gte('log_date', rangeStart).lte('log_date', rangeEnd),
+        supabase.from('attendance_requests').select('*')
+          .in('user_id', ids).gte('request_date', rangeStart).lte('request_date', rangeEnd),
+      ]);
+      setTeamLogs(logsRes.data || []);
+      setTeamRequests(reqsRes.data || []);
     } else {
       setTeamLogs([]); setTeamRequests([]);
     }
-
-    const { data: allProfiles } = await supabase.from('profiles').select('id,full_name,email');
-    const map: Record<string, string> = {};
-    (allProfiles || []).forEach((p: any) => { map[p.id] = p.full_name || p.email; });
-    setNameMap(map);
 
     setLoading(false);
   }, [profile?.id, isSuperAdmin, rangeStart, rangeEnd]);
