@@ -3319,7 +3319,7 @@ export default function ProjectDetailPage() {
 
   const showPTW           = !loading && can('sec_ptw',              'read');
 
-  const { getProject, updateProject: ctxUpdateProject, projects: allProjects } = useProjects();
+  const { getProject, updateProject: ctxUpdateProject, projects: allProjects, fullyLoaded: allProjectsFullyLoaded } = useProjects();
   const { expenses: allExpenses, loading: allExpLoading } = useExpenses();
   const { invoices: allInvoices, loading: allInvLoading } = useInvoices();
   const finSummaryLoading = allExpLoading || allInvLoading;
@@ -3600,6 +3600,21 @@ export default function ProjectDetailPage() {
 
   // Merge: DB project takes priority over local state
   const project = (dbProject as any) || null;  // Only use live DB data, no seed fallback
+
+  // Don't conclude "not found" until the FULL project list has loaded at least once. Projects now
+  // load progressively in batches (fastest-first for the Projects list page), so a project can be
+  // legitimately still-loading (in a later batch) even after the first batch has already arrived —
+  // previously this had no loading gate at all and would flash "Project Not Found" on every fresh
+  // page load until the list happened to finish fetching.
+  if (!project && !allProjectsFullyLoaded) return (
+    <Layout>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh', flexDirection:'column', gap:16 }}>
+        <div className="spinner" style={{ width:32, height:32, borderTopColor:T.primary, borderColor:`${T.primary}30` }} />
+        <div style={{ fontSize:14, color:T.textMuted }}>Loading project…</div>
+      </div>
+    </Layout>
+  );
+
   if (!project) return (
     <Layout>
       <div style={{ ...card, textAlign:'center', padding:60, margin:20 }}>

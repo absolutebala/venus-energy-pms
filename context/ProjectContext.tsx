@@ -127,6 +127,12 @@ function mapToDb(updates: Partial<Project>): Record<string, any> {
 interface ProjectContextType {
   projects: Project[];
   loading: boolean;
+  // True only once ALL batches have finished loading (unlike `loading`, which now flips false
+  // after just the first batch so the Projects list can render progressively). Pages that need to
+  // conclude "this ID doesn't exist" — like Project Detail's "Project Not Found" check — must wait
+  // for this, not `loading`, or they'll falsely report "not found" while later batches are still
+  // streaming in and the requested project simply hasn't arrived yet.
+  fullyLoaded: boolean;
   error: string | null;
   getProject: (id: string) => Project | undefined;
   updateProject: (id: string, updates: Partial<Project>, updatedBy?: string) => Promise<void>;
@@ -134,7 +140,7 @@ interface ProjectContextType {
 }
 
 const ProjectContext = createContext<ProjectContextType>({
-  projects: [], loading: true, error: null,
+  projects: [], loading: true, fullyLoaded: false, error: null,
   getProject: () => undefined,
   updateProject: async () => {},
   refreshProjects: async () => {},
@@ -143,10 +149,12 @@ const ProjectContext = createContext<ProjectContextType>({
 export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading,  setLoading]  = useState(true);
+  const [fullyLoaded, setFullyLoaded] = useState(false);
   const [error,    setError]    = useState<string | null>(null);
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
+    setFullyLoaded(false);
     setError(null);
     try {
       // Supabase PostgREST caps at 1000 rows — fetch in batches. Update state and clear `loading`
@@ -175,6 +183,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       setError(e.message);
     } finally {
       setLoading(false);
+      setFullyLoaded(true);
     }
   }, []);
 
@@ -237,7 +246,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ProjectContext.Provider value={{
-      projects, loading, error,
+      projects, loading, fullyLoaded, error,
       getProject, updateProject,
       refreshProjects: fetchProjects,
     }}>
