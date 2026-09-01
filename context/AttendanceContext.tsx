@@ -45,19 +45,44 @@ function distanceMeters(lat1: number, lon1: number, lat2: number, lon2: number):
   return R * c;
 }
 
-function getPosition(): Promise<GeolocationPosition> {
+function getPositionOnce(options: PositionOptions): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+  });
+}
+
+// enableHighAccuracy forces a GPS-level fix, which desktops/laptops without a GPS chip often
+// can't get at all (falling back to slow/unreliable OS WiFi-positioning) — causing exactly the
+// "Could not determine your location" failure. For a 250m office-radius check we don't need GPS
+// precision, so try the fast/lenient method first, and only fall back to high-accuracy if that
+// genuinely fails — this fixes the common case without giving up on the rare case that needs it.
+function getPosition(): Promise<GeolocationPosition> {
+  return new Promise(async (resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error('Geolocation is not supported by this browser.'));
       return;
     }
-    navigator.geolocation.getCurrentPosition(resolve, (err) => {
+    try {
+      const pos = await getPositionOnce({ enableHighAccuracy: false, timeout: 10000 });
+      resolve(pos);
+      return;
+    } catch (err: any) {
       if (err.code === err.PERMISSION_DENIED) {
         reject(new Error('Location access denied. Please allow location access to check in/out.'));
-      } else {
-        reject(new Error('Could not determine your location. Please try again.'));
+        return;
       }
-    }, { enableHighAccuracy: true, timeout: 15000 });
+      // First attempt failed (not permission-related) — retry once with high accuracy / longer timeout
+      try {
+        const pos = await getPositionOnce({ enableHighAccuracy: true, timeout: 15000 });
+        resolve(pos);
+      } catch (err2: any) {
+        if (err2.code === err2.PERMISSION_DENIED) {
+          reject(new Error('Location access denied. Please allow location access to check in/out.'));
+        } else {
+          reject(new Error('Could not determine your location. Please check that Location Services are enabled for your browser (in your device/OS settings), then try again.'));
+        }
+      }
+    }
   });
 }
 
