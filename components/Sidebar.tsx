@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
+import { ATTENDANCE_ENABLED } from '@/lib/featureFlags';
 import { createClient } from '@/lib/supabase';
 import {
   LayoutDashboard, FolderOpen, Building2, Package, Wallet,
@@ -114,6 +115,7 @@ export default function Sidebar({ collapsed, onCollapse }: Props) {
   };
 
   const shouldShow = (item: NavItem) => {
+    if (item.href === '/attendance' && !ATTENDANCE_ENABLED) return false;
     if (!item.module) return true;
     if (loading) return true;
     return can(item.module as any, 'read');

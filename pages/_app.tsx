@@ -10,6 +10,7 @@ import { WorkDocProvider } from '@/context/WorkDocContext';
 import { POItemProvider } from '@/context/POItemContext';
 import { WorkProgressProvider } from '@/context/WorkProgressContext';
 import { AttendanceProvider } from '@/context/AttendanceContext';
+import { ATTENDANCE_ENABLED } from '@/lib/featureFlags';
 import { ActivityProvider } from '@/context/ActivityContext';
 import { MaterialProvider } from '@/context/MaterialContext';
 import '@/styles/globals.css';
@@ -32,6 +33,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <WorkDocProvider>
         <POItemProvider>
         <WorkProgressProvider>
+        {ATTENDANCE_ENABLED ? (
         <AttendanceProvider>
         <ActivityProvider>
         <MaterialProvider>
@@ -42,6 +44,16 @@ export default function App({ Component, pageProps }: AppProps) {
       </MaterialProvider>
         </ActivityProvider>
         </AttendanceProvider>
+        ) : (
+        <ActivityProvider>
+        <MaterialProvider>
+        <ErrorBoundary>
+        <Component {...pageProps} />
+        <NewVersionBanner />
+      </ErrorBoundary>
+      </MaterialProvider>
+        </ActivityProvider>
+        )}
         </WorkProgressProvider>
         </POItemProvider>
         </WorkDocProvider>

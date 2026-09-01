@@ -1,5 +1,7 @@
 import React from 'react';
 import Layout from '@/components/Layout';
+import { useRouter } from 'next/router';
+import { ATTENDANCE_ENABLED } from '@/lib/featureFlags';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase';
 import * as XLSX from 'xlsx';
@@ -42,6 +44,14 @@ function hoursFor(log?: AttLog): string {
   return `${h}h ${m}m`;
 }
 
+const SIX_HOURS_SECONDS = 6 * 60 * 60;
+// "Present" once checked in; "Present (Early Checkout)" if they checked out under 6 hours
+function presenceLabel(log: AttLog): string {
+  if (!log.check_in_at || !log.check_out_at) return 'Present';
+  const secs = Math.max(0, Math.floor((new Date(log.check_out_at).getTime() - new Date(log.check_in_at).getTime()) / 1000));
+  return secs < SIX_HOURS_SECONDS ? 'Present (Early Checkout)' : 'Present';
+}
+
 interface CellInfo {
   label: string; bg: string; color: string; log?: AttLog; pendingWfh?: AttLog;
   pendingRequest?: AttReq; approvedRequest?: AttReq; isFuture: boolean; isWeeklyOff: boolean; hoursLabel?: string;
@@ -74,9 +84,9 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[]):
     if (pendingRequest) return { label: 'Absent (Request Pending)', bg: T.warningLight, color: T.warning, pendingRequest, isFuture, isWeeklyOff };
     return { label: 'Absent', bg: T.dangerLight, color: T.danger, isFuture, isWeeklyOff };
   }
-  if (log.work_mode === 'office') return { label: 'Office', hoursLabel: hoursFor(log), bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
+  if (log.work_mode === 'office') return { label: presenceLabel(log), hoursLabel: hoursFor(log), bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
   if (log.work_mode === 'home') {
-    if (log.wfh_status === 'approved') return { label: 'WFH', hoursLabel: hoursFor(log), bg: '#EFF6FF', color: '#2563EB', log, isFuture, isWeeklyOff };
+    if (log.wfh_status === 'approved') return { label: presenceLabel(log), hoursLabel: hoursFor(log), bg: '#EFF6FF', color: '#2563EB', log, isFuture, isWeeklyOff };
     if (log.wfh_status === 'rejected') return { label: 'Leave (WFH rejected)', bg: T.dangerLight, color: T.danger, log, isFuture, isWeeklyOff };
     return { label: 'WFH (Pending)', hoursLabel: hoursFor(log), bg: T.warningLight, color: T.warning, log, pendingWfh: log, isFuture, isWeeklyOff };
   }
@@ -84,7 +94,10 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[]):
 }
 
 export default function AttendancePage() {
+  const router = useRouter();
+  React.useEffect(() => { if (!ATTENDANCE_ENABLED) router.replace('/dashboard'); }, [router]);
   const { profile } = useAuth();
+  if (!ATTENDANCE_ENABLED) return null;
   const [tab, setTab] = React.useState<'my' | 'team'>('my');
   const [viewMode, setViewMode] = React.useState<'week' | 'month'>('week');
   const [anchor, setAnchor] = React.useState(new Date());
