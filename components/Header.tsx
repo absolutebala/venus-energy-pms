@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
+import AttendanceWidget from '@/components/AttendanceWidget';
+import { ATTENDANCE_ENABLED } from '@/lib/featureFlags';
 import { createClient } from '@/lib/supabase';
 import { T } from '@/lib/theme';
 import { Bell, CheckCircle2, AlertTriangle, Info, XCircle, X, ExternalLink } from 'lucide-react';
@@ -50,7 +52,7 @@ const fmtTime = (d: string) => {
 
 export default function Header() {
   const router = useRouter();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, isVendor } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -318,6 +320,9 @@ export default function Header() {
       {/* Page title */}
       <div style={{ fontWeight: 700, fontSize: 16, color: T.text, flex: 1 }}>{title}</div>
 
+
+      {/* Check In / Check Out — all roles except Vendor */}
+      {ATTENDANCE_ENABLED && !isVendor && <AttendanceWidget />}
 
       {/* Notification bell */}
       <div ref={notifRef} style={{ position: 'relative' }}>

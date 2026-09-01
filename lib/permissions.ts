@@ -12,7 +12,7 @@ function perm(can_create:boolean, can_read:boolean, can_edit:boolean, can_delete
 }
 
 function buildFull(): Record<AppModule, Permission> {
-  const modules: AppModule[] = ['dashboard','projects','vendors','srn_return','site_expenses','site_expenses_payment','sec_expenses','sec_work_progress','ptw','reports','capital'];
+  const modules: AppModule[] = ['dashboard','projects','vendors','srn_return','site_expenses','site_expenses_payment','sec_expenses','sec_work_progress','ptw','reports','capital','attendance'];
   return Object.fromEntries(modules.map(m=>[m,{
     module:m,
     can_create: m !== 'srn_return' && m !== 'reports', // no create for STN/SRN or Reports
@@ -32,6 +32,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     srn_return:          perm(false,true, true, false),
     site_expenses:       perm(false,true, false,false),
     site_expenses_payment: perm(false,false,false,false),
+    attendance:           perm(true, true, false,false),
     sec_expenses:        perm(false,true, false,false),
     ptw:                 perm(true, true, true, false),
     reports:             perm(false,true, false,false),
@@ -61,6 +62,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     srn_return:          perm(false,true, true, false),
     site_expenses:       perm(false,true, false,false),
     site_expenses_payment: perm(false,false,false,false),
+    attendance:           perm(true, true, false,false),
     sec_expenses:        perm(false,true, false,false),
     ptw:                 perm(true, true, true, false),
     reports:             perm(false,true, false,false),
@@ -90,6 +92,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     srn_return:          perm(false,true, true, false),
     site_expenses:       perm(false,true, false,false),
     site_expenses_payment: perm(false,false,false,false),
+    attendance:           perm(true, true, false,false),
     sec_expenses:        perm(false,true, false,false),
     ptw:                 perm(true, true, true, false),
     reports:             perm(false,true, false,false),
@@ -119,6 +122,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     srn_return:          perm(false,true, false,false),
     site_expenses:       perm(false,false,false,false),
     site_expenses_payment: perm(false,false,false,false),
+    attendance:           perm(true, true, false,false),
     sec_expenses:        perm(false,false,false,false),
     ptw:                 perm(false,true, false,false),
     reports:             perm(false,false,false,false),
@@ -148,6 +152,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     srn_return:          perm(false,true, false,false),
     site_expenses:       perm(true, true, true, false),
     site_expenses_payment: perm(false,true, true, false),
+    attendance:           perm(true, true, false,false),
     sec_expenses:        perm(true, true, true, false),
     ptw:                 perm(false,true, false,false),
     reports:             perm(false,true, false,false),
@@ -177,6 +182,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     srn_return:          perm(false,true, true, false),
     site_expenses:       perm(false,false,false,false),
     site_expenses_payment: perm(false,false,false,false),
+    attendance:           perm(false,false,false,false),
     sec_expenses:        perm(true, true, true, false),
     ptw:                 perm(false,true, false,false),
     reports:             perm(false,false,false,false),
@@ -206,6 +212,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     srn_return:          perm(false,true, false,false),
     site_expenses:       perm(false,true, false,false),
     site_expenses_payment: perm(false,false,false,false),
+    attendance:           perm(true, true, false,false),
     sec_expenses:        perm(false,true, false,false),
     ptw:                 perm(false,true, false,false),
     reports:             perm(false,true, false,false),
@@ -226,6 +233,36 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>
     sec_srn_detail:        perm(false,true, false,false),
     sec_stn_srn_summary:   perm(false,true, false,false),
     safety_compliance:     perm(false,true, false,false),
+  },
+
+  employee: {
+    dashboard:           perm(false,true, false,false),
+    projects:            perm(false,false,false,false),
+    vendors:             perm(false,false,false,false),
+    srn_return:          perm(false,false,false,false),
+    site_expenses:       perm(false,false,false,false),
+    site_expenses_payment: perm(false,false,false,false),
+    attendance:           perm(true, true, false,false),
+    sec_expenses:        perm(false,false,false,false),
+    ptw:                 perm(false,false,false,false),
+    reports:             perm(false,false,false,false),
+    capital:              perm(false,false,false,false),
+    sec_project_details:   perm(false,false,false,false),
+    sec_financial:         perm(false,false,false,false),
+    sec_vendor_assignment: perm(false,false,false,false),
+    sec_ptw:               perm(false,false,false,false),
+    sec_work_documents:    perm(false,false,false,false),
+    sec_stn_srn:           perm(false,false,false,false),
+    sec_billing_review:    perm(false,false,false,false),
+    sec_work_progress:     perm(false,false,false,false),
+    sec_activity_log:      perm(false,false,false,false),
+    invoices:    perm(false,false,false,false),
+    sec_invoice: perm(false,false,false,false),
+    sec_po_items:          perm(false,false,false,false),
+    sec_ptw_detail:        perm(false,false,false,false),
+    sec_srn_detail:        perm(false,false,false,false),
+    sec_stn_srn_summary:   perm(false,false,false,false),
+    safety_compliance:     perm(false,false,false,false),
   },
 };
 

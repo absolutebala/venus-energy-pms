@@ -7,3 +7,4 @@ node_modules
 supabase/.temp/
 .env.local.save
 .env.local
+tsconfig.tsbuildinfo

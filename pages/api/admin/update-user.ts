@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { data: callerProfile } = await admin.from('profiles').select('role').eq('id', user.id).single();
   if (!callerProfile || callerProfile.role !== 'super_admin') return res.status(403).json({ error: 'Forbidden' });
 
-  const { userId, full_name, phone, region, role, is_active, vendor_id } = req.body;
+  const { userId, full_name, phone, region, role, is_active, vendor_id, manager_id } = req.body;
   if (!userId) return res.status(400).json({ error: 'userId is required' });
 
 
@@ -25,6 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     full_name: full_name || null,
     phone: phone || null,
     vendor_id: vendor_id || null,
+    manager_id: manager_id || null,
     region: region || null,
     role,
     is_active: is_active ?? true,

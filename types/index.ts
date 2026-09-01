@@ -6,7 +6,8 @@ export type UserRole =
   | 'site_engineer'
   | 'viewer'
   | 'vendor'
-  | 'accounting_team';
+  | 'accounting_team'
+  | 'employee';
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin:     'Admin',
@@ -17,11 +18,12 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   viewer:          'Viewer',
   vendor:          'Vendor',
   accounting_team: 'Accounting Team',
+  employee:        'Employee',
 };
 
 export const ALL_MODULES = [
   'dashboard', 'projects', 'vendors', 'srn_return', 'ptw',
-  'site_expenses', 'reports', 'capital',
+  'site_expenses', 'reports', 'capital', 'attendance',
   'sec_project_details', 'sec_financial', 'sec_vendor_assignment',
   'sec_ptw', 'sec_work_documents', 'sec_stn_srn', 'sec_billing_review', 'sec_activity_log',
   'sec_expenses', 'sec_po_items', 'sec_ptw_detail', 'sec_srn_detail', 'sec_stn_srn_summary', 'sec_invoice',
@@ -53,7 +55,8 @@ export type AppModule =
   | 'sec_ptw_detail'
   | 'sec_srn_detail'
   | 'safety_compliance'
-  | 'capital';
+  | 'capital'
+  | 'attendance';
 
 export const MODULE_LABELS: Record<AppModule, string> = {
   dashboard:              'Dashboard',
@@ -62,6 +65,7 @@ export const MODULE_LABELS: Record<AppModule, string> = {
   srn_return:             'STN / SRN Status',
   site_expenses:          'Site Expenses',
   site_expenses_payment:  'Expense — Make Payment',
+  attendance:             'Attendance',
   ptw:                    'PTW Management',
   invoices:             'Invoices',
   reports:                'Reports',
