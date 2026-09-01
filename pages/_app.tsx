@@ -1,5 +1,6 @@
 import type { AppProps } from 'next/app';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import NewVersionBanner from '@/components/NewVersionBanner';
 import Head from 'next/head';
 import { AuthProvider } from '@/context/AuthContext';
 import { ProjectProvider } from '@/context/ProjectContext';
@@ -36,6 +37,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <MaterialProvider>
         <ErrorBoundary>
         <Component {...pageProps} />
+        <NewVersionBanner />
       </ErrorBoundary>
       </MaterialProvider>
         </ActivityProvider>
