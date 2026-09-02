@@ -18,7 +18,10 @@ const card: React.CSSProperties = { background: '#fff', border: `1px solid ${T.b
 const btn: React.CSSProperties = { border: `1px solid ${T.border}`, background: '#fff', borderRadius: 8, padding: '6px 12px', fontSize: 12, cursor: 'pointer', color: T.text };
 const btnActive: React.CSSProperties = { ...btn, background: T.primary, color: '#fff', border: `1px solid ${T.primary}` };
 
-function fmtDate(d: Date): string { return d.toISOString().split('T')[0]; }
+// toISOString() converts to UTC — for IST (UTC+5:30), local midnight becomes 18:30 the PREVIOUS
+// day in UTC, silently shifting every day-row's match-key back by one day. This broke matching
+// against real attendance_logs rows (which store the correct local date) for every user in IST.
+function fmtDate(d: Date): string { return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); }
 function fmtDayLabel(d: Date): string { return d.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short' }); }
 function isSameDay(a: Date, b: Date): boolean { return fmtDate(a) === fmtDate(b); }
 function startOfWeek(d: Date): Date { const r = new Date(d); const day = r.getDay(); r.setDate(r.getDate() - day); r.setHours(0,0,0,0); return r; }

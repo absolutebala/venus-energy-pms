@@ -104,8 +104,11 @@ const AttendanceContext = createContext<AttendanceContextType>({
   checkOut: async () => ({ success: false, error: 'Not initialized' }),
 });
 
+// toISOString() converts to UTC — for IST (UTC+5:30), local midnight becomes 18:30 the PREVIOUS
+// day in UTC, silently shifting the date back by one for anyone checking attendance for "today".
+// en-CA locale formats as YYYY-MM-DD directly in the given timezone, avoiding the UTC conversion.
 function todayStr(): string {
-  return new Date().toISOString().split('T')[0];
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 }
 
 export function AttendanceProvider({ children }: { children: React.ReactNode }) {
