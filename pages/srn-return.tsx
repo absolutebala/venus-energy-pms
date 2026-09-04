@@ -844,9 +844,11 @@ export default function SRNReturnPage() {
         });
       });
     });
-    const stnWs = XLSX.utils.json_to_sheet(stnRows);
-    cleanExportSheet(stnWs);
-    XLSX.utils.book_append_sheet(wb, stnWs, 'STN Items');
+    if (showSTN) {
+      const stnWs = XLSX.utils.json_to_sheet(stnRows);
+      cleanExportSheet(stnWs);
+      XLSX.utils.book_append_sheet(wb, stnWs, 'STN Items');
+    }
 
     // SRN Sheet
     const srnRows: any[] = [];
@@ -879,9 +881,11 @@ export default function SRNReturnPage() {
         });
       });
     });
-    const srnWs = XLSX.utils.json_to_sheet(srnRows);
-    cleanExportSheet(srnWs);
-    XLSX.utils.book_append_sheet(wb, srnWs, 'SRN Items');
+    if (showSRN) {
+      const srnWs = XLSX.utils.json_to_sheet(srnRows);
+      cleanExportSheet(srnWs);
+      XLSX.utils.book_append_sheet(wb, srnWs, 'SRN Items');
+    }
 
     XLSX.writeFile(wb, `Venus_STN_SRN_${new Date().toISOString().slice(0,10)}.xlsx`);
   };

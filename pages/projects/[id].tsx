@@ -4233,7 +4233,7 @@ export default function ProjectDetailPage() {
         {/* ── Expenses ── */}
         {showExpenses && <div style={{ ...card, marginBottom:16 }}>
           {sectionTitle('💸','Expenses', 'expenses', false)}
-          <ExpensesSection projectId={p.id} canAdd={canAddExpenses} />
+          <ExpensesSection projectId={p.id} canAdd={canAddExpenses && p.projectStatus !== 'Invoice Submitted – Payment Received'} />
         </div>}
 
         {/* ── Invoice ── */}
