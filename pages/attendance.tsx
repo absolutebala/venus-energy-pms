@@ -12,6 +12,7 @@ const T = {
   primary: '#0D9488', primaryLight: '#F0FDFA', bg: '#F8FAFC', text: '#1E293B',
   textMuted: '#64748B', border: '#E2E8F0', danger: '#DC2626', dangerLight: '#FEF2F2',
   warning: '#D97706', warningLight: '#FFFBEB', success: '#16A34A', successLight: '#F0FDF4',
+  leave: '#7C3AED', leaveLight: '#F5F3FF',
 };
 
 const card: React.CSSProperties = { background: '#fff', border: `1px solid ${T.border}`, borderRadius: 12, padding: 18 };
@@ -28,13 +29,14 @@ function startOfWeek(d: Date): Date { const r = new Date(d); const day = r.getDa
 function startOfMonth(d: Date): Date { return new Date(d.getFullYear(), d.getMonth(), 1); }
 function daysInMonth(d: Date): number { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); }
 function fmtWhen(iso: string): string { return new Date(iso).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
+function fmtClock(iso: string): string { return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); }
 
 interface AttLog {
   id: string; user_id: string; log_date: string; check_in_at: string | null; check_out_at: string | null;
   work_mode: 'office' | 'home' | null; wfh_status: 'pending' | 'approved' | 'rejected' | null;
 }
 interface AttReq {
-  id: string; user_id: string; request_date: string; requested_status: 'present' | 'absent';
+  id: string; user_id: string; request_date: string; requested_status: 'present' | 'absent' | 'leave';
   reason: string | null; status: 'pending' | 'approved' | 'rejected'; source: 'user' | 'admin';
   requested_by: string; approved_by: string | null; approved_at: string | null;
 }
@@ -57,7 +59,7 @@ function presenceLabel(log: AttLog): string {
 
 interface CellInfo {
   label: string; bg: string; color: string; log?: AttLog; pendingWfh?: AttLog;
-  pendingRequest?: AttReq; approvedRequest?: AttReq; isFuture: boolean; isWeeklyOff: boolean; hoursLabel?: string;
+  pendingRequest?: AttReq; approvedRequest?: AttReq; isFuture: boolean; isWeeklyOff: boolean; hoursLabel?: string; timesLabel?: string;
 }
 
 function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[]): CellInfo {
@@ -75,21 +77,36 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[]):
   if (isWeeklyOff) return { label: 'Weekly Off', bg: T.bg, color: T.textMuted, isFuture, isWeeklyOff };
 
   if (approvedRequest) {
-    const label = approvedRequest.requested_status === 'present' ? 'Present (marked)' : 'Absent (marked)';
     const underlyingLog = logs.find(l => l.user_id === userId && l.log_date === dateStr);
+    if (approvedRequest.requested_status === 'leave') {
+      return { label: 'Leave', bg: T.leaveLight, color: T.leave, approvedRequest,
+        hoursLabel: underlyingLog ? hoursFor(underlyingLog) : undefined, isFuture, isWeeklyOff };
+    }
+    const label = approvedRequest.requested_status === 'present' ? 'Present (marked)' : 'Absent (marked)';
     return { label, bg: approvedRequest.requested_status === 'present' ? T.successLight : T.dangerLight,
       color: approvedRequest.requested_status === 'present' ? T.success : T.danger, approvedRequest,
       hoursLabel: underlyingLog ? hoursFor(underlyingLog) : undefined, isFuture, isWeeklyOff };
   }
 
   const log = logs.find(l => l.user_id === userId && l.log_date === dateStr);
-  if (!log) {
-    if (pendingRequest) return { label: 'Absent (Request Pending)', bg: T.warningLight, color: T.warning, pendingRequest, isFuture, isWeeklyOff };
+  // A PAST day (not today) with a check-in but no check-out is incomplete — without this, hoursFor()
+  // computes elapsed time as (now - checkInAt) with no upper bound, so a forgotten checkout just keeps
+  // accumulating across calendar days (e.g. "79h 54m" for a Monday check-in never closed out by Thursday).
+  // Treat it exactly like Absent instead — same styling, same Request-for-Present eligibility — so the
+  // employee has to explicitly get it corrected/approved rather than it silently running forever.
+  const isPastDay = dayStart < today;
+  const isIncomplete = !!log?.check_in_at && !log?.check_out_at && isPastDay;
+  if (!log || isIncomplete) {
+    if (pendingRequest) {
+      const label = pendingRequest.requested_status === 'leave' ? 'Leave (Pending)' : 'Absent (Request Pending)';
+      return { label, bg: T.warningLight, color: T.warning, pendingRequest, isFuture, isWeeklyOff };
+    }
     return { label: 'Absent', bg: T.dangerLight, color: T.danger, isFuture, isWeeklyOff };
   }
-  if (log.work_mode === 'office') return { label: presenceLabel(log), hoursLabel: hoursFor(log), bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
+  const timesLabel = log.check_in_at ? `In: ${fmtClock(log.check_in_at)}${log.check_out_at ? ` · Out: ${fmtClock(log.check_out_at)}` : ''}` : undefined;
+  if (log.work_mode === 'office') return { label: presenceLabel(log), hoursLabel: hoursFor(log), timesLabel, bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
   if (log.work_mode === 'home') {
-    if (log.wfh_status === 'approved') return { label: presenceLabel(log), hoursLabel: hoursFor(log), bg: '#EFF6FF', color: '#2563EB', log, isFuture, isWeeklyOff };
+    if (log.wfh_status === 'approved') return { label: presenceLabel(log), hoursLabel: hoursFor(log), timesLabel, bg: '#EFF6FF', color: '#2563EB', log, isFuture, isWeeklyOff };
     if (log.wfh_status === 'rejected') return { label: 'Leave (WFH rejected)', bg: T.dangerLight, color: T.danger, log, isFuture, isWeeklyOff };
     return { label: 'WFH (Pending)', hoursLabel: hoursFor(log), bg: T.warningLight, color: T.warning, log, pendingWfh: log, isFuture, isWeeklyOff };
   }
@@ -115,6 +132,8 @@ export default function AttendancePage() {
   const [popupCell, setPopupCell] = React.useState<{ userId: string; date: string; info: CellInfo; canManage: boolean } | null>(null);
   const [requestModal, setRequestModal] = React.useState<string | null>(null);
   const [requestReason, setRequestReason] = React.useState('');
+  const [leaveModal, setLeaveModal] = React.useState<string[] | null>(null);
+  const [leaveReason, setLeaveReason] = React.useState('');
   const [toast, setToast] = React.useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   const isSuperAdmin = profile?.role === 'super_admin';
@@ -218,7 +237,27 @@ export default function AttendancePage() {
     } finally { setBusy(null); }
   };
 
-  const overrideStatus = async (userId: string, date: string, newStatus: 'present' | 'absent') => {
+  const addLeaveDate = () => setLeaveModal(prev => [...(prev || []), fmtDate(new Date())]);
+  const updateLeaveDate = (i: number, v: string) => setLeaveModal(prev => (prev || []).map((d, idx) => idx === i ? v : d));
+  const removeLeaveDate = (i: number) => setLeaveModal(prev => (prev || []).filter((_, idx) => idx !== i));
+
+  const submitLeaveRequest = async () => {
+    if (!leaveModal || leaveModal.length === 0 || !leaveReason.trim()) return;
+    setBusy('leave');
+    try {
+      const res = await fetch('/api/attendance/apply-leave', {
+        method: 'POST', headers: await authHeader(),
+        body: JSON.stringify({ dates: leaveModal, reason: leaveReason.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setToast({ msg: '❌ ' + (json.error || 'Failed'), type: 'error' }); return; }
+      setToast({ msg: '✅ Leave request submitted for approval', type: 'success' });
+      setLeaveModal(null); setLeaveReason('');
+      if (json.requests) setMyRequests(prev => [...prev, ...json.requests]);
+    } finally { setBusy(null); }
+  };
+
+  const overrideStatus = async (userId: string, date: string, newStatus: 'present' | 'absent' | 'leave') => {
     setBusy('override');
     try {
       const res = await fetch('/api/attendance/override-status', {
@@ -227,7 +266,7 @@ export default function AttendancePage() {
       });
       const json = await res.json();
       if (!res.ok) { setToast({ msg: '❌ ' + (json.error || 'Failed'), type: 'error' }); return; }
-      setToast({ msg: `✅ Marked ${newStatus === 'present' ? 'Present' : 'Absent'}`, type: 'success' });
+      setToast({ msg: `✅ Marked ${newStatus === 'present' ? 'Present' : newStatus === 'leave' ? 'Leave' : 'Absent'}`, type: 'success' });
       setPopupCell(null);
       if (json.request) {
         setTeamRequests(prev => [...prev, json.request]);
@@ -358,13 +397,18 @@ export default function AttendancePage() {
                       <td style={{ padding: '9px 10px', fontSize: 12, borderBottom: `1px solid ${T.border}` }}>{fmtDayLabel(d)}</td>
                       <td style={{ padding: '9px 10px', borderBottom: `1px solid ${T.border}` }}>
                         <span style={{ fontSize: 11, fontWeight: 600, color: c.color, background: c.bg, padding: '3px 10px', borderRadius: 20 }}>{c.label}</span>
-                        {c.hoursLabel && <div style={{ fontSize: 10, color: T.textMuted, marginTop: 3 }}>{c.hoursLabel} logged</div>}
+                        {c.timesLabel && <div style={{ fontSize: 10, color: T.textMuted, marginTop: 3 }}>{c.timesLabel}</div>}
+                        {c.hoursLabel && <div style={{ fontSize: 10, color: T.textMuted, marginTop: 1 }}>{c.hoursLabel} logged</div>}
                         {renderCellDetail(c)}
                       </td>
                       <td style={{ padding: '9px 10px', borderBottom: `1px solid ${T.border}` }}>
                         {canRequest && (
-                          <button onClick={() => { setRequestModal(fmtDate(d)); setRequestReason(''); }}
-                            style={{ ...btn, fontSize: 11, padding: '4px 10px' }}>Request for Present</button>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button onClick={() => { setRequestModal(fmtDate(d)); setRequestReason(''); }}
+                              style={{ ...btn, fontSize: 11, padding: '4px 10px' }}>Request for Present</button>
+                            <button onClick={() => { setLeaveModal([fmtDate(d)]); setLeaveReason(''); }}
+                              style={{ ...btn, fontSize: 11, padding: '4px 10px', color: T.leave, border: `1px solid ${T.leave}` }}>Apply as Leave</button>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -401,7 +445,8 @@ export default function AttendancePage() {
                             style={{ fontSize: 10, fontWeight: 600, color: c.color, background: c.bg, padding: '3px 6px', borderRadius: 6, whiteSpace: 'nowrap' as const, cursor: clickable ? 'pointer' : 'default', display: 'inline-block' }}>
                             {viewMode === 'month' ? c.label.split(' (')[0] : c.label}
                           </span>
-                          {viewMode === 'week' && c.hoursLabel && <div style={{ fontSize: 9, color: T.textMuted, marginTop: 2 }}>{c.hoursLabel}</div>}
+                          {viewMode === 'week' && c.timesLabel && <div style={{ fontSize: 9, color: T.textMuted, marginTop: 2 }}>{c.timesLabel}</div>}
+                          {viewMode === 'week' && c.hoursLabel && <div style={{ fontSize: 9, color: T.textMuted, marginTop: 1 }}>{c.hoursLabel}</div>}
                         </td>
                       );
                     })}
@@ -431,6 +476,38 @@ export default function AttendancePage() {
           </div>
         )}
 
+        {leaveModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+            onClick={() => setLeaveModal(null)}>
+            <div style={{ ...card, width: 380 }} onClick={e => e.stopPropagation()}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 4 }}>Apply Leave</div>
+              <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 12 }}>Select one or more dates — this will be sent to your manager and Super Admin for approval.</div>
+              {leaveModal.map((d, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+                  <input type="date" value={d} onChange={e => updateLeaveDate(i, e.target.value)}
+                    style={{ flex: 1, border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 10px', fontSize: 13 }} />
+                  {leaveModal.length > 1 && (
+                    <button onClick={() => removeLeaveDate(i)} style={{ background: 'none', border: 'none', color: T.danger, cursor: 'pointer', fontSize: 16, padding: '0 4px' }}>✕</button>
+                  )}
+                </div>
+              ))}
+              <button onClick={addLeaveDate} style={{ background: 'none', border: 'none', color: T.leave, cursor: 'pointer', fontSize: 12, fontWeight: 600, padding: 0, marginBottom: 14 }}>
+                + Add another date
+              </button>
+              <textarea value={leaveReason} onChange={e => setLeaveReason(e.target.value)} placeholder="Reason for leave..."
+                rows={3} style={{ width: '100%', border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 10px', fontSize: 12, marginBottom: 14, boxSizing: 'border-box' as const, resize: 'vertical' as const, fontFamily: 'inherit' }} />
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button onClick={() => setLeaveModal(null)} style={btn}>Cancel</button>
+                <button onClick={submitLeaveRequest} disabled={busy === 'leave' || !leaveReason.trim() || leaveModal.some(d => !d)}
+                  style={{ background: T.leave, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                    opacity: busy === 'leave' || !leaveReason.trim() || leaveModal.some(d => !d) ? 0.6 : 1 }}>
+                  {busy === 'leave' ? 'Submitting…' : 'Submit Leave Request'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {popupCell && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
             onClick={() => setPopupCell(null)}>
@@ -453,7 +530,9 @@ export default function AttendancePage() {
 
               {popupCell.info.pendingRequest && (
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: T.text, marginBottom: 4 }}>Pending Present Request</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: T.text, marginBottom: 4 }}>
+                    Pending {popupCell.info.pendingRequest.requested_status === 'leave' ? 'Leave' : 'Present'} Request
+                  </div>
                   {popupCell.info.pendingRequest.reason && <div style={{ fontSize: 11, color: T.textMuted, marginBottom: 8, fontStyle: 'italic' as const }}>"{popupCell.info.pendingRequest.reason}"</div>}
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button onClick={() => handleRequestAction(popupCell.info.pendingRequest!.id, 'approve')} disabled={busy === 'request-action'}
@@ -466,9 +545,11 @@ export default function AttendancePage() {
 
               <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: T.text, marginBottom: 8 }}>Set Status Directly</div>
-                <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' as const }}>
                   <button onClick={() => overrideStatus(popupCell.userId, popupCell.date, 'present')} disabled={busy === 'override'}
                     style={{ flex: 1, background: T.successLight, color: T.success, border: `1px solid ${T.success}`, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Present</button>
+                  <button onClick={() => overrideStatus(popupCell.userId, popupCell.date, 'leave')} disabled={busy === 'override'}
+                    style={{ flex: 1, background: T.leaveLight, color: T.leave, border: `1px solid ${T.leave}`, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Leave</button>
                   <button onClick={() => overrideStatus(popupCell.userId, popupCell.date, 'absent')} disabled={busy === 'override'}
                     style={{ flex: 1, background: T.dangerLight, color: T.danger, border: `1px solid ${T.danger}`, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Absent</button>
                 </div>

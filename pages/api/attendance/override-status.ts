@@ -13,8 +13,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (authErr || !user) return res.status(401).json({ error: 'Unauthorized' });
 
   const { targetUserId, requestDate, newStatus } = req.body;
-  if (!targetUserId || !requestDate || !['present', 'absent'].includes(newStatus)) {
-    return res.status(400).json({ error: 'targetUserId, requestDate, and a valid newStatus (present/absent) are required' });
+  if (!targetUserId || !requestDate || !['present', 'absent', 'leave'].includes(newStatus)) {
+    return res.status(400).json({ error: 'targetUserId, requestDate, and a valid newStatus (present/absent/leave) are required' });
   }
 
   const { data: callerProfile } = await admin.from('profiles').select('role').eq('id', user.id).single();
