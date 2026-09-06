@@ -810,7 +810,7 @@ export default function SRNReturnPage() {
   };
 
   const exportSRNToExcel = () => {
-    const hasAnyFilter = Boolean(search || cardFilter || kpiSubFilter || statusDistFilter || agingDistFilter);
+    const hasAnyFilter = Boolean(search || cardFilter || kpiSubFilter || statusDistFilter || agingDistFilter || coverageFilter);
     if (!hasAnyFilter) { setShowExportWarning(true); return; }
     const wb = XLSX.utils.book_new();
     // STN Sheet
