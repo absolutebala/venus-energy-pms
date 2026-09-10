@@ -813,6 +813,39 @@ export default function SRNReturnPage() {
     const hasAnyFilter = Boolean(search || cardFilter || kpiSubFilter || statusDistFilter || agingDistFilter || coverageFilter);
     if (!hasAnyFilter) { setShowExportWarning(true); return; }
     const wb = XLSX.utils.book_new();
+
+    // Coverage Summary Sheet — added FIRST (so it opens by default) whenever a coverage filter
+    // (Applicable/Not Applicable/With/Without STN or SRN) is active. Those filters describe
+    // PROJECTS lacking data, so the item-level STN/SRN sheets below are correctly EMPTY for
+    // "without" cases — there's nothing to list. This sheet gives the actual useful answer:
+    // which projects match, at the project level, regardless of how many items they have.
+    if (coverageFilter) {
+      const coverageRows: any[] = [];
+      let csno = 1;
+      filteredProjects.forEach((proj: any) => {
+        const proj0 = projectMap.get(proj.projectId);
+        coverageRows.push({
+          'S.No': csno++,
+          'Project No': proj0?.id || proj.projectId,
+          'Project ID': proj0?.projectId || '—',
+          'Project Status': proj0?.projectStatus || 'Not Set',
+          'Indus ID': proj.indusId || '—',
+          'Site Name': proj.projectName,
+          'PO No': proj.poNo,
+          'Vendor': proj.vendor,
+          'PM': proj.pm,
+          'Region': proj.region,
+          'STN Applicable': proj0?.stn_applicable === false ? 'No' : 'Yes',
+          'STN Items Count': proj.stnItems.length,
+          'SRN Applicable': proj0?.srn_applicable === false ? 'No' : 'Yes',
+          'SRN Items Count': proj.srnItems.length,
+        });
+      });
+      const coverageWs = XLSX.utils.json_to_sheet(coverageRows);
+      cleanExportSheet(coverageWs);
+      XLSX.utils.book_append_sheet(wb, coverageWs, 'Coverage Summary');
+    }
+
     // STN Sheet
     const stnRows: any[] = [];
     let sno = 1;
