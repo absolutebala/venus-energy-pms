@@ -117,7 +117,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
   const [loading, setLoading] = useState(true);
   const [checkingIn, setCheckingIn] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
-  const [office, setOffice] = useState<{ latitude: number; longitude: number; radius_meters: number } | null>(null);
+  const [offices, setOffices] = useState<{ latitude: number; longitude: number; radius_meters: number }[]>([]);
 
   const fetchToday = useCallback(async () => {
     if (!profile?.id) { setLoading(false); return; }
@@ -131,8 +131,10 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => { fetchToday(); }, [fetchToday]);
 
   useEffect(() => {
-    supabase.from('office_locations').select('latitude,longitude,radius_meters').limit(1).maybeSingle()
-      .then(({ data }) => { if (data) setOffice(data as any); });
+    // Fetch ALL registered office locations — an employee working from ANY one of them
+    // (Chennai, Hyderabad, Kumbakonam, etc.) should count as office attendance, not just the first.
+    supabase.from('office_locations').select('latitude,longitude,radius_meters')
+      .then(({ data }) => { setOffices((data as any) || []); });
   }, []);
 
   const checkIn = useCallback(async () => {
@@ -141,11 +143,10 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
     try {
       const pos = await getPosition();
       const lat = pos.coords.latitude, lng = pos.coords.longitude;
-      let workMode: 'office' | 'home' = 'home';
-      if (office) {
-        const dist = distanceMeters(lat, lng, office.latitude, office.longitude);
-        workMode = dist <= office.radius_meters ? 'office' : 'home';
-      }
+      // Office if within radius of ANY registered location, not just one specific office
+      const workMode: 'office' | 'home' = offices.some(
+        (o) => distanceMeters(lat, lng, o.latitude, o.longitude) <= o.radius_meters
+      ) ? 'office' : 'home';
       const payload: any = {
         user_id: profile.id, log_date: todayStr(),
         check_in_at: new Date().toISOString(), check_in_lat: lat, check_in_lng: lng,
