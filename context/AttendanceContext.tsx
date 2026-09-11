@@ -162,7 +162,7 @@ export function AttendanceProvider({ children }: { children: React.ReactNode }) 
     } finally {
       setCheckingIn(false);
     }
-  }, [profile?.id, office]);
+  }, [profile?.id, offices]);
 
   const checkOut = useCallback(async () => {
     if (!profile?.id || !todayLog) return { success: false, error: 'Not checked in' };
