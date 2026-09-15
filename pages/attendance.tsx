@@ -620,14 +620,22 @@ export default function AttendancePage() {
               <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: T.text, marginBottom: 8 }}>Set Status Directly</div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' as const }}>
-                  <button onClick={() => overrideStatus(popupCell.userId, popupCell.date, 'present')} disabled={busy === 'override'}
-                    style={{ flex: 1, background: T.successLight, color: T.success, border: `1px solid ${T.success}`, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Present</button>
-                  <button onClick={() => overrideStatus(popupCell.userId, popupCell.date, 'leave')} disabled={busy === 'override'}
-                    style={{ flex: 1, background: T.leaveLight, color: T.leave, border: `1px solid ${T.leave}`, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Leave</button>
-                  <button onClick={() => overrideStatus(popupCell.userId, popupCell.date, 'holiday')} disabled={busy === 'override'}
-                    style={{ flex: 1, background: '#EDE9FE', color: '#6D28D9', border: '1px solid #6D28D9', borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Holiday</button>
-                  <button onClick={() => overrideStatus(popupCell.userId, popupCell.date, 'absent')} disabled={busy === 'override'}
-                    style={{ flex: 1, background: T.dangerLight, color: T.danger, border: `1px solid ${T.danger}`, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Absent</button>
+                  {!popupCell.info.label.startsWith('Present') && (
+                    <button onClick={() => overrideStatus(popupCell.userId, popupCell.date, 'present')} disabled={busy === 'override'}
+                      style={{ flex: 1, background: T.successLight, color: T.success, border: `1px solid ${T.success}`, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Present</button>
+                  )}
+                  {!popupCell.info.label.startsWith('Leave') && (
+                    <button onClick={() => overrideStatus(popupCell.userId, popupCell.date, 'leave')} disabled={busy === 'override'}
+                      style={{ flex: 1, background: T.leaveLight, color: T.leave, border: `1px solid ${T.leave}`, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Leave</button>
+                  )}
+                  {popupCell.info.label !== 'Holiday' && (
+                    <button onClick={() => overrideStatus(popupCell.userId, popupCell.date, 'holiday')} disabled={busy === 'override'}
+                      style={{ flex: 1, background: '#EDE9FE', color: '#6D28D9', border: '1px solid #6D28D9', borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Holiday</button>
+                  )}
+                  {!popupCell.info.label.startsWith('Absent') && (
+                    <button onClick={() => overrideStatus(popupCell.userId, popupCell.date, 'absent')} disabled={busy === 'override'}
+                      style={{ flex: 1, background: T.dangerLight, color: T.danger, border: `1px solid ${T.danger}`, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Absent</button>
+                  )}
                 </div>
               </div>
 
