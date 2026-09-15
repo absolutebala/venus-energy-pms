@@ -62,7 +62,7 @@ interface CellInfo {
   pendingRequest?: AttReq; approvedRequest?: AttReq; isFuture: boolean; isWeeklyOff: boolean; hoursLabel?: string; timesLabel?: string;
 }
 
-function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[]): CellInfo {
+function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], holidayDates: Set<string>): CellInfo {
   const today = new Date(); today.setHours(0,0,0,0);
   const dayStart = new Date(day); dayStart.setHours(0,0,0,0);
   const dateStr = fmtDate(day);
@@ -101,6 +101,10 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[]):
       const label = pendingRequest.requested_status === 'leave' ? 'Leave (Pending)' : 'Absent (Request Pending)';
       return { label, bg: T.warningLight, color: T.warning, pendingRequest, isFuture, isWeeklyOff };
     }
+    // A registered holiday with no actual check-in shows as Holiday, not Absent — but if the person
+    // DID check in (handled above, before this branch is reached), their real status still applies,
+    // since employees can still work/check in on a holiday if they choose to.
+    if (holidayDates.has(dateStr)) return { label: 'Holiday', bg: T.leaveLight, color: T.leave, isFuture, isWeeklyOff };
     // Check-in closes at 11 AM IST. Before that, today's cell with no check-in yet is simply
     // undecided — show a neutral placeholder, not Absent, since they still have time to check in.
     const isToday = dayStart.getTime() === today.getTime();
@@ -169,6 +173,14 @@ export default function AttendancePage() {
       const map: Record<string, string> = {};
       (data || []).forEach((p: any) => { map[p.id] = p.full_name || p.email; });
       setNameMap(map);
+    });
+  }, []);
+
+  // Holidays — fetched ONCE on mount. Rarely change mid-session, and Settings is where they're managed.
+  const [holidayDates, setHolidayDates] = React.useState<Set<string>>(new Set());
+  React.useEffect(() => {
+    supabase.from('holidays').select('holiday_date').then(({ data }) => {
+      setHolidayDates(new Set((data || []).map((h: any) => h.holiday_date)));
     });
   }, []);
 
@@ -322,7 +334,7 @@ export default function AttendancePage() {
     const rows = teamMembers.map(m => {
       const row: any = { Employee: m.full_name || m.email };
       days.forEach(d => {
-        const c = cellFor(m.id, d, teamLogs, teamRequests);
+        const c = cellFor(m.id, d, teamLogs, teamRequests, holidayDates);
         row[viewMode === 'week' ? fmtDayLabel(d) : String(d.getDate())] = c.label;
       });
       return row;
@@ -395,7 +407,7 @@ export default function AttendancePage() {
               </thead>
               <tbody>
                 {days.map((d, i) => {
-                  const c = cellFor(profile?.id || '', d, myLogs, myRequests);
+                  const c = cellFor(profile?.id || '', d, myLogs, myRequests, holidayDates);
                   const canRequest = !c.isFuture && !c.isWeeklyOff && c.label === 'Absent';
                   return (
                     <tr key={i} style={{ background: isSameDay(d, new Date()) ? T.primaryLight : (i % 2 === 0 ? '#fff' : T.bg) }}>
@@ -442,7 +454,7 @@ export default function AttendancePage() {
                       {m.full_name || m.email}
                     </td>
                     {days.map((d, di) => {
-                      const c = cellFor(m.id, d, teamLogs, teamRequests);
+                      const c = cellFor(m.id, d, teamLogs, teamRequests, holidayDates);
                       const clickable = !c.isFuture && !c.isWeeklyOff;
                       return (
                         <td key={di} style={{ padding: '6px', borderBottom: `1px solid ${T.border}`, textAlign: 'center' as const }}>
