@@ -15,6 +15,7 @@ interface AuthContextValue {
   getAccessToken:   () => Promise<string | null>;
   can:              (module: AppModule, action: 'create' | 'read' | 'edit' | 'delete') => boolean;
   isVendor:         boolean;
+  isManagement:     boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -121,9 +122,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const isVendor = profile?.role === 'vendor';
+  const isManagement = profile?.role === 'management';
 
   return (
-    <AuthContext.Provider value={{ user, profile, permissions, loading, signIn, signOut, refreshProfile, getAccessToken, can, isVendor }}>
+    <AuthContext.Provider value={{ user, profile, permissions, loading, signIn, signOut, refreshProfile, getAccessToken, can, isVendor, isManagement }}>
       {children}
     </AuthContext.Provider>
   );

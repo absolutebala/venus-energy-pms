@@ -195,8 +195,8 @@ export default function AttendancePage() {
       supabase.from('attendance_requests').select('*')
         .eq('user_id', profile.id).gte('request_date', rangeStart).lte('request_date', rangeEnd),
       isSuperAdmin
-        ? supabase.from('profiles').select('id,full_name,email').neq('id', profile.id).neq('role', 'vendor').order('full_name')
-        : supabase.from('profiles').select('id,full_name,email').eq('manager_id', profile.id).neq('role', 'vendor').order('full_name'),
+        ? supabase.from('profiles').select('id,full_name,email').neq('id', profile.id).neq('role', 'vendor').neq('role', 'management').order('full_name')
+        : supabase.from('profiles').select('id,full_name,email').eq('manager_id', profile.id).neq('role', 'vendor').neq('role', 'management').order('full_name'),
     ]);
 
     setMyLogs(ownRes.data || []);

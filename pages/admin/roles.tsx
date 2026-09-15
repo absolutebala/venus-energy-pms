@@ -9,6 +9,7 @@ import { UserRole } from '@/types';
 
 const ROLES: { key: UserRole; label: string; icon: string; desc: string }[] = [
   { key:'super_admin',    label:'Super Admin',    icon:'👑', desc:'Full access — all modules'                              },
+  { key:'management',     label:'Management',     icon:'🏛', desc:'Full access — all modules, same as Super Admin — excluded from Attendance' },
   { key:'region_manager',  label:'Region Manager',  icon:'📍', desc:'Regional projects, vendors, PTW, approve utilisations'  },
   { key:'general_manager', label:'General Manager', icon:'🏢', desc:'Same access as Region Manager — company-wide oversight'  },
   { key:'project_manager',label:'Project Manager',icon:'📋', desc:'Project edit, vendor assign, PTW, approve utilisations' },

@@ -24,6 +24,7 @@ function buildFull(): Record<AppModule, Permission> {
 
 export const DEFAULT_PERMISSIONS: Record<UserRole, Record<AppModule, Permission>> = {
   super_admin: buildFull(),
+  management: buildFull(),
 
   region_manager: {
     dashboard:           perm(false,true, false,false),

@@ -52,7 +52,7 @@ const fmtTime = (d: string) => {
 
 export default function Header() {
   const router = useRouter();
-  const { profile, signOut, isVendor } = useAuth();
+  const { profile, signOut, isVendor, isManagement } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -322,7 +322,7 @@ export default function Header() {
 
 
       {/* Check In / Check Out — all roles except Vendor */}
-      {ATTENDANCE_ENABLED && !isVendor && <AttendanceWidget />}
+      {ATTENDANCE_ENABLED && !isVendor && !isManagement && <AttendanceWidget />}
 
       {/* Notification bell */}
       <div ref={notifRef} style={{ position: 'relative' }}>
