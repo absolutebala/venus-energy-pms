@@ -38,17 +38,30 @@ function ReassignSection({ field, label, allProjects, refreshProjects, actorName
     });
   }, [allProjects, fromValue, statusFilter, regionFilter, field]);
 
+  // All matching projects are selected by default when the filter changes — individual rows
+  // can be unchecked, or "Select All" toggled, before committing the reassignment.
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  React.useEffect(() => { setSelectedIds(new Set(matching.map((p: any) => p.id))); }, [matching]);
+  const selected = React.useMemo(() => matching.filter((p: any) => selectedIds.has(p.id)), [matching, selectedIds]);
+  const allSelected = matching.length > 0 && selected.length === matching.length;
+  const toggleAll = () => setSelectedIds(allSelected ? new Set() : new Set(matching.map((p: any) => p.id)));
+  const toggleOne = (id: string) => setSelectedIds(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+
   const handleReassign = async () => {
-    if (!fromValue || !toValue || matching.length === 0) return;
+    if (!fromValue || !toValue || selected.length === 0) return;
     if (fromValue === toValue) { setMsg({ type: 'error', text: 'From and To are the same — nothing to reassign' }); return; }
     const confirmed = window.confirm(
-      `Reassign ${matching.length} project(s) from "${fromValue}" to "${toValue}" (${label})?\n\nThis cannot be undone automatically — you'd need to reassign back manually.`
+      `Reassign ${selected.length} project(s) from "${fromValue}" to "${toValue}" (${label})?\n\nThis cannot be undone automatically — you'd need to reassign back manually.`
     );
     if (!confirmed) return;
 
     setBusy(true); setMsg(null);
     try {
-      const ids = matching.map((p: any) => p.id);
+      const ids = selected.map((p: any) => p.id);
       const { error } = await supabase.from('projects')
         .update({ [field]: toValue, updated_at: new Date().toISOString(), updated_by: actorName })
         .in('id', ids);
@@ -127,13 +140,16 @@ function ReassignSection({ field, label, allProjects, refreshProjects, actorName
       {fromValue && (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 8 }}>
-            {matching.length} project{matching.length !== 1 ? 's' : ''} match{matching.length === 1 ? 'es' : ''} this filter
+            {selected.length} of {matching.length} project{matching.length !== 1 ? 's' : ''} selected
           </div>
           {matching.length > 0 && (
             <div style={{ maxHeight: 220, overflowY: 'auto' as const, border: `1px solid ${T.border}`, borderRadius: 8 }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 12 }}>
                 <thead>
                   <tr style={{ background: T.bg }}>
+                    <th style={{ padding: '7px 10px', width: 30 }}>
+                      <input type="checkbox" checked={allSelected} onChange={toggleAll} />
+                    </th>
                     <th style={{ padding: '7px 10px', textAlign: 'left' as const, fontWeight: 700, color: T.textMuted }}>Project No</th>
                     <th style={{ padding: '7px 10px', textAlign: 'left' as const, fontWeight: 700, color: T.textMuted }}>Site</th>
                     <th style={{ padding: '7px 10px', textAlign: 'left' as const, fontWeight: 700, color: T.textMuted }}>Status</th>
@@ -143,6 +159,9 @@ function ReassignSection({ field, label, allProjects, refreshProjects, actorName
                 <tbody>
                   {matching.map((p: any) => (
                     <tr key={p.id} style={{ borderTop: `1px solid ${T.border}` }}>
+                      <td style={{ padding: '7px 10px' }}>
+                        <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleOne(p.id)} />
+                      </td>
                       <td style={{ padding: '7px 10px' }}>{p.id}</td>
                       <td style={{ padding: '7px 10px' }}>{p.site || '—'}</td>
                       <td style={{ padding: '7px 10px' }}>{p.status}</td>
@@ -156,9 +175,9 @@ function ReassignSection({ field, label, allProjects, refreshProjects, actorName
         </div>
       )}
 
-      <button onClick={handleReassign} disabled={busy || !fromValue || !toValue || matching.length === 0}
-        style={{ ...btnPrimary, opacity: busy || !fromValue || !toValue || matching.length === 0 ? 0.6 : 1 }}>
-        {busy ? 'Reassigning…' : `Reassign ${matching.length || ''} Project${matching.length === 1 ? '' : 's'}`}
+      <button onClick={handleReassign} disabled={busy || !fromValue || !toValue || selected.length === 0}
+        style={{ ...btnPrimary, opacity: busy || !fromValue || !toValue || selected.length === 0 ? 0.6 : 1 }}>
+        {busy ? 'Reassigning…' : `Reassign ${selected.length || ''} Project${selected.length === 1 ? '' : 's'}`}
       </button>
     </div>
   );
