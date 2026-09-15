@@ -101,6 +101,11 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[]):
       const label = pendingRequest.requested_status === 'leave' ? 'Leave (Pending)' : 'Absent (Request Pending)';
       return { label, bg: T.warningLight, color: T.warning, pendingRequest, isFuture, isWeeklyOff };
     }
+    // Check-in closes at 11 AM IST. Before that, today's cell with no check-in yet is simply
+    // undecided — show a neutral placeholder, not Absent, since they still have time to check in.
+    const isToday = dayStart.getTime() === today.getTime();
+    const istHour = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', hourCycle: 'h23' }).format(new Date()), 10);
+    if (isToday && istHour < 11) return { label: '—', bg: 'transparent', color: T.textMuted, isFuture, isWeeklyOff };
     return { label: 'Absent', bg: T.dangerLight, color: T.danger, isFuture, isWeeklyOff };
   }
   const timesLabel = log.check_in_at ? `In: ${fmtClock(log.check_in_at)}${log.check_out_at ? ` · Out: ${fmtClock(log.check_out_at)}` : ''}` : undefined;

@@ -42,6 +42,10 @@ function todayIST(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 }
 
+function currentISTHour(): number {
+  return parseInt(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', hourCycle: 'h23' }).format(new Date()), 10);
+}
+
 export default function AttendanceWidget() {
   const { todayLog, loading, checkingIn, checkingOut, checkIn, checkOut } = useAttendance();
   const [now, setNow] = React.useState(Date.now());
@@ -57,6 +61,14 @@ export default function AttendanceWidget() {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, [todayLog?.checkInAt, todayLog?.checkOutAt]);
+
+  // Keep the 11 AM / 5 PM cutoff checks fresh even when not checked in (the interval above only
+  // runs while actively checked in) — without this, someone with the tab open across 11 AM would
+  // still see the Check In button until they happen to navigate or refresh.
+  React.useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(t);
+  }, []);
 
   if (loading) return null;
 
@@ -113,6 +125,10 @@ export default function AttendanceWidget() {
     }
   };
 
+  const istHour = currentISTHour();
+  const isPastCheckinCutoff = istHour >= 11;
+  const isBeforeCheckoutCutoff = istHour < 17;
+
   return (
     <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
       {error && (
@@ -147,13 +163,17 @@ export default function AttendanceWidget() {
             <span>{todayLog?.workMode === 'office' ? '🏢' : '🏠'} Present{todayLog?.workMode === 'home' && todayLog?.wfhStatus === 'pending' ? ' (pending)' : ''}</span>
             <span style={{ fontWeight: 400 }}>{formatElapsedWithSeconds(elapsedSeconds)}</span>
           </div>
-          <button onClick={handleCheckOut} disabled={checkingOut}
-            style={{ background: T.danger, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px',
-              fontSize: 12, fontWeight: 600, cursor: checkingOut ? 'not-allowed' : 'pointer', opacity: checkingOut ? 0.7 : 1, whiteSpace: 'nowrap' }}>
-            {checkingOut ? 'Checking out…' : '⏹ Check Out'}
-          </button>
+          {isBeforeCheckoutCutoff ? (
+            <div style={{ fontSize: 10, color: T.textMuted, whiteSpace: 'nowrap' as const }}>Check-out available from 5:00 PM</div>
+          ) : (
+            <button onClick={handleCheckOut} disabled={checkingOut}
+              style={{ background: T.danger, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px',
+                fontSize: 12, fontWeight: 600, cursor: checkingOut ? 'not-allowed' : 'pointer', opacity: checkingOut ? 0.7 : 1, whiteSpace: 'nowrap' }}>
+              {checkingOut ? 'Checking out…' : '⏹ Check Out'}
+            </button>
+          )}
         </>
-      ) : (
+      ) : isPastCheckinCutoff ? null : (
         <button onClick={handleCheckIn} disabled={checkingIn}
           style={{ background: T.primary, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px',
             fontSize: 12, fontWeight: 600, cursor: checkingIn ? 'not-allowed' : 'pointer', opacity: checkingIn ? 0.7 : 1, whiteSpace: 'nowrap' }}>
