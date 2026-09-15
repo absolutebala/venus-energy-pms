@@ -33,12 +33,23 @@ function fmtClock(iso: string): string { return new Date(iso).toLocaleTimeString
 
 interface AttLog {
   id: string; user_id: string; log_date: string; check_in_at: string | null; check_out_at: string | null;
+  check_in_lat?: number | null; check_in_lng?: number | null;
   work_mode: 'office' | 'home' | null; wfh_status: 'pending' | 'approved' | 'rejected' | null;
 }
 interface AttReq {
-  id: string; user_id: string; request_date: string; requested_status: 'present' | 'absent' | 'leave';
+  id: string; user_id: string; request_date: string; requested_status: 'present' | 'absent' | 'leave' | 'holiday';
   reason: string | null; status: 'pending' | 'approved' | 'rejected'; source: 'user' | 'admin';
   requested_by: string; approved_by: string | null; approved_at: string | null;
+}
+
+// Haversine formula — distance in meters between two lat/lng points
+function distanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000;
+  const p1 = lat1 * Math.PI / 180, p2 = lat2 * Math.PI / 180;
+  const dp = (lat2 - lat1) * Math.PI / 180;
+  const dl = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function hoursFor(log?: AttLog): string {
@@ -82,6 +93,9 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
       return { label: 'Leave', bg: T.leaveLight, color: T.leave, approvedRequest,
         hoursLabel: underlyingLog ? hoursFor(underlyingLog) : undefined, isFuture, isWeeklyOff };
     }
+    if (approvedRequest.requested_status === 'holiday') {
+      return { label: 'Holiday', bg: T.leaveLight, color: T.leave, approvedRequest, isFuture, isWeeklyOff };
+    }
     const label = approvedRequest.requested_status === 'present' ? 'Present (marked)' : 'Absent (marked)';
     return { label, bg: approvedRequest.requested_status === 'present' ? T.successLight : T.dangerLight,
       color: approvedRequest.requested_status === 'present' ? T.success : T.danger, approvedRequest,
@@ -120,6 +134,32 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
     return { label: 'WFH (Pending)', hoursLabel: hoursFor(log), bg: T.warningLight, color: T.warning, log, pendingWfh: log, isFuture, isWeeklyOff };
   }
   return { label: 'Absent', bg: T.dangerLight, color: T.danger, isFuture, isWeeklyOff };
+}
+
+// Working-days-vs-present ratio for the currently displayed range (e.g. "21/23")
+function presentRatioFor(userId: string, days: Date[], logs: AttLog[], requests: AttReq[], holidayDates: Set<string>): { present: number; total: number } {
+  let present = 0, total = 0;
+  for (const d of days) {
+    const c = cellFor(userId, d, logs, requests, holidayDates);
+    if (c.isFuture || c.isWeeklyOff || c.label === 'Holiday') continue;
+    total++;
+    if (c.label === 'Present' || c.label === 'Present (Early Checkout)' || c.label === 'Present (marked)') present++;
+  }
+  return { present, total };
+}
+
+// Which registered office this person's most recent office check-in falls within, if any
+function officeNameFor(userId: string, logs: AttLog[], offices: { name: string; latitude: number; longitude: number; radius_meters: number }[]): string | null {
+  const officeLogs = logs.filter(l => l.user_id === userId && l.work_mode === 'office' && l.check_in_lat != null && l.check_in_lng != null)
+    .sort((a, b) => b.log_date.localeCompare(a.log_date));
+  if (officeLogs.length === 0 || offices.length === 0) return null;
+  const latest = officeLogs[0];
+  let best: { name: string; dist: number } | null = null;
+  for (const o of offices) {
+    const dist = distanceMeters(latest.check_in_lat as number, latest.check_in_lng as number, o.latitude, o.longitude);
+    if (dist <= o.radius_meters && (!best || dist < best.dist)) best = { name: o.name, dist };
+  }
+  return best ? best.name : null;
 }
 
 export default function AttendancePage() {
@@ -181,6 +221,14 @@ export default function AttendancePage() {
   React.useEffect(() => {
     supabase.from('holidays').select('holiday_date').then(({ data }) => {
       setHolidayDates(new Set((data || []).map((h: any) => h.holiday_date)));
+    });
+  }, []);
+
+  // Office locations — fetched ONCE on mount, used to show which office each person is checking in from
+  const [officeLocations, setOfficeLocations] = React.useState<{ name: string; latitude: number; longitude: number; radius_meters: number }[]>([]);
+  React.useEffect(() => {
+    supabase.from('office_locations').select('name,latitude,longitude,radius_meters').then(({ data }) => {
+      setOfficeLocations(data || []);
     });
   }, []);
 
@@ -274,7 +322,7 @@ export default function AttendancePage() {
     } finally { setBusy(null); }
   };
 
-  const overrideStatus = async (userId: string, date: string, newStatus: 'present' | 'absent' | 'leave') => {
+  const overrideStatus = async (userId: string, date: string, newStatus: 'present' | 'absent' | 'leave' | 'holiday') => {
     setBusy('override');
     try {
       const res = await fetch('/api/attendance/override-status', {
@@ -283,7 +331,7 @@ export default function AttendancePage() {
       });
       const json = await res.json();
       if (!res.ok) { setToast({ msg: '❌ ' + (json.error || 'Failed'), type: 'error' }); return; }
-      setToast({ msg: `✅ Marked ${newStatus === 'present' ? 'Present' : newStatus === 'leave' ? 'Leave' : 'Absent'}`, type: 'success' });
+      setToast({ msg: `✅ Marked ${newStatus === 'present' ? 'Present' : newStatus === 'leave' ? 'Leave' : newStatus === 'holiday' ? 'Holiday' : 'Absent'}`, type: 'success' });
       setPopupCell(null);
       if (json.request) {
         setTeamRequests(prev => [...prev, json.request]);
@@ -452,6 +500,15 @@ export default function AttendancePage() {
                   <tr key={m.id} style={{ background: mi % 2 === 0 ? '#fff' : T.bg }}>
                     <td style={{ padding: '9px 10px', fontSize: 12, fontWeight: 600, color: T.text, borderBottom: `1px solid ${T.border}`, position: 'sticky' as const, left: 0, background: mi % 2 === 0 ? '#fff' : T.bg, whiteSpace: 'nowrap' as const }}>
                       {m.full_name || m.email}
+                      {(() => {
+                        const r = presentRatioFor(m.id, days, teamLogs, teamRequests, holidayDates);
+                        const office = officeNameFor(m.id, teamLogs, officeLocations);
+                        return (
+                          <div style={{ fontSize: 10, fontWeight: 400, color: T.textMuted, marginTop: 2 }}>
+                            {r.present}/{r.total}{office ? ` · ${office}` : ''}
+                          </div>
+                        );
+                      })()}
                     </td>
                     {days.map((d, di) => {
                       const c = cellFor(m.id, d, teamLogs, teamRequests, holidayDates);
@@ -567,6 +624,8 @@ export default function AttendancePage() {
                     style={{ flex: 1, background: T.successLight, color: T.success, border: `1px solid ${T.success}`, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Present</button>
                   <button onClick={() => overrideStatus(popupCell.userId, popupCell.date, 'leave')} disabled={busy === 'override'}
                     style={{ flex: 1, background: T.leaveLight, color: T.leave, border: `1px solid ${T.leave}`, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Leave</button>
+                  <button onClick={() => overrideStatus(popupCell.userId, popupCell.date, 'holiday')} disabled={busy === 'override'}
+                    style={{ flex: 1, background: '#EDE9FE', color: '#6D28D9', border: '1px solid #6D28D9', borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Holiday</button>
                   <button onClick={() => overrideStatus(popupCell.userId, popupCell.date, 'absent')} disabled={busy === 'override'}
                     style={{ flex: 1, background: T.dangerLight, color: T.danger, border: `1px solid ${T.danger}`, borderRadius: 8, padding: '7px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Mark Absent</button>
                 </div>

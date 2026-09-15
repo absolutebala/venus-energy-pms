@@ -151,6 +151,9 @@ function ReassignSection({ field, label, allProjects, refreshProjects, actorName
                       <input type="checkbox" checked={allSelected} onChange={toggleAll} />
                     </th>
                     <th style={{ padding: '7px 10px', textAlign: 'left' as const, fontWeight: 700, color: T.textMuted }}>Project No</th>
+                    <th style={{ padding: '7px 10px', textAlign: 'left' as const, fontWeight: 700, color: T.textMuted }}>PO Number</th>
+                    <th style={{ padding: '7px 10px', textAlign: 'left' as const, fontWeight: 700, color: T.textMuted }}>Indus ID</th>
+                    <th style={{ padding: '7px 10px', textAlign: 'left' as const, fontWeight: 700, color: T.textMuted }}>Project Name</th>
                     <th style={{ padding: '7px 10px', textAlign: 'left' as const, fontWeight: 700, color: T.textMuted }}>Site</th>
                     <th style={{ padding: '7px 10px', textAlign: 'left' as const, fontWeight: 700, color: T.textMuted }}>Status</th>
                     <th style={{ padding: '7px 10px', textAlign: 'left' as const, fontWeight: 700, color: T.textMuted }}>Region</th>
@@ -163,6 +166,9 @@ function ReassignSection({ field, label, allProjects, refreshProjects, actorName
                         <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleOne(p.id)} />
                       </td>
                       <td style={{ padding: '7px 10px' }}>{p.id}</td>
+                      <td style={{ padding: '7px 10px' }}>{p.poNo || '—'}</td>
+                      <td style={{ padding: '7px 10px' }}>{p.indusId || '—'}</td>
+                      <td style={{ padding: '7px 10px' }}>{p.type || '—'}</td>
                       <td style={{ padding: '7px 10px' }}>{p.site || '—'}</td>
                       <td style={{ padding: '7px 10px' }}>{p.status}</td>
                       <td style={{ padding: '7px 10px' }}>{p.region || '—'}</td>
