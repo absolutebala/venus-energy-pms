@@ -162,7 +162,7 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
     const leftEarlyAway = !!log.check_out_at && !isWithinAnyOffice(log.check_out_lat, log.check_out_lng, officeLocations);
     if (leftEarlyAway) {
       const distanceOutLabel = nearestOfficeLabel(log.check_out_lat, log.check_out_lng, officeLocations);
-      return { label: 'Present (Left Early — Away from Office)', hoursLabel: hoursFor(log), timesLabel, distanceOutLabel, bg: T.warningLight, color: T.warning, log, isFuture, isWeeklyOff };
+      return { label: 'Present (Out — Away from Office)', hoursLabel: hoursFor(log), timesLabel, distanceOutLabel, bg: T.warningLight, color: T.warning, log, isFuture, isWeeklyOff };
     }
     return { label: presenceLabel(log), hoursLabel: hoursFor(log), timesLabel, bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
   }
