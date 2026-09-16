@@ -148,15 +148,15 @@ function presentRatioFor(userId: string, days: Date[], logs: AttLog[], requests:
   return { present, total };
 }
 
-// Which registered office this person's most recent office check-in falls within, if any
-function officeNameFor(userId: string, logs: AttLog[], offices: { name: string; latitude: number; longitude: number; radius_meters: number }[]): string | null {
-  const officeLogs = logs.filter(l => l.user_id === userId && l.work_mode === 'office' && l.check_in_lat != null && l.check_in_lng != null)
-    .sort((a, b) => b.log_date.localeCompare(a.log_date));
-  if (officeLogs.length === 0 || offices.length === 0) return null;
-  const latest = officeLogs[0];
+// Which registered office this person's most recent office check-in falls within, if any.
+// Takes a pre-fetched "most recent office check-in ever" per user, NOT scoped to the currently
+// displayed week/month — otherwise someone whose last office day falls outside the visible range
+// (e.g. they've been on leave/absent this week) would incorrectly show no office at all.
+function officeNameFromLatest(latest: { check_in_lat: number; check_in_lng: number } | undefined, offices: { name: string; latitude: number; longitude: number; radius_meters: number }[]): string | null {
+  if (!latest || offices.length === 0) return null;
   let best: { name: string; dist: number } | null = null;
   for (const o of offices) {
-    const dist = distanceMeters(latest.check_in_lat as number, latest.check_in_lng as number, o.latitude, o.longitude);
+    const dist = distanceMeters(latest.check_in_lat, latest.check_in_lng, o.latitude, o.longitude);
     if (dist <= o.radius_meters && (!best || dist < best.dist)) best = { name: o.name, dist };
   }
   return best ? best.name : null;
@@ -231,6 +231,25 @@ export default function AttendancePage() {
       setOfficeLocations(data || []);
     });
   }, []);
+
+  // Each team member's most recent office check-in, EVER — independent of whatever week/month
+  // is currently displayed, so the office name below their name doesn't disappear just because
+  // their last office day happens to fall outside the visible range.
+  const [memberOfficeLog, setMemberOfficeLog] = React.useState<Record<string, { check_in_lat: number; check_in_lng: number }>>({});
+  React.useEffect(() => {
+    if (teamMembers.length === 0) { setMemberOfficeLog({}); return; }
+    const ids = teamMembers.map(m => m.id);
+    supabase.from('attendance_logs').select('user_id,check_in_lat,check_in_lng,log_date')
+      .in('user_id', ids).eq('work_mode', 'office').not('check_in_lat', 'is', null)
+      .order('log_date', { ascending: false })
+      .then(({ data }) => {
+        const map: Record<string, { check_in_lat: number; check_in_lng: number }> = {};
+        (data || []).forEach((row: any) => {
+          if (!map[row.user_id]) map[row.user_id] = { check_in_lat: row.check_in_lat, check_in_lng: row.check_in_lng };
+        });
+        setMemberOfficeLog(map);
+      });
+  }, [teamMembers]);
 
   const loadData = React.useCallback(async () => {
     if (!profile?.id) return;
@@ -502,7 +521,7 @@ export default function AttendancePage() {
                       {m.full_name || m.email}
                       {(() => {
                         const r = presentRatioFor(m.id, days, teamLogs, teamRequests, holidayDates);
-                        const office = officeNameFor(m.id, teamLogs, officeLocations);
+                        const office = officeNameFromLatest(memberOfficeLog[m.id], officeLocations);
                         return (
                           <div style={{ fontSize: 10, fontWeight: 400, color: T.textMuted, marginTop: 2 }}>
                             {r.present}/{r.total}{office ? ` · ${office}` : ''}
