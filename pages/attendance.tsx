@@ -3,6 +3,7 @@ import Layout from '@/components/Layout';
 import { useRouter } from 'next/router';
 import { ATTENDANCE_ENABLED } from '@/lib/featureFlags';
 import { useAuth } from '@/context/AuthContext';
+import { ROLE_LABELS } from '@/types';
 import { createClient } from '@/lib/supabase';
 import * as XLSX from 'xlsx';
 
@@ -172,7 +173,7 @@ export default function AttendancePage() {
   const [anchor, setAnchor] = React.useState(new Date());
   const [myLogs, setMyLogs] = React.useState<AttLog[]>([]);
   const [myRequests, setMyRequests] = React.useState<AttReq[]>([]);
-  const [teamMembers, setTeamMembers] = React.useState<{ id: string; full_name: string | null; email: string }[]>([]);
+  const [teamMembers, setTeamMembers] = React.useState<{ id: string; full_name: string | null; email: string; role: string }[]>([]);
   const [teamLogs, setTeamLogs] = React.useState<AttLog[]>([]);
   const [teamRequests, setTeamRequests] = React.useState<AttReq[]>([]);
   const [nameMap, setNameMap] = React.useState<Record<string, string>>({});
@@ -262,8 +263,8 @@ export default function AttendancePage() {
       supabase.from('attendance_requests').select('*')
         .eq('user_id', profile.id).gte('request_date', rangeStart).lte('request_date', rangeEnd),
       isSuperAdmin
-        ? supabase.from('profiles').select('id,full_name,email').neq('id', profile.id).neq('role', 'vendor').neq('role', 'management').order('full_name')
-        : supabase.from('profiles').select('id,full_name,email').eq('manager_id', profile.id).neq('role', 'vendor').neq('role', 'management').order('full_name'),
+        ? supabase.from('profiles').select('id,full_name,email,role').neq('id', profile.id).neq('role', 'vendor').neq('role', 'management').order('full_name')
+        : supabase.from('profiles').select('id,full_name,email,role').eq('manager_id', profile.id).neq('role', 'vendor').neq('role', 'management').order('full_name'),
     ]);
 
     setMyLogs(ownRes.data || []);
@@ -522,9 +523,12 @@ export default function AttendancePage() {
                       {(() => {
                         const r = presentRatioFor(m.id, days, teamLogs, teamRequests, holidayDates);
                         const office = officeNameFromLatest(memberOfficeLog[m.id], officeLocations);
+                        const roleLabel = (ROLE_LABELS as any)[m.role] || m.role;
                         return (
-                          <div style={{ fontSize: 10, fontWeight: 400, color: T.textMuted, marginTop: 2 }}>
-                            {r.present}/{r.total}{office ? ` · ${office}` : ''}
+                          <div style={{ fontSize: 10, fontWeight: 400, color: T.textMuted, marginTop: 3, display: 'flex', flexDirection: 'column' as const, gap: 1 }}>
+                            <span>📅 {r.present}/{r.total}</span>
+                            {office && <span>🏢 {office}</span>}
+                            <span style={{ color: '#94A3B8' }}>👤 {roleLabel}</span>
                           </div>
                         );
                       })()}
