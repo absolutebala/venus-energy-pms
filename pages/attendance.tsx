@@ -81,6 +81,14 @@ interface CellInfo {
 // Chennai Office" instead of just "WFH", covering cases like a Villupuram-based employee traveling
 // to Chennai: if they land inside ANY office's radius they already count as WFO (handled elsewhere);
 // this only fires when they're outside every office, showing how far and from where.
+// Whether a point falls within ANY registered office's own radius (unlike nearestOfficeLabel,
+// which always returns the closest office regardless of distance) — used to detect a checked-in-
+// from-office day where the check-out happened somewhere that isn't actually near any office.
+function isWithinAnyOffice(lat: number | null | undefined, lng: number | null | undefined, offices: { latitude: number; longitude: number; radius_meters: number }[]): boolean {
+  if (lat == null || lng == null) return false;
+  return offices.some(o => distanceMeters(lat, lng, o.latitude, o.longitude) <= o.radius_meters);
+}
+
 function nearestOfficeLabel(lat: number | null | undefined, lng: number | null | undefined, offices: { name: string; latitude: number; longitude: number }[]): string | undefined {
   if (lat == null || lng == null || offices.length === 0) return undefined;
   let best: { name: string; dist: number } | null = null;
@@ -93,7 +101,7 @@ function nearestOfficeLabel(lat: number | null | undefined, lng: number | null |
   return `${km} km from ${best.name}`;
 }
 
-function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], holidayDates: Set<string>, officeLocations: { name: string; latitude: number; longitude: number }[]): CellInfo {
+function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], holidayDates: Set<string>, officeLocations: { name: string; latitude: number; longitude: number; radius_meters: number }[]): CellInfo {
   const today = new Date(); today.setHours(0,0,0,0);
   const dayStart = new Date(day); dayStart.setHours(0,0,0,0);
   const dateStr = fmtDate(day);
@@ -150,7 +158,14 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
     return { label: 'Absent', bg: T.dangerLight, color: T.danger, isFuture, isWeeklyOff };
   }
   const timesLabel = log.check_in_at ? `In: ${fmtClock(log.check_in_at)}${log.check_out_at ? ` · Out: ${fmtClock(log.check_out_at)}` : ''}` : undefined;
-  if (log.work_mode === 'office') return { label: presenceLabel(log), hoursLabel: hoursFor(log), timesLabel, bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
+  if (log.work_mode === 'office') {
+    const leftEarlyAway = !!log.check_out_at && !isWithinAnyOffice(log.check_out_lat, log.check_out_lng, officeLocations);
+    if (leftEarlyAway) {
+      const distanceOutLabel = nearestOfficeLabel(log.check_out_lat, log.check_out_lng, officeLocations);
+      return { label: 'Present (Left Early — Away from Office)', hoursLabel: hoursFor(log), timesLabel, distanceOutLabel, bg: T.warningLight, color: T.warning, log, isFuture, isWeeklyOff };
+    }
+    return { label: presenceLabel(log), hoursLabel: hoursFor(log), timesLabel, bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
+  }
   if (log.work_mode === 'home') {
     const distanceInLabel = nearestOfficeLabel(log.check_in_lat, log.check_in_lng, officeLocations);
     const distanceOutLabel = nearestOfficeLabel(log.check_out_lat, log.check_out_lng, officeLocations);
@@ -162,7 +177,7 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
 }
 
 // Working-days-vs-present ratio for the currently displayed range (e.g. "21/23")
-function presentRatioFor(userId: string, days: Date[], logs: AttLog[], requests: AttReq[], holidayDates: Set<string>, officeLocations: { name: string; latitude: number; longitude: number }[]): { present: number; total: number } {
+function presentRatioFor(userId: string, days: Date[], logs: AttLog[], requests: AttReq[], holidayDates: Set<string>, officeLocations: { name: string; latitude: number; longitude: number; radius_meters: number }[]): { present: number; total: number } {
   let present = 0, total = 0;
   for (const d of days) {
     const c = cellFor(userId, d, logs, requests, holidayDates, officeLocations);
