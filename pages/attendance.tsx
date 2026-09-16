@@ -72,7 +72,8 @@ function presenceLabel(log: AttLog): string {
 
 interface CellInfo {
   label: string; bg: string; color: string; log?: AttLog; pendingWfh?: AttLog;
-  pendingRequest?: AttReq; approvedRequest?: AttReq; isFuture: boolean; isWeeklyOff: boolean; hoursLabel?: string; timesLabel?: string; distanceLabel?: string;
+  pendingRequest?: AttReq; approvedRequest?: AttReq; isFuture: boolean; isWeeklyOff: boolean; hoursLabel?: string; timesLabel?: string;
+  distanceInLabel?: string; distanceOutLabel?: string;
 }
 
 // Distance from the single nearest registered office, regardless of whether it's within that
@@ -151,14 +152,11 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
   const timesLabel = log.check_in_at ? `In: ${fmtClock(log.check_in_at)}${log.check_out_at ? ` · Out: ${fmtClock(log.check_out_at)}` : ''}` : undefined;
   if (log.work_mode === 'office') return { label: presenceLabel(log), hoursLabel: hoursFor(log), timesLabel, bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
   if (log.work_mode === 'home') {
-    const checkInDistance = nearestOfficeLabel(log.check_in_lat, log.check_in_lng, officeLocations);
-    const checkOutDistance = nearestOfficeLabel(log.check_out_lat, log.check_out_lng, officeLocations);
-    const distanceLabel = checkOutDistance && checkOutDistance !== checkInDistance
-      ? `In: ${checkInDistance || '—'} · Out: ${checkOutDistance}`
-      : checkInDistance;
-    if (log.wfh_status === 'approved') return { label: 'Present (Away from Office)', hoursLabel: hoursFor(log), timesLabel, distanceLabel, bg: '#EFF6FF', color: '#2563EB', log, isFuture, isWeeklyOff };
+    const distanceInLabel = nearestOfficeLabel(log.check_in_lat, log.check_in_lng, officeLocations);
+    const distanceOutLabel = nearestOfficeLabel(log.check_out_lat, log.check_out_lng, officeLocations);
+    if (log.wfh_status === 'approved') return { label: 'Present (Away from Office)', hoursLabel: hoursFor(log), timesLabel, distanceInLabel, distanceOutLabel, bg: '#EFF6FF', color: '#2563EB', log, isFuture, isWeeklyOff };
     if (log.wfh_status === 'rejected') return { label: 'Leave (WFH rejected)', bg: T.dangerLight, color: T.danger, log, isFuture, isWeeklyOff };
-    return { label: 'WFH (Pending)', hoursLabel: hoursFor(log), distanceLabel, bg: T.warningLight, color: T.warning, log, pendingWfh: log, isFuture, isWeeklyOff };
+    return { label: 'WFH (Pending)', hoursLabel: hoursFor(log), distanceInLabel, distanceOutLabel, bg: T.warningLight, color: T.warning, log, pendingWfh: log, isFuture, isWeeklyOff };
   }
   return { label: 'Absent', bg: T.dangerLight, color: T.danger, isFuture, isWeeklyOff };
 }
@@ -514,7 +512,8 @@ export default function AttendancePage() {
                         <span style={{ fontSize: 11, fontWeight: 600, color: c.color, background: c.bg, padding: '3px 10px', borderRadius: 20 }}>{c.label}</span>
                         {c.timesLabel && <div style={{ fontSize: 10, color: T.textMuted, marginTop: 3 }}>{c.timesLabel}</div>}
                         {c.hoursLabel && <div style={{ fontSize: 10, color: T.textMuted, marginTop: 1 }}>{c.hoursLabel} logged</div>}
-                        {c.distanceLabel && <div style={{ fontSize: 10, color: T.warning, marginTop: 1 }}>📍 {c.distanceLabel}</div>}
+                        {c.distanceInLabel && <div style={{ fontSize: 10, color: '#2563EB', marginTop: 1 }}>📍 In: {c.distanceInLabel}</div>}
+                        {c.distanceOutLabel && <div style={{ fontSize: 10, color: T.warning, marginTop: 1 }}>📍 Out: {c.distanceOutLabel}</div>}
                         {renderCellDetail(c)}
                       </td>
                       <td style={{ padding: '9px 10px', borderBottom: `1px solid ${T.border}` }}>
@@ -575,7 +574,8 @@ export default function AttendancePage() {
                           </span>
                           {viewMode === 'week' && c.timesLabel && <div style={{ fontSize: 9, color: T.textMuted, marginTop: 2 }}>{c.timesLabel}</div>}
                           {viewMode === 'week' && c.hoursLabel && <div style={{ fontSize: 9, color: T.textMuted, marginTop: 1 }}>{c.hoursLabel}</div>}
-                          {viewMode === 'week' && c.distanceLabel && <div style={{ fontSize: 9, color: T.warning, marginTop: 1 }}>📍 {c.distanceLabel}</div>}
+                          {viewMode === 'week' && c.distanceInLabel && <div style={{ fontSize: 9, color: '#2563EB', marginTop: 1 }}>📍 In: {c.distanceInLabel}</div>}
+                          {viewMode === 'week' && c.distanceOutLabel && <div style={{ fontSize: 9, color: T.warning, marginTop: 1 }}>📍 Out: {c.distanceOutLabel}</div>}
                         </td>
                       );
                     })}
