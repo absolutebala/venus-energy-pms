@@ -20,23 +20,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Prevent deleting yourself
   if (userId === user.id) return res.status(400).json({ error: 'You cannot delete your own account.' });
 
-  // Delete from profiles first
-  const { error: profileErr, data: deletedRows } = await admin.from('profiles').delete().eq('id', userId).select();
-  if (profileErr) {
-    console.error('Profile delete error:', profileErr);
-    return res.status(500).json({ error: 'Failed to delete profile: ' + profileErr.message });
+  // Soft delete — keep the profile row and all attendance/activity history intact (a real hard
+  // delete would violate foreign keys from attendance_logs, attendance_requests, etc., and even
+  // where it could be forced through, it would permanently destroy that person's history). Instead:
+  // mark is_deleted so they're excluded from the Users list, and is_active=false so they can't log in.
+  const { error: updateErr, data: updatedRows } = await admin.from('profiles')
+    .update({ is_deleted: true, is_active: false })
+    .eq('id', userId)
+    .select();
+  if (updateErr) {
+    console.error('Soft-delete error:', updateErr);
+    return res.status(500).json({ error: 'Failed to delete user: ' + updateErr.message });
   }
-  if (!deletedRows || deletedRows.length === 0) {
-    // No error was thrown, but nothing was actually deleted — almost certainly an RLS policy
-    // silently blocking the delete rather than raising an error.
-    return res.status(500).json({ error: 'Delete affected 0 rows — likely blocked by a Row Level Security policy on the profiles table, even though the admin client should bypass RLS. Check that SUPABASE_SERVICE_ROLE_KEY is set correctly.' });
-  }
-
-  // Delete from auth.users via SQL (bypass broken admin API)
-  const { error: authDelErr } = await admin.rpc('delete_auth_user', { p_id: userId });
-  if (authDelErr) {
-    console.error('Auth delete error:', authDelErr);
-    // Profile already deleted — log but don't fail
+  if (!updatedRows || updatedRows.length === 0) {
+    return res.status(500).json({ error: 'Delete affected 0 rows — the user may not exist, or a Row Level Security policy is silently blocking the update.' });
   }
 
   return res.status(200).json({ success: true });
