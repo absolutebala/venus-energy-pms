@@ -326,6 +326,7 @@ export default function AdminUsersPage() {
   return (
     <Layout>
       <div className="fade-in">
+        <MsgAlert msg={msg} />
         {/* Stats */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
           {[
