@@ -35,6 +35,7 @@ function fmtClock(iso: string): string { return new Date(iso).toLocaleTimeString
 interface AttLog {
   id: string; user_id: string; log_date: string; check_in_at: string | null; check_out_at: string | null;
   check_in_lat?: number | null; check_in_lng?: number | null;
+  check_out_lat?: number | null; check_out_lng?: number | null;
   work_mode: 'office' | 'home' | null; wfh_status: 'pending' | 'approved' | 'rejected' | null;
 }
 interface AttReq {
@@ -114,7 +115,10 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
     if (approvedRequest.requested_status === 'holiday') {
       return { label: 'Holiday', bg: T.leaveLight, color: T.leave, approvedRequest, isFuture, isWeeklyOff };
     }
-    const label = approvedRequest.requested_status === 'present' ? 'Present (marked)' : 'Absent (marked)';
+    const wasAway = approvedRequest.requested_status === 'present' && underlyingLog?.work_mode === 'home';
+    const label = approvedRequest.requested_status === 'present'
+      ? (wasAway ? 'Present (Away from Office)' : 'Present (marked)')
+      : 'Absent (marked)';
     return { label, bg: approvedRequest.requested_status === 'present' ? T.successLight : T.dangerLight,
       color: approvedRequest.requested_status === 'present' ? T.success : T.danger, approvedRequest,
       hoursLabel: underlyingLog ? hoursFor(underlyingLog) : undefined, isFuture, isWeeklyOff };
@@ -147,8 +151,12 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
   const timesLabel = log.check_in_at ? `In: ${fmtClock(log.check_in_at)}${log.check_out_at ? ` · Out: ${fmtClock(log.check_out_at)}` : ''}` : undefined;
   if (log.work_mode === 'office') return { label: presenceLabel(log), hoursLabel: hoursFor(log), timesLabel, bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
   if (log.work_mode === 'home') {
-    const distanceLabel = nearestOfficeLabel(log.check_in_lat, log.check_in_lng, officeLocations);
-    if (log.wfh_status === 'approved') return { label: presenceLabel(log), hoursLabel: hoursFor(log), timesLabel, distanceLabel, bg: '#EFF6FF', color: '#2563EB', log, isFuture, isWeeklyOff };
+    const checkInDistance = nearestOfficeLabel(log.check_in_lat, log.check_in_lng, officeLocations);
+    const checkOutDistance = nearestOfficeLabel(log.check_out_lat, log.check_out_lng, officeLocations);
+    const distanceLabel = checkOutDistance && checkOutDistance !== checkInDistance
+      ? `In: ${checkInDistance || '—'} · Out: ${checkOutDistance}`
+      : checkInDistance;
+    if (log.wfh_status === 'approved') return { label: 'Present (Away from Office)', hoursLabel: hoursFor(log), timesLabel, distanceLabel, bg: '#EFF6FF', color: '#2563EB', log, isFuture, isWeeklyOff };
     if (log.wfh_status === 'rejected') return { label: 'Leave (WFH rejected)', bg: T.dangerLight, color: T.danger, log, isFuture, isWeeklyOff };
     return { label: 'WFH (Pending)', hoursLabel: hoursFor(log), distanceLabel, bg: T.warningLight, color: T.warning, log, pendingWfh: log, isFuture, isWeeklyOff };
   }
@@ -372,8 +380,12 @@ export default function AttendancePage() {
       setToast({ msg: `✅ Marked ${newStatus === 'present' ? 'Present' : newStatus === 'leave' ? 'Leave' : newStatus === 'holiday' ? 'Holiday' : 'Absent'}`, type: 'success' });
       setPopupCell(null);
       if (json.request) {
-        setTeamRequests(prev => [...prev, json.request]);
-        if (userId === profile?.id) setMyRequests(prev => [...prev, json.request]);
+        // Remove any prior request for this same user+date before adding the new one — the
+        // backend now does the same on its side, but local state needs to match or the OLD
+        // approved request would still be sitting there until the next full reload.
+        const isSameDay = (r: AttReq) => r.user_id === json.request.user_id && r.request_date === json.request.request_date;
+        setTeamRequests(prev => [...prev.filter(r => !isSameDay(r)), json.request]);
+        if (userId === profile?.id) setMyRequests(prev => [...prev.filter(r => !isSameDay(r)), json.request]);
       }
     } finally { setBusy(null); }
   };

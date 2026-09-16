@@ -27,6 +27,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
+  // Remove any existing request(s) for this user+date first — otherwise overriding a day's status
+  // a second time (e.g. Present, then later Absent) just adds another row without replacing the
+  // first, and the app's "find the approved request for this day" lookup can end up picking the
+  // OLD one, making the new override look like it silently did nothing even though it saved fine.
+  await admin.from('attendance_requests').delete().eq('user_id', targetUserId).eq('request_date', requestDate);
+
   const { data, error } = await admin.from('attendance_requests').insert({
     user_id: targetUserId,
     request_date: requestDate,
