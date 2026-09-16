@@ -21,10 +21,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (userId === user.id) return res.status(400).json({ error: 'You cannot delete your own account.' });
 
   // Delete from profiles first
-  const { error: profileErr } = await admin.from('profiles').delete().eq('id', userId);
+  const { error: profileErr, data: deletedRows } = await admin.from('profiles').delete().eq('id', userId).select();
   if (profileErr) {
     console.error('Profile delete error:', profileErr);
     return res.status(500).json({ error: 'Failed to delete profile: ' + profileErr.message });
+  }
+  if (!deletedRows || deletedRows.length === 0) {
+    // No error was thrown, but nothing was actually deleted — almost certainly an RLS policy
+    // silently blocking the delete rather than raising an error.
+    return res.status(500).json({ error: 'Delete affected 0 rows — likely blocked by a Row Level Security policy on the profiles table, even though the admin client should bypass RLS. Check that SUPABASE_SERVICE_ROLE_KEY is set correctly.' });
   }
 
   // Delete from auth.users via SQL (bypass broken admin API)
