@@ -71,10 +71,27 @@ function presenceLabel(log: AttLog): string {
 
 interface CellInfo {
   label: string; bg: string; color: string; log?: AttLog; pendingWfh?: AttLog;
-  pendingRequest?: AttReq; approvedRequest?: AttReq; isFuture: boolean; isWeeklyOff: boolean; hoursLabel?: string; timesLabel?: string;
+  pendingRequest?: AttReq; approvedRequest?: AttReq; isFuture: boolean; isWeeklyOff: boolean; hoursLabel?: string; timesLabel?: string; distanceLabel?: string;
 }
 
-function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], holidayDates: Set<string>): CellInfo {
+// Distance from the single nearest registered office, regardless of whether it's within that
+// office's radius — this is specifically for the WFH case, so a manager can see e.g. "3.2 km from
+// Chennai Office" instead of just "WFH", covering cases like a Villupuram-based employee traveling
+// to Chennai: if they land inside ANY office's radius they already count as WFO (handled elsewhere);
+// this only fires when they're outside every office, showing how far and from where.
+function nearestOfficeLabel(lat: number | null | undefined, lng: number | null | undefined, offices: { name: string; latitude: number; longitude: number }[]): string | undefined {
+  if (lat == null || lng == null || offices.length === 0) return undefined;
+  let best: { name: string; dist: number } | null = null;
+  for (const o of offices) {
+    const dist = distanceMeters(lat, lng, o.latitude, o.longitude);
+    if (!best || dist < best.dist) best = { name: o.name, dist };
+  }
+  if (!best) return undefined;
+  const km = (best.dist / 1000).toFixed(1);
+  return `${km} km from ${best.name}`;
+}
+
+function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], holidayDates: Set<string>, officeLocations: { name: string; latitude: number; longitude: number }[]): CellInfo {
   const today = new Date(); today.setHours(0,0,0,0);
   const dayStart = new Date(day); dayStart.setHours(0,0,0,0);
   const dateStr = fmtDate(day);
@@ -130,18 +147,19 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
   const timesLabel = log.check_in_at ? `In: ${fmtClock(log.check_in_at)}${log.check_out_at ? ` · Out: ${fmtClock(log.check_out_at)}` : ''}` : undefined;
   if (log.work_mode === 'office') return { label: presenceLabel(log), hoursLabel: hoursFor(log), timesLabel, bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
   if (log.work_mode === 'home') {
-    if (log.wfh_status === 'approved') return { label: presenceLabel(log), hoursLabel: hoursFor(log), timesLabel, bg: '#EFF6FF', color: '#2563EB', log, isFuture, isWeeklyOff };
+    const distanceLabel = nearestOfficeLabel(log.check_in_lat, log.check_in_lng, officeLocations);
+    if (log.wfh_status === 'approved') return { label: presenceLabel(log), hoursLabel: hoursFor(log), timesLabel, distanceLabel, bg: '#EFF6FF', color: '#2563EB', log, isFuture, isWeeklyOff };
     if (log.wfh_status === 'rejected') return { label: 'Leave (WFH rejected)', bg: T.dangerLight, color: T.danger, log, isFuture, isWeeklyOff };
-    return { label: 'WFH (Pending)', hoursLabel: hoursFor(log), bg: T.warningLight, color: T.warning, log, pendingWfh: log, isFuture, isWeeklyOff };
+    return { label: 'WFH (Pending)', hoursLabel: hoursFor(log), distanceLabel, bg: T.warningLight, color: T.warning, log, pendingWfh: log, isFuture, isWeeklyOff };
   }
   return { label: 'Absent', bg: T.dangerLight, color: T.danger, isFuture, isWeeklyOff };
 }
 
 // Working-days-vs-present ratio for the currently displayed range (e.g. "21/23")
-function presentRatioFor(userId: string, days: Date[], logs: AttLog[], requests: AttReq[], holidayDates: Set<string>): { present: number; total: number } {
+function presentRatioFor(userId: string, days: Date[], logs: AttLog[], requests: AttReq[], holidayDates: Set<string>, officeLocations: { name: string; latitude: number; longitude: number }[]): { present: number; total: number } {
   let present = 0, total = 0;
   for (const d of days) {
-    const c = cellFor(userId, d, logs, requests, holidayDates);
+    const c = cellFor(userId, d, logs, requests, holidayDates, officeLocations);
     if (c.isFuture || c.isWeeklyOff || c.label === 'Holiday') continue;
     total++;
     if (c.label === 'Present' || c.label === 'Present (Early Checkout)' || c.label === 'Present (marked)') present++;
@@ -402,7 +420,7 @@ export default function AttendancePage() {
     const rows = teamMembers.map(m => {
       const row: any = { Employee: m.full_name || m.email };
       days.forEach(d => {
-        const c = cellFor(m.id, d, teamLogs, teamRequests, holidayDates);
+        const c = cellFor(m.id, d, teamLogs, teamRequests, holidayDates, officeLocations);
         row[viewMode === 'week' ? fmtDayLabel(d) : String(d.getDate())] = c.label;
       });
       return row;
@@ -475,7 +493,7 @@ export default function AttendancePage() {
               </thead>
               <tbody>
                 {days.map((d, i) => {
-                  const c = cellFor(profile?.id || '', d, myLogs, myRequests, holidayDates);
+                  const c = cellFor(profile?.id || '', d, myLogs, myRequests, holidayDates, officeLocations);
                   const canRequest = !c.isFuture && !c.isWeeklyOff && c.label === 'Absent';
                   return (
                     <tr key={i} style={{ background: isSameDay(d, new Date()) ? T.primaryLight : (i % 2 === 0 ? '#fff' : T.bg) }}>
@@ -484,6 +502,7 @@ export default function AttendancePage() {
                         <span style={{ fontSize: 11, fontWeight: 600, color: c.color, background: c.bg, padding: '3px 10px', borderRadius: 20 }}>{c.label}</span>
                         {c.timesLabel && <div style={{ fontSize: 10, color: T.textMuted, marginTop: 3 }}>{c.timesLabel}</div>}
                         {c.hoursLabel && <div style={{ fontSize: 10, color: T.textMuted, marginTop: 1 }}>{c.hoursLabel} logged</div>}
+                        {c.distanceLabel && <div style={{ fontSize: 10, color: T.warning, marginTop: 1 }}>📍 {c.distanceLabel}</div>}
                         {renderCellDetail(c)}
                       </td>
                       <td style={{ padding: '9px 10px', borderBottom: `1px solid ${T.border}` }}>
@@ -521,7 +540,7 @@ export default function AttendancePage() {
                     <td style={{ padding: '9px 10px', fontSize: 12, fontWeight: 600, color: T.text, borderBottom: `1px solid ${T.border}`, position: 'sticky' as const, left: 0, background: mi % 2 === 0 ? '#fff' : T.bg, whiteSpace: 'nowrap' as const }}>
                       {m.full_name || m.email}
                       {(() => {
-                        const r = presentRatioFor(m.id, days, teamLogs, teamRequests, holidayDates);
+                        const r = presentRatioFor(m.id, days, teamLogs, teamRequests, holidayDates, officeLocations);
                         const office = officeNameFromLatest(memberOfficeLog[m.id], officeLocations);
                         const roleLabel = (ROLE_LABELS as any)[m.role] || m.role;
                         return (
@@ -534,7 +553,7 @@ export default function AttendancePage() {
                       })()}
                     </td>
                     {days.map((d, di) => {
-                      const c = cellFor(m.id, d, teamLogs, teamRequests, holidayDates);
+                      const c = cellFor(m.id, d, teamLogs, teamRequests, holidayDates, officeLocations);
                       const clickable = !c.isFuture && !c.isWeeklyOff;
                       return (
                         <td key={di} style={{ padding: '6px', borderBottom: `1px solid ${T.border}`, textAlign: 'center' as const }}>
@@ -544,6 +563,7 @@ export default function AttendancePage() {
                           </span>
                           {viewMode === 'week' && c.timesLabel && <div style={{ fontSize: 9, color: T.textMuted, marginTop: 2 }}>{c.timesLabel}</div>}
                           {viewMode === 'week' && c.hoursLabel && <div style={{ fontSize: 9, color: T.textMuted, marginTop: 1 }}>{c.hoursLabel}</div>}
+                          {viewMode === 'week' && c.distanceLabel && <div style={{ fontSize: 9, color: T.warning, marginTop: 1 }}>📍 {c.distanceLabel}</div>}
                         </td>
                       );
                     })}
