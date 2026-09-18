@@ -56,34 +56,40 @@ function getPositionOnce(options: PositionOptions): Promise<GeolocationPosition>
 // "Could not determine your location" failure. For a 250m office-radius check we don't need GPS
 // precision, so try the fast/lenient method first, and only fall back to high-accuracy if that
 // genuinely fails — this fixes the common case without giving up on the rare case that needs it.
-function getPosition(): Promise<GeolocationPosition> {
-  return new Promise(async (resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error('Geolocation is not supported by this browser.'));
-      return;
+//
+// IMPORTANT: the lenient method doesn't always fail outright when it can't get a good fix — it can
+// silently "succeed" with a very rough IP/cell-tower-based estimate (accuracy in the tens of km,
+// not meters). That looked like a successful check-in/out but produced coordinates 50-100+ km from
+// the person's real location. So we also check `pos.coords.accuracy` (meters) and only accept the
+// fast result if it's actually precise enough to mean something for a 250m radius check.
+const ACCEPTABLE_ACCURACY_METERS = 1000;
+
+async function getPosition(): Promise<GeolocationPosition> {
+  if (!navigator.geolocation) {
+    throw new Error('Geolocation is not supported by this browser.');
+  }
+
+  try {
+    const pos = await getPositionOnce({ enableHighAccuracy: false, timeout: 10000 });
+    if (pos.coords.accuracy <= ACCEPTABLE_ACCURACY_METERS) {
+      return pos;
     }
-    try {
-      const pos = await getPositionOnce({ enableHighAccuracy: false, timeout: 10000 });
-      resolve(pos);
-      return;
-    } catch (err: any) {
-      if (err.code === err.PERMISSION_DENIED) {
-        reject(new Error('Location access denied. Please allow location access to check in/out.'));
-        return;
-      }
-      // First attempt failed (not permission-related) — retry once with high accuracy / longer timeout
-      try {
-        const pos = await getPositionOnce({ enableHighAccuracy: true, timeout: 15000 });
-        resolve(pos);
-      } catch (err2: any) {
-        if (err2.code === err2.PERMISSION_DENIED) {
-          reject(new Error('Location access denied. Please allow location access to check in/out.'));
-        } else {
-          reject(new Error('Could not determine your location. Please check that Location Services are enabled for your browser (in your device/OS settings), then try again.'));
-        }
-      }
+    // Fast fix "succeeded" but is too imprecise to trust — fall through to the high-accuracy retry below
+  } catch (err: any) {
+    if (err.code === err.PERMISSION_DENIED) {
+      throw new Error('Location access denied. Please allow location access to check in/out.');
     }
-  });
+    // First attempt failed (not permission-related) — fall through to retry with high accuracy
+  }
+
+  try {
+    return await getPositionOnce({ enableHighAccuracy: true, timeout: 15000 });
+  } catch (err2: any) {
+    if (err2.code === err2.PERMISSION_DENIED) {
+      throw new Error('Location access denied. Please allow location access to check in/out.');
+    }
+    throw new Error('Could not determine your location. Please check that Location Services are enabled for your browser (in your device/OS settings), then try again.');
+  }
 }
 
 interface AttendanceContextType {
