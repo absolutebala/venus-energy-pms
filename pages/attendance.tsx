@@ -107,6 +107,7 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
   const dateStr = fmtDate(day);
   const isFuture = dayStart > today;
   const isWeeklyOff = day.getDay() === 0;
+  const isPastDay = dayStart < today;
 
   const dayRequests = requests.filter(r => r.user_id === userId && r.request_date === dateStr);
   const approvedRequest = dayRequests.find(r => r.status === 'approved');
@@ -117,9 +118,11 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
 
   if (approvedRequest) {
     const underlyingLog = logs.find(l => l.user_id === userId && l.log_date === dateStr);
+    const underlyingIncomplete = !!underlyingLog?.check_in_at && !underlyingLog?.check_out_at && isPastDay;
+    const safeHoursLabel = underlyingLog && !underlyingIncomplete ? hoursFor(underlyingLog) : undefined;
     if (approvedRequest.requested_status === 'leave') {
       return { label: 'Leave', bg: T.leaveLight, color: T.leave, approvedRequest,
-        hoursLabel: underlyingLog ? hoursFor(underlyingLog) : undefined, isFuture, isWeeklyOff };
+        hoursLabel: safeHoursLabel, isFuture, isWeeklyOff };
     }
     if (approvedRequest.requested_status === 'holiday') {
       return { label: 'Holiday', bg: T.leaveLight, color: T.leave, approvedRequest, isFuture, isWeeklyOff };
@@ -130,7 +133,7 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
       : 'Absent (marked)';
     return { label, bg: approvedRequest.requested_status === 'present' ? T.successLight : T.dangerLight,
       color: approvedRequest.requested_status === 'present' ? T.success : T.danger, approvedRequest,
-      hoursLabel: underlyingLog ? hoursFor(underlyingLog) : undefined, isFuture, isWeeklyOff };
+      hoursLabel: safeHoursLabel, isFuture, isWeeklyOff };
   }
 
   const log = logs.find(l => l.user_id === userId && l.log_date === dateStr);
@@ -139,7 +142,6 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
   // accumulating across calendar days (e.g. "79h 54m" for a Monday check-in never closed out by Thursday).
   // Treat it exactly like Absent instead — same styling, same Request-for-Present eligibility — so the
   // employee has to explicitly get it corrected/approved rather than it silently running forever.
-  const isPastDay = dayStart < today;
   const isIncomplete = !!log?.check_in_at && !log?.check_out_at && isPastDay;
   if (!log || isIncomplete) {
     if (pendingRequest) {
