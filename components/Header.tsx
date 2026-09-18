@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
 import AttendanceWidget from '@/components/AttendanceWidget';
-import EndOfDayCheckoutPrompt from '@/components/EndOfDayCheckoutPrompt';
 import { ATTENDANCE_ENABLED } from '@/lib/featureFlags';
 import { createClient } from '@/lib/supabase';
 import { T } from '@/lib/theme';
@@ -324,7 +323,6 @@ export default function Header() {
 
       {/* Check In / Check Out — all roles except Vendor */}
       {ATTENDANCE_ENABLED && !isVendor && !isManagement && <AttendanceWidget />}
-      {ATTENDANCE_ENABLED && !isVendor && !isManagement && <EndOfDayCheckoutPrompt />}
 
       {/* Notification bell */}
       <div ref={notifRef} style={{ position: 'relative' }}>
