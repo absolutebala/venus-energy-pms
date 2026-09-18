@@ -74,6 +74,7 @@ interface CellInfo {
   label: string; bg: string; color: string; log?: AttLog; pendingWfh?: AttLog;
   pendingRequest?: AttReq; approvedRequest?: AttReq; isFuture: boolean; isWeeklyOff: boolean; hoursLabel?: string; timesLabel?: string;
   distanceInLabel?: string; distanceOutLabel?: string;
+  cityLabel?: string;
 }
 
 // Distance from the single nearest registered office, regardless of whether it's within that
@@ -89,6 +90,14 @@ function isWithinAnyOffice(lat: number | null | undefined, lng: number | null | 
   return offices.some(o => distanceMeters(lat, lng, o.latitude, o.longitude) <= o.radius_meters);
 }
 
+// City of whichever registered office this point actually falls within — for the CLEAN Present
+// case (confirmed at an office), so the grid can show e.g. "Chennai" below the check-in/out times.
+function matchedOfficeCity(lat: number | null | undefined, lng: number | null | undefined, offices: { latitude: number; longitude: number; radius_meters: number; city?: string }[]): string | undefined {
+  if (lat == null || lng == null) return undefined;
+  const match = offices.find(o => distanceMeters(lat, lng, o.latitude, o.longitude) <= o.radius_meters);
+  return match?.city;
+}
+
 function nearestOfficeLabel(lat: number | null | undefined, lng: number | null | undefined, offices: { name: string; latitude: number; longitude: number }[]): string | undefined {
   if (lat == null || lng == null || offices.length === 0) return undefined;
   let best: { name: string; dist: number } | null = null;
@@ -101,7 +110,7 @@ function nearestOfficeLabel(lat: number | null | undefined, lng: number | null |
   return `${km} km from ${best.name}`;
 }
 
-function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], holidayDates: Set<string>, officeLocations: { name: string; latitude: number; longitude: number; radius_meters: number }[]): CellInfo {
+function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], holidayDates: Set<string>, officeLocations: { name: string; latitude: number; longitude: number; radius_meters: number; city?: string }[]): CellInfo {
   const today = new Date(); today.setHours(0,0,0,0);
   const dayStart = new Date(day); dayStart.setHours(0,0,0,0);
   const dateStr = fmtDate(day);
@@ -166,7 +175,8 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
       const distanceOutLabel = nearestOfficeLabel(log.check_out_lat, log.check_out_lng, officeLocations);
       return { label: 'Present (Out — Away from Office)', hoursLabel: hoursFor(log), timesLabel, distanceOutLabel, bg: T.warningLight, color: T.warning, log, isFuture, isWeeklyOff };
     }
-    return { label: presenceLabel(log), hoursLabel: hoursFor(log), timesLabel, bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
+    const cityLabel = matchedOfficeCity(log.check_in_lat, log.check_in_lng, officeLocations);
+    return { label: presenceLabel(log), hoursLabel: hoursFor(log), timesLabel, cityLabel, bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
   }
   if (log.work_mode === 'home') {
     const distanceInLabel = nearestOfficeLabel(log.check_in_lat, log.check_in_lng, officeLocations);
@@ -179,7 +189,7 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
 }
 
 // Working-days-vs-present ratio for the currently displayed range (e.g. "21/23")
-function presentRatioFor(userId: string, days: Date[], logs: AttLog[], requests: AttReq[], holidayDates: Set<string>, officeLocations: { name: string; latitude: number; longitude: number; radius_meters: number }[]): { present: number; total: number } {
+function presentRatioFor(userId: string, days: Date[], logs: AttLog[], requests: AttReq[], holidayDates: Set<string>, officeLocations: { name: string; latitude: number; longitude: number; radius_meters: number; city?: string }[]): { present: number; total: number } {
   let present = 0, total = 0;
   for (const d of days) {
     const c = cellFor(userId, d, logs, requests, holidayDates, officeLocations);
@@ -267,9 +277,9 @@ export default function AttendancePage() {
   }, []);
 
   // Office locations — fetched ONCE on mount, used to show which office each person is checking in from
-  const [officeLocations, setOfficeLocations] = React.useState<{ name: string; latitude: number; longitude: number; radius_meters: number }[]>([]);
+  const [officeLocations, setOfficeLocations] = React.useState<{ name: string; latitude: number; longitude: number; radius_meters: number; city?: string }[]>([]);
   React.useEffect(() => {
-    supabase.from('office_locations').select('name,latitude,longitude,radius_meters').then(({ data }) => {
+    supabase.from('office_locations').select('name,latitude,longitude,radius_meters,city').then(({ data }) => {
       setOfficeLocations(data || []);
     });
   }, []);
@@ -531,6 +541,7 @@ export default function AttendancePage() {
                         {c.hoursLabel && <div style={{ fontSize: 10, color: T.textMuted, marginTop: 1 }}>{c.hoursLabel} logged</div>}
                         {c.distanceInLabel && <div style={{ fontSize: 10, color: '#2563EB', marginTop: 1 }}>📍 In: {c.distanceInLabel}</div>}
                         {c.distanceOutLabel && <div style={{ fontSize: 10, color: T.warning, marginTop: 1 }}>📍 Out: {c.distanceOutLabel}</div>}
+                        {c.cityLabel && <div style={{ fontSize: 10, color: T.success, marginTop: 1 }}>📍 {c.cityLabel}</div>}
                         {renderCellDetail(c)}
                       </td>
                       <td style={{ padding: '9px 10px', borderBottom: `1px solid ${T.border}` }}>
@@ -593,6 +604,7 @@ export default function AttendancePage() {
                           {viewMode === 'week' && c.hoursLabel && <div style={{ fontSize: 9, color: T.textMuted, marginTop: 1 }}>{c.hoursLabel}</div>}
                           {viewMode === 'week' && c.distanceInLabel && <div style={{ fontSize: 9, color: '#2563EB', marginTop: 1 }}>📍 In: {c.distanceInLabel}</div>}
                           {viewMode === 'week' && c.distanceOutLabel && <div style={{ fontSize: 9, color: T.warning, marginTop: 1 }}>📍 Out: {c.distanceOutLabel}</div>}
+                          {viewMode === 'week' && c.cityLabel && <div style={{ fontSize: 9, color: T.success, marginTop: 1 }}>📍 {c.cityLabel}</div>}
                         </td>
                       );
                     })}
