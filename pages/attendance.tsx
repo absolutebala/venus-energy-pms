@@ -74,6 +74,7 @@ interface CellInfo {
   label: string; bg: string; color: string; log?: AttLog; pendingWfh?: AttLog;
   pendingRequest?: AttReq; approvedRequest?: AttReq; isFuture: boolean; isWeeklyOff: boolean; hoursLabel?: string; timesLabel?: string;
   distanceInLabel?: string; distanceOutLabel?: string;
+  hasPendingJustification?: boolean; originalAnomalyLabel?: string;
 }
 
 // Distance from the single nearest registered office, regardless of whether it's within that
@@ -101,6 +102,20 @@ function nearestOfficeLabel(lat: number | null | undefined, lng: number | null |
   return `${km} km from ${best.name}`;
 }
 
+// What this log's status would be WITHOUT any approved override — used both to word the pending-
+// justification popup and to show "Originally: X" once a justification gets approved.
+function rawAnomalyLabel(log: AttLog | undefined, officeLocations: { name: string; latitude: number; longitude: number; radius_meters: number }[]): string | undefined {
+  if (!log) return undefined;
+  if (log.work_mode === 'office') {
+    const leftEarlyAway = !!log.check_out_at && !isWithinAnyOffice(log.check_out_lat, log.check_out_lng, officeLocations);
+    return leftEarlyAway ? 'Present (Out — Away from Office)' : undefined;
+  }
+  if (log.work_mode === 'home' && log.wfh_status === 'approved') {
+    return 'Present (Away from Office)';
+  }
+  return undefined;
+}
+
 function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], holidayDates: Set<string>, officeLocations: { name: string; latitude: number; longitude: number; radius_meters: number }[]): CellInfo {
   const today = new Date(); today.setHours(0,0,0,0);
   const dayStart = new Date(day); dayStart.setHours(0,0,0,0);
@@ -124,12 +139,19 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
     if (approvedRequest.requested_status === 'holiday') {
       return { label: 'Holiday', bg: T.leaveLight, color: T.leave, approvedRequest, isFuture, isWeeklyOff };
     }
-    const wasAway = approvedRequest.requested_status === 'present' && underlyingLog?.work_mode === 'home';
-    const label = approvedRequest.requested_status === 'present'
-      ? (wasAway ? 'Present (Away from Office)' : 'Present (marked)')
-      : 'Absent (marked)';
+    const originalAnomalyLabel = rawAnomalyLabel(underlyingLog, officeLocations);
+    const isUserJustification = approvedRequest.requested_status === 'present' && approvedRequest.source === 'user' && !!originalAnomalyLabel;
+    let label: string;
+    if (approvedRequest.requested_status === 'present') {
+      // Employee's own justification, approved — fully resolved, show clean Present.
+      // Admin's direct override on an away-anomaly day — keep the away-flag visible for transparency.
+      label = isUserJustification ? 'Present' : (originalAnomalyLabel || 'Present (marked)');
+    } else {
+      label = 'Absent (marked)';
+    }
     return { label, bg: approvedRequest.requested_status === 'present' ? T.successLight : T.dangerLight,
       color: approvedRequest.requested_status === 'present' ? T.success : T.danger, approvedRequest,
+      originalAnomalyLabel: isUserJustification ? originalAnomalyLabel : undefined,
       hoursLabel: underlyingLog ? hoursFor(underlyingLog) : undefined, isFuture, isWeeklyOff };
   }
 
@@ -162,14 +184,18 @@ function cellFor(userId: string, day: Date, logs: AttLog[], requests: AttReq[], 
     const leftEarlyAway = !!log.check_out_at && !isWithinAnyOffice(log.check_out_lat, log.check_out_lng, officeLocations);
     if (leftEarlyAway) {
       const distanceOutLabel = nearestOfficeLabel(log.check_out_lat, log.check_out_lng, officeLocations);
-      return { label: 'Present (Out — Away from Office)', hoursLabel: hoursFor(log), timesLabel, distanceOutLabel, bg: T.warningLight, color: T.warning, log, isFuture, isWeeklyOff };
+      const relevantPending = pendingRequest?.requested_status === 'present' ? pendingRequest : undefined;
+      return { label: 'Present (Out — Away from Office)', hoursLabel: hoursFor(log), timesLabel, distanceOutLabel, bg: T.warningLight, color: T.warning, log, isFuture, isWeeklyOff, pendingRequest: relevantPending, hasPendingJustification: !!relevantPending };
     }
     return { label: presenceLabel(log), hoursLabel: hoursFor(log), timesLabel, bg: T.successLight, color: T.success, log, isFuture, isWeeklyOff };
   }
   if (log.work_mode === 'home') {
     const distanceInLabel = nearestOfficeLabel(log.check_in_lat, log.check_in_lng, officeLocations);
     const distanceOutLabel = nearestOfficeLabel(log.check_out_lat, log.check_out_lng, officeLocations);
-    if (log.wfh_status === 'approved') return { label: 'Present (Away from Office)', hoursLabel: hoursFor(log), timesLabel, distanceInLabel, distanceOutLabel, bg: '#EFF6FF', color: '#2563EB', log, isFuture, isWeeklyOff };
+    if (log.wfh_status === 'approved') {
+      const relevantPending = pendingRequest?.requested_status === 'present' ? pendingRequest : undefined;
+      return { label: 'Present (Away from Office)', hoursLabel: hoursFor(log), timesLabel, distanceInLabel, distanceOutLabel, bg: '#EFF6FF', color: '#2563EB', log, isFuture, isWeeklyOff, pendingRequest: relevantPending, hasPendingJustification: !!relevantPending };
+    }
     if (log.wfh_status === 'rejected') return { label: 'Leave (WFH rejected)', bg: T.dangerLight, color: T.danger, log, isFuture, isWeeklyOff };
     return { label: 'WFH (Pending)', hoursLabel: hoursFor(log), distanceInLabel, distanceOutLabel, bg: T.warningLight, color: T.warning, log, pendingWfh: log, isFuture, isWeeklyOff };
   }
@@ -461,6 +487,12 @@ export default function AttendancePage() {
     if (info.approvedRequest) {
       return (
         <div style={{ fontSize: 11, color: T.textMuted, marginTop: 6 }}>
+          {info.originalAnomalyLabel && (
+            <div style={{ marginBottom: 3 }}>Originally: <span style={{ fontWeight: 600 }}>{info.originalAnomalyLabel}</span></div>
+          )}
+          {info.approvedRequest.reason && (
+            <div style={{ marginBottom: 3, fontStyle: 'italic' as const }}>Reason: "{info.approvedRequest.reason}"</div>
+          )}
           Marked by {nameMap[info.approvedRequest.approved_by || ''] || '—'} on {info.approvedRequest.approved_at ? fmtWhen(info.approvedRequest.approved_at) : '—'}
         </div>
       );
@@ -520,6 +552,9 @@ export default function AttendancePage() {
                 {days.map((d, i) => {
                   const c = cellFor(profile?.id || '', d, myLogs, myRequests, holidayDates, officeLocations);
                   const canRequest = !c.isFuture && !c.isWeeklyOff && c.label === 'Absent';
+                  const canJustify = !c.isFuture && !c.isWeeklyOff
+                    && (c.label === 'Present (Away from Office)' || c.label === 'Present (Out — Away from Office)')
+                    && !c.pendingRequest && !c.approvedRequest;
                   return (
                     <tr key={i} style={{ background: isSameDay(d, new Date()) ? T.primaryLight : (i % 2 === 0 ? '#fff' : T.bg) }}>
                       <td style={{ padding: '9px 10px', fontSize: 12, borderBottom: `1px solid ${T.border}` }}>{fmtDayLabel(d)}</td>
@@ -539,6 +574,10 @@ export default function AttendancePage() {
                             <button onClick={() => { setLeaveModal([fmtDate(d)]); setLeaveReason(''); }}
                               style={{ ...btn, fontSize: 11, padding: '4px 10px', color: T.leave, border: `1px solid ${T.leave}` }}>Apply as Leave</button>
                           </div>
+                        )}
+                        {canJustify && (
+                          <button onClick={() => { setRequestModal(fmtDate(d)); setRequestReason(''); }}
+                            style={{ ...btn, fontSize: 11, padding: '4px 10px', color: T.warning, border: `1px solid ${T.warning}` }}>Request Justification</button>
                         )}
                       </td>
                     </tr>
@@ -586,6 +625,7 @@ export default function AttendancePage() {
                           <span onClick={() => clickable && setPopupCell({ userId: m.id, date: fmtDate(d), info: c, canManage: true })}
                             style={{ fontSize: 10, fontWeight: 600, color: c.color, background: c.bg, padding: '3px 6px', borderRadius: 6, whiteSpace: 'nowrap' as const, cursor: clickable ? 'pointer' : 'default', display: 'inline-block' }}>
                             {viewMode === 'month' ? c.label.split(' (')[0] : c.label}
+                            {c.hasPendingJustification && <span style={{ color: T.danger, fontWeight: 800, marginLeft: 4 }}>!</span>}
                           </span>
                           {viewMode === 'week' && c.timesLabel && <div style={{ fontSize: 9, color: T.textMuted, marginTop: 2 }}>{c.timesLabel}</div>}
                           {viewMode === 'week' && c.hoursLabel && <div style={{ fontSize: 9, color: T.textMuted, marginTop: 1 }}>{c.hoursLabel}</div>}
@@ -675,7 +715,9 @@ export default function AttendancePage() {
               {popupCell.info.pendingRequest && (
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: T.text, marginBottom: 4 }}>
-                    Pending {popupCell.info.pendingRequest.requested_status === 'leave' ? 'Leave' : 'Present'} Request
+                    {popupCell.info.hasPendingJustification
+                      ? `Pending Attendance Request — ${popupCell.info.label.includes('Out —') ? 'Left Office Early' : 'Working from Home'}`
+                      : `Pending ${popupCell.info.pendingRequest.requested_status === 'leave' ? 'Leave' : 'Present'} Request`}
                   </div>
                   {popupCell.info.pendingRequest.reason && <div style={{ fontSize: 11, color: T.textMuted, marginBottom: 8, fontStyle: 'italic' as const }}>"{popupCell.info.pendingRequest.reason}"</div>}
                   <div style={{ display: 'flex', gap: 10 }}>
